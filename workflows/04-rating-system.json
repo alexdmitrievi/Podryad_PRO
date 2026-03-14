@@ -1,0 +1,694 @@
+{
+  "name": "04 — Rating System",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [220, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/done_",
+              "operator": { "type": "string", "operation": "startsWith" }
+            }
+          ]
+        }
+      },
+      "id": "if-done-command",
+      "name": "Is /done Command?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $('Telegram Trigger').first().json.message.text;\nconst userId = String($('Telegram Trigger').first().json.message.from.id);\nconst orderId = text.replace('/done_', '').trim();\n\nreturn [{\n  json: {\n    order_id: parseInt(orderId),\n    caller_id: userId\n  }\n}];"
+      },
+      "id": "parse-done",
+      "name": "Parse /done Command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Orders"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "order_id",
+              "lookupValue": "={{ $json.order_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "sheets-lookup-order",
+      "name": "Sheets: Lookup Order",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [880, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "closed",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "if-order-closed",
+      "name": "Is Order Closed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse /done Command').first().json.caller_id }}",
+        "text": "❌ Заказ #{{ $('Parse /done Command').first().json.order_id }} не найден или не в статусе \"закрыт\".\n\nУбедитесь, что номер заказа правильный.",
+        "additionalFields": {}
+      },
+      "id": "send-not-found",
+      "name": "Send: Not Found",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1320, 160],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const order = $('Sheets: Lookup Order').first().json;\nconst callerId = $('Parse /done Command').first().json.caller_id;\n\nconst isCustomer = String(order.customer_id) === callerId;\nconst isExecutor = String(order.executor_id) === callerId;\n\nif (!isCustomer && !isExecutor) {\n  return [{\n    json: {\n      role: 'unknown',\n      order_id: order.order_id\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    role: isCustomer ? 'customer' : 'executor',\n    order_id: order.order_id,\n    customer_id: order.customer_id,\n    executor_id: order.executor_id,\n    caller_id: callerId\n  }\n}];"
+      },
+      "id": "determine-role",
+      "name": "Determine Caller Role",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 380]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "outputKey": "customer",
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.role }}",
+                    "rightValue": "customer",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "executor",
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.role }}",
+                    "rightValue": "executor",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "id": "switch-role",
+      "name": "Switch Role",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1540, 380]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.customer_id }}",
+        "text": "❓ Как прошёл заказ #{{ $json.order_id }}?\nОцените исполнителя от 1 до 5:\n\n1 — Плохо\n2 — Ниже среднего\n3 — Нормально\n4 — Хорошо\n5 — Отлично\n\nОтправьте цифру (1-5):",
+        "additionalFields": {
+          "reply_markup": "{\"inline_keyboard\":[[{\"text\":\"⭐ 1\",\"callback_data\":\"rate_1_{{ $json.order_id }}\"},{\"text\":\"⭐⭐ 2\",\"callback_data\":\"rate_2_{{ $json.order_id }}\"},{\"text\":\"⭐⭐⭐ 3\",\"callback_data\":\"rate_3_{{ $json.order_id }}\"}],[{\"text\":\"⭐⭐⭐⭐ 4\",\"callback_data\":\"rate_4_{{ $json.order_id }}\"},{\"text\":\"⭐⭐⭐⭐⭐ 5\",\"callback_data\":\"rate_5_{{ $json.order_id }}\"}]]}"
+        }
+      },
+      "id": "send-rating-request",
+      "name": "Send Rating Request",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1760, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.caller_id }}",
+        "text": "✅ Спасибо! Мы отправили заказчику запрос на оценку вашей работы по заказу #{{ $json.order_id }}.\n\nХорошая оценка повышает ваш рейтинг и даёт доступ к лучшим заказам!",
+        "additionalFields": {}
+      },
+      "id": "send-executor-done",
+      "name": "Notify Executor: Done Received",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1760, 500],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": ["callback_query"],
+        "additionalFields": {}
+      },
+      "id": "telegram-rating-callback",
+      "name": "Rating Callback",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [220, 700],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.callback_query.data }}",
+              "rightValue": "rate_",
+              "operator": { "type": "string", "operation": "startsWith" }
+            }
+          ]
+        }
+      },
+      "id": "if-rating-callback",
+      "name": "Is Rating Callback?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Rating Callback').first().json.callback_query.data;\nconst callbackId = $('Rating Callback').first().json.callback_query.id;\n\nconst parts = data.replace('rate_', '').split('_');\nconst score = parseInt(parts[0]);\nconst orderId = parseInt(parts[1]);\n\nreturn [{\n  json: {\n    score,\n    order_id: orderId,\n    callback_id: callbackId\n  }\n}];"
+      },
+      "id": "parse-rating",
+      "name": "Parse Rating",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 700]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Orders"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "order_id",
+              "lookupValue": "={{ $json.order_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "sheets-lookup-order-rating",
+      "name": "Sheets: Order for Rating",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [880, 700],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Workers"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "telegram_id",
+              "lookupValue": "={{ $json.executor_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "sheets-lookup-worker-rating",
+      "name": "Sheets: Worker for Rating",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1100, 700],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const worker = $('Sheets: Worker for Rating').first().json;\nconst newScore = $('Parse Rating').first().json.score;\nconst orderId = $('Parse Rating').first().json.order_id;\n\nconst oldRating = parseFloat(worker.rating) || 5.0;\nconst count = parseInt(worker.jobs_count) || 0;\n\nconst newRating = ((oldRating * count) + newScore) / (count + 1);\nconst roundedRating = Math.round(newRating * 100) / 100;\n\nlet needsBanCheck = false;\nlet penalty = 'none';\nlet banUntil = worker.ban_until || '';\nlet balance = parseInt(worker.balance) || 0;\n\nif (newScore <= 2) {\n  needsBanCheck = true;\n  \n  const consecutiveLow = parseInt(worker.consecutive_low || '0') + 1;\n  \n  if (consecutiveLow >= 3) {\n    const banDate = new Date();\n    banDate.setDate(banDate.getDate() + 30);\n    banUntil = banDate.toISOString();\n    penalty = 'ban_30_days';\n  } else if (consecutiveLow >= 2) {\n    balance -= 500;\n    penalty = 'fine_500';\n  } else {\n    penalty = 'warning';\n  }\n  \n  return [{\n    json: {\n      telegram_id: worker.telegram_id,\n      rating: roundedRating,\n      jobs_count: count + 1,\n      balance: balance,\n      ban_until: banUntil,\n      consecutive_low: consecutiveLow,\n      penalty: penalty,\n      score: newScore,\n      order_id: orderId,\n      needs_ban_check: true\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    telegram_id: worker.telegram_id,\n    rating: roundedRating,\n    jobs_count: count + 1,\n    balance: balance,\n    ban_until: banUntil,\n    consecutive_low: 0,\n    penalty: 'none',\n    score: newScore,\n    order_id: orderId,\n    needs_ban_check: false\n  }\n}];"
+      },
+      "id": "calc-rating",
+      "name": "Calculate New Rating",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 700]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Workers"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telegram_id": "={{ $json.telegram_id }}",
+            "rating": "={{ $json.rating }}",
+            "jobs_count": "={{ $json.jobs_count }}",
+            "balance": "={{ $json.balance }}",
+            "ban_until": "={{ $json.ban_until }}",
+            "consecutive_low": "={{ $json.consecutive_low }}"
+          }
+        },
+        "options": { "cellFormat": "USER_ENTERED" }
+      },
+      "id": "sheets-update-worker",
+      "name": "Sheets: Update Worker",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1540, 700],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "answerQuery",
+        "queryId": "={{ $('Parse Rating').first().json.callback_id }}",
+        "text": "✅ Спасибо за оценку!",
+        "additionalFields": { "showAlert": false }
+      },
+      "id": "answer-rating",
+      "name": "Answer Rating Callback",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1760, 600],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "outputKey": "warning",
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.penalty }}",
+                    "rightValue": "warning",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "fine",
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.penalty }}",
+                    "rightValue": "fine_500",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "ban",
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.penalty }}",
+                    "rightValue": "ban_30_days",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "id": "switch-penalty",
+      "name": "Switch Penalty",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1760, 820]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Calculate New Rating').first().json.telegram_id }}",
+        "text": "⚠️ Внимание! Вы получили низкую оценку ({{ $('Calculate New Rating').first().json.score }}/5) за заказ #{{ $('Calculate New Rating').first().json.order_id }}.\n\nВаш текущий рейтинг: {{ $('Calculate New Rating').first().json.rating }}\n\n⚠️ При повторной низкой оценке — штраф 500р.\nПри третьей подряд — блокировка на 30 дней.",
+        "additionalFields": {}
+      },
+      "id": "send-warning",
+      "name": "Send Warning",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1980, 720],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Calculate New Rating').first().json.telegram_id }}",
+        "text": "🚨 Штраф 500р!\n\nВы получили вторую подряд низкую оценку ({{ $('Calculate New Rating').first().json.score }}/5) за заказ #{{ $('Calculate New Rating').first().json.order_id }}.\n\n💰 С вашего баланса списано 500р.\nТекущий баланс: {{ $('Calculate New Rating').first().json.balance }}р\nРейтинг: {{ $('Calculate New Rating').first().json.rating }}\n\n⚠️ Следующая низкая оценка — блокировка на 30 дней!",
+        "additionalFields": {}
+      },
+      "id": "send-fine",
+      "name": "Send Fine Notice",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1980, 860],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Calculate New Rating').first().json.telegram_id }}",
+        "text": "🔒 Вы заблокированы на 30 дней!\n\nПричина: 3 низких оценки подряд.\nЗаказ: #{{ $('Calculate New Rating').first().json.order_id }}\nРейтинг: {{ $('Calculate New Rating').first().json.rating }}\n\nБлокировка до: {{ $('Calculate New Rating').first().json.ban_until }}\n\nДля разблокировки обратитесь к администратору.",
+        "additionalFields": {}
+      },
+      "id": "send-ban",
+      "name": "Send Ban Notice",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1980, 1000],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "text": "🔒 Исполнитель заблокирован!\n\nID: {{ $('Calculate New Rating').first().json.telegram_id }}\nПричина: 3 низких оценки подряд\nРейтинг: {{ $('Calculate New Rating').first().json.rating }}\nДо: {{ $('Calculate New Rating').first().json.ban_until }}",
+        "additionalFields": {}
+      },
+      "id": "notify-admin-ban",
+      "name": "Notify Admin: Ban",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2200, 1000],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Calculate New Rating').first().json;\nconst stars = '⭐'.repeat(data.score);\n\nconst text = `✅ Спасибо за оценку!\\n\\nЗаказ #${data.order_id}\\nОценка: ${stars} (${data.score}/5)\\n\\nВаш отзыв помогает улучшить качество сервиса!`;\n\nconst customerId = $('Sheets: Order for Rating').first().json.customer_id;\n\nreturn [{\n  json: {\n    chat_id: customerId,\n    text: text\n  }\n}];"
+      },
+      "id": "build-thanks",
+      "name": "Build Thanks Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 1140]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "id": "send-thanks",
+      "name": "Send Thanks to Customer",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1980, 1140],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "Ошибка в Rating System workflow"
+      },
+      "id": "error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [220, 1100]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "text": "🚨 *ОШИБКА в Rating System*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "notify-admin-error",
+      "name": "Notify Admin Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [440, 1100],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [{ "node": "Is /done Command?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is /done Command?": {
+      "main": [
+        [{ "node": "Parse /done Command", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Parse /done Command": {
+      "main": [
+        [{ "node": "Sheets: Lookup Order", "type": "main", "index": 0 }]
+      ]
+    },
+    "Sheets: Lookup Order": {
+      "main": [
+        [{ "node": "Is Order Closed?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Order Closed?": {
+      "main": [
+        [{ "node": "Determine Caller Role", "type": "main", "index": 0 }],
+        [{ "node": "Send: Not Found", "type": "main", "index": 0 }]
+      ]
+    },
+    "Determine Caller Role": {
+      "main": [
+        [{ "node": "Switch Role", "type": "main", "index": 0 }]
+      ]
+    },
+    "Switch Role": {
+      "main": [
+        [{ "node": "Send Rating Request", "type": "main", "index": 0 }],
+        [{ "node": "Notify Executor: Done Received", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Notify Executor: Done Received": {
+      "main": [
+        [{ "node": "Send Rating Request", "type": "main", "index": 0 }]
+      ]
+    },
+    "Rating Callback": {
+      "main": [
+        [{ "node": "Is Rating Callback?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Rating Callback?": {
+      "main": [
+        [{ "node": "Parse Rating", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Parse Rating": {
+      "main": [
+        [{ "node": "Sheets: Order for Rating", "type": "main", "index": 0 }]
+      ]
+    },
+    "Sheets: Order for Rating": {
+      "main": [
+        [{ "node": "Sheets: Worker for Rating", "type": "main", "index": 0 }]
+      ]
+    },
+    "Sheets: Worker for Rating": {
+      "main": [
+        [{ "node": "Calculate New Rating", "type": "main", "index": 0 }]
+      ]
+    },
+    "Calculate New Rating": {
+      "main": [
+        [
+          { "node": "Sheets: Update Worker", "type": "main", "index": 0 },
+          { "node": "Answer Rating Callback", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Sheets: Update Worker": {
+      "main": [
+        [
+          { "node": "Switch Penalty", "type": "main", "index": 0 },
+          { "node": "Build Thanks Message", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Switch Penalty": {
+      "main": [
+        [{ "node": "Send Warning", "type": "main", "index": 0 }],
+        [{ "node": "Send Fine Notice", "type": "main", "index": 0 }],
+        [{ "node": "Send Ban Notice", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Send Ban Notice": {
+      "main": [
+        [{ "node": "Notify Admin: Ban", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Thanks Message": {
+      "main": [
+        [{ "node": "Send Thanks to Customer", "type": "main", "index": 0 }]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "podryad-pro" },
+    { "name": "rating" },
+    { "name": "penalties" }
+  ],
+  "pinData": {},
+  "versionId": "4"
+}
