@@ -83,8 +83,9 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $env.TELEGRAM_CHANNEL_ID }}",
+        "resource": "message",
         "operation": "sendLocation",
+        "chatId": "={{ $env.TELEGRAM_CHANNEL_ID }}",
         "latitude": "={{ $json.lat }}",
         "longitude": "={{ $json.lon }}",
         "additionalFields": {}
@@ -194,6 +195,26 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [1980, 300]
+    },
+    {
+      "parameters": {},
+      "id": "b1b2c3d4-2222-4000-8000-000000000012",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 800]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "text": "🚨 *ОШИБКА в Publish Order*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "b1b2c3d4-2222-4000-8000-000000000013",
+      "name": "Notify Admin Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [260, 800]
     }
   ],
   "connections": {
@@ -240,6 +261,11 @@
           { "node": "Update Payment", "type": "main", "index": 0 },
           { "node": "Notify Customer", "type": "main", "index": 0 }
         ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
       ]
     }
   },

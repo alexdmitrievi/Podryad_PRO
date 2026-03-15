@@ -1,6 +1,21 @@
 import { NextResponse } from 'next/server';
 import { getOrders } from '@/lib/sheets';
 
+const rateLimit = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW = 60_000;
+const RATE_LIMIT_MAX = 5;
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimit.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimit.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return false;
+  }
+  entry.count++;
+  return entry.count > RATE_LIMIT_MAX;
+}
+
 export async function GET() {
   try {
     const orders = await getOrders('published');
@@ -16,6 +31,14 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    if (isRateLimited(clientIp)) {
+      return NextResponse.json(
+        { error: 'Слишком много запросов. Попробуйте через минуту.' },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
 
     if (!body.address || typeof body.address !== 'string' || body.address.length < 3) {

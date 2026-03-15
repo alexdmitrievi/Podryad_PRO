@@ -67,6 +67,26 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [800, 400]
+    },
+    {
+      "parameters": {},
+      "id": "f1b2c3d4-6666-4000-8000-000000000006",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 700]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "text": "🚨 *ОШИБКА в Daily Analytics*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "f1b2c3d4-6666-4000-8000-000000000007",
+      "name": "Notify Admin Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [260, 700]
     }
   ],
   "connections": {
@@ -91,6 +111,11 @@
     "Calculate Metrics": {
       "main": [
         [{ "node": "Send Daily Report", "type": "main", "index": 0 }]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
       ]
     }
   },

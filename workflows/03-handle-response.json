@@ -247,6 +247,26 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [2280, 600]
+    },
+    {
+      "parameters": {},
+      "id": "c1b2c3d4-3333-4000-8000-000000000016",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 800]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "text": "🚨 *ОШИБКА в Handle Response*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "c1b2c3d4-3333-4000-8000-000000000017",
+      "name": "Notify Admin Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [260, 800]
     }
   ],
   "connections": {
@@ -300,6 +320,11 @@
           { "node": "Edit Channel Post", "type": "main", "index": 0 },
           { "node": "Answer Callback", "type": "main", "index": 0 }
         ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
       ]
     }
   },

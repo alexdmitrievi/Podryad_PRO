@@ -72,14 +72,6 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendPoll",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"chat_id\": {{ $json.customer_id }},\n  \"question\": \"❓ Как прошёл заказ #{{ $json.order_id }}? Оцените исполнителя:\",\n  \"options\": [\n    \"⭐ Плохо (1)\",\n    \"⭐⭐ Ниже среднего (2)\",\n    \"⭐⭐⭐ Нормально (3)\",\n    \"⭐⭐⭐⭐ Хорошо (4)\",\n    \"⭐⭐⭐⭐⭐ Отлично (5)\"\n  ],\n  \"is_anonymous\": false,\n  \"allows_multiple_answers\": false\n}",
-        "options": {}
-      },
-      "parameters": {
         "conditions": {
           "options": { "caseSensitive": true },
           "conditions": [
@@ -220,6 +212,26 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [1700, 700]
+    },
+    {
+      "parameters": {},
+      "id": "d1b2c3d4-4444-4000-8000-000000000016",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 1000]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "text": "🚨 *ОШИБКА в Rating System*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "d1b2c3d4-4444-4000-8000-000000000017",
+      "name": "Notify Admin Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [260, 1000]
     }
   ],
   "connections": {
@@ -288,6 +300,11 @@
     "Update Worker Rating": {
       "main": [
         [{ "node": "Notify Worker Rating", "type": "main", "index": 0 }]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
       ]
     }
   },

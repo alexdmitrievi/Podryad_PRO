@@ -24,11 +24,12 @@ export interface Worker {
   phone: string;
   rating: number;
   jobs_count: number;
-  white_list: boolean;
-  is_vip: boolean;
+  white_list: string;
+  is_vip: string;
   vip_expires_at?: string;
   skills: string;
   balance: number;
   ban_until?: string;
   created_at: string;
+  consecutive_low: number;
 }

@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
-import type { Worker } from '@/lib/types';
+
+interface TopWorker {
+  name: string;
+  rating: number;
+  jobs_count: number;
+  is_vip: boolean;
+  skills: string;
+}
 
 export async function GET() {
   try {
@@ -16,16 +23,17 @@ export async function GET() {
     const data = await res.json();
     const rows: string[][] = data.values ?? [];
 
-    const workers: Pick<Worker, 'name' | 'rating' | 'jobs_count' | 'is_vip' | 'skills'>[] = rows
+    const workers: TopWorker[] = rows
       .filter((row) => row[6] === 'TRUE')
       .filter((row) => {
         if (!row[11]) return true;
-        return new Date(row[11]) < new Date();
+        const banDate = new Date(row[11]);
+        return !isNaN(banDate.getTime()) && banDate < new Date();
       })
       .map((row) => ({
         name: row[2] || row[1] || 'Исполнитель',
         rating: parseFloat(row[4]) || 5.0,
-        jobs_count: parseInt(row[5]) || 0,
+        jobs_count: parseInt(row[5], 10) || 0,
         is_vip: row[7] === 'TRUE',
         skills: row[9] || '',
       }))
