@@ -92,8 +92,8 @@ function createOrdersSheet(ss) {
 
   // Data Validation: work_type (колонка K)
   const workTypeRule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(['грузчики', 'уборка', 'стройка', 'другое'], true)
-    .setAllowInvalid(false)
+    .requireValueInList(['грузчики', 'уборка', 'стройка', 'доставка', 'ремонт', 'другое'], true)
+    .setAllowInvalid(true)
     .build();
   sheet.getRange('K2:K1000').setDataValidation(workTypeRule);
 
@@ -177,9 +177,10 @@ function createWorkersSheet(ss) {
     'is_vip',         // H — TRUE/FALSE
     'vip_expires_at', // I — timestamp
     'skills',         // J — грузчики,уборка,стройка
-    'balance',        // K — рубли
-    'ban_until',      // L — timestamp
-    'created_at'      // M — timestamp
+    'balance',          // K — рубли
+    'ban_until',        // L — timestamp
+    'created_at',       // M — timestamp
+    'consecutive_low'   // N — счётчик подряд низких оценок
   ];
 
   const headerRange = sheet.getRange(1, 1, 1, headers.length);
@@ -221,6 +222,7 @@ function createWorkersSheet(ss) {
   sheet.setColumnWidth(11, 90);  // balance
   sheet.setColumnWidth(12, 180); // ban_until
   sheet.setColumnWidth(13, 180); // created_at
+  sheet.setColumnWidth(14, 120); // consecutive_low
 
   // Числовой формат для rating
   sheet.getRange('E2:E1000').setNumberFormat('0.00');

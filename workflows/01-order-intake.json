@@ -286,23 +286,21 @@
       "position": [1920, 600]
     },
     {
-      "parameters": {
-        "jsCode": "// Если произошла ошибка где-то в цепочке\nconst error = $input.first().json;\nconst chatId = $('Telegram Trigger').first().json.message?.chat?.id;\n\nif (chatId) {\n  return [{\n    json: {\n      chatId: chatId,\n      text: '⚠️ Произошла ошибка при обработке заявки. Попробуйте ещё раз или напишите @podryad_pro_support'\n    }\n  }];\n}\n\nreturn [{ json: { error: error.message || 'Unknown error' } }];"
-      },
+      "parameters": {},
       "id": "a1b2c3d4-1111-4000-8000-000000000013",
-      "name": "Error Handler",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
       "position": [960, 800]
     },
     {
       "parameters": {
-        "chatId": "={{ $json.chatId }}",
-        "text": "={{ $json.text }}",
-        "additionalFields": {}
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "text": "=🚨 *ОШИБКА в Order Intake*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
+        "additionalFields": { "parse_mode": "Markdown" }
       },
       "id": "a1b2c3d4-1111-4000-8000-000000000014",
-      "name": "Send Error Msg",
+      "name": "Notify Admin Error",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [1200, 800]
@@ -356,9 +354,9 @@
         [{ "node": "Confirm to Customer", "type": "main", "index": 0 }]
       ]
     },
-    "Error Handler": {
+    "Error Trigger": {
       "main": [
-        [{ "node": "Send Error Msg", "type": "main", "index": 0 }]
+        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
       ]
     }
   },

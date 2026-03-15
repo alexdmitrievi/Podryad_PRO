@@ -79,11 +79,38 @@
         "jsonBody": "={\n  \"chat_id\": {{ $json.customer_id }},\n  \"question\": \"❓ Как прошёл заказ #{{ $json.order_id }}? Оцените исполнителя:\",\n  \"options\": [\n    \"⭐ Плохо (1)\",\n    \"⭐⭐ Ниже среднего (2)\",\n    \"⭐⭐⭐ Нормально (3)\",\n    \"⭐⭐⭐⭐ Хорошо (4)\",\n    \"⭐⭐⭐⭐⭐ Отлично (5)\"\n  ],\n  \"is_anonymous\": false,\n  \"allows_multiple_answers\": false\n}",
         "options": {}
       },
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "d1b2c3d4-4444-4000-8000-000000000015",
+      "name": "Is Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1100, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendPoll",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": {{ $json.customer_id }},\n  \"question\": \"❓ Как прошёл заказ #{{ $json.order_id }}? Оцените исполнителя:\",\n  \"options\": [\n    \"⭐ Плохо (1)\",\n    \"⭐⭐ Ниже среднего (2)\",\n    \"⭐⭐⭐ Нормально (3)\",\n    \"⭐⭐⭐⭐ Хорошо (4)\",\n    \"⭐⭐⭐⭐⭐ Отлично (5)\"\n  ],\n  \"is_anonymous\": false,\n  \"allows_multiple_answers\": false\n}",
+        "options": {}
+      },
       "id": "d1b2c3d4-4444-4000-8000-000000000006",
       "name": "Send Poll",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1240, 200]
+      "position": [1340, 200]
     },
     {
       "parameters": {
@@ -219,7 +246,13 @@
     },
     "Determine Role": {
       "main": [
-        [{ "node": "Send Poll", "type": "main", "index": 0 }]
+        [{ "node": "Is Valid?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Valid?": {
+      "main": [
+        [{ "node": "Send Poll", "type": "main", "index": 0 }],
+        []
       ]
     },
     "Poll Answer Trigger": {

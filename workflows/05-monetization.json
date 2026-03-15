@@ -1,255 +1,602 @@
 {
-  "name": "Подряд PRO — 05 Monetization",
+  "name": "05 — Monetization (VIP + Pick)",
   "nodes": [
     {
       "parameters": {
         "updates": ["message"],
         "additionalFields": {}
       },
-      "id": "e1b2c3d4-5555-4000-8000-000000000001",
-      "name": "Monetization Trigger",
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [0, 300],
-      "webhookId": "podryad-monetization"
+      "position": [220, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
-        "conditions": {
-          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
-          "conditions": [
+        "rules": {
+          "rules": [
             {
-              "id": "is-vip",
-              "leftValue": "={{ $json.message.text }}",
-              "rightValue": "/vip",
-              "operator": { "type": "string", "operation": "equals" }
+              "outputKey": "vip",
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/vip",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
             },
             {
-              "id": "is-pick",
-              "leftValue": "={{ $json.message.text }}",
-              "rightValue": "/pick",
-              "operator": { "type": "string", "operation": "startsWith" }
+              "outputKey": "pick",
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/pick",
+                    "operator": { "type": "string", "operation": "startsWith" }
+                  }
+                ]
+              }
             }
-          ],
-          "combinator": "or"
+          ]
         },
-        "fallbackOutput": "extra"
+        "options": { "fallbackOutput": "extra" }
       },
-      "id": "e1b2c3d4-5555-4000-8000-000000000002",
-      "name": "Route VIP or Pick",
+      "id": "switch-command",
+      "name": "Switch Command",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [260, 300]
+      "position": [440, 300]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Workers"
+        },
         "filtersUI": {
-          "values": [{ "lookupColumn": "telegram_id", "lookupValue": "={{ $('Monetization Trigger').item.json.message.from.id }}" }]
+          "values": [
+            {
+              "lookupColumn": "telegram_id",
+              "lookupValue": "={{ $('Telegram Trigger').first().json.message.from.id }}"
+            }
+          ]
         },
         "options": {}
       },
-      "id": "e1b2c3d4-5555-4000-8000-000000000003",
-      "name": "Check VIP Status",
+      "id": "sheets-lookup-worker-vip",
+      "name": "Sheets: Check VIP Status",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [540, 100]
+      "position": [660, 180],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
-        "jsCode": "const worker = $('Check VIP Status').first().json;\nconst isVip = worker?.is_vip === 'TRUE' || worker?.is_vip === true;\nconst expiresAt = worker?.vip_expires_at;\n\nif (isVip && expiresAt) {\n  const expires = new Date(expiresAt);\n  if (expires > new Date()) {\n    return [{\n      json: {\n        already_vip: true,\n        expires: expires.toLocaleDateString('ru-RU'),\n        chat_id: $('Monetization Trigger').first().json.message.chat.id\n      }\n    }];\n  }\n}\n\nreturn [{\n  json: {\n    already_vip: false,\n    chat_id: $('Monetization Trigger').first().json.message.chat.id,\n    user_id: String($('Monetization Trigger').first().json.message.from.id)\n  }\n}];"
+        "jsCode": "const workers = $('Sheets: Check VIP Status').all();\nconst userId = String($('Telegram Trigger').first().json.message.from.id);\n\nif (workers.length === 0) {\n  return [{\n    json: {\n      is_vip: false,\n      is_registered: false,\n      user_id: userId\n    }\n  }];\n}\n\nconst worker = workers[0].json;\nconst isVip = worker.is_vip === 'TRUE' || worker.is_vip === true;\nlet vipActive = false;\n\nif (isVip && worker.vip_expires_at) {\n  vipActive = new Date(worker.vip_expires_at) > new Date();\n}\n\nreturn [{\n  json: {\n    is_vip: vipActive,\n    is_registered: true,\n    vip_expires_at: worker.vip_expires_at || '',\n    user_id: userId,\n    worker_name: worker.name || ''\n  }\n}];"
       },
-      "id": "e1b2c3d4-5555-4000-8000-000000000004",
-      "name": "VIP Logic",
+      "id": "check-vip",
+      "name": "Check VIP Status",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [780, 100]
+      "position": [880, 180]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": { "caseSensitive": false },
           "conditions": [
             {
-              "id": "already-vip",
-              "leftValue": "={{ $json.already_vip }}",
+              "leftValue": "={{ $json.is_vip }}",
               "rightValue": true,
               "operator": { "type": "boolean", "operation": "equals" }
             }
-          ],
-          "combinator": "and"
+          ]
         }
       },
-      "id": "e1b2c3d4-5555-4000-8000-000000000005",
+      "id": "if-already-vip",
       "name": "Already VIP?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1020, 100]
+      "position": [1100, 180]
     },
     {
       "parameters": {
-        "chatId": "={{ $json.chat_id }}",
-        "text": "🌟 *Вы уже VIP!*\n\nВаша подписка активна до {{ $json.expires }}\n\n*Преимущества VIP:*\n• Ранний доступ к заказам (на 30 мин раньше)\n• Приоритет при отклике\n• VIP-бейдж в профиле",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "chatId": "={{ $json.user_id }}",
+        "text": "🌟 Вы уже VIP!\n\nПодписка активна до: {{ $json.vip_expires_at }}\n\nVIP-преимущества:\n• Ранний доступ к заказам (на 30 мин раньше)\n• Приоритет при отклике\n• Значок VIP в профиле\n• Поддержка 24/7",
+        "additionalFields": {}
       },
-      "id": "e1b2c3d4-5555-4000-8000-000000000006",
-      "name": "VIP Active Msg",
+      "id": "send-already-vip",
+      "name": "Send: Already VIP",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1300, 0]
+      "position": [1320, 80],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const userId = $('Check VIP Status').first().json.user_id;\n\nconst paymentUrl = `https://podryad.pro/app/payments?type=vip&user_id=${userId}&amount=1000`;\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [\n      { text: '💳 Оплатить VIP — 1000р/мес', url: paymentUrl }\n    ],\n    [\n      { text: '❌ Отмена', callback_data: 'cancel_vip' }\n    ]\n  ]\n});\n\nreturn [{\n  json: {\n    chat_id: userId,\n    text: `🌟 VIP-подписка — 1000р/мес\\n\\nПреимущества:\\n• Ранний доступ к заказам (на 30 мин раньше)\\n• Приоритет при отклике\\n• Значок VIP в профиле\\n• Поддержка 24/7\\n\\n💳 Нажмите кнопку для оплаты:`,\n    reply_markup: keyboard\n  }\n}];"
+      },
+      "id": "build-vip-offer",
+      "name": "Build VIP Offer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 260]
     },
     {
       "parameters": {
         "chatId": "={{ $json.chat_id }}",
-        "text": "🌟 *VIP подписка — 1000р/мес*\n\n*Что даёт VIP:*\n• Ранний доступ к заказам (на 30 мин раньше)\n• Приоритет при отклике\n• VIP-бейдж в профиле\n• Персональная поддержка\n\n💳 Для оплаты нажмите кнопку ниже:",
+        "text": "={{ $json.text }}",
         "additionalFields": {
-          "parse_mode": "Markdown",
-          "replyMarkup": "inlineKeyboard",
-          "inlineKeyboard": {
-            "rows": [
-              {
-                "row": {
-                  "buttons": [
-                    { "text": "💳 Оплатить VIP 1000р", "additionalFields": { "callbackData": "pay_vip_{{ $json.user_id }}" } }
-                  ]
-                }
-              }
-            ]
-          }
+          "reply_markup": "={{ $json.reply_markup }}"
         }
       },
-      "id": "e1b2c3d4-5555-4000-8000-000000000007",
-      "name": "VIP Offer Msg",
+      "id": "send-vip-offer",
+      "name": "Send VIP Offer",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1300, 200]
+      "position": [1540, 260],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vip-payment",
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "id": "webhook-vip-payment",
+      "name": "Webhook: VIP Payment",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 600],
+      "webhookId": "vip-payment"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook: VIP Payment').first().json.body || $('Webhook: VIP Payment').first().json;\n\nif (body.event !== 'payment.succeeded') {\n  throw new Error('VIP payment not succeeded');\n}\n\nconst payment = body.object;\nconst userId = payment.metadata?.user_id;\nconst paymentType = payment.metadata?.type || 'vip';\n\nreturn [{\n  json: {\n    user_id: userId,\n    type: paymentType,\n    yukassa_id: payment.id,\n    amount: parseInt(payment.amount?.value || 1000)\n  }\n}];"
+      },
+      "id": "parse-vip-payment",
+      "name": "Parse VIP Payment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "const userId = $('Parse VIP Payment').first().json.user_id;\nconst expiresAt = new Date();\nexpiresAt.setMonth(expiresAt.getMonth() + 1);\n\nreturn [{\n  json: {\n    telegram_id: userId,\n    is_vip: 'TRUE',\n    vip_expires_at: expiresAt.toISOString()\n  }\n}];"
+      },
+      "id": "calc-vip-expiry",
+      "name": "Calculate VIP Expiry",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 600]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Workers"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telegram_id": "={{ $json.telegram_id }}",
+            "is_vip": "={{ $json.is_vip }}",
+            "vip_expires_at": "={{ $json.vip_expires_at }}"
+          }
+        },
+        "matchingColumns": ["telegram_id"],
+        "options": { "cellFormat": "USER_ENTERED" }
+      },
+      "id": "sheets-activate-vip",
+      "name": "Sheets: Activate VIP",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [880, 600],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Payments"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "payment_id": "={{ $('Parse VIP Payment').first().json.yukassa_id }}",
+            "order_id": "",
+            "payer_id": "={{ $('Parse VIP Payment').first().json.user_id }}",
+            "amount": "={{ $('Parse VIP Payment').first().json.amount }}",
+            "type": "vip",
+            "status": "paid",
+            "yukassa_id": "={{ $('Parse VIP Payment').first().json.yukassa_id }}",
+            "created_at": "={{ new Date().toISOString() }}",
+            "paid_at": "={{ new Date().toISOString() }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "sheets-log-vip-payment",
+      "name": "Sheets: Log VIP Payment",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1100, 600],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse VIP Payment').first().json.user_id }}",
+        "text": "🌟 VIP активирован!\n\nПодписка действует до: {{ $('Calculate VIP Expiry').first().json.vip_expires_at }}\n\nТеперь вы получаете:\n• Ранний доступ к заказам\n• Приоритет при отклике\n• Значок VIP\n\nСпасибо за доверие!",
+        "additionalFields": {}
+      },
+      "id": "send-vip-activated",
+      "name": "Send: VIP Activated",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1320, 600],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "{\"status\": \"ok\"}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "webhook-vip-response",
+      "name": "VIP Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1320, 480]
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $('Telegram Trigger').first().json.message.text;\nconst userId = String($('Telegram Trigger').first().json.message.from.id);\n\nconst description = text.replace('/pick', '').trim() || 'любой тип работ';\n\nreturn [{\n  json: {\n    user_id: userId,\n    description: description\n  }\n}];"
+      },
+      "id": "parse-pick",
+      "name": "Parse /pick Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 420]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
-        "filtersUI": {},
-        "options": { "returnAllMatches": true }
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Workers"
+        },
+        "options": {}
       },
-      "id": "e1b2c3d4-5555-4000-8000-000000000008",
-      "name": "Read All Workers",
+      "id": "sheets-read-all-workers",
+      "name": "Sheets: Read All Workers",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [540, 500]
+      "position": [880, 420],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
-        "jsCode": "const workers = $('Read All Workers').all().map(i => i.json);\nconst msgText = $('Monetization Trigger').first().json.message.text;\nconst description = msgText.replace('/pick', '').trim() || 'любая работа';\n\n// Фильтруем: white_list, рейтинг >= 4.5, не забанены\nconst eligible = workers\n  .filter(w => {\n    if (w.white_list !== 'TRUE' && w.white_list !== true) return false;\n    if (parseFloat(w.rating || 0) < 4.0) return false;\n    if (w.ban_until) {\n      const banDate = new Date(w.ban_until);\n      if (banDate > new Date()) return false;\n    }\n    return true;\n  })\n  .sort((a, b) => parseFloat(b.rating || 0) - parseFloat(a.rating || 0))\n  .slice(0, 3);\n\nreturn [{\n  json: {\n    workers: eligible.map(w => ({\n      name: w.name || w.username || 'Неизвестный',\n      rating: w.rating,\n      jobs_count: w.jobs_count,\n      skills: w.skills,\n      is_vip: w.is_vip === 'TRUE'\n    })),\n    description,\n    chat_id: $('Monetization Trigger').first().json.message.chat.id\n  }\n}];"
+        "jsCode": "const allWorkers = $('Sheets: Read All Workers').all().map(i => i.json);\nconst description = $('Parse /pick Request').first().json.description;\n\nconst eligible = allWorkers\n  .filter(w => {\n    const whitelisted = w.white_list === 'TRUE' || w.white_list === true;\n    const highRating = parseFloat(w.rating || '0') >= 4.5;\n    const notBanned = !w.ban_until || new Date(w.ban_until) < new Date();\n    return whitelisted && highRating && notBanned;\n  })\n  .sort((a, b) => {\n    const ratingDiff = parseFloat(b.rating || '0') - parseFloat(a.rating || '0');\n    if (ratingDiff !== 0) return ratingDiff;\n    return parseInt(b.jobs_count || '0') - parseInt(a.jobs_count || '0');\n  })\n  .slice(0, 3);\n\nif (eligible.length === 0) {\n  return [{\n    json: {\n      has_workers: false,\n      description: description\n    }\n  }];\n}\n\nconst workersData = eligible.map(w => ({\n  name: w.name,\n  rating: w.rating,\n  jobs_count: w.jobs_count,\n  skills: w.skills,\n  is_vip: w.is_vip\n}));\n\nreturn [{\n  json: {\n    has_workers: true,\n    workers_array: JSON.stringify(workersData),\n    description: description,\n    top_workers: eligible\n  }\n}];"
       },
-      "id": "e1b2c3d4-5555-4000-8000-000000000009",
+      "id": "filter-top-workers",
       "name": "Filter Top Workers",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [780, 500]
+      "position": [1100, 420]
     },
     {
       "parameters": {
-        "resource": "chat",
-        "operation": "complete",
-        "modelId": { "__rl": true, "value": "gpt-4o-mini", "mode": "list" },
+        "conditions": {
+          "options": { "caseSensitive": false },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.has_workers }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "if-has-workers",
+      "name": "Has Workers?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1320, 420]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse /pick Request').first().json.user_id }}",
+        "text": "😔 К сожалению, сейчас нет подходящих исполнителей с рейтингом 4.5+.\n\nПопробуйте позже или создайте заказ — исполнители сами откликнутся!",
+        "additionalFields": {}
+      },
+      "id": "send-no-workers",
+      "name": "Send: No Workers",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1540, 340],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
         "messages": {
           "values": [
             {
-              "content": "На основе данных исполнителей составь краткую рекомендацию на русском языке для заказчика.\nДля каждого из исполнителей укажи:\n- Имя и рейтинг\n- Специализация (skills)\n- Кол-во выполненных заказов\n- Краткая характеристика (1 предложение)\n- Если VIP — отметь 🌟\nТон: профессиональный, доверительный.\nФормат: текстовый, с эмодзи, для Telegram.",
+              "content": "На основе данных исполнителей составь краткую рекомендацию на русском языке для заказчика.\nДля каждого из исполнителей укажи:\n- Имя и рейтинг (звёздочки)\n- Специализация\n- Кол-во выполненных заказов\n- Краткая характеристика (1 предложение)\nТон: профессиональный, доверительный.\nФормат: нумерованный список.",
               "role": "system"
             },
             {
-              "content": "Запрос заказчика: {{ $json.description }}\n\nДанные исполнителей:\n{{ JSON.stringify($json.workers, null, 2) }}",
+              "content": "Запрос заказчика: {{ $json.description }}\n\nДанные исполнителей:\n{{ $json.workers_array }}",
               "role": "user"
             }
           ]
         },
-        "options": { "temperature": 0.7, "maxTokens": 600 }
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 800
+        }
       },
-      "id": "e1b2c3d4-5555-4000-8000-000000000010",
-      "name": "GPT Recommendation",
+      "id": "openai-pick",
+      "name": "OpenAI: Generate Pick",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [1020, 500]
+      "position": [1540, 500],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAI"
+        }
+      }
     },
     {
       "parameters": {
-        "chatId": "={{ $('Filter Top Workers').item.json.chat_id }}",
-        "text": "🏆 *Подбор исполнителей*\n\n{{ $json.message.content }}\n\n💳 *Для получения контактов оплатите 1000р:*",
+        "jsCode": "const recommendation = $('OpenAI: Generate Pick').first().json.message.content;\nconst userId = $('Parse /pick Request').first().json.user_id;\n\nconst text = `🏆 Подбор исполнителей — Подряд PRO\\n\\n${recommendation}\\n\\n💳 Для получения контактов оплатите 1000р.\\nПосле оплаты мы отправим вам номера телефонов.`;\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [\n      {\n        text: '💳 Получить контакты — 1000р',\n        url: `https://podryad.pro/app/payments?type=pick&user_id=${userId}&amount=1000`\n      }\n    ]\n  ]\n});\n\nreturn [{\n  json: {\n    chat_id: userId,\n    text: text,\n    reply_markup: keyboard\n  }\n}];"
+      },
+      "id": "build-pick-message",
+      "name": "Build Pick Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 500]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.text }}",
         "additionalFields": {
-          "parse_mode": "Markdown",
-          "replyMarkup": "inlineKeyboard",
-          "inlineKeyboard": {
-            "rows": [
-              {
-                "row": {
-                  "buttons": [
-                    { "text": "💳 Оплатить подбор 1000р", "additionalFields": { "callbackData": "pay_pick" } }
-                  ]
-                }
-              }
-            ]
-          }
+          "reply_markup": "={{ $json.reply_markup }}"
         }
       },
-      "id": "e1b2c3d4-5555-4000-8000-000000000011",
+      "id": "send-pick-result",
       "name": "Send Pick Result",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1300, 500]
+      "position": [1980, 500],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "Ошибка в Monetization workflow"
+      },
+      "id": "error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [220, 800]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "text": "🚨 *ОШИБКА в Monetization*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "notify-admin-error",
+      "name": "Notify Admin Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [440, 800],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     }
   ],
   "connections": {
-    "Monetization Trigger": {
+    "Telegram Trigger": {
       "main": [
-        [{ "node": "Route VIP or Pick", "type": "main", "index": 0 }]
+        [{ "node": "Switch Command", "type": "main", "index": 0 }]
       ]
     },
-    "Route VIP or Pick": {
+    "Switch Command": {
       "main": [
-        [{ "node": "Check VIP Status", "type": "main", "index": 0 }],
-        [{ "node": "Read All Workers", "type": "main", "index": 0 }],
+        [{ "node": "Sheets: Check VIP Status", "type": "main", "index": 0 }],
+        [{ "node": "Parse /pick Request", "type": "main", "index": 0 }],
         []
       ]
     },
-    "Check VIP Status": {
+    "Sheets: Check VIP Status": {
       "main": [
-        [{ "node": "VIP Logic", "type": "main", "index": 0 }]
+        [{ "node": "Check VIP Status", "type": "main", "index": 0 }]
       ]
     },
-    "VIP Logic": {
+    "Check VIP Status": {
       "main": [
         [{ "node": "Already VIP?", "type": "main", "index": 0 }]
       ]
     },
     "Already VIP?": {
       "main": [
-        [{ "node": "VIP Active Msg", "type": "main", "index": 0 }],
-        [{ "node": "VIP Offer Msg", "type": "main", "index": 0 }]
+        [{ "node": "Send: Already VIP", "type": "main", "index": 0 }],
+        [{ "node": "Build VIP Offer", "type": "main", "index": 0 }]
       ]
     },
-    "Read All Workers": {
+    "Build VIP Offer": {
+      "main": [
+        [{ "node": "Send VIP Offer", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook: VIP Payment": {
+      "main": [
+        [{ "node": "Parse VIP Payment", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse VIP Payment": {
+      "main": [
+        [{ "node": "Calculate VIP Expiry", "type": "main", "index": 0 }]
+      ]
+    },
+    "Calculate VIP Expiry": {
+      "main": [
+        [{ "node": "Sheets: Activate VIP", "type": "main", "index": 0 }]
+      ]
+    },
+    "Sheets: Activate VIP": {
+      "main": [
+        [
+          { "node": "Sheets: Log VIP Payment", "type": "main", "index": 0 },
+          { "node": "VIP Webhook Response", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Sheets: Log VIP Payment": {
+      "main": [
+        [{ "node": "Send: VIP Activated", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse /pick Request": {
+      "main": [
+        [{ "node": "Sheets: Read All Workers", "type": "main", "index": 0 }]
+      ]
+    },
+    "Sheets: Read All Workers": {
       "main": [
         [{ "node": "Filter Top Workers", "type": "main", "index": 0 }]
       ]
     },
     "Filter Top Workers": {
       "main": [
-        [{ "node": "GPT Recommendation", "type": "main", "index": 0 }]
+        [{ "node": "Has Workers?", "type": "main", "index": 0 }]
       ]
     },
-    "GPT Recommendation": {
+    "Has Workers?": {
+      "main": [
+        [{ "node": "OpenAI: Generate Pick", "type": "main", "index": 0 }],
+        [{ "node": "Send: No Workers", "type": "main", "index": 0 }]
+      ]
+    },
+    "OpenAI: Generate Pick": {
+      "main": [
+        [{ "node": "Build Pick Message", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Pick Message": {
       "main": [
         [{ "node": "Send Pick Result", "type": "main", "index": 0 }]
       ]
+    },
+    "Error Trigger": {
+      "main": [
+        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
+      ]
     }
   },
-  "active": false,
-  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
-  "versionId": "podryad-05-monetization-v2",
-  "meta": { "instanceId": "podryad-pro" },
-  "tags": [{ "name": "podryad-pro" }]
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "podryad-pro" },
+    { "name": "monetization" },
+    { "name": "vip" }
+  ],
+  "pinData": {},
+  "versionId": "5"
 }

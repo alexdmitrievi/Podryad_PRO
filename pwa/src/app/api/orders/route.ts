@@ -18,11 +18,32 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const webhookUrl = process.env.N8N_WEBHOOK_BASE + '/order-intake';
-    const res = await fetch(webhookUrl, {
+    if (!body.address || typeof body.address !== 'string' || body.address.length < 3) {
+      return NextResponse.json({ error: 'Укажите адрес (минимум 3 символа)' }, { status: 400 });
+    }
+    if (!body.work_type || typeof body.work_type !== 'string') {
+      return NextResponse.json({ error: 'Укажите тип работы' }, { status: 400 });
+    }
+
+    const webhookBase = process.env.N8N_WEBHOOK_BASE;
+    if (!webhookBase) {
+      console.error('N8N_WEBHOOK_BASE is not configured');
+      return NextResponse.json({ error: 'Сервис временно недоступен' }, { status: 503 });
+    }
+
+    const res = await fetch(`${webhookBase}/order-intake`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        source: 'pwa',
+        address: String(body.address).slice(0, 500),
+        work_type: String(body.work_type).slice(0, 100),
+        time: String(body.time ?? '').slice(0, 100),
+        payment: String(body.payment ?? '').slice(0, 100),
+        people: Math.max(1, Math.min(50, parseInt(body.people) || 1)),
+        hours: Math.max(1, Math.min(24, parseInt(body.hours) || 1)),
+        comment: String(body.comment ?? '').slice(0, 1000),
+      }),
     });
 
     if (!res.ok) {
