@@ -5,13 +5,16 @@ const statusConfig: Record<string, { class: string; label: string }> = {
   published: { class: 'bg-green-100 text-green-700', label: '🟢 Открыт' },
   closed: { class: 'bg-gray-100 text-gray-500', label: '🔒 Закрыт' },
   pending: { class: 'bg-yellow-100 text-yellow-700', label: '⏳ Ожидает' },
+  paid: { class: 'bg-blue-100 text-blue-700', label: '💳 Оплачен' },
   cancelled: { class: 'bg-red-100 text-red-600', label: '❌ Отменён' },
+  done: { class: 'bg-green-100 text-green-700', label: '✅ Выполнен' },
 };
 
 const workTypeEmoji: Record<string, string> = {
   'грузчики': '💪',
   'уборка': '🧹',
   'стройка': '🏗',
+  'разнорабочие': '🔧',
   'другое': '📋',
 };
 
@@ -37,7 +40,11 @@ export default function OrderCard({ order }: { order: Order }) {
       <div className="space-y-1.5 text-sm text-gray-600">
         <p className="font-medium text-gray-800">📍 {order.address}</p>
         {order.time && <p>⏰ {order.time}</p>}
-        {order.payment && <p>💰 {order.payment}</p>}
+        {order.worker_rate != null ? (
+          <p>💰 {order.worker_rate}₽/час — на руки: {order.worker_payout?.toLocaleString() ?? '?'}₽</p>
+        ) : order.payment_text ? (
+          <p>💰 {order.payment_text}</p>
+        ) : null}
         <p>
           👥 {order.people} чел. × {order.hours} ч.
         </p>

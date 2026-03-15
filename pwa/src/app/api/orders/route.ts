@@ -62,9 +62,9 @@ export async function POST(req: Request) {
         address: String(body.address).slice(0, 500),
         work_type: String(body.work_type).slice(0, 100),
         time: String(body.time ?? '').slice(0, 100),
-        payment: String(body.payment ?? '').slice(0, 100),
         people: Math.max(1, Math.min(50, parseInt(body.people) || 1)),
         hours: Math.max(1, Math.min(24, parseInt(body.hours) || 1)),
+        client_rate: body.client_rate != null ? Math.max(300, Math.min(5000, parseInt(String(body.client_rate)) || 600)) : undefined,
         comment: String(body.comment ?? '').slice(0, 1000),
       }),
     });

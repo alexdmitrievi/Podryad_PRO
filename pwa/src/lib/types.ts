@@ -6,15 +6,22 @@ export interface Order {
   lon: number;
   yandex_link: string;
   time: string;
-  payment: string;
+  payment_text: string;
   people: number;
   hours: number;
   work_type: string;
   comment?: string;
-  status: 'pending' | 'published' | 'closed' | 'cancelled';
+  status: 'pending' | 'paid' | 'published' | 'closed' | 'cancelled' | 'done';
   executor_id?: string;
   message_id?: string;
   created_at: string;
+  client_rate?: number;
+  worker_rate?: number;
+  client_total?: number;
+  worker_payout?: number;
+  margin?: number;
+  payout_status?: string;
+  payout_at?: string;
 }
 
 export interface Worker {
@@ -31,5 +38,7 @@ export interface Worker {
   balance: number;
   ban_until?: string;
   created_at: string;
-  consecutive_low: number;
+  is_selfemployed?: string;
+  card_last4?: string;
+  accepted_offer?: string;
 }

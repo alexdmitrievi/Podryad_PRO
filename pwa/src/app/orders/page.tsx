@@ -75,7 +75,9 @@ export default function OrdersPage() {
               </p>
               <p className="text-sm text-gray-500">
                 📋 {order.work_type}
-                {order.payment && ` · 💰 ${order.payment}`}
+                {order.worker_rate != null
+                  ? ` · 💰 ${order.worker_rate}₽/час (${order.worker_payout?.toLocaleString() ?? '?'}₽)`
+                  : order.payment_text && ` · 💰 ${order.payment_text}`}
                 {order.people && ` · 👥 ${order.people} чел.`}
               </p>
               {order.yandex_link && (

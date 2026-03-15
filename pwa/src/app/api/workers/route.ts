@@ -14,7 +14,8 @@ export async function GET() {
     const apiKey = process.env.GOOGLE_API_KEY;
 
     if (!sheetId || !apiKey) {
-      return NextResponse.json({ error: 'Config missing' }, { status: 500 });
+      console.warn('Missing GOOGLE_SHEETS_ID or GOOGLE_API_KEY');
+      return NextResponse.json([]);
     }
 
     const range = 'Workers!A2:N500';

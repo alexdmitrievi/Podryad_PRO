@@ -1,27 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { DEFAULT_RATES, type Rate } from '@/lib/rates';
 
 const WORK_TYPES = [
   { value: 'грузчики', label: '💪 Грузчики' },
   { value: 'уборка', label: '🧹 Уборка' },
   { value: 'стройка', label: '🏗 Строительство' },
+  { value: 'разнорабочие', label: '🔧 Разнорабочие' },
   { value: 'другое', label: '📋 Другое' },
 ];
 
 export default function OrderForm() {
+  const [rates, setRates] = useState<Rate[]>(DEFAULT_RATES);
   const [form, setForm] = useState({
     address: '',
     time: '',
-    payment: '',
     people: '2',
     hours: '2',
     work_type: 'грузчики',
+    rate: '',
     comment: '',
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch('/api/rates')
+      .then((r) => r.json())
+      .then(setRates)
+      .catch(() => setRates(DEFAULT_RATES));
+  }, []);
+
+  const people = parseInt(form.people, 10) || 1;
+  const hours = parseInt(form.hours, 10) || 1;
+  const suggestedRate = rates.find((r) => r.work_type === form.work_type)?.client_rate ?? 600;
+  const rate = form.rate !== '' ? parseInt(form.rate, 10) || 0 : suggestedRate;
+  const minHours = rates.find((r) => r.work_type === form.work_type)?.min_hours ?? 1;
+  const effectiveHours = Math.max(hours, minHours);
+  const clientTotal = rate * people * effectiveHours;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,26 +57,33 @@ export default function OrderForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...form,
-          people: parseInt(form.people) || 1,
-          hours: parseInt(form.hours) || 1,
+          address: form.address.trim(),
+          work_type: form.work_type,
+          time: form.time || undefined,
+          people,
+          hours,
+          client_rate: rate,
+          comment: form.comment.trim() || undefined,
         }),
       });
 
-      if (!res.ok) throw new Error('Ошибка отправки');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Ошибка отправки');
+      }
 
       setSuccess(true);
       setForm({
         address: '',
         time: '',
-        payment: '',
         people: '2',
         hours: '2',
         work_type: 'грузчики',
+        rate: '',
         comment: '',
       });
-    } catch {
-      setError('Не удалось отправить заявку. Попробуйте позже.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось отправить заявку');
     } finally {
       setLoading(false);
     }
@@ -70,7 +95,8 @@ export default function OrderForm() {
         <p className="text-4xl">✅</p>
         <p className="font-bold text-green-800 text-lg">Заявка отправлена!</p>
         <p className="text-green-600 text-sm">
-          Мы обработаем её и опубликуем в канале после оплаты.
+          Вам придёт ссылка на оплату {clientTotal.toLocaleString()}₽ — после оплаты заказ
+          опубликуем в канале.
         </p>
         <button
           onClick={() => setSuccess(false)}
@@ -85,7 +111,6 @@ export default function OrderForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Address */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           📍 Адрес *
@@ -102,7 +127,6 @@ export default function OrderForm() {
         />
       </div>
 
-      {/* Work type */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           📋 Тип работы
@@ -114,10 +138,9 @@ export default function OrderForm() {
               type="button"
               onClick={() => setForm({ ...form, work_type: wt.value })}
               className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                ${
-                  form.work_type === wt.value
-                    ? 'bg-[#0088cc] text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ${form.work_type === wt.value
+                  ? 'bg-[#0088cc] text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
             >
               {wt.label}
@@ -126,7 +149,6 @@ export default function OrderForm() {
         </div>
       </div>
 
-      {/* Time */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           ⏰ Когда
@@ -141,7 +163,6 @@ export default function OrderForm() {
         />
       </div>
 
-      {/* People + Hours row */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -181,23 +202,34 @@ export default function OrderForm() {
         </div>
       </div>
 
-      {/* Payment */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          💰 Оплата
+          💰 Ставка за час (₽) — индивидуально по заказу
         </label>
         <input
-          type="text"
-          placeholder="500р/час или 3000р за всё"
-          value={form.payment}
-          onChange={(e) => setForm({ ...form, payment: e.target.value })}
+          type="number"
+          min={300}
+          max={2000}
+          step={50}
+          placeholder={`пример: ${suggestedRate}`}
+          value={form.rate}
+          onChange={(e) => setForm({ ...form, rate: e.target.value })}
           className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white
                      focus:ring-2 focus:ring-[#0088cc] focus:border-transparent
                      outline-none transition-all text-sm"
         />
       </div>
 
-      {/* Comment */}
+      <div className="bg-[#0088cc]/5 rounded-xl p-4 border border-[#0088cc]/20">
+        <p className="text-sm text-gray-600">Стоимость:</p>
+        <p className="text-xl font-bold text-[#0088cc]">
+          {clientTotal.toLocaleString()}₽
+        </p>
+        <p className="text-xs text-gray-500">
+          {rate}₽/час за чел. × {people} чел × {effectiveHours} ч
+        </p>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           💬 Комментарий
@@ -226,11 +258,11 @@ export default function OrderForm() {
                    hover:bg-[#0077b3] active:scale-[0.98] transition-all shadow-sm
                    disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? '⏳ Отправка...' : '📝 Отправить заявку — 500₽'}
+        {loading ? '⏳ Отправка...' : `📝 Отправить заявку — ${clientTotal.toLocaleString()}₽`}
       </button>
 
       <p className="text-gray-400 text-xs text-center">
-        После проверки данных вам придёт ссылка на оплату
+        После отправки вам придёт ссылка на оплату
       </p>
     </form>
   );

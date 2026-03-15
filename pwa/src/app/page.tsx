@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import CostCalculator from '@/components/CostCalculator';
 
 export default function HomePage() {
   const botName = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
@@ -44,7 +45,7 @@ export default function HomePage() {
             {
               icon: '📝',
               title: 'Заказчик пишет боту',
-              desc: 'Опишите задачу в свободной форме — ИИ распознает адрес, время, бюджет',
+              desc: 'Опишите задачу — платформа рассчитает стоимость по тарифам. Оплата через ЮKassa.',
             },
             {
               icon: '📢',
@@ -54,7 +55,7 @@ export default function HomePage() {
             {
               icon: '🏃',
               title: 'Исполнитель откликается',
-              desc: 'Первый подходящий получает контакты. Скорость решает!',
+              desc: 'Первый подходящий получает заказ. Общение через бота — контакты скрыты до завершения.',
             },
             {
               icon: '⭐',
@@ -75,22 +76,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Calculator + Tariffs */}
       <section className="bg-gray-100 px-6 py-12">
         <div className="max-w-md mx-auto space-y-6">
-          <h2 className="text-2xl font-bold text-center">Тарифы</h2>
+          <h2 className="text-2xl font-bold text-center">Сколько стоит?</h2>
+          <CostCalculator />
 
+          <h2 className="text-2xl font-bold text-center pt-6">Дополнительные услуги</h2>
           <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-bold text-lg">📝 Публикация заказа</h3>
-                  <p className="text-gray-500 text-sm">Разовая оплата</p>
-                </div>
-                <span className="text-2xl font-extrabold text-[#0088cc]">500₽</span>
-              </div>
-            </div>
-
             <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-5 shadow-sm border border-amber-200">
               <div className="flex justify-between items-center">
                 <div>
@@ -100,7 +93,6 @@ export default function HomePage() {
                 <span className="text-2xl font-extrabold text-amber-600">1000₽<span className="text-sm font-normal">/мес</span></span>
               </div>
             </div>
-
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200">
               <div className="flex justify-between items-center">
                 <div>

@@ -45,7 +45,9 @@ export default function MapView({ orders }: Props) {
             <div className="text-sm space-y-1 min-w-[180px]">
               <p className="font-bold text-base">#{order.order_id}</p>
               <p>📍 {order.address}</p>
-              {order.payment && <p>💰 {order.payment}</p>}
+              {order.worker_rate != null ? (
+                <p>💰 {order.worker_rate}₽/час · на руки {order.worker_payout?.toLocaleString()}₽</p>
+              ) : order.payment_text && <p>💰 {order.payment_text}</p>}
               {order.time && <p>⏰ {order.time}</p>}
               <p>📋 {order.work_type}</p>
               <a

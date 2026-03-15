@@ -17,10 +17,11 @@ export default function PaymentsPage() {
           <div className="bg-gray-50 rounded-xl p-4 text-left space-y-2">
             <p className="text-sm font-medium">Тарифы:</p>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">📝 Публикация заказа</span>
-              <span className="font-semibold">500₽</span>
+              <span className="text-gray-600">📝 Заказ (грузчики, уборка…)</span>
+              <span className="font-semibold">от 600₽/час</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <p className="text-xs text-gray-500">Стоимость зависит от типа работ, людей и часов</p>
+            <div className="flex justify-between text-sm mt-2">
               <span className="text-gray-600">🌟 VIP подписка</span>
               <span className="font-semibold">1 000₽/мес</span>
             </div>
