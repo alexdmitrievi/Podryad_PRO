@@ -20,37 +20,29 @@
     },
     {
       "parameters": {
-        "rules": {
-          "rules": [
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
             {
-              "outputKey": "vip",
-              "conditions": {
-                "options": { "caseSensitive": false },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.message.text }}",
-                    "rightValue": "/vip",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ]
-              }
+              "id": "cond-vip",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/vip",
+              "operator": { "type": "string", "operation": "equals" }
             },
             {
-              "outputKey": "pick",
-              "conditions": {
-                "options": { "caseSensitive": false },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.message.text }}",
-                    "rightValue": "/pick",
-                    "operator": { "type": "string", "operation": "startsWith" }
-                  }
-                ]
-              }
+              "id": "cond-pick",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/pick",
+              "operator": { "type": "string", "operation": "startsWith" }
             }
-          ]
+          ],
+          "combinator": "or"
         },
-        "options": { "fallbackOutput": "extra" }
+        "fallbackOutput": "extra"
       },
       "id": "switch-command",
       "name": "Switch Command",
@@ -224,9 +216,9 @@
             "telegram_id": "={{ $json.telegram_id }}",
             "is_vip": "={{ $json.is_vip }}",
             "vip_expires_at": "={{ $json.vip_expires_at }}"
-          }
+          },
+          "matchingColumns": ["telegram_id"]
         },
-        "matchingColumns": ["telegram_id"],
         "options": { "cellFormat": "USER_ENTERED" }
       },
       "id": "sheets-activate-vip",
