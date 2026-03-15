@@ -55,8 +55,8 @@
         "operation": "read",
         "documentId": {
           "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -145,7 +145,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/sendMessage",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"reply_markup\": {{ $json.reply_markup }}\n}",
@@ -197,8 +197,8 @@
         "operation": "update",
         "documentId": {
           "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -233,8 +233,8 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -314,8 +314,8 @@
         "operation": "read",
         "documentId": {
           "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -428,7 +428,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/sendMessage",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"reply_markup\": {{ $json.reply_markup }}\n}",

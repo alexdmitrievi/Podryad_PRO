@@ -26,7 +26,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "filtersUI": {
           "values": [
@@ -68,7 +68,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/answerCallbackQuery",
+        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/answerCallbackQuery",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -88,7 +88,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
         "filtersUI": {
           "values": [
@@ -140,7 +140,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/answerCallbackQuery",
+        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/answerCallbackQuery",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -170,7 +170,7 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "columns": {
           "mappingMode": "defineBelow",
@@ -216,10 +216,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/editMessageText",
+        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/editMessageText",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"chat_id\": \"{{ $env.TELEGRAM_CHANNEL_ID }}\",\n  \"message_id\": {{ $('Atomic Lock').item.json.message_id }},\n  \"text\": \"🧾 РАБОТА ОМСК | Подряд PRO #{{ $('Atomic Lock').item.json.order_id }}\\n\\n🔒 ЗАКРЫТ — исполнитель найден\\n\\n📍 {{ $('Atomic Lock').item.json.address }}\\n⏰ {{ $('Atomic Lock').item.json.time || 'не указано' }}\\n💰 {{ $('Atomic Lock').item.json.payment || 'не указано' }}\\n\\n#работаомск #омск\",\n  \"parse_mode\": \"HTML\"\n}",
+        "jsonBody": "={\n  \"chat_id\": \"@podryad_pro\",\n  \"message_id\": {{ $('Atomic Lock').item.json.message_id }},\n  \"text\": \"🧾 РАБОТА ОМСК | Подряд PRO #{{ $('Atomic Lock').item.json.order_id }}\\n\\n🔒 ЗАКРЫТ — исполнитель найден\\n\\n📍 {{ $('Atomic Lock').item.json.address }}\\n⏰ {{ $('Atomic Lock').item.json.time || 'не указано' }}\\n💰 {{ $('Atomic Lock').item.json.payment || 'не указано' }}\\n\\n#работаомск #омск\",\n  \"parse_mode\": \"HTML\"\n}",
         "options": {}
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000014",
@@ -231,7 +231,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/answerCallbackQuery",
+        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/answerCallbackQuery",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [

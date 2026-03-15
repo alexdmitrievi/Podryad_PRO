@@ -47,7 +47,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "filtersUI": {
           "values": [{ "lookupColumn": "order_id", "lookupValue": "={{ $json.order_id }}" }]
@@ -92,7 +92,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendPoll",
+        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/sendPoll",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.customer_id }},\n  \"question\": \"❓ Как прошёл заказ #{{ $json.order_id }}? Оцените исполнителя:\",\n  \"options\": [\n    \"⭐ Плохо (1)\",\n    \"⭐⭐ Ниже среднего (2)\",\n    \"⭐⭐⭐ Нормально (3)\",\n    \"⭐⭐⭐⭐ Хорошо (4)\",\n    \"⭐⭐⭐⭐⭐ Отлично (5)\"\n  ],\n  \"is_anonymous\": false,\n  \"allows_multiple_answers\": false\n}",
@@ -129,7 +129,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "filtersUI": {
           "values": [{ "lookupColumn": "customer_id", "lookupValue": "={{ $json.voter_id }}" }]
@@ -155,7 +155,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
         "filtersUI": {
           "values": [{ "lookupColumn": "telegram_id", "lookupValue": "={{ $json.executor_id }}" }]
@@ -181,7 +181,7 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
         "columns": {
           "mappingMode": "defineBelow",

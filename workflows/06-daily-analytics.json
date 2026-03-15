@@ -21,7 +21,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "filtersUI": {},
         "options": { "returnAllMatches": true }
@@ -35,7 +35,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
         "filtersUI": {},
         "options": { "returnAllMatches": true }
