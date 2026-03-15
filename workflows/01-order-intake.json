@@ -1,118 +1,111 @@
 {
-  "name": "01 — Order Intake",
+  "name": "Подряд PRO — 01 Order Intake",
   "nodes": [
     {
       "parameters": {
         "updates": ["message"],
         "additionalFields": {}
       },
-      "id": "telegram-trigger",
+      "id": "a1b2c3d4-1111-4000-8000-000000000001",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [220, 300],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [0, 300],
+      "webhookId": "podryad-telegram-trigger"
     },
     {
       "parameters": {
-        "rules": {
-          "rules": [
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
             {
-              "outputKey": "start",
-              "conditions": {
-                "options": { "caseSensitive": false },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.message.text }}",
-                    "rightValue": "/start",
-                    "operator": { "type": "string", "operation": "startsWith" }
-                  }
-                ]
-              }
+              "id": "cond-start",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/start",
+              "operator": { "type": "string", "operation": "startsWith" }
             },
             {
-              "outputKey": "order_cmd",
-              "conditions": {
-                "options": { "caseSensitive": false },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.message.text }}",
-                    "rightValue": "/order",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ]
-              }
+              "id": "cond-order",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/order",
+              "operator": { "type": "string", "operation": "startsWith" }
             },
             {
-              "outputKey": "skip_handled_elsewhere",
-              "conditions": {
-                "options": { "caseSensitive": false },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.message.text }}",
-                    "rightValue": "/",
-                    "operator": { "type": "string", "operation": "startsWith" }
-                  }
-                ]
-              }
+              "id": "cond-vip",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/vip",
+              "operator": { "type": "string", "operation": "equals" }
             },
             {
-              "outputKey": "order_text",
-              "conditions": {
-                "options": { "caseSensitive": false },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.message.text }}",
-                    "rightValue": "",
-                    "operator": { "type": "string", "operation": "exists" }
-                  }
-                ]
-              }
+              "id": "cond-pick",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/pick",
+              "operator": { "type": "string", "operation": "startsWith" }
+            },
+            {
+              "id": "cond-done",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/done",
+              "operator": { "type": "string", "operation": "startsWith" }
+            },
+            {
+              "id": "cond-approve",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/approve",
+              "operator": { "type": "string", "operation": "startsWith" }
             }
-          ]
+          ],
+          "combinator": "or"
         },
-        "options": {
-          "fallbackOutput": "extra"
-        }
+        "fallbackOutput": "extra"
       },
-      "id": "switch-command",
-      "name": "Switch Command",
+      "id": "a1b2c3d4-1111-4000-8000-000000000002",
+      "name": "Route Command",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [440, 300]
+      "position": [240, 300]
     },
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "👋 Добро пожаловать в *Подряд PRO*!\n\n🔨 Мы помогаем найти исполнителей в Омске.\n\n📝 Чтобы создать заказ — просто опишите задачу текстом.\nНапример: _\"Нужны 2 грузчика на ул. Ленина 10, завтра в 10:00, 1500р/час\"_\n\n📋 Команды:\n/order — создать заказ\n/vip — VIP подписка (1000р/мес)\n/pick — подбор топ-3 исполнителей\n\n🌐 Сайт: podryad.pro",
+        "text": "👋 Добро пожаловать в *Подряд PRO*!\n\n🔨 Платформа для поиска работы и подработки в Омске.\n\n*Как пользоваться:*\n📝 Просто напишите что нужно сделать — бот всё распознает\n\n*Примеры:*\n• _Нужны 2 грузчика на ул. Ленина 50, завтра в 10:00, 500р/час_\n• _Уборка офиса, ул. Маркса 25, 3 часа, 1500р_\n\n*Команды:*\n/order — оформить заказ\n/vip — VIP подписка (ранний доступ)\n/pick — подбор ТОП-3 исполнителей\n\n📢 Канал с заказами: @podryad\\_pro",
         "additionalFields": {
           "parse_mode": "Markdown"
         }
       },
-      "id": "send-welcome",
-      "name": "Send Welcome",
+      "id": "a1b2c3d4-1111-4000-8000-000000000003",
+      "name": "Welcome Message",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [660, 80],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [500, 0]
     },
     {
       "parameters": {
-        "model": "gpt-4o-mini",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "📝 *Оформление заказа*\n\nОпишите задачу в одном сообщении:\n\n• Что нужно сделать?\n• Адрес\n• Когда?\n• Оплата\n• Сколько человек нужно?\n\n*Пример:*\n_Нужны 3 грузчика, ул. Ленина 50, завтра в 10:00, 500р/час на 4 часа_",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "a1b2c3d4-1111-4000-8000-000000000004",
+      "name": "Order Help",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "complete",
+        "modelId": { "__rl": true, "value": "gpt-4o-mini", "mode": "list" },
         "messages": {
           "values": [
             {
-              "content": "Ты — парсер заявок платформы \"Подряд PRO\" (Омск, Россия).\nИзвлеки из сообщения пользователя структурированные данные.\n\nПРАВИЛА:\n- Если город не указан — ставь \"Омск\"\n- Если время не указано — ставь null\n- Если сумма не указана — ставь null\n- Адрес должен быть полным: улица + номер + город\n- Если адрес неполный или непонятный — needs_clarification: true\n- work_type определяй по контексту: грузчики (переезд, погрузка), уборка (клининг, мытьё), стройка (ремонт, отделка), другое\n- people и hours — целые числа, если не указаны — null\n\nВЕРНИ ТОЛЬКО ВАЛИДНЫЙ JSON (без markdown, без комментариев):\n{\n  \"city\": \"string\",\n  \"address\": \"string (полный адрес с городом)\",\n  \"time\": \"DD.MM.YYYY HH:mm или null\",\n  \"payment\": \"string или null\",\n  \"people\": \"int или null\",\n  \"hours\": \"int или null\",\n  \"work_type\": \"грузчики|уборка|стройка|другое\",\n  \"comment\": \"string или null\",\n  \"needs_clarification\": false,\n  \"clarification_question\": \"string или null\"\n}",
+              "content": "Ты — парсер заявок платформы \"Подряд PRO\" (Омск, Россия).\nИзвлеки из сообщения пользователя структурированные данные.\n\nПРАВИЛА:\n- Если город не указан — ставь \"Омск\"\n- Если время не указано — ставь null\n- Если сумма не указана — ставь null\n- Адрес должен быть полным: улица + номер + город\n- Если адрес неполный или непонятный — needs_clarification: true\n- work_type: определи из контекста — грузчики, уборка, стройка или другое\n- people: если не указано явно, ставь 1 для уборки, 2 для грузчиков, null для остального\n\nВЕРНИ ТОЛЬКО ВАЛИДНЫЙ JSON (без markdown, без комментариев):\n{\n  \"city\": \"string\",\n  \"address\": \"string (полный адрес с городом)\",\n  \"time\": \"DD.MM.YYYY HH:mm или null\",\n  \"payment\": \"string или null\",\n  \"people\": \"int или null\",\n  \"hours\": \"int или null\",\n  \"work_type\": \"грузчики|уборка|стройка|другое\",\n  \"comment\": \"string или null\",\n  \"needs_clarification\": false,\n  \"clarification_question\": \"string или null\"\n}",
               "role": "system"
             },
             {
@@ -126,111 +119,100 @@
           "maxTokens": 500
         }
       },
-      "id": "openai-parse",
-      "name": "OpenAI Parse Order",
+      "id": "a1b2c3d4-1111-4000-8000-000000000005",
+      "name": "GPT Parse Order",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [660, 340],
-      "credentials": {
-        "openAiApi": {
-          "id": "2",
-          "name": "OpenAI"
-        }
-      }
+      "position": [500, 500]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $('OpenAI Parse Order').first().json.message.content;\n\nlet parsed;\ntry {\n  const cleaned = raw.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  return [{\n    json: {\n      needs_clarification: true,\n      clarification_question: 'Не удалось разобрать заявку. Пожалуйста, опишите задачу подробнее: адрес, время, количество людей и тип работы.'\n    }\n  }];\n}\n\nreturn [{ json: parsed }];"
+        "jsCode": "// Парсим ответ GPT\nlet raw = $('GPT Parse Order').first().json.message.content;\n\n// Убираем markdown если GPT добавил\nraw = raw.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch(e) {\n  return [{ json: { error: true, message: 'GPT вернул невалидный JSON', raw } }];\n}\n\nreturn [{ json: { ...parsed, error: false } }];"
       },
-      "id": "parse-json",
+      "id": "a1b2c3d4-1111-4000-8000-000000000006",
       "name": "Parse GPT Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [880, 340]
+      "position": [740, 500]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false },
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
           "conditions": [
             {
+              "id": "needs-clarify",
               "leftValue": "={{ $json.needs_clarification }}",
               "rightValue": true,
               "operator": { "type": "boolean", "operation": "equals" }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
-      "id": "if-clarification",
+      "id": "a1b2c3d4-1111-4000-8000-000000000007",
       "name": "Needs Clarification?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1100, 340]
+      "position": [960, 500]
     },
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "🤔 Уточните, пожалуйста:\n\n{{ $json.clarification_question }}\n\n💡 Пример заявки:\n_\"Нужны 2 грузчика на ул. Ленина 10, завтра в 10:00, 1500р/час, переезд 3 этаж\"_",
-        "additionalFields": {
-          "parse_mode": "Markdown"
-        }
+        "text": "❓ Уточните, пожалуйста:\n\n{{ $json.clarification_question }}\n\nНапишите сообщение заново с полными данными.",
+        "additionalFields": {}
       },
-      "id": "send-clarification",
+      "id": "a1b2c3d4-1111-4000-8000-000000000008",
       "name": "Ask Clarification",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1320, 200],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [1200, 380]
     },
     {
       "parameters": {
-        "url": "=https://nominatim.openstreetmap.org/search?q={{ encodeURIComponent($json.address) }}&format=json&limit=1&accept-language=ru",
-        "options": {
-          "response": { "response": { "fullResponse": false } }
+        "method": "GET",
+        "url": "https://nominatim.openstreetmap.org/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "q", "value": "={{ $json.address }}" },
+            { "name": "format", "value": "json" },
+            { "name": "limit", "value": "1" },
+            { "name": "accept-language", "value": "ru" },
+            { "name": "countrycodes", "value": "ru" }
+          ]
         },
+        "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {
-              "name": "User-Agent",
-              "value": "PodraydPRO/1.0 (admin@podryad.pro)"
-            }
+            { "name": "User-Agent", "value": "PodraydPRO/1.0 (admin@podryad.pro)" }
           ]
+        },
+        "options": {
+          "timeout": 10000
         }
       },
-      "id": "nominatim-geocode",
+      "id": "a1b2c3d4-1111-4000-8000-000000000009",
       "name": "Nominatim Geocode",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1320, 460]
+      "position": [1200, 600]
     },
     {
       "parameters": {
-        "jsCode": "const parsed = $('Parse GPT Response').first().json;\nconst geoResult = $('Nominatim Geocode').first().json;\n\nconst geoData = Array.isArray(geoResult) ? geoResult[0] : geoResult;\nconst lat = geoData?.lat ? parseFloat(geoData.lat) : 54.9894;\nconst lon = geoData?.lon ? parseFloat(geoData.lon) : 73.3667;\n\nconst addr = encodeURIComponent(parsed.address || 'Омск');\nconst yandexLink = `https://yandex.ru/maps/?pt=${lon},${lat}&z=16&text=${addr}`;\n\nconst customerId = $('Telegram Trigger').first().json.message.from.id;\n\nreturn [{\n  json: {\n    customer_id: String(customerId),\n    address: parsed.address || 'Не указан',\n    lat: lat,\n    lon: lon,\n    yandex_link: yandexLink,\n    time: parsed.time || '',\n    payment: parsed.payment || '',\n    people: parsed.people || 1,\n    hours: parsed.hours || 1,\n    work_type: parsed.work_type || 'другое',\n    comment: parsed.comment || '',\n    status: 'pending',\n    executor_id: '',\n    message_id: '',\n    created_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const parsed = $('Parse GPT Response').first().json;\nconst geoResult = $('Nominatim Geocode').first().json;\n\n// Nominatim возвращает массив — берём первый результат\nconst geo = Array.isArray(geoResult) ? geoResult[0] : geoResult;\n\nconst lat = geo?.lat ? parseFloat(geo.lat) : 54.9894;\nconst lon = geo?.lon ? parseFloat(geo.lon) : 73.3667;\nconst addr = parsed.address || 'Омск';\nconst encodedAddr = encodeURIComponent(addr);\nconst yandexLink = `https://yandex.ru/maps/?pt=${lon},${lat}&z=16&text=${encodedAddr}`;\n\nconst customerId = $('Telegram Trigger').first().json.message.from.id;\nconst now = new Date().toISOString();\n\nreturn [{\n  json: {\n    customer_id: String(customerId),\n    address: addr,\n    lat: lat,\n    lon: lon,\n    yandex_link: yandexLink,\n    time: parsed.time || '',\n    payment: parsed.payment || '',\n    people: parsed.people || 1,\n    hours: parsed.hours || 1,\n    work_type: parsed.work_type || 'другое',\n    comment: parsed.comment || '',\n    status: 'pending',\n    executor_id: '',\n    message_id: '',\n    created_at: now\n  }\n}];"
       },
-      "id": "build-order",
+      "id": "a1b2c3d4-1111-4000-8000-000000000010",
       "name": "Build Order Object",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1540, 460]
+      "position": [1440, 600]
     },
     {
       "parameters": {
         "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Orders"
-        },
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -249,118 +231,101 @@
             "executor_id": "",
             "message_id": "",
             "created_at": "={{ $json.created_at }}"
-          }
+          },
+          "matchingColumns": []
         },
         "options": {}
       },
-      "id": "sheets-append-order",
-      "name": "Sheets: Append Order",
+      "id": "a1b2c3d4-1111-4000-8000-000000000011",
+      "name": "Save to Sheets",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1760, 460],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const order = $('Build Order Object').first().json;\nconst appendResult = $('Sheets: Append Order').first().json;\n\nconst orderId = appendResult.row_number ? appendResult.row_number - 1 : 'NEW';\n\nconst timeText = order.time || 'не указано';\nconst paymentText = order.payment || 'не указано';\nconst peopleText = order.people || '?';\nconst hoursText = order.hours || '?';\n\nconst text = `✅ Заказ #${orderId} принят! Проверьте данные:\\n\\n📍 ${order.address}\\n🗺 ${order.yandex_link}\\n⏰ ${timeText}\\n💰 ${paymentText}\\n👥 ${peopleText} чел. × ${hoursText} ч.\\n📋 ${order.work_type}${order.comment ? '\\n💬 ' + order.comment : ''}\\n\\n💳 Для публикации оплатите 500р.\\n❌ Данные неверные? Напишите заново.`;\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [\n      { text: '💳 Оплатить 500р', callback_data: `pay_${orderId}` }\n    ],\n    [\n      { text: '❌ Отменить', callback_data: `cancel_${orderId}` }\n    ]\n  ]\n});\n\nreturn [{\n  json: {\n    chat_id: $('Telegram Trigger').first().json.message.chat.id,\n    text: text,\n    reply_markup: keyboard,\n    order_id: orderId\n  }\n}];"
-      },
-      "id": "build-reply",
-      "name": "Build Reply Message",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1980, 460]
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $json.chat_id }}",
-        "text": "={{ $json.text }}",
-        "additionalFields": {
-          "reply_markup": "={{ $json.reply_markup }}"
-        }
-      },
-      "id": "send-order-confirmation",
-      "name": "Send Order Confirmation",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [2200, 460],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [1680, 600]
     },
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "📝 Опишите вашу задачу текстом, и я создам заказ.\n\n💡 Пример:\n_\"Нужны 2 грузчика на ул. Ленина 10, завтра в 10:00, 1500р/час, переезд 3 этаж\"_\n\nИли просто напишите что нужно сделать — я задам уточняющие вопросы.",
+        "text": "✅ *Заказ принят!* Проверьте данные:\n\n📍 {{ $('Build Order Object').item.json.address }}\n🗺 [Открыть на карте]({{ $('Build Order Object').item.json.yandex_link }})\n⏰ {{ $('Build Order Object').item.json.time || 'не указано' }}\n💰 {{ $('Build Order Object').item.json.payment || 'не указано' }}\n👥 {{ $('Build Order Object').item.json.people }} чел. × {{ $('Build Order Object').item.json.hours }} ч.\n📋 {{ $('Build Order Object').item.json.work_type }}\n\n💳 *Для публикации оплатите 500р*\n\n❌ Данные неверные? Напишите заново.",
         "additionalFields": {
-          "parse_mode": "Markdown"
+          "parse_mode": "Markdown",
+          "replyMarkup": "inlineKeyboard",
+          "inlineKeyboard": {
+            "rows": [
+              {
+                "row": {
+                  "buttons": [
+                    {
+                      "text": "💳 Оплатить 500р",
+                      "additionalFields": {
+                        "callbackData": "pay_{{ $('Save to Sheets').item.json.order_id || 'new' }}"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "buttons": [
+                    {
+                      "text": "❌ Отменить",
+                      "additionalFields": {
+                        "callbackData": "cancel_{{ $('Save to Sheets').item.json.order_id || 'new' }}"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
         }
       },
-      "id": "send-order-help",
-      "name": "Send Order Help",
+      "id": "a1b2c3d4-1111-4000-8000-000000000012",
+      "name": "Confirm to Customer",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [660, 180],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [1920, 600]
     },
     {
       "parameters": {
-        "errorMessage": "Ошибка в Order Intake workflow"
+        "jsCode": "// Если произошла ошибка где-то в цепочке\nconst error = $input.first().json;\nconst chatId = $('Telegram Trigger').first().json.message?.chat?.id;\n\nif (chatId) {\n  return [{\n    json: {\n      chatId: chatId,\n      text: '⚠️ Произошла ошибка при обработке заявки. Попробуйте ещё раз или напишите @podryad_pro_support'\n    }\n  }];\n}\n\nreturn [{ json: { error: error.message || 'Unknown error' } }];"
       },
-      "id": "error-trigger",
-      "name": "Error Trigger",
-      "type": "n8n-nodes-base.errorTrigger",
-      "typeVersion": 1,
-      "position": [220, 600]
+      "id": "a1b2c3d4-1111-4000-8000-000000000013",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 800]
     },
     {
       "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
-        "text": "🚨 *ОШИБКА в Order Intake*\n\nWorkflow: {{ $json.workflow.name }}\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\n\nExecution ID: {{ $json.execution.id }}",
-        "additionalFields": {
-          "parse_mode": "Markdown"
-        }
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
       },
-      "id": "notify-admin-error",
-      "name": "Notify Admin Error",
+      "id": "a1b2c3d4-1111-4000-8000-000000000014",
+      "name": "Send Error Msg",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [440, 600],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [1200, 800]
     }
   ],
   "connections": {
     "Telegram Trigger": {
       "main": [
-        [{ "node": "Switch Command", "type": "main", "index": 0 }]
+        [{ "node": "Route Command", "type": "main", "index": 0 }]
       ]
     },
-    "Switch Command": {
+    "Route Command": {
       "main": [
-        [{ "node": "Send Welcome", "type": "main", "index": 0 }],
-        [{ "node": "Send Order Help", "type": "main", "index": 0 }],
+        [{ "node": "Welcome Message", "type": "main", "index": 0 }],
+        [{ "node": "Order Help", "type": "main", "index": 0 }],
         [],
-        [{ "node": "OpenAI Parse Order", "type": "main", "index": 0 }]
+        [],
+        [],
+        [],
+        [{ "node": "GPT Parse Order", "type": "main", "index": 0 }]
       ]
     },
-    "OpenAI Parse Order": {
+    "GPT Parse Order": {
       "main": [
         [{ "node": "Parse GPT Response", "type": "main", "index": 0 }]
       ]
@@ -383,37 +348,33 @@
     },
     "Build Order Object": {
       "main": [
-        [{ "node": "Sheets: Append Order", "type": "main", "index": 0 }]
+        [{ "node": "Save to Sheets", "type": "main", "index": 0 }]
       ]
     },
-    "Sheets: Append Order": {
+    "Save to Sheets": {
       "main": [
-        [{ "node": "Build Reply Message", "type": "main", "index": 0 }]
+        [{ "node": "Confirm to Customer", "type": "main", "index": 0 }]
       ]
     },
-    "Build Reply Message": {
+    "Error Handler": {
       "main": [
-        [{ "node": "Send Order Confirmation", "type": "main", "index": 0 }]
-      ]
-    },
-    "Error Trigger": {
-      "main": [
-        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
+        [{ "node": "Send Error Msg", "type": "main", "index": 0 }]
       ]
     }
   },
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "saveManualExecutions": true,
     "callerPolicy": "workflowsFromSameOwner",
     "errorWorkflow": ""
   },
-  "staticData": null,
+  "versionId": "podryad-01-intake-v2",
+  "meta": {
+    "instanceId": "podryad-pro"
+  },
   "tags": [
     { "name": "podryad-pro" },
-    { "name": "telegram" },
-    { "name": "orders" }
-  ],
-  "pinData": {},
-  "versionId": "1"
+    { "name": "telegram" }
+  ]
 }

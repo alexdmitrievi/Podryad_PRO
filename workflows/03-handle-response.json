@@ -1,534 +1,311 @@
 {
-  "name": "03 — Handle Response",
+  "name": "Подряд PRO — 03 Handle Response",
   "nodes": [
     {
       "parameters": {
         "updates": ["callback_query"],
         "additionalFields": {}
       },
-      "id": "telegram-callback",
-      "name": "Telegram Callback",
+      "id": "c1b2c3d4-3333-4000-8000-000000000001",
+      "name": "Callback Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [220, 300],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [0, 300],
+      "webhookId": "podryad-callback"
     },
     {
       "parameters": {
-        "jsCode": "const callback = $('Telegram Callback').first().json;\nconst data = callback.callback_query.data;\nconst userId = callback.callback_query.from.id;\nconst username = callback.callback_query.from.username || '';\nconst firstName = callback.callback_query.from.first_name || '';\nconst callbackId = callback.callback_query.id;\n\nlet action = '';\nlet orderId = '';\n\nif (data.startsWith('ready_')) {\n  action = 'ready';\n  orderId = data.replace('ready_', '');\n} else if (data.startsWith('go_')) {\n  action = 'go';\n  orderId = data.replace('go_', '');\n} else if (data.startsWith('book_')) {\n  action = 'book';\n  orderId = data.replace('book_', '');\n} else if (data.startsWith('pay_')) {\n  action = 'pay';\n  orderId = data.replace('pay_', '');\n} else if (data.startsWith('cancel_')) {\n  action = 'cancel';\n  orderId = data.replace('cancel_', '');\n} else {\n  action = 'unknown';\n  orderId = data;\n}\n\nreturn [{\n  json: {\n    action,\n    order_id: parseInt(orderId),\n    user_id: String(userId),\n    username,\n    first_name: firstName,\n    callback_id: callbackId\n  }\n}];"
+        "jsCode": "const cb = $input.first().json.callback_query;\nconst data = cb.data; // ready_123, go_123, book_123\nconst parts = data.split('_');\nconst action = parts[0]; // ready, go, book\nconst orderId = parts.slice(1).join('_');\nconst userId = String(cb.from.id);\nconst username = cb.from.username || '';\nconst firstName = cb.from.first_name || '';\n\n// Фильтруем: нас интересуют только ready и go\nif (!['ready', 'go', 'book'].includes(action)) {\n  throw new Error('UNKNOWN_ACTION');\n}\n\nreturn [{\n  json: {\n    action,\n    order_id: orderId,\n    user_id: userId,\n    username,\n    first_name: firstName,\n    callback_query_id: cb.id\n  }\n}];"
       },
-      "id": "parse-callback",
-      "name": "Parse Callback Data",
+      "id": "c1b2c3d4-3333-4000-8000-000000000002",
+      "name": "Parse Callback",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [440, 300]
-    },
-    {
-      "parameters": {
-        "rules": {
-          "rules": [
-            {
-              "outputKey": "ready_or_go",
-              "conditions": {
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "ready",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ]
-              }
-            },
-            {
-              "outputKey": "ready_or_go",
-              "conditions": {
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "go",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ]
-              }
-            },
-            {
-              "outputKey": "book",
-              "conditions": {
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "book",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ]
-              }
-            },
-            {
-              "outputKey": "pay",
-              "conditions": {
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "pay",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ]
-              }
-            }
-          ]
-        },
-        "options": { "fallbackOutput": "extra" }
-      },
-      "id": "switch-action",
-      "name": "Switch Action",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3,
-      "position": [660, 300]
+      "position": [260, 300]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Orders"
-        },
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "filtersUI": {
           "values": [
             {
               "lookupColumn": "order_id",
-              "lookupValue": "={{ $('Parse Callback Data').first().json.order_id }}"
+              "lookupValue": "={{ $json.order_id }}"
             }
           ]
         },
         "options": {}
       },
-      "id": "sheets-lookup-order",
-      "name": "Sheets: Lookup Order",
+      "id": "c1b2c3d4-3333-4000-8000-000000000003",
+      "name": "Lookup Order",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [880, 200],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "position": [500, 300]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false },
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
           "conditions": [
             {
+              "id": "is-published",
               "leftValue": "={{ $json.status }}",
               "rightValue": "published",
               "operator": { "type": "string", "operation": "equals" }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
-      "id": "if-order-open",
-      "name": "Is Order Open?",
+      "id": "c1b2c3d4-3333-4000-8000-000000000004",
+      "name": "Still Open?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1100, 200]
+      "position": [740, 300]
     },
     {
       "parameters": {
-        "chatId": "={{ $('Parse Callback Data').first().json.user_id }}",
-        "text": "❌ Этот заказ уже занят или закрыт.\n\n📢 Следите за новыми заказами в канале!",
-        "additionalFields": {}
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/answerCallbackQuery",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "callback_query_id", "value": "={{ $('Parse Callback').item.json.callback_query_id }}" },
+            { "name": "text", "value": "❌ Этот заказ уже занят!" },
+            { "name": "show_alert", "value": "true" }
+          ]
+        },
+        "options": {}
       },
-      "id": "send-already-taken",
-      "name": "Send: Already Taken",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [1320, 80],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "answerQuery",
-        "queryId": "={{ $('Parse Callback Data').first().json.callback_id }}",
-        "text": "❌ Заказ уже занят!",
-        "additionalFields": { "showAlert": true }
-      },
-      "id": "answer-taken",
-      "name": "Answer: Already Taken",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [1320, -40],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "id": "c1b2c3d4-3333-4000-8000-000000000005",
+      "name": "Already Taken",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 500]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Workers"
-        },
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
         "filtersUI": {
           "values": [
             {
               "lookupColumn": "telegram_id",
-              "lookupValue": "={{ $('Parse Callback Data').first().json.user_id }}"
+              "lookupValue": "={{ $('Parse Callback').item.json.user_id }}"
             }
           ]
         },
         "options": {}
       },
-      "id": "sheets-lookup-worker",
-      "name": "Sheets: Lookup Worker",
+      "id": "c1b2c3d4-3333-4000-8000-000000000006",
+      "name": "Lookup Worker",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1320, 300],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "position": [1000, 200]
     },
     {
       "parameters": {
-        "jsCode": "const workers = $('Sheets: Lookup Worker').all();\nconst callbackData = $('Parse Callback Data').first().json;\n\nif (workers.length === 0) {\n  return [{\n    json: {\n      access: false,\n      reason: 'not_registered',\n      message: '⛔ Вы не зарегистрированы как исполнитель.\\n\\nНапишите @Podryad_PRO_bot чтобы зарегистрироваться.'\n    }\n  }];\n}\n\nconst worker = workers[0].json;\n\nif (worker.white_list !== 'TRUE' && worker.white_list !== true) {\n  return [{\n    json: {\n      access: false,\n      reason: 'not_whitelisted',\n      message: '⛔ У вас нет доступа к заказам.\\n\\nОбратитесь к администратору: @Podryad_PRO_bot'\n    }\n  }];\n}\n\nconst rating = parseFloat(worker.rating) || 5.0;\nif (rating < 4.0) {\n  return [{\n    json: {\n      access: false,\n      reason: 'low_rating',\n      message: `⛔ Ваш рейтинг (${rating}) ниже минимального (4.0).\\n\\nВыполняйте заказы качественно для повышения рейтинга.`\n    }\n  }];\n}\n\nif (worker.ban_until) {\n  const banDate = new Date(worker.ban_until);\n  if (banDate > new Date()) {\n    const banStr = banDate.toLocaleDateString('ru-RU');\n    return [{\n      json: {\n        access: false,\n        reason: 'banned',\n        message: `⛔ Вы заблокированы до ${banStr}.\\n\\nОбратитесь к администратору: @Podryad_PRO_bot`\n      }\n    }];\n  }\n}\n\nreturn [{\n  json: {\n    access: true,\n    worker: worker\n  }\n}];"
+        "jsCode": "const worker = $('Lookup Worker').first().json;\nconst userId = $('Parse Callback').first().json.user_id;\n\n// Если исполнитель не найден в базе — автоматическая регистрация\nif (!worker || !worker.telegram_id) {\n  return [{\n    json: {\n      access: false,\n      reason: 'NOT_REGISTERED',\n      user_id: userId\n    }\n  }];\n}\n\n// Проверка бана\nif (worker.ban_until) {\n  const banDate = new Date(worker.ban_until);\n  if (banDate > new Date()) {\n    return [{\n      json: {\n        access: false,\n        reason: 'BANNED',\n        ban_until: worker.ban_until,\n        user_id: userId\n      }\n    }];\n  }\n}\n\n// Проверка white_list\nif (worker.white_list !== 'TRUE' && worker.white_list !== true) {\n  return [{\n    json: {\n      access: false,\n      reason: 'NOT_WHITELISTED',\n      user_id: userId\n    }\n  }];\n}\n\n// Проверка рейтинга\nconst rating = parseFloat(worker.rating) || 5.0;\nif (rating < 4.0) {\n  return [{\n    json: {\n      access: false,\n      reason: 'LOW_RATING',\n      rating,\n      user_id: userId\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    access: true,\n    worker_id: worker.telegram_id,\n    worker_name: worker.name || worker.username || 'Исполнитель',\n    worker_phone: worker.phone || 'не указан',\n    worker_rating: rating,\n    worker_username: worker.username || '',\n    is_vip: worker.is_vip === 'TRUE' || worker.is_vip === true\n  }\n}];"
       },
-      "id": "check-worker-access",
-      "name": "Check Worker Access",
+      "id": "c1b2c3d4-3333-4000-8000-000000000007",
+      "name": "Check Access",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1540, 300]
+      "position": [1260, 200]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false },
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
           "conditions": [
             {
+              "id": "has-access",
               "leftValue": "={{ $json.access }}",
               "rightValue": true,
               "operator": { "type": "boolean", "operation": "equals" }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
-      "id": "if-access-granted",
-      "name": "Access Granted?",
+      "id": "c1b2c3d4-3333-4000-8000-000000000008",
+      "name": "Has Access?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1760, 300]
+      "position": [1500, 200]
     },
     {
       "parameters": {
-        "operation": "answerQuery",
-        "queryId": "={{ $('Parse Callback Data').first().json.callback_id }}",
-        "text": "={{ $json.message }}",
-        "additionalFields": { "showAlert": true }
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/answerCallbackQuery",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "callback_query_id", "value": "={{ $('Parse Callback').item.json.callback_query_id }}" },
+            { "name": "text", "value": "⛔ Нет доступа. Зарегистрируйтесь: @Podryad_PRO_bot /start" },
+            { "name": "show_alert", "value": "true" }
+          ]
+        },
+        "options": {}
       },
-      "id": "answer-no-access",
-      "name": "Answer: No Access",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [1980, 160],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "id": "c1b2c3d4-3333-4000-8000-000000000009",
+      "name": "No Access Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 400]
     },
     {
       "parameters": {
-        "jsCode": "const order = $('Sheets: Lookup Order').first().json;\n\nif (order.status !== 'published') {\n  throw new Error('ORDER_ALREADY_TAKEN');\n}\n\nconst callbackData = $('Parse Callback Data').first().json;\nconst worker = $('Check Worker Access').first().json.worker;\n\nreturn [{\n  json: {\n    order_id: order.order_id,\n    customer_id: order.customer_id,\n    address: order.address,\n    lat: order.lat,\n    lon: order.lon,\n    yandex_link: order.yandex_link,\n    time: order.time,\n    payment: order.payment,\n    people: order.people,\n    hours: order.hours,\n    work_type: order.work_type,\n    comment: order.comment,\n    message_id: order.message_id,\n    status: 'closed',\n    executor_id: callbackData.user_id,\n    executor_name: worker.name || callbackData.first_name,\n    executor_username: worker.username || callbackData.username,\n    executor_phone: worker.phone || 'не указан',\n    executor_rating: worker.rating || '5.00'\n  }\n}];"
+        "jsCode": "// Атомарная проверка — повторное чтение перед записью\nconst order = $('Lookup Order').first().json;\nconst worker = $('Check Access').first().json;\n\nif (order.status !== 'published') {\n  throw new Error('ORDER_ALREADY_TAKEN');\n}\n\nreturn [{\n  json: {\n    order_id: order.order_id,\n    status: 'closed',\n    executor_id: worker.worker_id,\n    customer_id: order.customer_id,\n    address: order.address,\n    yandex_link: order.yandex_link,\n    time: order.time,\n    payment: order.payment,\n    people: order.people,\n    hours: order.hours,\n    work_type: order.work_type,\n    comment: order.comment,\n    message_id: order.message_id,\n    worker_name: worker.worker_name,\n    worker_phone: worker.worker_phone,\n    worker_rating: worker.worker_rating,\n    worker_username: worker.worker_username\n  }\n}];"
       },
-      "id": "atomic-lock",
-      "name": "Atomic Lock Check",
+      "id": "c1b2c3d4-3333-4000-8000-000000000010",
+      "name": "Atomic Lock",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1980, 400]
+      "position": [1760, 100]
     },
     {
       "parameters": {
         "operation": "update",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Orders"
-        },
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
             "order_id": "={{ $json.order_id }}",
             "status": "closed",
             "executor_id": "={{ $json.executor_id }}"
-          }
+          },
+          "matchingColumns": ["order_id"]
         },
-        "options": { "cellFormat": "USER_ENTERED" }
+        "options": {}
       },
-      "id": "sheets-close-order",
-      "name": "Sheets: Close Order",
+      "id": "c1b2c3d4-3333-4000-8000-000000000011",
+      "name": "Close Order",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [2200, 400],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "position": [2020, 100]
     },
     {
       "parameters": {
-        "operation": "answerQuery",
-        "queryId": "={{ $('Parse Callback Data').first().json.callback_id }}",
-        "text": "✅ Заказ ваш! Проверьте личные сообщения бота.",
-        "additionalFields": { "showAlert": true }
+        "chatId": "={{ $('Atomic Lock').item.json.executor_id }}",
+        "text": "🎉 *Заказ #{{ $('Atomic Lock').item.json.order_id }} — ВАШ!*\n\n📍 {{ $('Atomic Lock').item.json.address }}\n🗺 [Открыть маршрут]({{ $('Atomic Lock').item.json.yandex_link }})\n⏰ {{ $('Atomic Lock').item.json.time || 'не указано' }}\n💰 {{ $('Atomic Lock').item.json.payment || 'не указано' }}\n👥 {{ $('Atomic Lock').item.json.people }} чел. × {{ $('Atomic Lock').item.json.hours }} ч.\n📋 {{ $('Atomic Lock').item.json.work_type }}\n{{ $('Atomic Lock').item.json.comment ? '💬 ' + $('Atomic Lock').item.json.comment : '' }}\n\n✅ По завершении: /done\\_{{ $('Atomic Lock').item.json.order_id }}",
+        "additionalFields": { "parse_mode": "Markdown" }
       },
-      "id": "answer-success",
-      "name": "Answer: Success",
+      "id": "c1b2c3d4-3333-4000-8000-000000000012",
+      "name": "Notify Worker",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [2420, 200],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [2280, 0]
     },
     {
       "parameters": {
-        "jsCode": "const o = $('Atomic Lock Check').first().json;\n\nconst timeText = o.time || 'По договорённости';\nconst paymentText = o.payment || 'По договорённости';\n\nconst executorMsg = `🎉 Заказ #${o.order_id} — ВАШ!\\n\\n📍 ${o.address}\\n🗺 ${o.yandex_link}\\n⏰ ${timeText}\\n💰 ${paymentText}\\n👥 ${o.people} чел. × ${o.hours} ч.\\n📋 ${o.work_type}${o.comment ? '\\n💬 ' + o.comment : ''}\\n\\n📞 Контакт заказчика: напишите ему в Telegram\\n\\n✅ По завершении нажмите: /done_${o.order_id}`;\n\nconst customerMsg = `✅ Исполнитель найден для заказа #${o.order_id}!\\n\\n👤 ${o.executor_name}${o.executor_username ? ' (@' + o.executor_username + ')' : ''}\\n⭐ Рейтинг: ${o.executor_rating}\\n📞 ${o.executor_phone}\\n\\nОн уже готов к работе!\\nПосле выполнения оцените работу: /done_${o.order_id}`;\n\nconst channelMsg = `🧾 РАБОТА ОМСК | Подряд PRO #${o.order_id}\\n\\n🔒 ЗАКРЫТ — исполнитель найден\\n\\n📍 ${o.address}\\n⏰ ${timeText}\\n💰 ${paymentText}\\n\\n#работаомск #омск`;\n\nreturn [{\n  json: {\n    executor_id: o.executor_id,\n    customer_id: o.customer_id,\n    executor_msg: executorMsg,\n    customer_msg: customerMsg,\n    channel_msg: channelMsg,\n    message_id: o.message_id\n  }\n}];"
+        "chatId": "={{ $('Atomic Lock').item.json.customer_id }}",
+        "text": "✅ *Исполнитель найден!*\n\n👤 {{ $('Atomic Lock').item.json.worker_name }}\n⭐ Рейтинг: {{ $('Atomic Lock').item.json.worker_rating }}\n{{ $('Atomic Lock').item.json.worker_phone !== 'не указан' ? '📞 ' + $('Atomic Lock').item.json.worker_phone : '' }}\n{{ $('Atomic Lock').item.json.worker_username ? '💬 @' + $('Atomic Lock').item.json.worker_username : '' }}\n\nОн уже едет к вам!\nПосле выполнения оцените: /done\\_{{ $('Atomic Lock').item.json.order_id }}",
+        "additionalFields": { "parse_mode": "Markdown" }
       },
-      "id": "build-notifications",
-      "name": "Build Notifications",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [2420, 400]
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $json.executor_id }}",
-        "text": "={{ $json.executor_msg }}",
-        "additionalFields": {}
-      },
-      "id": "notify-executor",
-      "name": "Notify Executor",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [2640, 280],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $json.customer_id }}",
-        "text": "={{ $json.customer_msg }}",
-        "additionalFields": {}
-      },
-      "id": "notify-customer",
+      "id": "c1b2c3d4-3333-4000-8000-000000000013",
       "name": "Notify Customer",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [2640, 420],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [2280, 200]
     },
     {
       "parameters": {
-        "operation": "editMessageText",
-        "chatId": "={{ $env.TELEGRAM_CHANNEL_ID }}",
-        "messageId": "={{ $json.message_id }}",
-        "text": "={{ $json.channel_msg }}",
-        "additionalFields": {}
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/editMessageText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{ $env.TELEGRAM_CHANNEL_ID }}\",\n  \"message_id\": {{ $('Atomic Lock').item.json.message_id }},\n  \"text\": \"🧾 РАБОТА ОМСК | Подряд PRO #{{ $('Atomic Lock').item.json.order_id }}\\n\\n🔒 ЗАКРЫТ — исполнитель найден\\n\\n📍 {{ $('Atomic Lock').item.json.address }}\\n⏰ {{ $('Atomic Lock').item.json.time || 'не указано' }}\\n💰 {{ $('Atomic Lock').item.json.payment || 'не указано' }}\\n\\n#работаомск #омск\",\n  \"parse_mode\": \"HTML\"\n}",
+        "options": {}
       },
-      "id": "edit-channel-post",
+      "id": "c1b2c3d4-3333-4000-8000-000000000014",
       "name": "Edit Channel Post",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [2640, 560],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2280, 400]
     },
     {
       "parameters": {
-        "chatId": "={{ $('Parse Callback Data').first().json.user_id }}",
-        "text": "🔒 Бронирование за 1000р — скоро!\n\nЭта функция в разработке. Пока нажмите \"Готов 👍\" чтобы взять заказ бесплатно.",
-        "additionalFields": {}
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/answerCallbackQuery",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "callback_query_id", "value": "={{ $('Parse Callback').item.json.callback_query_id }}" },
+            { "name": "text", "value": "✅ Заказ ваш! Проверьте личные сообщения бота." },
+            { "name": "show_alert", "value": "true" }
+          ]
+        },
+        "options": {}
       },
-      "id": "send-book-placeholder",
-      "name": "Send: Book Placeholder",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [880, 500],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "errorMessage": "Ошибка в Handle Response workflow"
-      },
-      "id": "error-trigger",
-      "name": "Error Trigger",
-      "type": "n8n-nodes-base.errorTrigger",
-      "typeVersion": 1,
-      "position": [220, 700]
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
-        "text": "🚨 *ОШИБКА в Handle Response*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
-        "additionalFields": { "parse_mode": "Markdown" }
-      },
-      "id": "notify-admin-error",
-      "name": "Notify Admin Error",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [440, 700],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "id": "c1b2c3d4-3333-4000-8000-000000000015",
+      "name": "Answer Callback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2280, 600]
     }
   ],
   "connections": {
-    "Telegram Callback": {
+    "Callback Trigger": {
       "main": [
-        [{ "node": "Parse Callback Data", "type": "main", "index": 0 }]
+        [{ "node": "Parse Callback", "type": "main", "index": 0 }]
       ]
     },
-    "Parse Callback Data": {
+    "Parse Callback": {
       "main": [
-        [{ "node": "Switch Action", "type": "main", "index": 0 }]
+        [{ "node": "Lookup Order", "type": "main", "index": 0 }]
       ]
     },
-    "Switch Action": {
+    "Lookup Order": {
       "main": [
-        [{ "node": "Sheets: Lookup Order", "type": "main", "index": 0 }],
-        [{ "node": "Sheets: Lookup Order", "type": "main", "index": 0 }],
-        [{ "node": "Send: Book Placeholder", "type": "main", "index": 0 }],
-        []
+        [{ "node": "Still Open?", "type": "main", "index": 0 }]
       ]
     },
-    "Sheets: Lookup Order": {
+    "Still Open?": {
       "main": [
-        [{ "node": "Is Order Open?", "type": "main", "index": 0 }]
+        [{ "node": "Lookup Worker", "type": "main", "index": 0 }],
+        [{ "node": "Already Taken", "type": "main", "index": 0 }]
       ]
     },
-    "Is Order Open?": {
+    "Lookup Worker": {
       "main": [
-        [{ "node": "Sheets: Lookup Worker", "type": "main", "index": 0 }],
-        [
-          { "node": "Send: Already Taken", "type": "main", "index": 0 },
-          { "node": "Answer: Already Taken", "type": "main", "index": 0 }
-        ]
+        [{ "node": "Check Access", "type": "main", "index": 0 }]
       ]
     },
-    "Sheets: Lookup Worker": {
+    "Check Access": {
       "main": [
-        [{ "node": "Check Worker Access", "type": "main", "index": 0 }]
+        [{ "node": "Has Access?", "type": "main", "index": 0 }]
       ]
     },
-    "Check Worker Access": {
+    "Has Access?": {
       "main": [
-        [{ "node": "Access Granted?", "type": "main", "index": 0 }]
+        [{ "node": "Atomic Lock", "type": "main", "index": 0 }],
+        [{ "node": "No Access Reply", "type": "main", "index": 0 }]
       ]
     },
-    "Access Granted?": {
+    "Atomic Lock": {
       "main": [
-        [{ "node": "Atomic Lock Check", "type": "main", "index": 0 }],
-        [{ "node": "Answer: No Access", "type": "main", "index": 0 }]
+        [{ "node": "Close Order", "type": "main", "index": 0 }]
       ]
     },
-    "Atomic Lock Check": {
-      "main": [
-        [{ "node": "Sheets: Close Order", "type": "main", "index": 0 }]
-      ]
-    },
-    "Sheets: Close Order": {
+    "Close Order": {
       "main": [
         [
-          { "node": "Answer: Success", "type": "main", "index": 0 },
-          { "node": "Build Notifications", "type": "main", "index": 0 }
-        ]
-      ]
-    },
-    "Build Notifications": {
-      "main": [
-        [
-          { "node": "Notify Executor", "type": "main", "index": 0 },
+          { "node": "Notify Worker", "type": "main", "index": 0 },
           { "node": "Notify Customer", "type": "main", "index": 0 },
-          { "node": "Edit Channel Post", "type": "main", "index": 0 }
+          { "node": "Edit Channel Post", "type": "main", "index": 0 },
+          { "node": "Answer Callback", "type": "main", "index": 0 }
         ]
-      ]
-    },
-    "Error Trigger": {
-      "main": [
-        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
       ]
     }
   },
-  "settings": {
-    "executionOrder": "v1",
-    "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner"
-  },
-  "staticData": null,
-  "tags": [
-    { "name": "podryad-pro" },
-    { "name": "responses" },
-    { "name": "workers" }
-  ],
-  "pinData": {},
-  "versionId": "3"
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "versionId": "podryad-03-response-v2",
+  "meta": { "instanceId": "podryad-pro" },
+  "tags": [{ "name": "podryad-pro" }]
 }

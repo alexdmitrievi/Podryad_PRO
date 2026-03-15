@@ -1,96 +1,49 @@
 {
-  "name": "02 — Publish Order",
+  "name": "Подряд PRO — 02 Publish Order",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "payment-callback",
         "options": {
-          "responseMode": "responseNode"
+          "responseMode": "onReceived",
+          "responseData": "allEntries"
         }
       },
-      "id": "webhook-yukassa",
-      "name": "Webhook YuKassa",
+      "id": "b1b2c3d4-2222-4000-8000-000000000001",
+      "name": "Webhook Payment",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [220, 300],
-      "webhookId": "payment-callback"
+      "position": [0, 200],
+      "webhookId": "podryad-payment-cb"
     },
     {
       "parameters": {
-        "updates": ["message"],
+        "updates": ["callback_query"],
         "additionalFields": {}
       },
-      "id": "telegram-trigger-admin",
-      "name": "Telegram Admin Trigger",
+      "id": "b1b2c3d4-2222-4000-8000-000000000002",
+      "name": "Telegram Admin Approve",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [220, 520],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [0, 500],
+      "webhookId": "podryad-admin-approve"
     },
     {
       "parameters": {
-        "conditions": {
-          "options": { "caseSensitive": false },
-          "conditions": [
-            {
-              "leftValue": "={{ $json.message.text }}",
-              "rightValue": "/approve_",
-              "operator": { "type": "string", "operation": "startsWith" }
-            },
-            {
-              "leftValue": "={{ String($json.message.from.id) }}",
-              "rightValue": "={{ $env.TELEGRAM_ADMIN_ID }}",
-              "operator": { "type": "string", "operation": "equals" }
-            }
-          ],
-          "combinator": "and"
-        }
+        "jsCode": "// Определяем источник: webhook ЮKassa или Telegram admin\nconst webhookData = $('Webhook Payment').first()?.json;\nconst tgData = $('Telegram Admin Approve').first()?.json;\n\nlet orderId, source;\n\nif (webhookData?.object?.metadata?.order_id) {\n  // ЮKassa webhook\n  orderId = webhookData.object.metadata.order_id;\n  source = 'yukassa';\n} else if (tgData?.callback_query?.data) {\n  // Admin approve: approve_123\n  const data = tgData.callback_query.data;\n  if (data.startsWith('approve_')) {\n    orderId = data.replace('approve_', '');\n    source = 'admin';\n  }\n}\n\nif (!orderId) {\n  throw new Error('NO_ORDER_ID: не удалось определить order_id');\n}\n\nreturn [{ json: { order_id: orderId, source } }];"
       },
-      "id": "if-admin-approve",
-      "name": "Is Admin Approve?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [440, 520]
-    },
-    {
-      "parameters": {
-        "jsCode": "const text = $('Telegram Admin Trigger').first().json.message.text;\nconst orderId = text.replace('/approve_', '').trim();\nreturn [{ json: { order_id: parseInt(orderId), source: 'admin' } }];"
-      },
-      "id": "parse-admin-command",
-      "name": "Parse Admin Command",
+      "id": "b1b2c3d4-2222-4000-8000-000000000003",
+      "name": "Extract Order ID",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [660, 520]
-    },
-    {
-      "parameters": {
-        "jsCode": "const body = $('Webhook YuKassa').first().json.body || $('Webhook YuKassa').first().json;\n\nif (body.event !== 'payment.succeeded') {\n  throw new Error('Payment not succeeded: ' + (body.event || 'unknown'));\n}\n\nconst payment = body.object;\nconst orderId = payment.metadata?.order_id;\n\nif (!orderId) {\n  throw new Error('No order_id in payment metadata');\n}\n\nreturn [{\n  json: {\n    order_id: parseInt(orderId),\n    yukassa_id: payment.id,\n    amount: parseInt(payment.amount?.value || 500),\n    payer_id: payment.metadata?.payer_id || '',\n    source: 'yukassa'\n  }\n}];"
-      },
-      "id": "parse-yukassa",
-      "name": "Parse YuKassa Callback",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [440, 300]
+      "position": [280, 350]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Orders"
-        },
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "filtersUI": {
           "values": [
             {
@@ -101,317 +54,201 @@
         },
         "options": {}
       },
-      "id": "sheets-lookup-order",
-      "name": "Sheets: Lookup Order",
+      "id": "b1b2c3d4-2222-4000-8000-000000000004",
+      "name": "Lookup Order",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [880, 400],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "position": [520, 350]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false },
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
           "conditions": [
             {
+              "id": "is-pending",
               "leftValue": "={{ $json.status }}",
               "rightValue": "pending",
               "operator": { "type": "string", "operation": "equals" }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
-      "id": "if-order-pending",
-      "name": "Is Order Pending?",
+      "id": "b1b2c3d4-2222-4000-8000-000000000005",
+      "name": "Is Pending?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1100, 400]
-    },
-    {
-      "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Payments"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "payment_id": "={{ $('Parse YuKassa Callback').item.json.yukassa_id ?? 'admin_' + Date.now() }}",
-            "order_id": "={{ $json.order_id }}",
-            "payer_id": "={{ $json.customer_id }}",
-            "amount": 500,
-            "type": "order",
-            "status": "paid",
-            "yukassa_id": "={{ $('Parse YuKassa Callback').item.json.yukassa_id ?? 'admin_approve' }}",
-            "created_at": "={{ new Date().toISOString() }}",
-            "paid_at": "={{ new Date().toISOString() }}"
-          }
-        },
-        "options": {}
-      },
-      "id": "sheets-append-payment",
-      "name": "Sheets: Append Payment",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [1320, 300],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "position": [760, 350]
     },
     {
       "parameters": {
         "chatId": "={{ $env.TELEGRAM_CHANNEL_ID }}",
         "operation": "sendLocation",
-        "latitude": "={{ $('Sheets: Lookup Order').first().json.lat }}",
-        "longitude": "={{ $('Sheets: Lookup Order').first().json.lon }}",
+        "latitude": "={{ $json.lat }}",
+        "longitude": "={{ $json.lon }}",
         "additionalFields": {}
       },
-      "id": "send-location",
-      "name": "Send Location to Channel",
+      "id": "b1b2c3d4-2222-4000-8000-000000000006",
+      "name": "Send Location",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1540, 300],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [1020, 300]
     },
     {
       "parameters": {
-        "jsCode": "const order = $('Sheets: Lookup Order').first().json;\n\nconst workTypeHashtag = {\n  'грузчики': '#грузчикиомск',\n  'уборка': '#уборкаомск',\n  'стройка': '#стройкаомск',\n  'другое': '#подработкаомск'\n};\n\nconst hashtag = workTypeHashtag[order.work_type] || '#подработкаомск';\n\nconst timeText = order.time || 'По договорённости';\nconst paymentText = order.payment || 'По договорённости';\nconst peopleText = order.people || '?';\nconst hoursText = order.hours || '?';\n\nlet text = `🧾 РАБОТА ОМСК | Подряд PRO #${order.order_id}\\n\\n`;\ntext += `📍 ${order.address}\\n`;\ntext += `🗺 ${order.yandex_link}\\n\\n`;\ntext += `⏰ ${timeText}\\n`;\ntext += `💰 ${paymentText}\\n`;\ntext += `👥 ${peopleText} чел. × ${hoursText} ч.\\n`;\ntext += `📋 ${order.work_type}\\n`;\n\nif (order.comment) {\n  text += `💬 ${order.comment}\\n`;\n}\n\ntext += `\\n👇 Нажми кнопку чтобы взять заказ!\\n`;\ntext += `@Podryad_PRO_bot\\n\\n`;\ntext += `#работаомск #подработка ${hashtag} #омск`;\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [\n      { text: 'Готов 👍', callback_data: `ready_${order.order_id}` },\n      { text: 'Еду 🚚', callback_data: `go_${order.order_id}` }\n    ],\n    [\n      { text: '🔒 Забронировать за 1000р', callback_data: `book_${order.order_id}` }\n    ]\n  ]\n});\n\nreturn [{\n  json: {\n    text: text,\n    reply_markup: keyboard,\n    order_id: order.order_id,\n    customer_id: order.customer_id\n  }\n}];"
+        "jsCode": "const order = $('Lookup Order').first().json;\n\nconst workTypeHashtag = {\n  'грузчики': '#грузчикиомск',\n  'уборка': '#уборкаомск',\n  'стройка': '#стройкаомск',\n  'другое': '#подработкаомск'\n};\n\nconst hashtag = workTypeHashtag[order.work_type] || '#подработкаомск';\n\nlet text = `🧾 РАБОТА ОМСК | Подряд PRO #${order.order_id}\\n\\n`;\ntext += `📍 ${order.address}\\n`;\ntext += `🗺 <a href=\"${order.yandex_link}\">Открыть на карте</a>\\n\\n`;\n\nif (order.time) text += `⏰ ${order.time}\\n`;\nif (order.payment) text += `💰 ${order.payment}\\n`;\nif (order.people) text += `👥 ${order.people} чел.`;\nif (order.hours) text += ` × ${order.hours} ч.`;\ntext += `\\n📋 ${order.work_type}\\n`;\nif (order.comment) text += `💬 ${order.comment}\\n`;\n\ntext += `\\n👇 Нажми кнопку чтобы взять заказ!\\n@Podryad_PRO_bot\\n\\n`;\ntext += `#работаомск #подработка ${hashtag} #омск`;\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [\n      { text: 'Готов 👍', callback_data: `ready_${order.order_id}` },\n      { text: 'Еду 🚚', callback_data: `go_${order.order_id}` }\n    ],\n    [\n      { text: '🔒 Забронировать за 1000р', callback_data: `book_${order.order_id}` }\n    ]\n  ]\n});\n\nreturn [{ json: { text, keyboard, order_id: order.order_id } }];"
       },
-      "id": "build-channel-post",
-      "name": "Build Channel Post",
+      "id": "b1b2c3d4-2222-4000-8000-000000000007",
+      "name": "Build Post",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1760, 300]
+      "position": [1260, 300]
     },
     {
       "parameters": {
         "chatId": "={{ $env.TELEGRAM_CHANNEL_ID }}",
         "text": "={{ $json.text }}",
         "additionalFields": {
-          "reply_markup": "={{ $json.reply_markup }}",
-          "parse_mode": "HTML"
-        }
-      },
-      "id": "send-channel-post",
-      "name": "Send Channel Post",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [1980, 300],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Orders"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "order_id": "={{ $('Build Channel Post').first().json.order_id }}",
-            "status": "published",
-            "message_id": "={{ $json.result?.message_id ?? $json.message_id ?? '' }}"
-          }
-        },
-        "options": {
-          "cellFormat": "USER_ENTERED"
-        }
-      },
-      "id": "sheets-update-order-published",
-      "name": "Sheets: Mark Published",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [2200, 300],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $('Build Channel Post').first().json.customer_id }}",
-        "text": "🎉 Ваш заказ #{{ $('Build Channel Post').first().json.order_id }} опубликован в канале!\n\n📢 Ожидайте откликов исполнителей.\nМы уведомим вас, когда кто-то возьмёт заказ.\n\n👀 Следите за каналом: @Podryad_PRO_bot",
-        "additionalFields": {}
-      },
-      "id": "notify-customer-published",
-      "name": "Notify Customer: Published",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [2420, 300],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "respondWith": "text",
-        "responseBody": "{\"status\": \"ok\"}",
-        "options": {
-          "responseCode": 200,
-          "responseHeaders": {
-            "entries": [
-              { "name": "Content-Type", "value": "application/json" }
+          "parse_mode": "HTML",
+          "replyMarkup": "inlineKeyboard",
+          "inlineKeyboard": {
+            "rows": [
+              {
+                "row": {
+                  "buttons": [
+                    { "text": "Готов 👍", "additionalFields": { "callbackData": "ready_{{ $json.order_id }}" } },
+                    { "text": "Еду 🚚", "additionalFields": { "callbackData": "go_{{ $json.order_id }}" } }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "buttons": [
+                    { "text": "🔒 Забронировать за 1000р", "additionalFields": { "callbackData": "book_{{ $json.order_id }}" } }
+                  ]
+                }
+              }
             ]
           }
         }
       },
-      "id": "webhook-response",
-      "name": "Webhook Response",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [2420, 160]
-    },
-    {
-      "parameters": {
-        "errorMessage": "Ошибка в Publish Order workflow"
-      },
-      "id": "error-trigger",
-      "name": "Error Trigger",
-      "type": "n8n-nodes-base.errorTrigger",
-      "typeVersion": 1,
-      "position": [220, 700]
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
-        "text": "🚨 *ОШИБКА в Publish Order*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
-        "additionalFields": { "parse_mode": "Markdown" }
-      },
-      "id": "notify-admin-error",
-      "name": "Notify Admin Error",
+      "id": "b1b2c3d4-2222-4000-8000-000000000008",
+      "name": "Publish to Channel",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [440, 700],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [1500, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $('Build Post').item.json.order_id }}",
+            "status": "published",
+            "message_id": "={{ $('Publish to Channel').item.json.message_id }}"
+          },
+          "matchingColumns": ["order_id"]
+        },
+        "options": {}
+      },
+      "id": "b1b2c3d4-2222-4000-8000-000000000009",
+      "name": "Update Order Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1740, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "sheetName": { "__rl": true, "value": "Payments", "mode": "list" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $('Extract Order ID').item.json.order_id }}",
+            "status": "paid",
+            "paid_at": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": ["order_id"]
+        },
+        "options": {}
+      },
+      "id": "b1b2c3d4-2222-4000-8000-000000000010",
+      "name": "Update Payment",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1740, 500]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Lookup Order').item.json.customer_id }}",
+        "text": "✅ Оплата получена! Ваш заказ #{{ $('Build Post').item.json.order_id }} опубликован в канале.\n\n📢 Ожидайте отклика исполнителей — мы уведомим вас!",
+        "additionalFields": {}
+      },
+      "id": "b1b2c3d4-2222-4000-8000-000000000011",
+      "name": "Notify Customer",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1980, 300]
     }
   ],
   "connections": {
-    "Webhook YuKassa": {
+    "Webhook Payment": {
       "main": [
-        [{ "node": "Parse YuKassa Callback", "type": "main", "index": 0 }]
+        [{ "node": "Extract Order ID", "type": "main", "index": 0 }]
       ]
     },
-    "Parse YuKassa Callback": {
+    "Telegram Admin Approve": {
       "main": [
-        [
-          { "node": "Sheets: Lookup Order", "type": "main", "index": 0 },
-          { "node": "Webhook Response", "type": "main", "index": 0 }
-        ]
+        [{ "node": "Extract Order ID", "type": "main", "index": 0 }]
       ]
     },
-    "Telegram Admin Trigger": {
+    "Extract Order ID": {
       "main": [
-        [{ "node": "Is Admin Approve?", "type": "main", "index": 0 }]
+        [{ "node": "Lookup Order", "type": "main", "index": 0 }]
       ]
     },
-    "Is Admin Approve?": {
+    "Lookup Order": {
       "main": [
-        [{ "node": "Parse Admin Command", "type": "main", "index": 0 }],
+        [{ "node": "Is Pending?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Pending?": {
+      "main": [
+        [{ "node": "Send Location", "type": "main", "index": 0 }],
         []
       ]
     },
-    "Parse Admin Command": {
+    "Send Location": {
       "main": [
-        [{ "node": "Sheets: Lookup Order", "type": "main", "index": 0 }]
+        [{ "node": "Build Post", "type": "main", "index": 0 }]
       ]
     },
-    "Sheets: Lookup Order": {
+    "Build Post": {
       "main": [
-        [{ "node": "Is Order Pending?", "type": "main", "index": 0 }]
+        [{ "node": "Publish to Channel", "type": "main", "index": 0 }]
       ]
     },
-    "Is Order Pending?": {
-      "main": [
-        [{ "node": "Sheets: Append Payment", "type": "main", "index": 0 }],
-        []
-      ]
-    },
-    "Sheets: Append Payment": {
-      "main": [
-        [{ "node": "Send Location to Channel", "type": "main", "index": 0 }]
-      ]
-    },
-    "Send Location to Channel": {
-      "main": [
-        [{ "node": "Build Channel Post", "type": "main", "index": 0 }]
-      ]
-    },
-    "Build Channel Post": {
-      "main": [
-        [{ "node": "Send Channel Post", "type": "main", "index": 0 }]
-      ]
-    },
-    "Send Channel Post": {
+    "Publish to Channel": {
       "main": [
         [
-          { "node": "Sheets: Mark Published", "type": "main", "index": 0 }
+          { "node": "Update Order Status", "type": "main", "index": 0 },
+          { "node": "Update Payment", "type": "main", "index": 0 },
+          { "node": "Notify Customer", "type": "main", "index": 0 }
         ]
-      ]
-    },
-    "Sheets: Mark Published": {
-      "main": [
-        [{ "node": "Notify Customer: Published", "type": "main", "index": 0 }]
-      ]
-    },
-    "Error Trigger": {
-      "main": [
-        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
       ]
     }
   },
+  "active": false,
   "settings": {
     "executionOrder": "v1",
-    "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner"
+    "saveManualExecutions": true
   },
-  "staticData": null,
-  "tags": [
-    { "name": "podryad-pro" },
-    { "name": "publish" },
-    { "name": "payments" }
-  ],
-  "pinData": {},
-  "versionId": "2"
+  "versionId": "podryad-02-publish-v2",
+  "meta": { "instanceId": "podryad-pro" },
+  "tags": [{ "name": "podryad-pro" }, { "name": "channel" }]
 }

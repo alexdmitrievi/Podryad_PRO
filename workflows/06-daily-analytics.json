@@ -1,224 +1,106 @@
 {
-  "name": "06 — Daily Analytics",
+  "name": "Подряд PRO — 06 Daily Analytics",
   "nodes": [
     {
       "parameters": {
         "rule": {
           "interval": [
             {
-              "field": "cronExpression",
-              "expression": "0 20 * * *"
+              "triggerAtHour": 20,
+              "triggerAtMinute": 0
             }
           ]
         }
       },
-      "id": "cron-trigger",
-      "name": "Daily 20:00 MSK",
+      "id": "f1b2c3d4-6666-4000-8000-000000000001",
+      "name": "Daily Cron 20:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [220, 300]
+      "position": [0, 300]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Orders"
-        },
-        "options": {}
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
+        "filtersUI": {},
+        "options": { "returnAllMatches": true }
       },
-      "id": "sheets-read-orders",
-      "name": "Sheets: Read All Orders",
+      "id": "f1b2c3d4-6666-4000-8000-000000000002",
+      "name": "Read All Orders",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [440, 300],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "position": [260, 300]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Workers"
-        },
-        "options": {}
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "url" },
+        "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
+        "filtersUI": {},
+        "options": { "returnAllMatches": true }
       },
-      "id": "sheets-read-workers",
-      "name": "Sheets: Read All Workers",
+      "id": "f1b2c3d4-6666-4000-8000-000000000003",
+      "name": "Read All Workers",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [440, 480],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "position": [260, 500]
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Payments"
-        },
-        "options": {}
+        "jsCode": "const allOrders = $('Read All Orders').all().map(i => i.json);\nconst allWorkers = $('Read All Workers').all().map(i => i.json);\n\n// Сегодняшняя дата (MSK = UTC+3)\nconst now = new Date();\nconst mskOffset = 3 * 60 * 60 * 1000;\nconst mskNow = new Date(now.getTime() + mskOffset);\nconst todayStr = mskNow.toISOString().slice(0, 10); // YYYY-MM-DD\n\n// Фильтруем заказы за сегодня\nconst todayOrders = allOrders.filter(o => {\n  if (!o.created_at) return false;\n  const orderDate = new Date(o.created_at);\n  const orderMsk = new Date(orderDate.getTime() + mskOffset);\n  return orderMsk.toISOString().slice(0, 10) === todayStr;\n});\n\nconst total = todayOrders.length;\nconst published = todayOrders.filter(o => o.status === 'published').length;\nconst closed = todayOrders.filter(o => o.status === 'closed').length;\nconst pending = todayOrders.filter(o => o.status === 'pending').length;\nconst cancelled = todayOrders.filter(o => o.status === 'cancelled').length;\nconst revenue = (closed + published) * 500; // 500р за публикацию\nconst conversion = total > 0 ? Math.round(closed / total * 100) : 0;\n\n// Топ исполнитель дня\nconst todayExecutors = todayOrders\n  .filter(o => o.status === 'closed' && o.executor_id)\n  .reduce((acc, o) => {\n    acc[o.executor_id] = (acc[o.executor_id] || 0) + 1;\n    return acc;\n  }, {});\n\nlet topWorker = 'нет данных';\nconst topExecutorId = Object.entries(todayExecutors)\n  .sort((a, b) => b[1] - a[1])[0];\n\nif (topExecutorId) {\n  const w = allWorkers.find(w => String(w.telegram_id) === String(topExecutorId[0]));\n  if (w) {\n    topWorker = `${w.name || w.username} (⭐${w.rating}, ${topExecutorId[1]} заказов)`;\n  }\n}\n\n// Общая статистика\nconst totalWorkers = allWorkers.length;\nconst activeWorkers = allWorkers.filter(w => parseInt(w.jobs_count || 0) > 0).length;\nconst vipWorkers = allWorkers.filter(w => w.is_vip === 'TRUE' || w.is_vip === true).length;\n\nconst dateFormatted = mskNow.toLocaleDateString('ru-RU', {\n  day: '2-digit', month: '2-digit', year: 'numeric'\n});\n\nreturn [{\n  json: {\n    date: dateFormatted,\n    total, published, closed, pending, cancelled,\n    revenue, conversion,\n    topWorker,\n    totalWorkers, activeWorkers, vipWorkers,\n    totalAllOrders: allOrders.length\n  }\n}];"
       },
-      "id": "sheets-read-payments",
-      "name": "Sheets: Read Payments",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [440, 660],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const allOrders = $('Sheets: Read All Orders').all().map(i => i.json);\nconst allWorkers = $('Sheets: Read All Workers').all().map(i => i.json);\nconst allPayments = $('Sheets: Read Payments').all().map(i => i.json);\n\nconst now = new Date();\nconst todayStr = now.toDateString();\nconst dateFormatted = now.toLocaleDateString('ru-RU', {\n  day: '2-digit',\n  month: '2-digit',\n  year: 'numeric'\n});\n\nconst todayOrders = allOrders.filter(o => {\n  if (!o.created_at) return false;\n  try {\n    return new Date(o.created_at).toDateString() === todayStr;\n  } catch (e) {\n    return false;\n  }\n});\n\nconst total = todayOrders.length;\nconst published = todayOrders.filter(o => o.status === 'published').length;\nconst closed = todayOrders.filter(o => o.status === 'closed').length;\nconst cancelled = todayOrders.filter(o => o.status === 'cancelled').length;\nconst pending = todayOrders.filter(o => o.status === 'pending').length;\n\nconst todayPayments = allPayments.filter(p => {\n  if (!p.paid_at) return false;\n  try {\n    return new Date(p.paid_at).toDateString() === todayStr && p.status === 'paid';\n  } catch (e) {\n    return false;\n  }\n});\n\nconst revenue = todayPayments.reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);\n\nconst conversion = total > 0\n  ? Math.round((closed / total) * 100)\n  : 0;\n\nconst closedToday = todayOrders.filter(o => o.status === 'closed');\nconst executorCounts = {};\nclosedToday.forEach(o => {\n  if (o.executor_id) {\n    executorCounts[o.executor_id] = (executorCounts[o.executor_id] || 0) + 1;\n  }\n});\n\nlet topWorkerId = '';\nlet topWorkerCount = 0;\nfor (const [id, count] of Object.entries(executorCounts)) {\n  if (count > topWorkerCount) {\n    topWorkerId = id;\n    topWorkerCount = count;\n  }\n}\n\nlet topWorkerName = 'нет данных';\nif (topWorkerId) {\n  const worker = allWorkers.find(w => String(w.telegram_id) === String(topWorkerId));\n  if (worker) {\n    topWorkerName = `${worker.name || 'ID:' + topWorkerId} (${topWorkerCount} заказов, рейтинг ${worker.rating || '?'})`;\n  }\n}\n\nconst totalWorkers = allWorkers.length;\nconst activeVip = allWorkers.filter(w => {\n  return (w.is_vip === 'TRUE' || w.is_vip === true) &&\n    w.vip_expires_at && new Date(w.vip_expires_at) > now;\n}).length;\n\nconst totalAllTime = allOrders.length;\nconst closedAllTime = allOrders.filter(o => o.status === 'closed').length;\n\nreturn [{\n  json: {\n    date: dateFormatted,\n    total,\n    published,\n    closed,\n    cancelled,\n    pending,\n    revenue,\n    conversion: conversion + '%',\n    top_worker: topWorkerName,\n    total_workers: totalWorkers,\n    active_vip: activeVip,\n    total_all_time: totalAllTime,\n    closed_all_time: closedAllTime\n  }\n}];"
-      },
-      "id": "calc-metrics",
+      "id": "f1b2c3d4-6666-4000-8000-000000000004",
       "name": "Calculate Metrics",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [720, 400]
-    },
-    {
-      "parameters": {
-        "jsCode": "const m = $('Calculate Metrics').first().json;\n\nlet text = `📊 Подряд PRO | Итоги ${m.date}\\n`;\ntext += `━━━━━━━━━━━━━━━━━━━━━━\\n\\n`;\n\ntext += `📥 Новых заказов: ${m.total}\\n`;\ntext += `⏳ В ожидании: ${m.pending}\\n`;\ntext += `📤 Опубликовано: ${m.published}\\n`;\ntext += `✅ Закрыто: ${m.closed}\\n`;\ntext += `❌ Отменено: ${m.cancelled}\\n\\n`;\n\ntext += `💰 Выручка за день: ${m.revenue}р\\n`;\ntext += `📈 Конверсия: ${m.conversion}\\n\\n`;\n\ntext += `🏆 Топ исполнитель: ${m.top_worker}\\n\\n`;\n\ntext += `━━━━━━━━━━━━━━━━━━━━━━\\n`;\ntext += `📋 Общая статистика:\\n`;\ntext += `👷 Исполнителей: ${m.total_workers}\\n`;\ntext += `🌟 Активных VIP: ${m.active_vip}\\n`;\ntext += `📦 Всего заказов: ${m.total_all_time}\\n`;\ntext += `✅ Всего закрыто: ${m.closed_all_time}\\n`;\n\nreturn [{ json: { text } }];"
-      },
-      "id": "build-report",
-      "name": "Build Report",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [940, 400]
+      "position": [540, 400]
     },
     {
       "parameters": {
         "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
-        "text": "={{ $json.text }}",
-        "additionalFields": {}
-      },
-      "id": "send-report",
-      "name": "Send Report to Admin",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [1160, 400],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "errorMessage": "Ошибка в Daily Analytics workflow"
-      },
-      "id": "error-trigger",
-      "name": "Error Trigger",
-      "type": "n8n-nodes-base.errorTrigger",
-      "typeVersion": 1,
-      "position": [220, 700]
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
-        "text": "🚨 *ОШИБКА в Daily Analytics*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
+        "text": "📊 *Подряд PRO | Итоги {{ $json.date }}*\n\n━━━ *Заказы за сегодня* ━━━\n📥 Новых: {{ $json.total }}\n⏳ В ожидании: {{ $json.pending }}\n📤 Опубликовано: {{ $json.published }}\n✅ Закрыто: {{ $json.closed }}\n❌ Отменено: {{ $json.cancelled }}\n\n━━━ *Финансы* ━━━\n💰 Выручка: {{ $json.revenue }}₽\n📈 Конверсия: {{ $json.conversion }}%\n\n━━━ *Исполнители* ━━━\n👥 Всего: {{ $json.totalWorkers }}\n🔧 Активных: {{ $json.activeWorkers }}\n🌟 VIP: {{ $json.vipWorkers }}\n\n🏆 *Топ дня:* {{ $json.topWorker }}\n\n📋 Всего заказов в системе: {{ $json.totalAllOrders }}",
         "additionalFields": { "parse_mode": "Markdown" }
       },
-      "id": "notify-admin-error",
-      "name": "Notify Admin Error",
+      "id": "f1b2c3d4-6666-4000-8000-000000000005",
+      "name": "Send Daily Report",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [440, 700],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [800, 400]
     }
   ],
   "connections": {
-    "Daily 20:00 MSK": {
+    "Daily Cron 20:00": {
       "main": [
         [
-          { "node": "Sheets: Read All Orders", "type": "main", "index": 0 },
-          { "node": "Sheets: Read All Workers", "type": "main", "index": 0 },
-          { "node": "Sheets: Read Payments", "type": "main", "index": 0 }
+          { "node": "Read All Orders", "type": "main", "index": 0 },
+          { "node": "Read All Workers", "type": "main", "index": 0 }
         ]
       ]
     },
-    "Sheets: Read All Orders": {
+    "Read All Orders": {
       "main": [
         [{ "node": "Calculate Metrics", "type": "main", "index": 0 }]
       ]
     },
-    "Sheets: Read All Workers": {
-      "main": [
-        [{ "node": "Calculate Metrics", "type": "main", "index": 0 }]
-      ]
-    },
-    "Sheets: Read Payments": {
+    "Read All Workers": {
       "main": [
         [{ "node": "Calculate Metrics", "type": "main", "index": 0 }]
       ]
     },
     "Calculate Metrics": {
       "main": [
-        [{ "node": "Build Report", "type": "main", "index": 0 }]
-      ]
-    },
-    "Build Report": {
-      "main": [
-        [{ "node": "Send Report to Admin", "type": "main", "index": 0 }]
-      ]
-    },
-    "Error Trigger": {
-      "main": [
-        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
+        [{ "node": "Send Daily Report", "type": "main", "index": 0 }]
       ]
     }
   },
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner",
     "timezone": "Europe/Moscow"
   },
-  "staticData": null,
-  "tags": [
-    { "name": "podryad-pro" },
-    { "name": "analytics" },
-    { "name": "cron" }
-  ],
-  "pinData": {},
-  "versionId": "6"
+  "versionId": "podryad-06-analytics-v2",
+  "meta": { "instanceId": "podryad-pro" },
+  "tags": [{ "name": "podryad-pro" }]
 }
