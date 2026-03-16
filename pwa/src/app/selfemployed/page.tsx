@@ -185,7 +185,7 @@ export default function SelfemployedPage() {
                   block w-full text-center py-3 rounded-2xl font-semibold text-sm
                   transition-all hover:brightness-95 active:scale-[0.98]
                   ${m.recommended
-                    ? 'bg-[#0088cc] text-white'
+                    ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/20'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
                 `}
               >
@@ -213,7 +213,7 @@ export default function SelfemployedPage() {
               href={`https://t.me/${botName}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full text-center py-3 rounded-2xl font-semibold text-sm bg-[#0088cc] text-white transition-all hover:brightness-95 active:scale-[0.98]"
+              className="block w-full text-center py-3 rounded-xl font-semibold text-sm bg-brand-500 text-white transition-all hover:bg-brand-600 active:scale-[0.98] shadow-sm shadow-brand-500/20"
             >
               Открыть бот →
             </a>

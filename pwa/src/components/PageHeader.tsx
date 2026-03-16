@@ -14,7 +14,7 @@ export default function PageHeader({
   backLabel = '← Главная',
 }: Props) {
   return (
-    <header className="bg-[#0088cc] text-white px-4 py-3 flex-shrink-0">
+    <header className="bg-gradient-to-r from-brand-900 to-brand-600 text-white px-4 py-3 flex-shrink-0">
       <div className="max-w-lg mx-auto">
         <Link
           href={backHref}

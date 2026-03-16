@@ -10,9 +10,9 @@ export default function HomePage() {
   const maxChannel = process.env.NEXT_PUBLIC_MAX_CHANNEL_LINK || 'https://max.ru/podryad_pro';
 
   return (
-    <main className="min-h-screen flex flex-col bg-white">
+    <main className="min-h-screen flex flex-col bg-surface">
       {/* ── Hero ── */}
-      <section className="relative bg-gradient-to-br from-brand-600 via-brand-500 to-brand-700 text-white overflow-hidden">
+      <section className="relative bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 text-white overflow-hidden">
         <div className="hero-pattern absolute inset-0" />
         <div className="relative max-w-md mx-auto px-6 pt-16 pb-20 text-center space-y-6">
           <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium">
@@ -73,7 +73,7 @@ export default function HomePage() {
         {/* Curved bottom */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            <path d="M0 48h1440V24C1200 0 240 0 0 24v24z" fill="white" />
+            <path d="M0 48h1440V24C1200 0 240 0 0 24v24z" fill="#F7F9FC" />
           </svg>
         </div>
       </section>
@@ -187,7 +187,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Calculator ── */}
-      <section className="bg-gray-50 px-6 py-14">
+      <section className="bg-white px-6 py-14">
         <div className="max-w-md mx-auto space-y-8">
           <div className="text-center">
             <h2 className="text-2xl font-extrabold text-gray-900">Сколько стоит?</h2>

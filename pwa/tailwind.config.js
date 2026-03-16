@@ -9,18 +9,23 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          50:  '#e6f4ff',
-          100: '#b3e0ff',
-          200: '#80ccff',
-          300: '#4db8ff',
-          400: '#1aa3ff',
-          500: '#0088cc',
-          600: '#006da3',
-          700: '#005580',
-          800: '#003d5c',
-          900: '#002639',
+          50:  '#eef2ff',
+          100: '#dce4ff',
+          200: '#bac8ff',
+          300: '#8fa5ff',
+          400: '#6180ff',
+          500: '#2F5BFF',
+          600: '#2548d9',
+          700: '#1d38b3',
+          800: '#152a8c',
+          900: '#1E2A5A',
           yandex: '#FC3F1D',
         },
+        violet: {
+          DEFAULT: '#6C5CE7',
+          light: '#a29bfe',
+        },
+        surface: '#F7F9FC',
         max: {
           DEFAULT: '#2787F5',
           dark: '#1a6fd4',
@@ -29,13 +34,14 @@ module.exports = {
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', '-apple-system', 'sans-serif'],
+        heading: ['var(--font-manrope)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         'card': '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
         'card-hover': '0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04)',
         'elevated': '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.06)',
-        'glow': '0 0 20px rgba(0,136,204,0.25)',
-        'glow-lg': '0 0 40px rgba(0,136,204,0.3)',
+        'glow': '0 0 20px rgba(47,91,255,0.25)',
+        'glow-lg': '0 0 40px rgba(47,91,255,0.3)',
         'inner-soft': 'inset 0 2px 4px rgba(0,0,0,0.04)',
       },
       borderRadius: {

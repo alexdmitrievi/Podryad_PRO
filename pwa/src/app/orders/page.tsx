@@ -61,8 +61,8 @@ export default function OrdersPage() {
                 href={`https://t.me/${process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot'}?start=order`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-[#0088cc] text-white font-medium py-2.5 px-6 rounded-xl
-                           text-sm hover:bg-[#0077b3] active:scale-[0.98] transition-all"
+                className="bg-brand-500 text-white font-medium py-2.5 px-6 rounded-xl
+                           text-sm hover:bg-brand-600 active:scale-[0.98] transition-all"
               >
                 📱 Создать заказ в боте
               </a>

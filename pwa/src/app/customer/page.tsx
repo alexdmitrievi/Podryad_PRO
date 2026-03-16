@@ -35,7 +35,7 @@ export default function CustomerPage() {
                     href={`https://t.me/${botName}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block mt-3 px-5 py-2.5 rounded-2xl bg-[#0088cc] text-white text-sm font-semibold transition-all hover:brightness-95 active:scale-[0.98]"
+                    className="inline-block mt-3 px-5 py-2.5 rounded-2xl bg-brand-500 text-white text-sm font-semibold transition-all hover:bg-brand-600 active:scale-[0.98] shadow-sm"
                   >
                     📱 Открыть бот
                   </a>
@@ -45,7 +45,7 @@ export default function CustomerPage() {
                       href={maxChannel}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#0088cc] font-medium hover:underline"
+                      className="text-brand-500 font-medium hover:underline"
                     >
                       Написать в MAX →
                     </a>
@@ -191,7 +191,7 @@ export default function CustomerPage() {
 
           <p className="text-xs text-gray-400 mt-4 leading-relaxed">
             Точная стоимость зависит от количества людей и часов.{' '}
-            <Link href="/app/order" className="text-[#0088cc] font-medium hover:underline">
+            <Link href="/app/order" className="text-brand-500 font-medium hover:underline">
               Рассчитать стоимость →
             </Link>
           </p>
@@ -203,7 +203,7 @@ export default function CustomerPage() {
             href={`https://t.me/${botName}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full text-center py-3.5 rounded-2xl font-bold text-base bg-[#0088cc] text-white transition-all hover:brightness-95 active:scale-[0.98] shadow-sm"
+            className="block w-full text-center py-3.5 rounded-xl font-bold text-base bg-brand-500 text-white transition-all hover:bg-brand-600 active:scale-[0.98] shadow-md shadow-brand-500/20"
           >
             📱 Зарегистрироваться в боте
           </a>

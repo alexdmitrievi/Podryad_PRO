@@ -46,9 +46,9 @@ export default function MaxPage() {
   const maxChannel = process.env.NEXT_PUBLIC_MAX_CHANNEL_LINK || 'https://max.ru/podryad_pro';
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-surface">
       {/* Header */}
-      <header className="bg-gradient-to-r from-max to-[#1a6fd4] text-white px-5 py-3.5">
+      <header className="bg-gradient-to-r from-max to-max-dark text-white px-5 py-3.5">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <h1 className="text-lg font-bold tracking-tight">Подряд PRO в MAX</h1>
           <Link
@@ -62,7 +62,7 @@ export default function MaxPage() {
       </header>
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-max via-[#2787F5] to-[#1a6fd4] text-white px-6 pt-12 pb-16 text-center relative overflow-hidden">
+      <section className="bg-gradient-to-br from-max via-max to-max-dark text-white px-6 pt-12 pb-16 text-center relative overflow-hidden">
         <div className="hero-pattern absolute inset-0" />
         <div className="relative max-w-md mx-auto space-y-5">
           <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium">
@@ -96,7 +96,7 @@ export default function MaxPage() {
 
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            <path d="M0 48h1440V24C1200 0 240 0 0 24v24z" fill="white" />
+            <path d="M0 48h1440V24C1200 0 240 0 0 24v24z" fill="#F7F9FC" />
           </svg>
         </div>
       </section>
