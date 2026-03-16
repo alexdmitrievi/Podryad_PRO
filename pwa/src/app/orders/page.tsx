@@ -1,8 +1,29 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import {
+  MapPin, Loader2, Inbox, ExternalLink,
+} from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
 import type { Order } from '@/lib/types';
+
+const statusLabel: Record<string, string> = {
+  pending: 'Ожидает оплаты',
+  published: 'Активен',
+  closed: 'Закрыт',
+  cancelled: 'Отменён',
+  paid: 'Оплачен',
+  done: 'Выполнен',
+};
+
+const statusStyle: Record<string, { bg: string; text: string; dot: string }> = {
+  pending:   { bg: 'bg-amber-50',   text: 'text-amber-700',   dot: 'bg-amber-500' },
+  published: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  paid:      { bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500' },
+  closed:    { bg: 'bg-gray-100',   text: 'text-gray-500',    dot: 'bg-gray-400' },
+  cancelled: { bg: 'bg-red-50',     text: 'text-red-600',     dot: 'bg-red-500' },
+  done:      { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+};
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -18,80 +39,96 @@ export default function OrdersPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const statusLabel: Record<string, string> = {
-    pending: 'Ожидает оплаты',
-    published: 'Активен',
-    closed: 'Закрыт',
-    cancelled: 'Отменён',
-  };
-
-  const statusColor: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    published: 'bg-green-100 text-green-800',
-    closed: 'bg-gray-100 text-gray-600',
-    cancelled: 'bg-red-100 text-red-700',
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-[#0088cc] text-white px-4 py-3">
-        <div className="flex items-center justify-between max-w-lg mx-auto">
-          <h1 className="text-lg font-bold">📋 Заказы</h1>
-          <Link href="/" className="text-sm opacity-80 hover:opacity-100">
-            ← Главная
-          </Link>
-        </div>
-      </header>
+      <PageHeader title="📋 Заказы" />
 
       <main className="max-w-lg mx-auto p-4 space-y-3">
         {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-2xl p-5 shadow-sm animate-pulse h-32" />
-            ))}
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 size={28} className="text-brand-500 animate-spin" />
+            <span className="text-sm text-gray-400">Загрузка заказов...</span>
           </div>
         ) : orders.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-5xl mb-4">📭</p>
-            <p className="font-medium text-lg">Нет активных заказов</p>
-            <p className="text-sm mt-2">Новые заказы появятся совсем скоро!</p>
+          <div className="text-center py-16 px-6">
+            <p className="text-5xl mb-4">📋</p>
+            <p className="font-bold text-lg text-gray-800">Нет активных заказов</p>
+            <p className="text-sm text-gray-500 mt-2 mb-6">
+              Новые заказы появятся совсем скоро!
+            </p>
+            <div className="flex flex-col gap-2 max-w-xs mx-auto">
+              <a
+                href={`https://t.me/${process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot'}?start=order`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#0088cc] text-white font-medium py-2.5 px-6 rounded-xl
+                           text-sm hover:bg-[#0077b3] active:scale-[0.98] transition-all"
+              >
+                📱 Создать заказ в боте
+              </a>
+              <a
+                href="/app/map"
+                className="bg-gray-100 text-gray-700 font-medium py-2.5 px-6 rounded-xl
+                           text-sm hover:bg-gray-200 active:scale-[0.98] transition-all"
+              >
+                🗺 Смотреть на карте
+              </a>
+            </div>
           </div>
         ) : (
-          orders.map((order) => (
-            <div
-              key={order.order_id}
-              className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <span className="font-bold text-gray-800">#{order.order_id}</span>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor[order.status] ?? 'bg-gray-100 text-gray-600'}`}
-                >
-                  {statusLabel[order.status] ?? order.status}
-                </span>
+          orders.map((order, i) => {
+            const s = statusStyle[order.status] || statusStyle.pending;
+            return (
+              <div
+                key={order.order_id}
+                className="
+                  bg-white rounded-3xl p-5 shadow-card border border-gray-100
+                  hover:shadow-card-hover transition-all duration-300
+                  animate-fade-in
+                "
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <span className="font-bold text-gray-900">#{order.order_id}</span>
+                  <span className={`
+                    inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold
+                    ${s.bg} ${s.text}
+                  `}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                    {statusLabel[order.status] ?? order.status}
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-2 text-sm text-gray-700 mb-2">
+                  <MapPin size={15} className="text-gray-400 mt-0.5 shrink-0" />
+                  <span className="font-medium">{order.address}</span>
+                </div>
+
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  📋 {order.work_type}
+                  {order.worker_payout != null
+                    ? <span className="font-semibold text-emerald-600"> · {order.worker_payout.toLocaleString('ru-RU')}₽ на руки</span>
+                    : order.payment_text && <span> · {order.payment_text}</span>}
+                  {order.people && <span> · {order.people} чел.</span>}
+                </p>
+
+                {order.yandex_link && (
+                  <a
+                    href={order.yandex_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="
+                      inline-flex items-center gap-1.5 mt-3 text-brand-500
+                      text-xs font-semibold hover:text-brand-700 transition-colors
+                    "
+                  >
+                    <ExternalLink size={12} />
+                    Открыть на карте
+                  </a>
+                )}
               </div>
-              <p className="text-sm text-gray-700 mb-1">
-                <span className="font-medium">📍</span> {order.address}
-              </p>
-              <p className="text-sm text-gray-500">
-                📋 {order.work_type}
-                {order.worker_rate != null
-                  ? ` · 💰 ${order.worker_rate}₽/час (${order.worker_payout?.toLocaleString() ?? '?'}₽)`
-                  : order.payment_text && ` · 💰 ${order.payment_text}`}
-                {order.people && ` · 👥 ${order.people} чел.`}
-              </p>
-              {order.yandex_link && (
-                <a
-                  href={order.yandex_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#0088cc] text-xs mt-2 inline-block hover:underline"
-                >
-                  🗺 Открыть на карте
-                </a>
-              )}
-            </div>
-          ))
+            );
+          })
         )}
       </main>
     </div>

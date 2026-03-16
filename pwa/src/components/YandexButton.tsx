@@ -1,3 +1,5 @@
+import { Navigation } from 'lucide-react';
+
 interface Props {
   lat: number;
   lon: number;
@@ -12,13 +14,16 @@ export default function YandexButton({ lat, lon, address }: Props) {
       href={link}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center justify-center gap-2
-                 bg-[#FC3F1D] text-white px-4 py-2.5
-                 rounded-xl font-medium text-sm w-full
-                 hover:bg-[#e63519] active:scale-[0.98]
-                 transition-all shadow-sm"
+      className="
+        flex items-center justify-center gap-2
+        bg-brand-yandex/10 text-brand-yandex
+        px-4 py-2.5 rounded-2xl font-semibold text-sm w-full
+        hover:bg-brand-yandex hover:text-white
+        active:scale-[0.97] transition-all duration-200
+      "
     >
-      🗺 Открыть в Яндекс.Картах
+      <Navigation size={16} />
+      Маршрут
     </a>
   );
 }

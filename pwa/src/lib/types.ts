@@ -22,6 +22,8 @@ export interface Order {
   margin?: number;
   payout_status?: string;
   payout_at?: string;
+  max_posted?: boolean;
+  max_message_id?: string;
 }
 
 export interface Worker {

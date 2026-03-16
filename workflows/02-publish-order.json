@@ -42,7 +42,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "filtersUI": {
           "values": [
@@ -85,7 +85,7 @@
       "parameters": {
         "resource": "message",
         "operation": "sendLocation",
-        "chatId": "@podryad_pro",
+        "chatId": "-1003710991577",
         "latitude": "={{ $json.lat }}",
         "longitude": "={{ $json.lon }}",
         "additionalFields": {}
@@ -108,7 +108,7 @@
     },
     {
       "parameters": {
-        "chatId": "@podryad_pro",
+        "chatId": "-1003710991577",
         "text": "={{ $json.text }}",
         "additionalFields": {
           "parse_mode": "HTML",
@@ -143,7 +143,7 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "columns": {
           "mappingMode": "defineBelow",
@@ -165,7 +165,7 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Payments", "mode": "list" },
         "columns": {
           "mappingMode": "defineBelow",
@@ -206,7 +206,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "chatId": "407721399",
         "text": "🚨 *ОШИБКА в Publish Order*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
         "additionalFields": { "parse_mode": "Markdown" }
       },

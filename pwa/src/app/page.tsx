@@ -1,120 +1,278 @@
 import Link from 'next/link';
+import {
+  ArrowRight, MapPin, Star, Users, MessageSquare,
+  Shield, Zap, Crown, Trophy, ChevronRight,
+} from 'lucide-react';
 import CostCalculator from '@/components/CostCalculator';
+import MessengerLinks from '@/components/MessengerLinks';
 
 export default function HomePage() {
-  const botName = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
+  const maxChannel = process.env.NEXT_PUBLIC_MAX_CHANNEL_LINK || 'https://max.ru/podryad_pro';
 
   return (
-    <main className="min-h-screen flex flex-col">
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-[#0088cc] to-[#005580] text-white px-6 py-16 text-center">
-        <div className="max-w-md mx-auto space-y-6">
-          <h1 className="text-4xl font-extrabold tracking-tight leading-tight">
-            🔨 Подряд PRO
-          </h1>
-          <p className="text-lg opacity-90">
+    <main className="min-h-screen flex flex-col bg-white">
+      {/* ── Hero ── */}
+      <section className="relative bg-gradient-to-br from-brand-600 via-brand-500 to-brand-700 text-white overflow-hidden">
+        <div className="hero-pattern absolute inset-0" />
+        <div className="relative max-w-md mx-auto px-6 pt-16 pb-20 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium">
+            <Zap size={14} />
             Работа и подработка в Омске
-          </p>
-          <p className="text-sm opacity-70">
-            Грузчики · Уборка · Строительство · Любые задачи
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1] text-balance">
+            Подряд PRO
+          </h1>
+          <p className="text-lg text-white/80 max-w-xs mx-auto leading-relaxed">
+            Грузчики · Уборка · Строительство · Любые задачи — быстро и надёжно
           </p>
 
-          <div className="flex flex-col gap-3 mt-8">
-            <a
-              href={`https://t.me/${botName}`}
-              className="bg-white text-[#0088cc] font-bold py-3 px-6 rounded-2xl text-lg hover:bg-gray-100 transition-colors shadow-lg"
-            >
-              📱 Открыть бот в Telegram
-            </a>
-            <Link
-              href="/app/map"
-              className="bg-white/20 backdrop-blur text-white font-medium py-3 px-6 rounded-2xl text-lg border border-white/30 hover:bg-white/30 transition-colors"
-            >
-              🗺 Смотреть заказы на карте
-            </Link>
+          {/* VPN banner */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-2.5 text-sm text-white/80 border border-white/10">
+            💡 Telegram заблокирован? Используйте{' '}
+            <a href={maxChannel} target="_blank" rel="noopener noreferrer" className="underline font-semibold text-white hover:text-white/90">
+              MAX
+            </a>{' '}
+            — работает без VPN
           </div>
+
+          <MessengerLinks action="bot" variant="buttons" />
+
+          <Link
+            href="/app/map"
+            className="
+              flex items-center justify-center gap-2
+              bg-white/15 backdrop-blur-sm text-white font-semibold
+              py-3.5 px-6 rounded-2xl text-base
+              border border-white/20 hover:bg-white/25
+              active:scale-[0.97] transition-all duration-200
+            "
+          >
+            <MapPin size={18} />
+            Заказы на карте
+          </Link>
+
+          <p className="text-xs text-white/60">
+            Все деньги проходят через платформу. Гарантия выполнения.
+          </p>
+
+          {/* Trust badges */}
+          <div className="flex justify-center gap-6 pt-2 text-sm text-white/60">
+            <span className="flex items-center gap-1.5">
+              <Shield size={14} /> Безопасно
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Star size={14} /> Рейтинг
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Zap size={14} /> Быстро
+            </span>
+          </div>
+        </div>
+
+        {/* Curved bottom */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
+            <path d="M0 48h1440V24C1200 0 240 0 0 24v24z" fill="white" />
+          </svg>
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="px-6 py-12 max-w-md mx-auto space-y-8">
-        <h2 className="text-2xl font-bold text-center">Как это работает</h2>
+      {/* ── How it works ── */}
+      <section className="px-6 py-16 max-w-md mx-auto">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-extrabold text-gray-900">Как это работает</h2>
+          <p className="text-gray-500 text-sm mt-2">Всего 4 простых шага</p>
+        </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           {[
             {
-              icon: '📝',
-              title: 'Заказчик пишет боту',
-              desc: 'Опишите задачу — платформа рассчитает стоимость по тарифам. Оплата через ЮKassa.',
+              num: '01',
+              icon: MessageSquare,
+              title: 'Опишите задачу',
+              desc: 'Напишите боту в Telegram или MAX — платформа рассчитает стоимость по тарифам.',
+              color: 'from-blue-500 to-blue-600',
             },
             {
-              icon: '📢',
-              title: 'Заказ публикуется в канале',
-              desc: 'С точкой на карте, кнопкой навигации и всеми деталями',
+              num: '02',
+              icon: MapPin,
+              title: 'Заказ публикуется',
+              desc: 'С точкой на карте, кнопкой навигации и всеми деталями — одновременно в Telegram и MAX.',
+              color: 'from-emerald-500 to-emerald-600',
             },
             {
-              icon: '🏃',
+              num: '03',
+              icon: Users,
               title: 'Исполнитель откликается',
-              desc: 'Первый подходящий получает заказ. Общение через бота — контакты скрыты до завершения.',
+              desc: 'Первый подходящий получает заказ. Контакты скрыты до завершения работы.',
+              color: 'from-amber-500 to-amber-600',
             },
             {
-              icon: '⭐',
+              num: '04',
+              icon: Star,
               title: 'Рейтинг и доверие',
-              desc: 'После выполнения — оценка. Лучшие получают больше заказов',
+              desc: 'После выполнения — взаимная оценка. Лучшие исполнители получают больше заказов.',
+              color: 'from-purple-500 to-purple-600',
             },
           ].map((step, i) => (
-            <div key={i} className="flex gap-4 items-start">
-              <div className="text-3xl flex-shrink-0 w-12 h-12 flex items-center justify-center bg-blue-50 rounded-xl">
-                {step.icon}
+            <div
+              key={i}
+              className="flex gap-4 items-start group"
+            >
+              <div className={`
+                w-12 h-12 rounded-2xl bg-gradient-to-br ${step.color}
+                flex items-center justify-center shrink-0
+                shadow-sm group-hover:scale-105 transition-transform duration-300
+              `}>
+                <step.icon size={20} className="text-white" />
               </div>
-              <div>
-                <h3 className="font-semibold text-lg">{step.title}</h3>
-                <p className="text-gray-600 text-sm mt-1">{step.desc}</p>
+              <div className="pt-0.5">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xs font-bold text-gray-300">{step.num}</span>
+                  <h3 className="font-bold text-gray-900">{step.title}</h3>
+                </div>
+                <p className="text-gray-500 text-sm mt-1 leading-relaxed">{step.desc}</p>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Calculator + Tariffs */}
-      <section className="bg-gray-100 px-6 py-12">
-        <div className="max-w-md mx-auto space-y-6">
-          <h2 className="text-2xl font-bold text-center">Сколько стоит?</h2>
+      {/* ── Role selection ── */}
+      <section className="px-6 pb-6 max-w-md mx-auto w-full">
+        <h2 className="text-xl font-extrabold text-center text-gray-900 mb-4">Кто вы?</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Link
+            href="/customer"
+            className="
+              group relative bg-white rounded-3xl p-5 shadow-card border border-gray-100
+              hover:shadow-card-hover hover:-translate-y-0.5
+              transition-all duration-300
+            "
+          >
+            <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center mb-3 group-hover:bg-brand-100 transition-colors">
+              <span className="text-xl">🧾</span>
+            </div>
+            <h3 className="font-bold text-gray-900 text-sm">Я заказчик</h3>
+            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+              Оформить заказ на грузчиков, уборку или другие работы
+            </p>
+            <ChevronRight size={16} className="absolute top-5 right-4 text-gray-300 group-hover:text-brand-500 transition-colors" />
+          </Link>
+          <Link
+            href="/worker"
+            className="
+              group relative bg-white rounded-3xl p-5 shadow-card border border-gray-100
+              hover:shadow-card-hover hover:-translate-y-0.5
+              transition-all duration-300
+            "
+          >
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center mb-3 group-hover:bg-amber-100 transition-colors">
+              <span className="text-xl">💼</span>
+            </div>
+            <h3 className="font-bold text-gray-900 text-sm">Я исполнитель</h3>
+            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+              Смотреть заказы на карте и откликаться
+            </p>
+            <ChevronRight size={16} className="absolute top-5 right-4 text-gray-300 group-hover:text-brand-500 transition-colors" />
+          </Link>
+        </div>
+        <p className="text-xs text-gray-400 text-center mt-3">
+          Самозанятые получают заказы в приоритете ·{' '}
+          <Link href="/selfemployed" className="text-brand-500 hover:text-brand-700 font-medium transition-colors">
+            Подробнее
+          </Link>
+        </p>
+      </section>
+
+      {/* ── Calculator ── */}
+      <section className="bg-gray-50 px-6 py-14">
+        <div className="max-w-md mx-auto space-y-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-extrabold text-gray-900">Сколько стоит?</h2>
+            <p className="text-gray-500 text-sm mt-2">Расчёт за несколько минут</p>
+          </div>
           <CostCalculator />
 
-          <h2 className="text-2xl font-bold text-center pt-6">Дополнительные услуги</h2>
-          <div className="space-y-4">
-            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-5 shadow-sm border border-amber-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-bold text-lg">🌟 VIP подписка</h3>
-                  <p className="text-gray-500 text-sm">Ранний доступ к заказам</p>
+          {/* Premium services */}
+          <div className="space-y-6 pt-4">
+            <h2 className="text-xl font-extrabold text-center text-gray-900">Дополнительные услуги</h2>
+            <div className="space-y-3">
+              <div className="
+                bg-gradient-to-r from-amber-50 to-yellow-50
+                rounded-3xl p-5 shadow-card border border-amber-100
+                hover:shadow-card-hover transition-all duration-300
+              ">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center">
+                      <Crown size={20} className="text-amber-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">VIP подписка</h3>
+                      <p className="text-gray-500 text-xs">Ранний доступ к заказам</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-extrabold text-amber-600">{(1000).toLocaleString('ru-RU')}₽</span>
+                    <span className="text-xs text-gray-400 block">/мес</span>
+                  </div>
                 </div>
-                <span className="text-2xl font-extrabold text-amber-600">1000₽<span className="text-sm font-normal">/мес</span></span>
               </div>
-            </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-bold text-lg">🏆 Подбор ТОП-3</h3>
-                  <p className="text-gray-500 text-sm">Персональная подборка</p>
+
+              <div className="
+                bg-white rounded-3xl p-5 shadow-card border border-gray-100
+                hover:shadow-card-hover transition-all duration-300
+              ">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center">
+                      <Trophy size={20} className="text-brand-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">Подбор ТОП-3</h3>
+                      <p className="text-gray-500 text-xs">Персональная подборка</p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-extrabold text-brand-500">{(1000).toLocaleString('ru-RU')}₽</span>
                 </div>
-                <span className="text-2xl font-extrabold text-[#0088cc]">1000₽</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="px-6 py-12 text-center max-w-md mx-auto">
-        <a
-          href={`https://t.me/${botName}`}
-          className="block bg-[#0088cc] text-white font-bold py-4 px-8 rounded-2xl text-lg hover:bg-[#0077b3] transition-colors shadow-lg"
-        >
-          Начать в Telegram →
-        </a>
-        <p className="text-gray-400 text-xs mt-4">
+      {/* ── CTA + Footer ── */}
+      <section className="px-6 py-14 max-w-md mx-auto w-full space-y-8">
+        <MessengerLinks action="order" variant="buttons" />
+
+        <div className="grid grid-cols-2 gap-6 text-sm">
+          <div>
+            <p className="font-semibold text-gray-700 mb-2">Исполнителям</p>
+            <div className="space-y-1.5">
+              <Link href="/app/map" className="block text-gray-400 hover:text-brand-500 transition-colors">
+                Заказы на карте
+              </Link>
+              <Link href="/selfemployed" className="block text-gray-400 hover:text-brand-500 transition-colors">
+                Как стать самозанятым
+              </Link>
+            </div>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-700 mb-2">Заказчикам</p>
+            <div className="space-y-1.5">
+              <Link href="/app/order" className="block text-gray-400 hover:text-brand-500 transition-colors">
+                Оформить заказ
+              </Link>
+              <Link href="/app/payments" className="block text-gray-400 hover:text-brand-500 transition-colors">
+                Тарифы
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-gray-300 text-xs text-center">
           © {new Date().getFullYear()} Подряд PRO · podryad.pro
         </p>
       </section>

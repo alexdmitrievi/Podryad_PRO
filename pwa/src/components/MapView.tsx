@@ -1,11 +1,10 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, AttributionControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import type { Order } from '@/lib/types';
 
-// Fix default marker icons in Next.js
 const defaultIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -31,33 +30,48 @@ export default function MapView({ orders }: Props) {
     <MapContainer
       center={[54.9894, 73.3667]}
       zoom={12}
-      className="h-full w-full rounded-b-2xl"
+      className="h-full w-full"
       scrollWheelZoom={true}
       zoomControl={false}
+      attributionControl={false}
     >
+      <AttributionControl position="bottomright" prefix={false} />
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+        attribution='&copy; OpenStreetMap'
       />
       {published.map((order) => (
         <Marker key={order.order_id} position={[order.lat, order.lon]}>
           <Popup>
-            <div className="text-sm space-y-1 min-w-[180px]">
-              <p className="font-bold text-base">#{order.order_id}</p>
-              <p>📍 {order.address}</p>
-              {order.worker_rate != null ? (
-                <p>💰 {order.worker_rate}₽/час · на руки {order.worker_payout?.toLocaleString()}₽</p>
-              ) : order.payment_text && <p>💰 {order.payment_text}</p>}
-              {order.time && <p>⏰ {order.time}</p>}
-              <p>📋 {order.work_type}</p>
-              <a
-                href={order.yandex_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mt-1 text-[#FC3F1D] font-medium text-xs"
-              >
-                🗺 Открыть маршрут →
-              </a>
+            <div className="text-sm space-y-2 min-w-[200px] p-1">
+              <p className="font-bold text-base text-gray-900">Заказ #{order.order_id}</p>
+              <div className="space-y-1.5 text-gray-600">
+                <p className="flex items-center gap-1.5">
+                  <span className="text-gray-400">📍</span> {order.address}
+                </p>
+                {order.worker_payout != null ? (
+                  <p className="flex items-center gap-1.5 font-semibold text-emerald-600">
+                    💵 На руки: {order.worker_payout.toLocaleString('ru-RU')}₽
+                  </p>
+                ) : order.payment_text && (
+                  <p className="flex items-center gap-1.5">💰 {order.payment_text}</p>
+                )}
+                {order.time && <p className="flex items-center gap-1.5">⏰ {order.time}</p>}
+                <p className="flex items-center gap-1.5">📋 {order.work_type}</p>
+              </div>
+              {order.yandex_link && (
+                <a
+                  href={order.yandex_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="
+                    inline-flex items-center gap-1.5 mt-1 text-brand-yandex
+                    font-semibold text-xs hover:underline
+                  "
+                >
+                  🗺 Открыть маршрут →
+                </a>
+              )}
             </div>
           </Popup>
         </Marker>

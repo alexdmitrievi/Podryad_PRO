@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { Loader2, Inbox } from 'lucide-react';
 import OrderCard from '@/components/OrderCard';
+import PageHeader from '@/components/PageHeader';
 import type { Order } from '@/lib/types';
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false });
@@ -25,43 +27,45 @@ export default function MapPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <header className="bg-[#0088cc] text-white px-4 py-3 flex-shrink-0">
-        <h1 className="text-lg font-bold">🔨 Подряд PRO</h1>
-        <p className="text-xs opacity-80">
-          {loading ? 'Загрузка...' : `${published.length} активных заказов`}
-        </p>
-      </header>
+      <PageHeader
+        title="🔨 Подряд PRO"
+        subtitle={loading ? 'Загрузка...' : `${published.length} заказов`}
+      />
 
       {/* Map */}
-      <div className="h-56 w-full flex-shrink-0">
+      <div className="h-56 w-full flex-shrink-0 relative">
         {!loading && <MapView orders={published} />}
         {loading && (
-          <div className="h-full w-full bg-gray-200 flex items-center justify-center">
-            <span className="text-gray-400 text-sm">🗺 Загрузка карты...</span>
+          <div className="h-full w-full bg-gray-100 flex flex-col items-center justify-center gap-2">
+            <Loader2 size={24} className="text-gray-400 animate-spin" />
+            <span className="text-gray-400 text-xs">Загрузка карты...</span>
           </div>
         )}
       </div>
 
       {/* Orders list */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {loading ? (
-          <>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="skeleton h-48 w-full" />
-            ))}
-          </>
-        ) : published.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            <p className="text-4xl mb-3">📭</p>
-            <p className="font-medium">Пока нет активных заказов</p>
-            <p className="text-sm mt-1">Новые появятся совсем скоро!</p>
-          </div>
-        ) : (
-          published.map((order) => (
-            <OrderCard key={order.order_id} order={order} />
-          ))
-        )}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 space-y-3 pb-2">
+          {loading ? (
+            <>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="skeleton h-44 w-full" />
+              ))}
+            </>
+          ) : published.length === 0 ? (
+            <div className="text-center py-16 space-y-3 animate-fade-in">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto">
+                <Inbox size={28} className="text-gray-400" />
+              </div>
+              <p className="font-semibold text-gray-500 text-lg">Пока нет заказов</p>
+              <p className="text-sm text-gray-400">Новые появятся совсем скоро!</p>
+            </div>
+          ) : (
+            published.map((order) => (
+              <OrderCard key={order.order_id} order={order} />
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

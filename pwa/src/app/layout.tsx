@@ -1,13 +1,20 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
 
+const inter = Inter({
+  subsets: ['latin', 'cyrillic'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'Подряд PRO | Работа Омск',
-  description: 'Платформа для поиска работы и подработки в Омске. Грузчики, уборка, строительство.',
+  title: 'Подряд PRO | Работа и подработка в Омске',
+  description: 'Платформа для поиска работы и подработки в Омске. Грузчики, уборка, строительство — быстро и надёжно.',
   manifest: '/manifest.json',
-  keywords: 'работа омск, подработка омск, грузчики омск, подряд',
+  keywords: 'работа омск, подработка омск, грузчики омск, подряд, уборка',
   openGraph: {
-    title: 'Подряд PRO | Работа Омск',
+    title: 'Подряд PRO | Работа и подработка в Омске',
     description: 'Платформа для поиска работы и подработки в Омске',
     type: 'website',
     url: 'https://podryad.pro',
@@ -34,13 +41,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ru">
+    <html lang="ru" className={inter.variable}>
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="bg-gray-50 text-gray-900 antialiased">
+      <body className="bg-gray-50 text-gray-900 font-sans antialiased">
         {children}
       </body>
     </html>

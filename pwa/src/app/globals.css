@@ -2,16 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --brand-primary: #0088cc;
-  --brand-dark: #006699;
-  --brand-yandex: #FC3F1D;
-}
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
 
-html, body {
-  height: 100%;
-  overscroll-behavior: none;
-  -webkit-tap-highlight-color: transparent;
+  html {
+    scroll-behavior: smooth;
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 999px;
+  }
+
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* PWA safe area insets */
@@ -22,6 +42,10 @@ html, body {
   }
 }
 
+.safe-area-pb {
+  padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+}
+
 /* Leaflet fix for Next.js */
 .leaflet-container {
   width: 100%;
@@ -29,15 +53,66 @@ html, body {
   z-index: 1;
 }
 
-/* Smooth loading skeleton */
+.leaflet-popup-content-wrapper {
+  border-radius: 1rem !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,.1) !important;
+}
+
+/* ─── Animations ─── */
+
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 0.5rem;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.75rem;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+/* ─── Utility classes ─── */
+
+.glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.hero-pattern {
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255,255,255,0.06) 0%, transparent 40%),
+    radial-gradient(circle at 60% 80%, rgba(255,255,255,0.04) 0%, transparent 50%);
 }

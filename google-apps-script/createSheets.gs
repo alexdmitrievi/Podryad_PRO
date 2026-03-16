@@ -1,451 +1,288 @@
 /**
- * ╔══════════════════════════════════════════════════╗
- * ║  Подряд PRO — Google Sheets Setup Script v2.0   ║
- * ║  Создаёт 3 вкладки: Orders, Workers, Payments   ║
- * ╚══════════════════════════════════════════════════╝
+ * ╔════════════════════════════════════════════════════════════════╗
+ * ║ Подряд PRO — Google Sheets Setup Script v3.0                 ║
+ * ║ Создаёт 5 вкладок: Orders, Workers, Payments, Rates, ChatProxy║
+ * ╚════════════════════════════════════════════════════════════════╝
  *
  * ИНСТРУКЦИЯ:
- * 1. Открой Google Sheets → Extensions → Apps Script
- * 2. Вставь этот код целиком
- * 3. Нажми ▶ Run → createPodraydProSheets
- * 4. Подтверди доступ при первом запуске
+ * 1) Google Sheets -> Extensions -> Apps Script
+ * 2) Вставить этот код
+ * 3) Запустить createPodryadProSheets
+ * 4) Подтвердить доступ при первом запуске
  */
 
-function createPodraydProSheets() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+const MAX_ROWS = 5000;
+const WORK_TYPES = ['грузчики', 'уборка', 'стройка', 'разнорабочие', 'другое'];
 
-  // Удаляем старые вкладки если существуют (для идемпотентности)
-  const sheetNames = ['Orders', 'Workers', 'Payments'];
+const DEFAULT_RATES = [
+  ['грузчики', 700, 500, 200, 2, true, nowISO()],
+  ['уборка', 600, 400, 200, 2, true, nowISO()],
+  ['стройка', 900, 650, 250, 3, true, nowISO()],
+  ['разнорабочие', 650, 450, 200, 2, true, nowISO()],
+  ['другое', 600, 400, 200, 1, true, nowISO()]
+];
+
+function createPodryadProSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetNames = ['Orders', 'Workers', 'Payments', 'Rates', 'ChatProxy'];
+
   sheetNames.forEach(name => {
     const existing = ss.getSheetByName(name);
-    if (existing) {
-      ss.deleteSheet(existing);
-    }
+    if (existing) ss.deleteSheet(existing);
   });
 
   createOrdersSheet(ss);
   createWorkersSheet(ss);
   createPaymentsSheet(ss);
+  createRatesSheet(ss);
+  createChatProxySheet(ss);
 
-  // Удалить дефолтный "Sheet1" / "Лист1" если остался
   const defaultSheet = ss.getSheetByName('Sheet1') || ss.getSheetByName('Лист1');
-  if (defaultSheet && ss.getSheets().length > 1) {
-    ss.deleteSheet(defaultSheet);
-  }
+  if (defaultSheet && ss.getSheets().length > 1) ss.deleteSheet(defaultSheet);
 
   SpreadsheetApp.flush();
-  Logger.log('✅ Все 3 вкладки созданы успешно!');
-  SpreadsheetApp.getUi().alert('✅ Подряд PRO: все 3 вкладки созданы!');
+  Logger.log('OK: 5 sheets created successfully.');
+  SpreadsheetApp.getUi().alert('OK: Подряд PRO v3.0 — 5 вкладок созданы.');
 }
 
-// ═══════════════════════════════════════════════════
-// ВКЛАДКА 1: Orders
-// ═══════════════════════════════════════════════════
+// Совместимость со старым названием функции.
+function createPodraydProSheets() {
+  createPodryadProSheets();
+}
+
 function createOrdersSheet(ss) {
   const sheet = ss.insertSheet('Orders');
-
-  // Заголовки
   const headers = [
-    'order_id',       // A — автоинкремент
-    'customer_id',    // B — telegram_id заказчика
-    'address',        // C — полный адрес
-    'lat',            // D — широта
-    'lon',            // E — долгота
-    'yandex_link',    // F — deeplink
-    'time',           // G — DD.MM.YYYY HH:mm
-    'payment',        // H — "1500р/час"
-    'people',         // I — кол-во людей
-    'hours',          // J — кол-во часов
-    'work_type',      // K — тип работы
-    'comment',        // L — комментарий
-    'status',         // M — статус
-    'executor_id',    // N — telegram_id исполнителя
-    'message_id',     // O — ID поста в канале
-    'created_at'      // P — timestamp ISO 8601
+    'order_id',
+    'customer_id',
+    'address',
+    'lat',
+    'lon',
+    'yandex_link',
+    'time',
+    'payment_text',
+    'people',
+    'hours',
+    'work_type',
+    'comment',
+    'status',
+    'executor_id',
+    'message_id',
+    'created_at',
+    'client_rate',
+    'worker_rate',
+    'client_total',
+    'worker_payout',
+    'margin',
+    'payout_status',
+    'payout_at',
+    'max_posted',
+    'max_message_id'
   ];
 
-  // Записать заголовки
-  const headerRange = sheet.getRange(1, 1, 1, headers.length);
-  headerRange.setValues([headers]);
-  headerRange.setFontWeight('bold');
-  headerRange.setBackground('#1a73e8');
-  headerRange.setFontColor('#ffffff');
-  headerRange.setHorizontalAlignment('center');
+  setHeaderRow(sheet, headers, '#1a73e8', '#ffffff');
+  fillOrderIdFormula(sheet, 2, MAX_ROWS);
 
-  // Автоинкремент order_id (колонка A, начиная со строки 2)
-  // Формула: если B2 не пусто → ROW()-1, иначе пусто
-  const formulaRange = sheet.getRange('A2:A1000');
-  const formulas = [];
-  for (let i = 2; i <= 1000; i++) {
-    formulas.push(['=IF(B' + i + '<>"", ROW()-1, "")']);
-  }
-  formulaRange.setFormulas(formulas);
+  applyListValidation(sheet, 'K2:K' + MAX_ROWS, WORK_TYPES, false);
+  applyListValidation(sheet, 'M2:M' + MAX_ROWS, ['pending', 'paid', 'published', 'closed', 'cancelled', 'done'], false);
+  applyListValidation(sheet, 'V2:V' + MAX_ROWS, ['pending', 'paid', 'held', 'refunded'], false);
+  applyListValidation(sheet, 'X2:X' + MAX_ROWS, ['TRUE', 'FALSE'], false);
 
-  // Значения по умолчанию для lat/lon Омска (в пустых ячейках не нужны)
+  sheet.getRange('D2:E' + MAX_ROWS).setNumberFormat('0.000000');
+  sheet.getRange('I2:J' + MAX_ROWS).setNumberFormat('0');
+  sheet.getRange('Q2:U' + MAX_ROWS).setNumberFormat('#,##0');
 
-  // Data Validation: status (колонка M)
-  const statusRule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(['pending', 'published', 'closed', 'cancelled'], true)
-    .setAllowInvalid(false)
-    .build();
-  sheet.getRange('M2:M1000').setDataValidation(statusRule);
-
-  // Data Validation: work_type (колонка K)
-  const workTypeRule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(['грузчики', 'уборка', 'стройка', 'доставка', 'ремонт', 'другое'], true)
-    .setAllowInvalid(true)
-    .build();
-  sheet.getRange('K2:K1000').setDataValidation(workTypeRule);
-
-  // Форматирование колонок
-  sheet.setColumnWidth(1, 80);   // order_id
-  sheet.setColumnWidth(2, 120);  // customer_id
-  sheet.setColumnWidth(3, 250);  // address
-  sheet.setColumnWidth(4, 90);   // lat
-  sheet.setColumnWidth(5, 90);   // lon
-  sheet.setColumnWidth(6, 300);  // yandex_link
-  sheet.setColumnWidth(7, 140);  // time
-  sheet.setColumnWidth(8, 120);  // payment
-  sheet.setColumnWidth(9, 70);   // people
-  sheet.setColumnWidth(10, 70);  // hours
-  sheet.setColumnWidth(11, 120); // work_type
-  sheet.setColumnWidth(12, 200); // comment
-  sheet.setColumnWidth(13, 100); // status
-  sheet.setColumnWidth(14, 120); // executor_id
-  sheet.setColumnWidth(15, 100); // message_id
-  sheet.setColumnWidth(16, 180); // created_at
-
-  // Числовой формат для lat/lon
-  sheet.getRange('D2:D1000').setNumberFormat('0.0000');
-  sheet.getRange('E2:E1000').setNumberFormat('0.0000');
-
-  // Закрепить заголовок
-  sheet.setFrozenRows(1);
-
-  // Условное форматирование по статусу
-  const statusRange = sheet.getRange('M2:M1000');
-
-  // pending → жёлтый
-  const pendingRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenTextEqualTo('pending')
-    .setBackground('#fff3cd')
-    .setRanges([statusRange])
-    .build();
-
-  // published → зелёный
-  const publishedRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenTextEqualTo('published')
-    .setBackground('#d4edda')
-    .setRanges([statusRange])
-    .build();
-
-  // closed → серый
-  const closedRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenTextEqualTo('closed')
-    .setBackground('#e2e3e5')
-    .setRanges([statusRange])
-    .build();
-
-  // cancelled → красный
-  const cancelledRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenTextEqualTo('cancelled')
-    .setBackground('#f8d7da')
-    .setRanges([statusRange])
-    .build();
-
-  sheet.setConditionalFormatRules([
-    pendingRule, publishedRule, closedRule, cancelledRule
+  setColumnWidths(sheet, [
+    90, 130, 270, 95, 95, 320, 150, 210, 70, 70, 130, 220, 110, 130, 110, 190, 95, 95, 120, 130, 100, 120, 190, 100, 130
   ]);
 
-  Logger.log('✅ Orders sheet created');
+  const statusRange = sheet.getRange('M2:M' + MAX_ROWS);
+  const payoutRange = sheet.getRange('V2:V' + MAX_ROWS);
+  sheet.setConditionalFormatRules([
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('pending').setBackground('#fff3cd').setRanges([statusRange]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('published').setBackground('#d4edda').setRanges([statusRange]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('closed').setBackground('#d1ecf1').setRanges([statusRange]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('cancelled').setBackground('#f8d7da').setRanges([statusRange]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('paid').setBackground('#e2f0d9').setRanges([payoutRange]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('held').setBackground('#fce8b2').setRanges([payoutRange]).build()
+  ]);
 }
 
-// ═══════════════════════════════════════════════════
-// ВКЛАДКА 2: Workers
-// ═══════════════════════════════════════════════════
 function createWorkersSheet(ss) {
   const sheet = ss.insertSheet('Workers');
-
   const headers = [
-    'telegram_id',    // A — PK
-    'username',       // B — @username
-    'name',           // C — имя
-    'phone',          // D — +7...
-    'rating',         // E — float (default 5.0)
-    'jobs_count',     // F — кол-во выполненных
-    'white_list',     // G — TRUE/FALSE
-    'is_vip',         // H — TRUE/FALSE
-    'vip_expires_at', // I — timestamp
-    'skills',         // J — грузчики,уборка,стройка
-    'balance',          // K — рубли
-    'ban_until',        // L — timestamp
-    'created_at',       // M — timestamp
-    'consecutive_low'   // N — счётчик подряд низких оценок
+    'telegram_id',
+    'username',
+    'name',
+    'phone',
+    'rating',
+    'jobs_count',
+    'white_list',
+    'is_vip',
+    'vip_expires_at',
+    'skills',
+    'balance',
+    'ban_until',
+    'created_at',
+    'is_selfemployed',
+    'card_last4',
+    'accepted_offer'
   ];
 
-  const headerRange = sheet.getRange(1, 1, 1, headers.length);
-  headerRange.setValues([headers]);
-  headerRange.setFontWeight('bold');
-  headerRange.setBackground('#34a853');
-  headerRange.setFontColor('#ffffff');
-  headerRange.setHorizontalAlignment('center');
+  setHeaderRow(sheet, headers, '#34a853', '#ffffff');
 
-  // Data Validation: white_list (колонка G)
-  const boolRuleWL = SpreadsheetApp.newDataValidation()
-    .requireValueInList(['TRUE', 'FALSE'], true)
-    .setAllowInvalid(false)
-    .build();
-  sheet.getRange('G2:G1000').setDataValidation(boolRuleWL);
+  applyListValidation(sheet, 'G2:G' + MAX_ROWS, ['TRUE', 'FALSE'], false);
+  applyListValidation(sheet, 'H2:H' + MAX_ROWS, ['TRUE', 'FALSE'], false);
+  applyListValidation(sheet, 'N2:N' + MAX_ROWS, ['TRUE', 'FALSE'], false);
+  applyListValidation(sheet, 'P2:P' + MAX_ROWS, ['TRUE', 'FALSE'], false);
 
-  // Data Validation: is_vip (колонка H)
-  const boolRuleVIP = SpreadsheetApp.newDataValidation()
-    .requireValueInList(['TRUE', 'FALSE'], true)
-    .setAllowInvalid(false)
-    .build();
-  sheet.getRange('H2:H1000').setDataValidation(boolRuleVIP);
+  sheet.getRange('E2:E' + MAX_ROWS).setNumberFormat('0.00');
+  sheet.getRange('F2:F' + MAX_ROWS).setNumberFormat('0');
+  sheet.getRange('K2:K' + MAX_ROWS).setNumberFormat('#,##0');
 
-  // Дефолтные значения для новых строк (rating=5.0, jobs_count=0, white_list=FALSE, is_vip=FALSE, balance=0)
-  // Реализуем через формулы-заглушки: если telegram_id заполнен и rating пуст → 5.0
-  // Лучше оставить без формул — n8n будет записывать значения напрямую
-
-  // Форматирование
-  sheet.setColumnWidth(1, 120);  // telegram_id
-  sheet.setColumnWidth(2, 130);  // username
-  sheet.setColumnWidth(3, 150);  // name
-  sheet.setColumnWidth(4, 130);  // phone
-  sheet.setColumnWidth(5, 80);   // rating
-  sheet.setColumnWidth(6, 100);  // jobs_count
-  sheet.setColumnWidth(7, 90);   // white_list
-  sheet.setColumnWidth(8, 80);   // is_vip
-  sheet.setColumnWidth(9, 180);  // vip_expires_at
-  sheet.setColumnWidth(10, 200); // skills
-  sheet.setColumnWidth(11, 90);  // balance
-  sheet.setColumnWidth(12, 180); // ban_until
-  sheet.setColumnWidth(13, 180); // created_at
-  sheet.setColumnWidth(14, 120); // consecutive_low
-
-  // Числовой формат для rating
-  sheet.getRange('E2:E1000').setNumberFormat('0.00');
-
-  // Закрепить заголовок
-  sheet.setFrozenRows(1);
-
-  // Условное форматирование: rating
-  const ratingRange = sheet.getRange('E2:E1000');
-
-  // rating >= 4.5 → зелёный
-  const goodRatingRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenNumberGreaterThanOrEqualTo(4.5)
-    .setBackground('#d4edda')
-    .setRanges([ratingRange])
-    .build();
-
-  // rating < 3.0 → красный
-  const badRatingRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenNumberLessThan(3.0)
-    .setBackground('#f8d7da')
-    .setRanges([ratingRange])
-    .build();
-
-  // is_vip = TRUE → золотой
-  const vipRange = sheet.getRange('H2:H1000');
-  const vipRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenTextEqualTo('TRUE')
-    .setBackground('#fff8e1')
-    .setFontColor('#f9a825')
-    .setRanges([vipRange])
-    .build();
-
-  // ban_until не пуст → красная строка
-  const banRange = sheet.getRange('L2:L1000');
-  const banRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenCellNotEmpty()
-    .setBackground('#ffcdd2')
-    .setRanges([banRange])
-    .build();
-
-  sheet.setConditionalFormatRules([
-    goodRatingRule, badRatingRule, vipRule, banRule
+  setColumnWidths(sheet, [
+    130, 130, 150, 130, 80, 95, 95, 90, 180, 220, 100, 180, 190, 120, 90, 120
   ]);
-
-  Logger.log('✅ Workers sheet created');
 }
 
-// ═══════════════════════════════════════════════════
-// ВКЛАДКА 3: Payments
-// ═══════════════════════════════════════════════════
 function createPaymentsSheet(ss) {
   const sheet = ss.insertSheet('Payments');
-
   const headers = [
-    'payment_id',     // A — uuid
-    'order_id',       // B — FK → Orders.order_id
-    'payer_id',       // C — telegram_id
-    'amount',         // D — рубли
-    'type',           // E — order|vip|pick
-    'status',         // F — pending|paid|refunded|failed
-    'yukassa_id',     // G — ID транзакции
-    'created_at',     // H — timestamp
-    'paid_at'         // I — timestamp
+    'payment_id',
+    'order_id',
+    'payer_id',
+    'amount',
+    'type',
+    'direction',
+    'status',
+    'yukassa_id',
+    'created_at',
+    'paid_at',
+    'recipient_id'
   ];
 
+  setHeaderRow(sheet, headers, '#fbbc04', '#000000');
+
+  applyListValidation(sheet, 'E2:E' + MAX_ROWS, ['order', 'vip', 'pick', 'payout'], false);
+  applyListValidation(sheet, 'F2:F' + MAX_ROWS, ['incoming', 'outgoing'], false);
+  applyListValidation(sheet, 'G2:G' + MAX_ROWS, ['pending', 'paid', 'refunded', 'failed'], false);
+
+  sheet.getRange('D2:D' + MAX_ROWS).setNumberFormat('#,##0');
+
+  setColumnWidths(sheet, [
+    280, 80, 120, 100, 90, 95, 110, 250, 190, 190, 130
+  ]);
+}
+
+function createRatesSheet(ss) {
+  const sheet = ss.insertSheet('Rates');
+  const headers = [
+    'work_type',
+    'client_rate',
+    'worker_rate',
+    'margin',
+    'min_hours',
+    'is_active',
+    'updated_at'
+  ];
+
+  setHeaderRow(sheet, headers, '#6f42c1', '#ffffff');
+  sheet.getRange(2, 1, DEFAULT_RATES.length, DEFAULT_RATES[0].length).setValues(DEFAULT_RATES);
+
+  applyListValidation(sheet, 'A2:A' + MAX_ROWS, WORK_TYPES, false);
+  applyListValidation(sheet, 'F2:F' + MAX_ROWS, ['TRUE', 'FALSE'], false);
+
+  // Колонка margin = client_rate - worker_rate
+  const marginFormulas = [];
+  for (let row = 2; row <= MAX_ROWS; row++) {
+    marginFormulas.push(['=IF(OR(B' + row + '="",C' + row + '=""),"",B' + row + '-C' + row + ')']);
+  }
+  sheet.getRange('D2:D' + MAX_ROWS).setFormulas(marginFormulas);
+
+  sheet.getRange('B2:E' + MAX_ROWS).setNumberFormat('#,##0');
+  setColumnWidths(sheet, [150, 110, 110, 100, 90, 95, 190]);
+}
+
+function createChatProxySheet(ss) {
+  const sheet = ss.insertSheet('ChatProxy');
+  const headers = [
+    'chat_id',
+    'order_id',
+    'customer_id',
+    'executor_id',
+    'status',
+    'created_at',
+    'messages_count'
+  ];
+
+  setHeaderRow(sheet, headers, '#0b7285', '#ffffff');
+  applyListValidation(sheet, 'E2:E' + MAX_ROWS, ['active', 'closed'], false);
+
+  sheet.getRange('G2:G' + MAX_ROWS).setNumberFormat('0');
+  setColumnWidths(sheet, [100, 90, 130, 130, 90, 190, 120]);
+}
+
+function fillOrderIdFormula(sheet, startRow, endRow) {
+  const formulas = [];
+  for (let row = startRow; row <= endRow; row++) {
+    formulas.push(['=IF(B' + row + '<>"",ROW()-1,"")']);
+  }
+  sheet.getRange('A' + startRow + ':A' + endRow).setFormulas(formulas);
+}
+
+function setHeaderRow(sheet, headers, bgColor, textColor) {
   const headerRange = sheet.getRange(1, 1, 1, headers.length);
   headerRange.setValues([headers]);
   headerRange.setFontWeight('bold');
-  headerRange.setBackground('#fbbc04');
-  headerRange.setFontColor('#000000');
+  headerRange.setBackground(bgColor);
+  headerRange.setFontColor(textColor);
   headerRange.setHorizontalAlignment('center');
-
-  // Data Validation: type (колонка E)
-  const typeRule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(['order', 'vip', 'pick'], true)
-    .setAllowInvalid(false)
-    .build();
-  sheet.getRange('E2:E1000').setDataValidation(typeRule);
-
-  // Data Validation: status (колонка F)
-  const statusRule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(['pending', 'paid', 'refunded', 'failed'], true)
-    .setAllowInvalid(false)
-    .build();
-  sheet.getRange('F2:F1000').setDataValidation(statusRule);
-
-  // Форматирование
-  sheet.setColumnWidth(1, 280);  // payment_id (uuid длинный)
-  sheet.setColumnWidth(2, 80);   // order_id
-  sheet.setColumnWidth(3, 120);  // payer_id
-  sheet.setColumnWidth(4, 90);   // amount
-  sheet.setColumnWidth(5, 80);   // type
-  sheet.setColumnWidth(6, 100);  // status
-  sheet.setColumnWidth(7, 250);  // yukassa_id
-  sheet.setColumnWidth(8, 180);  // created_at
-  sheet.setColumnWidth(9, 180);  // paid_at
-
-  // Числовой формат для amount
-  sheet.getRange('D2:D1000').setNumberFormat('#,##0');
-
-  // Закрепить заголовок
   sheet.setFrozenRows(1);
-
-  // Условное форматирование по статусу платежа
-  const statusRange = sheet.getRange('F2:F1000');
-
-  const paidRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenTextEqualTo('paid')
-    .setBackground('#d4edda')
-    .setRanges([statusRange])
-    .build();
-
-  const pendingRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenTextEqualTo('pending')
-    .setBackground('#fff3cd')
-    .setRanges([statusRange])
-    .build();
-
-  const failedRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenTextEqualTo('failed')
-    .setBackground('#f8d7da')
-    .setRanges([statusRange])
-    .build();
-
-  const refundedRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenTextEqualTo('refunded')
-    .setBackground('#cce5ff')
-    .setRanges([statusRange])
-    .build();
-
-  sheet.setConditionalFormatRules([
-    paidRule, pendingRule, failedRule, refundedRule
-  ]);
-
-  Logger.log('✅ Payments sheet created');
 }
 
-// ═══════════════════════════════════════════════════
-// БОНУС: Утилиты
-// ═══════════════════════════════════════════════════
-
-/**
- * Генерирует UUID v4 (для payment_id)
- * Использование в n8n: =generateUUID()
- */
-function generateUUID() {
-  return Utilities.getUuid();
+function setColumnWidths(sheet, widths) {
+  for (let i = 0; i < widths.length; i++) {
+    sheet.setColumnWidth(i + 1, widths[i]);
+  }
 }
 
-/**
- * Возвращает текущий timestamp ISO 8601
- * Использование: =nowISO()
- */
+function applyListValidation(sheet, a1Range, values, allowInvalid) {
+  const rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(values, true)
+    .setAllowInvalid(allowInvalid)
+    .build();
+  sheet.getRange(a1Range).setDataValidation(rule);
+}
+
 function nowISO() {
   return new Date().toISOString();
 }
 
-/**
- * Генерирует Яндекс deeplink из координат и адреса
- * Использование: =yandexLink(lat, lon, address)
- */
+function generateUUID() {
+  return Utilities.getUuid();
+}
+
 function yandexLink(lat, lon, address) {
-  var encoded = encodeURIComponent(address);
+  const encoded = encodeURIComponent(address || '');
   return 'https://yandex.ru/maps/?pt=' + lon + ',' + lat + '&z=16&text=' + encoded;
 }
 
-/**
- * Находит следующий свободный order_id
- * (альтернатива формуле ROW()-1 при программной записи)
- */
 function getNextOrderId() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName('Orders');
-  var lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return 1;
-  return lastRow; // т.к. ROW()-1 для строки 2 = 1, строки 3 = 2, и т.д.
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Orders');
+  if (!sheet) return 1;
+  const lastRow = sheet.getLastRow();
+  return Math.max(1, lastRow - 1 + 1);
 }
 
-/**
- * Меню в Google Sheets для быстрого доступа
- */
 function onOpen() {
-  var ui = SpreadsheetApp.getUi();
-  ui.createMenu('🔨 Подряд PRO')
-    .addItem('🔄 Пересоздать все вкладки', 'createPodraydProSheets')
-    .addItem('📊 Статистика заказов', 'showOrderStats')
-    .addItem('🆔 Следующий order_id', 'showNextOrderId')
+  SpreadsheetApp.getUi()
+    .createMenu('Podryad PRO')
+    .addItem('Recreate all sheets (v3.0)', 'createPodryadProSheets')
+    .addItem('Show next order_id', 'showNextOrderId')
     .addToUi();
 }
 
-function showOrderStats() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName('Orders');
-  if (!sheet) {
-    SpreadsheetApp.getUi().alert('❌ Вкладка Orders не найдена');
-    return;
-  }
-
-  var data = sheet.getDataRange().getValues();
-  var total = data.length - 1; // минус заголовок
-  var published = 0, closed = 0, pending = 0, cancelled = 0;
-
-  for (var i = 1; i < data.length; i++) {
-    var status = data[i][12]; // колонка M (index 12)
-    if (status === 'published') published++;
-    else if (status === 'closed') closed++;
-    else if (status === 'pending') pending++;
-    else if (status === 'cancelled') cancelled++;
-  }
-
-  SpreadsheetApp.getUi().alert(
-    '📊 Статистика Подряд PRO\n\n' +
-    '📥 Всего заказов: ' + total + '\n' +
-    '⏳ Ожидают: ' + pending + '\n' +
-    '📤 Опубликовано: ' + published + '\n' +
-    '✅ Закрыто: ' + closed + '\n' +
-    '❌ Отменено: ' + cancelled + '\n' +
-    '💰 Выручка: ~' + (closed * 500) + 'р'
-  );
-}
-
 function showNextOrderId() {
-  var nextId = getNextOrderId();
-  SpreadsheetApp.getUi().alert('Следующий order_id: ' + nextId);
+  SpreadsheetApp.getUi().alert('Next order_id: ' + getNextOrderId());
 }

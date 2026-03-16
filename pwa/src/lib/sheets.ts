@@ -20,7 +20,7 @@ const WORKER_COLUMNS: Record<string, number> = {
   accepted_offer: 15,
 };
 
-// v3 Orders schema: A(order_id) .. W(payout_at)
+// v3.1 Orders schema: A(order_id) .. Y(max_message_id)
 const SHEET_COLUMNS: Record<string, number> = {
   order_id: 0,
   customer_id: 1,
@@ -45,6 +45,8 @@ const SHEET_COLUMNS: Record<string, number> = {
   margin: 20,
   payout_status: 21,
   payout_at: 22,
+  max_posted: 23,
+  max_message_id: 24,
 };
 
 export async function getOrders(statusFilter?: string): Promise<Order[]> {
@@ -56,7 +58,7 @@ export async function getOrders(statusFilter?: string): Promise<Order[]> {
     return [];
   }
 
-  const range = 'Orders!A2:W1000';
+  const range = 'Orders!A2:Y1000';
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
 
   try {
@@ -94,6 +96,8 @@ export async function getOrders(statusFilter?: string): Promise<Order[]> {
         margin: parseInt(row[SHEET_COLUMNS.margin], 10) || undefined,
         payout_status: row[SHEET_COLUMNS.payout_status] || undefined,
         payout_at: row[SHEET_COLUMNS.payout_at] || undefined,
+        max_posted: row[SHEET_COLUMNS.max_posted] === 'TRUE',
+        max_message_id: row[SHEET_COLUMNS.max_message_id] || undefined,
       }));
   } catch (error) {
     console.error('Failed to read Google Sheets:', error);

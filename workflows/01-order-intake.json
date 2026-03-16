@@ -3,14 +3,19 @@
   "nodes": [
     {
       "parameters": {
-        "updates": ["message"],
+        "updates": [
+          "message"
+        ],
         "additionalFields": {}
       },
       "id": "a1b2c3d4-1111-4000-8000-000000000001",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [0, 300],
+      "position": [
+        0,
+        320
+      ],
       "webhookId": "podryad-telegram-trigger"
     },
     {
@@ -24,39 +29,57 @@
           "conditions": [
             {
               "id": "cond-start",
-              "leftValue": "={{ $json.message.text }}",
+              "leftValue": "={{ $json.message.text || '' }}",
               "rightValue": "/start",
-              "operator": { "type": "string", "operation": "startsWith" }
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
             },
             {
               "id": "cond-order",
-              "leftValue": "={{ $json.message.text }}",
+              "leftValue": "={{ $json.message.text || '' }}",
               "rightValue": "/order",
-              "operator": { "type": "string", "operation": "startsWith" }
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
             },
             {
               "id": "cond-vip",
-              "leftValue": "={{ $json.message.text }}",
+              "leftValue": "={{ $json.message.text || '' }}",
               "rightValue": "/vip",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
             },
             {
               "id": "cond-pick",
-              "leftValue": "={{ $json.message.text }}",
+              "leftValue": "={{ $json.message.text || '' }}",
               "rightValue": "/pick",
-              "operator": { "type": "string", "operation": "startsWith" }
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            },
+            {
+              "id": "cond-chat",
+              "leftValue": "={{ $json.message.text || '' }}",
+              "rightValue": "/chat_",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
             },
             {
               "id": "cond-done",
-              "leftValue": "={{ $json.message.text }}",
-              "rightValue": "/done",
-              "operator": { "type": "string", "operation": "startsWith" }
-            },
-            {
-              "id": "cond-approve",
-              "leftValue": "={{ $json.message.text }}",
-              "rightValue": "/approve",
-              "operator": { "type": "string", "operation": "startsWith" }
+              "leftValue": "={{ $json.message.text || '' }}",
+              "rightValue": "/done_",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
             }
           ],
           "combinator": "or"
@@ -67,12 +90,15 @@
       "name": "Route Command",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [240, 300]
+      "position": [
+        240,
+        320
+      ]
     },
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "👋 Добро пожаловать в *Подряд PRO*!\n\n🔨 Платформа для поиска работы и подработки в Омске.\n\n*Как пользоваться:*\n📝 Просто напишите что нужно сделать — бот всё распознает\n\n*Примеры:*\n• _Нужны 2 грузчика на ул. Ленина 50, завтра в 10:00, 500р/час_\n• _Уборка офиса, ул. Маркса 25, 3 часа, 1500р_\n\n*Команды:*\n/order — оформить заказ\n/vip — VIP подписка (ранний доступ)\n/pick — подбор ТОП-3 исполнителей\n\n📢 Канал с заказами: @podryad\\_pro",
+        "text": "👋 *Подряд PRO | Работа Омск*\n\nПлатформа работает по модели безопасной сделки:\n• заказчик оплачивает платформе\n• исполнитель получает выплату после выполнения\n• контакты скрыты до завершения\n\nКоманды:\n/order — оформить заказ\n/vip — ранний доступ к заказам (1000₽/мес)\n/pick — подбор ТОП-3 исполнителей (1000₽)\n\nОпишите задачу в одном сообщении, например:\n`Нужны 3 грузчика на Маркса 25, сегодня в 18:00, на 4 часа`",
         "additionalFields": {
           "parse_mode": "Markdown"
         }
@@ -81,12 +107,15 @@
       "name": "Welcome Message",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [500, 0]
+      "position": [
+        500,
+        40
+      ]
     },
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "📝 *Оформление заказа*\n\nОпишите задачу в одном сообщении:\n\n• Что нужно сделать?\n• Адрес\n• Когда?\n• Оплата\n• Сколько человек нужно?\n\n*Пример:*\n_Нужны 3 грузчика, ул. Ленина 50, завтра в 10:00, 500р/час на 4 часа_",
+        "text": "📝 *Оформление заказа*\n\nОтправьте одним сообщением:\n• адрес (улица + номер)\n• время\n• тип работ\n• количество людей\n• количество часов\n\nПример:\n`Нужно 2 грузчика, Ленина 50 Омск, завтра в 10:00, на 3 часа`\n\nЦена считается автоматически по тарифам платформы.",
         "additionalFields": {
           "parse_mode": "Markdown"
         }
@@ -95,22 +124,89 @@
       "name": "Order Help",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [500, 200]
+      "position": [
+        500,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "💎 /vip обрабатывается в Workflow 5 (Monetization).\n\nЕсли нужно, активирую доступ после оплаты.",
+        "additionalFields": {}
+      },
+      "id": "a1b2c3d4-1111-4000-8000-000000000015",
+      "name": "VIP Routed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        500,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "🎯 /pick обрабатывается в Workflow 5 (Monetization).\n\nПосле оплаты получите ТОП-3 исполнителей.",
+        "additionalFields": {}
+      },
+      "id": "a1b2c3d4-1111-4000-8000-000000000016",
+      "name": "Pick Routed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        500,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "💬 Команда /chat_ обрабатывается в Workflow 7 (Chat Proxy).",
+        "additionalFields": {}
+      },
+      "id": "a1b2c3d4-1111-4000-8000-000000000017",
+      "name": "Chat Routed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        500,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "✅ Команда /done_ обрабатывается в Workflow 4 (Rating System).",
+        "additionalFields": {}
+      },
+      "id": "a1b2c3d4-1111-4000-8000-000000000018",
+      "name": "Done Routed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        500,
+        740
+      ]
     },
     {
       "parameters": {
         "resource": "chat",
         "operation": "complete",
-        "modelId": { "__rl": true, "value": "gpt-4o-mini", "mode": "list" },
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list"
+        },
         "messages": {
           "values": [
             {
-              "content": "Ты — парсер заявок платформы \"Подряд PRO\" (Омск, Россия).\nИзвлеки из сообщения пользователя структурированные данные.\n\nПРАВИЛА:\n- Если город не указан — ставь \"Омск\"\n- Если время не указано — ставь null\n- Если сумма не указана — ставь null\n- Адрес должен быть полным: улица + номер + город\n- Если адрес неполный или непонятный — needs_clarification: true\n- work_type: определи из контекста — грузчики, уборка, стройка или другое\n- people: если не указано явно, ставь 1 для уборки, 2 для грузчиков, null для остального\n\nВЕРНИ ТОЛЬКО ВАЛИДНЫЙ JSON (без markdown, без комментариев):\n{\n  \"city\": \"string\",\n  \"address\": \"string (полный адрес с городом)\",\n  \"time\": \"DD.MM.YYYY HH:mm или null\",\n  \"payment\": \"string или null\",\n  \"people\": \"int или null\",\n  \"hours\": \"int или null\",\n  \"work_type\": \"грузчики|уборка|стройка|другое\",\n  \"comment\": \"string или null\",\n  \"needs_clarification\": false,\n  \"clarification_question\": \"string или null\"\n}",
-              "role": "system"
+              "role": "system",
+              "content": "Ты — парсер заявок платформы \"Подряд PRO\" (Омск, Россия).\nИзвлеки из сообщения пользователя структурированные данные.\n\nПРАВИЛА:\n- Если город не указан — ставь \"Омск\"\n- Если время не указано — ставь null\n- Адрес должен быть полным: улица + номер + город\n- Если адрес неполный — needs_clarification: true\n- Если кол-во людей не указано: грузчики→2, уборка→1, стройка→2, другое→1\n- Если часы не указаны — ставь null и needs_clarification: true\n  (ЧАСЫ ОБЯЗАТЕЛЬНЫ для расчёта стоимости!)\n- work_type: определи из контекста\n- НЕ ИЗВЛЕКАЙ цену — платформа рассчитывает автоматически\n\nВЕРНИ ТОЛЬКО ВАЛИДНЫЙ JSON:\n{\n  \"city\": \"string\",\n  \"address\": \"string (полный адрес с городом)\",\n  \"time\": \"DD.MM.YYYY HH:mm или null\",\n  \"people\": \"int\",\n  \"hours\": \"int или null\",\n  \"work_type\": \"грузчики|уборка|стройка|разнорабочие|другое\",\n  \"comment\": \"string или null\",\n  \"needs_clarification\": false,\n  \"clarification_question\": \"string или null\"\n}"
             },
             {
-              "content": "={{ $('Telegram Trigger').item.json.message.text }}",
-              "role": "user"
+              "role": "user",
+              "content": "={{ $('Telegram Trigger').item.json.message.text }}"
             }
           ]
         },
@@ -120,31 +216,44 @@
         }
       },
       "id": "a1b2c3d4-1111-4000-8000-000000000005",
-      "name": "GPT Parse Order",
+      "name": "OpenAI Parse",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [500, 500]
+      "position": [
+        760,
+        980
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Парсим ответ GPT\nlet raw = $('GPT Parse Order').first().json.message.content;\n\n// Убираем markdown если GPT добавил\nraw = raw.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch(e) {\n  return [{ json: { error: true, message: 'GPT вернул невалидный JSON', raw } }];\n}\n\nreturn [{ json: { ...parsed, error: false } }];"
+        "jsCode": "let raw = $('OpenAI Parse').first().json.message.content || '';\nraw = raw.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch (error) {\n  throw new Error('INVALID_OPENAI_JSON: ' + raw);\n}\n\nconst allowed = ['грузчики', 'уборка', 'стройка', 'разнорабочие', 'другое'];\nif (!allowed.includes(parsed.work_type)) parsed.work_type = 'другое';\n\nreturn [{ json: parsed }];"
       },
       "id": "a1b2c3d4-1111-4000-8000-000000000006",
-      "name": "Parse GPT Response",
+      "name": "Parse OpenAI JSON",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [740, 500]
+      "position": [
+        980,
+        980
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
-              "id": "needs-clarify",
+              "id": "needs-clarification",
               "leftValue": "={{ $json.needs_clarification }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -154,19 +263,27 @@
       "name": "Needs Clarification?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [960, 500]
+      "position": [
+        1200,
+        980
+      ]
     },
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "❓ Уточните, пожалуйста:\n\n{{ $json.clarification_question }}\n\nНапишите сообщение заново с полными данными.",
-        "additionalFields": {}
+        "text": "❓ Уточните данные:\n\n{{ $json.clarification_question || 'Укажите полный адрес и количество часов' }}\n\nПример:\n`Нужны 2 грузчика, Ленина 50 Омск, сегодня 18:00, на 4 часа`",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "a1b2c3d4-1111-4000-8000-000000000008",
       "name": "Ask Clarification",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1200, 380]
+      "position": [
+        1430,
+        840
+      ]
     },
     {
       "parameters": {
@@ -175,17 +292,35 @@
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "q", "value": "={{ $json.address }}" },
-            { "name": "format", "value": "json" },
-            { "name": "limit", "value": "1" },
-            { "name": "accept-language", "value": "ru" },
-            { "name": "countrycodes", "value": "ru" }
+            {
+              "name": "q",
+              "value": "={{ $json.address }}"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            },
+            {
+              "name": "accept-language",
+              "value": "ru"
+            },
+            {
+              "name": "countrycodes",
+              "value": "ru"
+            }
           ]
         },
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "User-Agent", "value": "PodraydPRO/1.0 (admin@podryad.pro)" }
+            {
+              "name": "User-Agent",
+              "value": "PodryadPRO/1.0 (n8n-bot)"
+            }
           ]
         },
         "options": {
@@ -196,23 +331,69 @@
       "name": "Nominatim Geocode",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1200, 600]
+      "position": [
+        1430,
+        1100
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const parsed = $('Parse GPT Response').first().json;\nconst geoResult = $('Nominatim Geocode').first().json;\n\n// Nominatim возвращает массив — берём первый результат\nconst geo = Array.isArray(geoResult) ? geoResult[0] : geoResult;\n\nconst lat = geo?.lat ? parseFloat(geo.lat) : 54.9894;\nconst lon = geo?.lon ? parseFloat(geo.lon) : 73.3667;\nconst addr = parsed.address || 'Омск';\nconst encodedAddr = encodeURIComponent(addr);\nconst yandexLink = `https://yandex.ru/maps/?pt=${lon},${lat}&z=16&text=${encodedAddr}`;\n\nconst customerId = $('Telegram Trigger').first().json.message.from.id;\nconst now = new Date().toISOString();\n\nreturn [{\n  json: {\n    customer_id: String(customerId),\n    address: addr,\n    lat: lat,\n    lon: lon,\n    yandex_link: yandexLink,\n    time: parsed.time || '',\n    payment: parsed.payment || '',\n    people: parsed.people || 1,\n    hours: parsed.hours || 1,\n    work_type: parsed.work_type || 'другое',\n    comment: parsed.comment || '',\n    status: 'pending',\n    executor_id: '',\n    message_id: '',\n    created_at: now\n  }\n}];"
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Rates",
+          "mode": "list"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "work_type",
+              "lookupValue": "={{ $('Parse OpenAI JSON').item.json.work_type }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4000-8000-000000000019",
+      "name": "Read Rates",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1650,
+        1100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $('Parse OpenAI JSON').first().json;\nconst geoResult = $('Nominatim Geocode').first().json;\nconst ratesResult = $('Read Rates').first()?.json || {};\n\nconst geo = Array.isArray(geoResult) ? geoResult[0] : geoResult;\n\nconst lat = geo?.lat ? parseFloat(geo.lat) : 54.9894;\nconst lon = geo?.lon ? parseFloat(geo.lon) : 73.3667;\nconst addr = parsed.address || 'Омск';\nconst yandexLink = `https://yandex.ru/maps/?pt=${lon},${lat}&z=16&text=${encodeURIComponent(addr)}`;\n\nconst people = Number(parsed.people || 1);\nconst hours = Number(parsed.hours || 0);\nconst clientRate = parseInt(ratesResult.client_rate, 10) || 600;\nconst workerRate = parseInt(ratesResult.worker_rate, 10) || 400;\nconst minHours = parseInt(ratesResult.min_hours, 10) || 1;\n\nconst effectiveHours = Math.max(hours, minHours);\nconst clientTotal = clientRate * people * effectiveHours;\nconst workerPayout = workerRate * people * effectiveHours;\nconst margin = clientTotal - workerPayout;\n\nconst customerId = $('Telegram Trigger').first().json.message.from.id;\nconst createdAt = new Date().toISOString();\n\nreturn [{\n  json: {\n    customer_id: String(customerId),\n    address: addr,\n    lat,\n    lon,\n    yandex_link: yandexLink,\n    time: parsed.time || '',\n    payment_text: `${clientRate}₽/час × ${people} чел × ${effectiveHours} ч`,\n    people,\n    hours: effectiveHours,\n    work_type: parsed.work_type || 'другое',\n    comment: parsed.comment || '',\n    status: 'pending',\n    executor_id: '',\n    message_id: '',\n    created_at: createdAt,\n    client_rate: clientRate,\n    worker_rate: workerRate,\n    client_total: clientTotal,\n    worker_payout: workerPayout,\n    margin,\n    payout_status: 'pending',\n    payout_at: ''\n  }\n}];"
       },
       "id": "a1b2c3d4-1111-4000-8000-000000000010",
       "name": "Build Order Object",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1440, 600]
+      "position": [
+        1880,
+        1100
+      ]
     },
     {
       "parameters": {
         "operation": "append",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Orders",
+          "mode": "list"
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -222,30 +403,89 @@
             "lon": "={{ $json.lon }}",
             "yandex_link": "={{ $json.yandex_link }}",
             "time": "={{ $json.time }}",
-            "payment": "={{ $json.payment }}",
+            "payment_text": "={{ $json.payment_text }}",
             "people": "={{ $json.people }}",
             "hours": "={{ $json.hours }}",
             "work_type": "={{ $json.work_type }}",
             "comment": "={{ $json.comment }}",
             "status": "={{ $json.status }}",
-            "executor_id": "",
-            "message_id": "",
-            "created_at": "={{ $json.created_at }}"
+            "executor_id": "={{ $json.executor_id }}",
+            "message_id": "={{ $json.message_id }}",
+            "created_at": "={{ $json.created_at }}",
+            "client_rate": "={{ $json.client_rate }}",
+            "worker_rate": "={{ $json.worker_rate }}",
+            "client_total": "={{ $json.client_total }}",
+            "worker_payout": "={{ $json.worker_payout }}",
+            "margin": "={{ $json.margin }}",
+            "payout_status": "={{ $json.payout_status }}",
+            "payout_at": "={{ $json.payout_at }}"
           },
           "matchingColumns": []
         },
         "options": {}
       },
       "id": "a1b2c3d4-1111-4000-8000-000000000011",
-      "name": "Save to Sheets",
+      "name": "Append Order",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1680, 600]
+      "position": [
+        2110,
+        1100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Orders",
+          "mode": "list"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "customer_id",
+              "lookupValue": "={{ $('Build Order Object').item.json.customer_id }}"
+            },
+            {
+              "lookupColumn": "created_at",
+              "lookupValue": "={{ $('Build Order Object').item.json.created_at }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4000-8000-000000000020",
+      "name": "Read Saved Order",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2340,
+        1100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const order = $('Read Saved Order').first()?.json || $('Build Order Object').first().json;\nconst orderId = order.order_id || 'new';\n\nconst text =\n`✅ *Заказ принят!*\\n\\n` +\n`📍 ${order.address}\\n` +\n`🗺 [Открыть на карте](${order.yandex_link})\\n` +\n`⏰ ${order.time || 'не указано'}\\n` +\n`👥 ${order.people} чел. × ${order.hours} ч.\\n` +\n`📋 ${order.work_type}\\n\\n` +\n`━━━━━━━━━━━━━━━━━━\\n` +\n`💰 *Стоимость: ${order.client_total}₽*\\n` +\n`  (${order.client_rate}₽/час × ${order.people} чел × ${order.hours} ч)\\n` +\n`━━━━━━━━━━━━━━━━━━\\n\\n` +\n`💳 Оплатите для публикации заказа:`;\n\nreturn [{\n  json: {\n    order_id: String(orderId),\n    client_total: Number(order.client_total),\n    text\n  }\n}];"
+      },
+      "id": "a1b2c3d4-1111-4000-8000-000000000021",
+      "name": "Build Customer Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2570,
+        1100
+      ]
     },
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "✅ *Заказ принят!* Проверьте данные:\n\n📍 {{ $('Build Order Object').item.json.address }}\n🗺 [Открыть на карте]({{ $('Build Order Object').item.json.yandex_link }})\n⏰ {{ $('Build Order Object').item.json.time || 'не указано' }}\n💰 {{ $('Build Order Object').item.json.payment || 'не указано' }}\n👥 {{ $('Build Order Object').item.json.people }} чел. × {{ $('Build Order Object').item.json.hours }} ч.\n📋 {{ $('Build Order Object').item.json.work_type }}\n\n💳 *Для публикации оплатите 500р*\n\n❌ Данные неверные? Напишите заново.",
+        "text": "={{ $json.text }}",
         "additionalFields": {
           "parse_mode": "Markdown",
           "replyMarkup": "inlineKeyboard",
@@ -255,9 +495,9 @@
                 "row": {
                   "buttons": [
                     {
-                      "text": "💳 Оплатить 500р",
+                      "text": "💳 Оплатить {{ $json.client_total }}₽",
                       "additionalFields": {
-                        "callbackData": "pay_{{ $('Save to Sheets').item.json.order_id || 'new' }}"
+                        "callbackData": "pay_{{ $json.order_id }}"
                       }
                     }
                   ]
@@ -269,7 +509,7 @@
                     {
                       "text": "❌ Отменить",
                       "additionalFields": {
-                        "callbackData": "cancel_{{ $('Save to Sheets').item.json.order_id || 'new' }}"
+                        "callbackData": "cancel_{{ $json.order_id }}"
                       }
                     }
                   ]
@@ -283,7 +523,10 @@
       "name": "Confirm to Customer",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1920, 600]
+      "position": [
+        2800,
+        1100
+      ]
     },
     {
       "parameters": {},
@@ -291,72 +534,209 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [960, 800]
+      "position": [
+        920,
+        1340
+      ]
     },
     {
       "parameters": {
         "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
         "text": "=🚨 *ОШИБКА в Order Intake*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "a1b2c3d4-1111-4000-8000-000000000014",
       "name": "Notify Admin Error",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1200, 800]
+      "position": [
+        1160,
+        1340
+      ]
     }
   ],
   "connections": {
     "Telegram Trigger": {
       "main": [
-        [{ "node": "Route Command", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Route Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Route Command": {
       "main": [
-        [{ "node": "Welcome Message", "type": "main", "index": 0 }],
-        [{ "node": "Order Help", "type": "main", "index": 0 }],
-        [],
-        [],
-        [],
-        [],
-        [{ "node": "GPT Parse Order", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Welcome Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Order Help",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "VIP Routed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pick Routed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Chat Routed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Done Routed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OpenAI Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "GPT Parse Order": {
+    "OpenAI Parse": {
       "main": [
-        [{ "node": "Parse GPT Response", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Parse OpenAI JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Parse GPT Response": {
+    "Parse OpenAI JSON": {
       "main": [
-        [{ "node": "Needs Clarification?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Needs Clarification?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Needs Clarification?": {
       "main": [
-        [{ "node": "Ask Clarification", "type": "main", "index": 0 }],
-        [{ "node": "Nominatim Geocode", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Ask Clarification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nominatim Geocode",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Nominatim Geocode": {
       "main": [
-        [{ "node": "Build Order Object", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Read Rates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Rates": {
+      "main": [
+        [
+          {
+            "node": "Build Order Object",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build Order Object": {
       "main": [
-        [{ "node": "Save to Sheets", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Append Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Save to Sheets": {
+    "Append Order": {
       "main": [
-        [{ "node": "Confirm to Customer", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Read Saved Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Saved Order": {
+      "main": [
+        [
+          {
+            "node": "Build Customer Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Customer Message": {
+      "main": [
+        [
+          {
+            "node": "Confirm to Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Error Trigger": {
       "main": [
-        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Notify Admin Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -367,12 +747,19 @@
     "callerPolicy": "workflowsFromSameOwner",
     "errorWorkflow": ""
   },
-  "versionId": "podryad-01-intake-v2",
+  "versionId": "podryad-01-intake-v3",
   "meta": {
     "instanceId": "podryad-pro"
   },
   "tags": [
-    { "name": "podryad-pro" },
-    { "name": "telegram" }
+    {
+      "name": "podryad-pro"
+    },
+    {
+      "name": "telegram"
+    },
+    {
+      "name": "intake"
+    }
   ]
 }

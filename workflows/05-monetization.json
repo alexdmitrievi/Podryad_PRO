@@ -56,7 +56,7 @@
         "documentId": {
           "__rl": true,
           "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing"
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -198,7 +198,7 @@
         "documentId": {
           "__rl": true,
           "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing"
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -234,7 +234,7 @@
         "documentId": {
           "__rl": true,
           "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing"
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -315,7 +315,7 @@
         "documentId": {
           "__rl": true,
           "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing"
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -452,7 +452,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "chatId": "407721399",
         "text": "🚨 *ОШИБКА в Monetization*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
         "additionalFields": { "parse_mode": "Markdown" }
       },

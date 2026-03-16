@@ -1,36 +1,33 @@
 import OrderForm from '@/components/OrderForm';
+import MessengerLinks from '@/components/MessengerLinks';
+import PageHeader from '@/components/PageHeader';
 
 export default function OrderPage() {
-  const botName = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
-
   return (
     <div className="h-full overflow-y-auto">
-      <header className="bg-[#0088cc] text-white px-4 py-3">
-        <h1 className="text-lg font-bold">➕ Новый заказ</h1>
-        <p className="text-xs opacity-80">Заполните форму или напишите боту</p>
-      </header>
+      <PageHeader title="➕ Новый заказ" subtitle="Заполните форму или напишите боту" />
 
-      <div className="p-4 space-y-4 max-w-md mx-auto">
-        {/* Quick bot link */}
-        <a
-          href={`https://t.me/${botName}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 bg-blue-50 border border-blue-200
-                     rounded-xl p-3 hover:bg-blue-100 transition-colors"
-        >
-          <span className="text-2xl">📱</span>
-          <div>
-            <p className="font-medium text-sm text-[#0088cc]">Быстрее через Telegram</p>
-            <p className="text-xs text-gray-500">
-              Просто напишите боту — ИИ всё распознает
-            </p>
+      <div className="p-4 space-y-5 max-w-md mx-auto pb-6">
+        {/* Messenger shortcuts */}
+        <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-brand-100 flex items-center justify-center shrink-0">
+              <span className="text-xl">⚡</span>
+            </div>
+            <div>
+              <p className="font-semibold text-sm text-brand-700">Быстрее через мессенджер</p>
+              <p className="text-xs text-brand-500/70 mt-0.5">
+                Просто напишите боту — ИИ всё распознает
+              </p>
+            </div>
           </div>
-        </a>
+          <MessengerLinks action="order" variant="inline" />
+        </div>
 
-        <div className="flex items-center gap-3 text-gray-300">
+        {/* Divider */}
+        <div className="flex items-center gap-3">
           <div className="h-px bg-gray-200 flex-1" />
-          <span className="text-xs">или заполните форму</span>
+          <span className="text-xs text-gray-400 font-medium">или заполните форму</span>
           <div className="h-px bg-gray-200 flex-1" />
         </div>
 

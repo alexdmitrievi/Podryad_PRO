@@ -57,10 +57,7 @@ export async function getSessionToken(): Promise<string | null> {
   return store.get(COOKIE_NAME)?.value ?? null;
 }
 
-export async function getTelegramIdFromSession(): Promise<string | null> {
-  const token = await getSessionToken();
-  if (!token) return null;
-
+export function verifySessionToken(token: string): string | null {
   const parts = token.split('.');
   if (parts.length !== 3) return null;
 
@@ -81,4 +78,10 @@ export async function getTelegramIdFromSession(): Promise<string | null> {
   if (age > COOKIE_MAX_AGE * 1000) return null;
 
   return telegramId;
+}
+
+export async function getTelegramIdFromSession(): Promise<string | null> {
+  const token = await getSessionToken();
+  if (!token) return null;
+  return verifySessionToken(token);
 }

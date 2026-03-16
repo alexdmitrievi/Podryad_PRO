@@ -21,7 +21,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "filtersUI": {},
         "options": { "returnAllMatches": true }
@@ -35,7 +35,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
         "filtersUI": {},
         "options": { "returnAllMatches": true }
@@ -58,7 +58,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "chatId": "407721399",
         "text": "📊 *Подряд PRO | Итоги {{ $json.date }}*\n\n━━━ *Заказы за сегодня* ━━━\n📥 Новых: {{ $json.total }}\n⏳ В ожидании: {{ $json.pending }}\n📤 Опубликовано: {{ $json.published }}\n✅ Закрыто: {{ $json.closed }}\n❌ Отменено: {{ $json.cancelled }}\n\n━━━ *Финансы* ━━━\n💰 Выручка: {{ $json.revenue }}₽\n📈 Конверсия: {{ $json.conversion }}%\n\n━━━ *Исполнители* ━━━\n👥 Всего: {{ $json.totalWorkers }}\n🔧 Активных: {{ $json.activeWorkers }}\n🌟 VIP: {{ $json.vipWorkers }}\n\n🏆 *Топ дня:* {{ $json.topWorker }}\n\n📋 Всего заказов в системе: {{ $json.totalAllOrders }}",
         "additionalFields": { "parse_mode": "Markdown" }
       },
@@ -78,7 +78,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "chatId": "407721399",
         "text": "🚨 *ОШИБКА в Daily Analytics*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
         "additionalFields": { "parse_mode": "Markdown" }
       },

@@ -47,7 +47,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "filtersUI": {
           "values": [{ "lookupColumn": "order_id", "lookupValue": "={{ $json.order_id }}" }]
@@ -129,7 +129,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
         "filtersUI": {
           "values": [{ "lookupColumn": "customer_id", "lookupValue": "={{ $json.voter_id }}" }]
@@ -155,7 +155,7 @@
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
         "filtersUI": {
           "values": [{ "lookupColumn": "telegram_id", "lookupValue": "={{ $json.executor_id }}" }]
@@ -181,7 +181,7 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1jNplJVE6_FM-gEzWMWf2HEqjXrNYRs2T6bZF6IWAOtM/edit?usp=sharing", "mode": "url" },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
         "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
         "columns": {
           "mappingMode": "defineBelow",
@@ -223,7 +223,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "chatId": "407721399",
         "text": "🚨 *ОШИБКА в Rating System*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
         "additionalFields": { "parse_mode": "Markdown" }
       },
