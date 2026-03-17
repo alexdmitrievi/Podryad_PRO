@@ -166,6 +166,29 @@ export default function PaymentsPage() {
             но самозанятые исполнители получают их первыми.
           </p>
         </section>
+
+        {/* ══ РЕКВИЗИТЫ ИП ══ */}
+        <section className="bg-white rounded-3xl p-6 shadow-card border border-gray-100">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">🏢</span>
+            <h2 className="text-lg font-bold text-gray-900">Реквизиты</h2>
+          </div>
+
+          <div className="space-y-3 text-sm text-gray-700">
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-500">ИНН</span>
+              <span className="font-mono font-semibold text-gray-900">550516401202</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-500">ОГРНИП</span>
+              <span className="font-mono font-semibold text-gray-900">322554300070581</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-400 mt-4 leading-relaxed">
+            Все платежи обрабатываются через ЮKassa. Чеки формируются автоматически в соответствии с 54-ФЗ.
+          </p>
+        </section>
       </div>
     </div>
   );

@@ -134,10 +134,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const userId = $('Check VIP Status').first().json.user_id;\n\nconst paymentUrl = `https://podryad.pro/app/payments?type=vip&user_id=${userId}&amount=1000`;\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [\n      { text: '💳 Оплатить VIP — 1000р/мес', url: paymentUrl }\n    ],\n    [\n      { text: '❌ Отмена', callback_data: 'cancel_vip' }\n    ]\n  ]\n});\n\nreturn [{\n  json: {\n    chat_id: userId,\n    text: `🌟 VIP-подписка — 1000р/мес\\n\\nПреимущества:\\n• Ранний доступ к заказам (на 30 мин раньше)\\n• Приоритет при отклике\\n• Значок VIP в профиле\\n• Поддержка 24/7\\n\\n💳 Нажмите кнопку для оплаты:`,\n    reply_markup: keyboard\n  }\n}];"
+        "jsCode": "const userId = $('Check VIP Status').first().json.user_id;\nconst shopId = $env.YUKASSA_SHOP_ID;\nconst secretKey = $env.YUKASSA_SECRET_KEY;\n\nif (!shopId || !secretKey) {\n  throw new Error('YUKASSA credentials not configured in n8n Variables');\n}\n\nconst auth = Buffer.from(shopId + ':' + secretKey).toString('base64');\nconst idempotenceKey = 'vip_' + userId + '_' + Date.now();\n\nconst body = {\n  amount: { value: '1000.00', currency: 'RUB' },\n  confirmation: { type: 'redirect', return_url: 'https://podryadpro.ru/app/payments' },\n  capture: true,\n  description: 'Подряд PRO — VIP подписка',\n  metadata: { user_id: String(userId), type: 'vip' }\n};\n\nreturn [{\n  json: {\n    auth_header: 'Basic ' + auth,\n    idempotence_key: idempotenceKey,\n    request_body: JSON.stringify(body),\n    user_id: userId\n  }\n}];"
       },
       "id": "build-vip-offer",
-      "name": "Build VIP Offer",
+      "name": "Build VIP Payment",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1320, 260]
@@ -145,7 +145,40 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/sendMessage",
+        "url": "https://api.yookassa.ru/v3/payments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{ $json.auth_header }}" },
+            { "name": "Idempotence-Key", "value": "={{ $json.idempotence_key }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ $json.request_body }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "yukassa-vip-create",
+      "name": "YooKassa VIP Payment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 260]
+    },
+    {
+      "parameters": {
+        "jsCode": "const yukassa = $('YooKassa VIP Payment').first().json;\nconst paymentUrl = yukassa.confirmation?.confirmation_url;\nconst userId = $('Build VIP Payment').first().json.user_id;\n\nif (!paymentUrl) {\n  throw new Error('No VIP payment URL from YooKassa');\n}\n\nconst text = '🌟 VIP-подписка — 1000₽/мес\\n\\nПреимущества:\\n• Ранний доступ к заказам (на 30 мин раньше)\\n• Приоритет при отклике\\n• Значок VIP в профиле\\n• Поддержка 24/7\\n\\n💳 Нажмите кнопку для оплаты:';\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [{ text: '💳 Оплатить VIP — 1000₽', url: paymentUrl }]\n  ]\n});\n\nreturn [{\n  json: {\n    chat_id: userId,\n    text: text,\n    reply_markup: keyboard\n  }\n}];"
+      },
+      "id": "build-vip-message",
+      "name": "Build VIP Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 260]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"reply_markup\": {{ $json.reply_markup }}\n}",
@@ -155,7 +188,7 @@
       "name": "Send VIP Offer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1540, 260]
+      "position": [1980, 260]
     },
     {
       "parameters": {
@@ -417,10 +450,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const recommendation = $('OpenAI: Generate Pick').first().json.message.content;\nconst userId = $('Parse /pick Request').first().json.user_id;\n\nconst text = `🏆 Подбор исполнителей — Подряд PRO\\n\\n${recommendation}\\n\\n💳 Для получения контактов оплатите 1000р.\\nПосле оплаты мы отправим вам номера телефонов.`;\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [\n      {\n        text: '💳 Получить контакты — 1000р',\n        url: `https://podryad.pro/app/payments?type=pick&user_id=${userId}&amount=1000`\n      }\n    ]\n  ]\n});\n\nreturn [{\n  json: {\n    chat_id: userId,\n    text: text,\n    reply_markup: keyboard\n  }\n}];"
+        "jsCode": "const recommendation = $('OpenAI: Generate Pick').first().json.message.content;\nconst userId = $('Parse /pick Request').first().json.user_id;\nconst shopId = $env.YUKASSA_SHOP_ID;\nconst secretKey = $env.YUKASSA_SECRET_KEY;\n\nif (!shopId || !secretKey) {\n  throw new Error('YUKASSA credentials not configured');\n}\n\nconst auth = Buffer.from(shopId + ':' + secretKey).toString('base64');\nconst idempotenceKey = 'pick_' + userId + '_' + Date.now();\n\nconst body = {\n  amount: { value: '1000.00', currency: 'RUB' },\n  confirmation: { type: 'redirect', return_url: 'https://podryadpro.ru/app/payments' },\n  capture: true,\n  description: 'Подряд PRO — Подбор ТОП-3 исполнителей',\n  metadata: { user_id: String(userId), type: 'pick' }\n};\n\nreturn [{\n  json: {\n    auth_header: 'Basic ' + auth,\n    idempotence_key: idempotenceKey,\n    request_body: JSON.stringify(body),\n    user_id: userId,\n    recommendation: recommendation\n  }\n}];"
       },
-      "id": "build-pick-message",
-      "name": "Build Pick Message",
+      "id": "build-pick-payment",
+      "name": "Build Pick Payment",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1760, 500]
@@ -428,7 +461,40 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/sendMessage",
+        "url": "https://api.yookassa.ru/v3/payments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{ $json.auth_header }}" },
+            { "name": "Idempotence-Key", "value": "={{ $json.idempotence_key }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ $json.request_body }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "yukassa-pick-create",
+      "name": "YooKassa Pick Payment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1980, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "const yukassa = $('YooKassa Pick Payment').first().json;\nconst paymentUrl = yukassa.confirmation?.confirmation_url;\nconst pickData = $('Build Pick Payment').first().json;\n\nif (!paymentUrl) {\n  throw new Error('No Pick payment URL from YooKassa');\n}\n\nconst text = '🏆 Подбор исполнителей — Подряд PRO\\n\\n' + pickData.recommendation + '\\n\\n💳 Для получения контактов оплатите 1000₽.\\nПосле оплаты мы отправим вам номера телефонов.';\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [{ text: '💳 Получить контакты — 1000₽', url: paymentUrl }]\n  ]\n});\n\nreturn [{\n  json: {\n    chat_id: pickData.user_id,\n    text: text,\n    reply_markup: keyboard\n  }\n}];"
+      },
+      "id": "build-pick-message",
+      "name": "Build Pick Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2200, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"reply_markup\": {{ $json.reply_markup }}\n}",
@@ -438,7 +504,7 @@
       "name": "Send Pick Result",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1980, 500]
+      "position": [2420, 500]
     },
     {
       "parameters": {
@@ -495,10 +561,20 @@
     "Already VIP?": {
       "main": [
         [{ "node": "Send: Already VIP", "type": "main", "index": 0 }],
-        [{ "node": "Build VIP Offer", "type": "main", "index": 0 }]
+        [{ "node": "Build VIP Payment", "type": "main", "index": 0 }]
       ]
     },
-    "Build VIP Offer": {
+    "Build VIP Payment": {
+      "main": [
+        [{ "node": "YooKassa VIP Payment", "type": "main", "index": 0 }]
+      ]
+    },
+    "YooKassa VIP Payment": {
+      "main": [
+        [{ "node": "Build VIP Message", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build VIP Message": {
       "main": [
         [{ "node": "Send VIP Offer", "type": "main", "index": 0 }]
       ]
@@ -553,6 +629,16 @@
       ]
     },
     "OpenAI: Generate Pick": {
+      "main": [
+        [{ "node": "Build Pick Payment", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Pick Payment": {
+      "main": [
+        [{ "node": "YooKassa Pick Payment", "type": "main", "index": 0 }]
+      ]
+    },
+    "YooKassa Pick Payment": {
       "main": [
         [{ "node": "Build Pick Message", "type": "main", "index": 0 }]
       ]
