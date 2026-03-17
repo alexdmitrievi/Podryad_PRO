@@ -3,26 +3,44 @@
   "nodes": [
     {
       "parameters": {
-        "updates": ["message"],
+        "updates": [
+          "message"
+        ],
         "additionalFields": {}
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000001",
       "name": "Done Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [0, 300],
-      "webhookId": "podryad-done"
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "podryad-done",
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "is-done",
               "leftValue": "={{ $json.message.text }}",
               "rightValue": "/done_",
-              "operator": { "type": "string", "operation": "startsWith" }
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
             }
           ],
           "combinator": "and"
@@ -32,7 +50,10 @@
       "name": "Is Done Command?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -42,15 +63,31 @@
       "name": "Extract Done Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [500, 200]
+      "position": [
+        500,
+        200
+      ]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Orders",
+          "mode": "list"
+        },
         "filtersUI": {
-          "values": [{ "lookupColumn": "order_id", "lookupValue": "={{ $json.order_id }}" }]
+          "values": [
+            {
+              "lookupColumn": "order_id",
+              "lookupValue": "={{ $json.order_id }}"
+            }
+          ]
         },
         "options": {}
       },
@@ -58,7 +95,16 @@
       "name": "Lookup Order",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [740, 200]
+      "position": [
+        740,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
@@ -68,17 +114,25 @@
       "name": "Determine Role",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [980, 200]
+      "position": [
+        980,
+        200
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true },
+          "options": {
+            "caseSensitive": true
+          },
           "conditions": [
             {
               "leftValue": "={{ $json.valid }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ]
         }
@@ -87,7 +141,10 @@
       "name": "Is Valid?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1100, 200]
+      "position": [
+        1100,
+        200
+      ]
     },
     {
       "parameters": {
@@ -102,19 +159,33 @@
       "name": "Send Poll",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 200]
+      "position": [
+        1340,
+        200
+      ]
     },
     {
       "parameters": {
-        "updates": ["poll_answer"],
+        "updates": [
+          "poll_answer"
+        ],
         "additionalFields": {}
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000007",
       "name": "Poll Answer Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [0, 700],
-      "webhookId": "podryad-poll-answer"
+      "position": [
+        0,
+        700
+      ],
+      "webhookId": "podryad-poll-answer",
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -124,23 +195,50 @@
       "name": "Parse Poll Answer",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [260, 700]
+      "position": [
+        260,
+        700
+      ]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
-        "filtersUI": {
-          "values": [{ "lookupColumn": "customer_id", "lookupValue": "={{ $json.voter_id }}" }]
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
+          "mode": "url"
         },
-        "options": { "returnAllMatches": true }
+        "sheetName": {
+          "__rl": true,
+          "value": "Orders",
+          "mode": "list"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "customer_id",
+              "lookupValue": "={{ $json.voter_id }}"
+            }
+          ]
+        },
+        "options": {
+          "returnAllMatches": true
+        }
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000009",
       "name": "Find Voter Orders",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [500, 700]
+      "position": [
+        500,
+        700
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
@@ -150,15 +248,31 @@
       "name": "Find Executor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [740, 700]
+      "position": [
+        740,
+        700
+      ]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Workers",
+          "mode": "list"
+        },
         "filtersUI": {
-          "values": [{ "lookupColumn": "telegram_id", "lookupValue": "={{ $json.executor_id }}" }]
+          "values": [
+            {
+              "lookupColumn": "telegram_id",
+              "lookupValue": "={{ $json.executor_id }}"
+            }
+          ]
         },
         "options": {}
       },
@@ -166,7 +280,16 @@
       "name": "Lookup Worker",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [980, 700]
+      "position": [
+        980,
+        700
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
@@ -176,13 +299,24 @@
       "name": "Calculate Rating",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1220, 700]
+      "position": [
+        1220,
+        700
+      ]
     },
     {
       "parameters": {
         "operation": "update",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Workers",
+          "mode": "list"
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -191,7 +325,9 @@
             "jobs_count": "={{ $json.jobs_count }}",
             "ban_until": "={{ $json.ban_until }}"
           },
-          "matchingColumns": ["telegram_id"]
+          "matchingColumns": [
+            "telegram_id"
+          ]
         },
         "options": {}
       },
@@ -199,19 +335,39 @@
       "name": "Update Worker Rating",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1460, 700]
+      "position": [
+        1460,
+        700
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
         "chatId": "={{ $('Calculate Rating').item.json.telegram_id }}",
         "text": "📊 *Новая оценка за заказ*\n\n⭐ Оценка: {{ $('Calculate Rating').item.json.score }}/5\n📈 Ваш рейтинг: {{ $('Calculate Rating').item.json.rating }}\n✅ Выполнено заказов: {{ $('Calculate Rating').item.json.jobs_count }}\n\n{{ $('Calculate Rating').item.json.penalty_msg }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000014",
       "name": "Notify Worker Rating",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1700, 700]
+      "position": [
+        1700,
+        700
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {},
@@ -219,98 +375,205 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 1000]
+      "position": [
+        0,
+        1000
+      ]
     },
     {
       "parameters": {
         "chatId": "407721399",
         "text": "🚨 *ОШИБКА в Rating System*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000017",
       "name": "Notify Admin Error",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [260, 1000]
+      "position": [
+        260,
+        1000
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     }
   ],
   "connections": {
     "Done Trigger": {
       "main": [
-        [{ "node": "Is Done Command?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Is Done Command?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Is Done Command?": {
       "main": [
-        [{ "node": "Extract Done Data", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Extract Done Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
     "Extract Done Data": {
       "main": [
-        [{ "node": "Lookup Order", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Lookup Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Lookup Order": {
       "main": [
-        [{ "node": "Determine Role", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Determine Role",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Determine Role": {
       "main": [
-        [{ "node": "Is Valid?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Is Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Is Valid?": {
       "main": [
-        [{ "node": "Send Poll", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Send Poll",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
     "Poll Answer Trigger": {
       "main": [
-        [{ "node": "Parse Poll Answer", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Parse Poll Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Parse Poll Answer": {
       "main": [
-        [{ "node": "Find Voter Orders", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Find Voter Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Find Voter Orders": {
       "main": [
-        [{ "node": "Find Executor", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Find Executor",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Find Executor": {
       "main": [
-        [{ "node": "Lookup Worker", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Lookup Worker",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Lookup Worker": {
       "main": [
-        [{ "node": "Calculate Rating", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Calculate Rating",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Calculate Rating": {
       "main": [
-        [{ "node": "Update Worker Rating", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Update Worker Rating",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Update Worker Rating": {
       "main": [
-        [{ "node": "Notify Worker Rating", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Notify Worker Rating",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Error Trigger": {
       "main": [
-        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Notify Admin Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
   "active": false,
-  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
   "versionId": "podryad-04-rating-v2",
-  "meta": { "instanceId": "podryad-pro" },
-  "tags": [{ "name": "podryad-pro" }]
+  "meta": {
+    "instanceId": "podryad-pro"
+  },
+  "tags": [
+    {
+      "name": "podryad-pro"
+    }
+  ]
 }

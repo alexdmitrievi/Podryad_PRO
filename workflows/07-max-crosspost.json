@@ -4,20 +4,36 @@
     {
       "parameters": {
         "rule": {
-          "interval": [{ "field": "minutes", "minutesInterval": 2 }]
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
         }
       },
       "id": "g1b2c3d4-7777-4000-8000-000000000001",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0, 300]
+      "position": [
+        0,
+        300
+      ]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Orders",
+          "mode": "list"
+        },
         "filtersUI": {
           "values": [
             {
@@ -32,7 +48,16 @@
       "name": "Read Published Orders",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [260, 300]
+      "position": [
+        260,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
@@ -42,18 +67,28 @@
       "name": "Filter Unposted",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [520, 300]
+      "position": [
+        520,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
           "conditions": [
             {
               "id": "has-items",
               "leftValue": "={{ $input.all().length }}",
               "rightValue": 0,
-              "operator": { "type": "number", "operation": "gt" }
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
             }
           ],
           "combinator": "and"
@@ -63,7 +98,10 @@
       "name": "Has Orders?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [760, 300]
+      "position": [
+        760,
+        300
+      ]
     },
     {
       "parameters": {
@@ -74,7 +112,10 @@
       "name": "Split In Batches",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [1000, 250]
+      "position": [
+        1000,
+        250
+      ]
     },
     {
       "parameters": {
@@ -84,7 +125,10 @@
       "name": "Build MAX Post",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1260, 250]
+      "position": [
+        1260,
+        250
+      ]
     },
     {
       "parameters": {
@@ -119,13 +163,24 @@
       "name": "Send to MAX Channel",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1500, 250]
+      "position": [
+        1500,
+        250
+      ]
     },
     {
       "parameters": {
         "operation": "update",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Orders",
+          "mode": "list"
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -133,7 +188,9 @@
             "max_posted": "TRUE",
             "max_message_id": "={{ $json.body?.message?.body?.mid || $json.message?.body?.mid || '' }}"
           },
-          "matchingColumns": ["order_id"]
+          "matchingColumns": [
+            "order_id"
+          ]
         },
         "options": {}
       },
@@ -141,7 +198,16 @@
       "name": "Update Order MAX Status",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1740, 250]
+      "position": [
+        1740,
+        250
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
@@ -152,7 +218,10 @@
       "name": "Wait 1s",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [1980, 250]
+      "position": [
+        1980,
+        250
+      ]
     },
     {
       "parameters": {},
@@ -160,72 +229,146 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 600]
+      "position": [
+        0,
+        600
+      ]
     },
     {
       "parameters": {
         "chatId": "407721399",
         "text": "🚨 *ОШИБКА в MAX Cross-Post*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}\n\nВозможно, MAX API недоступен. Проверьте токен и chat_id.",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "g1b2c3d4-7777-4000-8000-000000000011",
       "name": "Notify Admin Error",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [260, 600]
+      "position": [
+        260,
+        600
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     }
   ],
   "connections": {
     "Schedule Trigger": {
       "main": [
-        [{ "node": "Read Published Orders", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Read Published Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Read Published Orders": {
       "main": [
-        [{ "node": "Filter Unposted", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Filter Unposted",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Filter Unposted": {
       "main": [
-        [{ "node": "Has Orders?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Has Orders?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Has Orders?": {
       "main": [
-        [{ "node": "Split In Batches", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
     "Split In Batches": {
       "main": [
         [],
-        [{ "node": "Build MAX Post", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build MAX Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build MAX Post": {
       "main": [
-        [{ "node": "Send to MAX Channel", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send to MAX Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Send to MAX Channel": {
       "main": [
-        [{ "node": "Update Order MAX Status", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Update Order MAX Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Update Order MAX Status": {
       "main": [
-        [{ "node": "Wait 1s", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Wait 1s",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Wait 1s": {
       "main": [
-        [{ "node": "Split In Batches", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Error Trigger": {
       "main": [
-        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Notify Admin Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -236,6 +379,18 @@
     "errorWorkflow": ""
   },
   "versionId": "podryad-07-max-crosspost-v1",
-  "meta": { "instanceId": "podryad-pro" },
-  "tags": [{ "name": "podryad-pro" }, { "name": "max" }, { "name": "cross-post" }]
+  "meta": {
+    "instanceId": "podryad-pro"
+  },
+  "tags": [
+    {
+      "name": "podryad-pro"
+    },
+    {
+      "name": "max"
+    },
+    {
+      "name": "cross-post"
+    }
+  ]
 }

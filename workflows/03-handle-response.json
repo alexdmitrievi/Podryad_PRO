@@ -3,15 +3,26 @@
   "nodes": [
     {
       "parameters": {
-        "updates": ["callback_query"],
+        "updates": [
+          "callback_query"
+        ],
         "additionalFields": {}
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000001",
       "name": "Callback Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [0, 300],
-      "webhookId": "podryad-callback"
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "podryad-callback",
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -21,13 +32,24 @@
       "name": "Parse Callback",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [260, 300]
+      "position": [
+        260,
+        300
+      ]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Orders",
+          "mode": "list"
+        },
         "filtersUI": {
           "values": [
             {
@@ -42,18 +64,34 @@
       "name": "Lookup Order",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [500, 300]
+      "position": [
+        500,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "is-published",
               "leftValue": "={{ $json.status }}",
               "rightValue": "published",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -63,7 +101,10 @@
       "name": "Still Open?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [740, 300]
+      "position": [
+        740,
+        300
+      ]
     },
     {
       "parameters": {
@@ -72,9 +113,18 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "callback_query_id", "value": "={{ $('Parse Callback').item.json.callback_query_id }}" },
-            { "name": "text", "value": "❌ Этот заказ уже занят!" },
-            { "name": "show_alert", "value": "true" }
+            {
+              "name": "callback_query_id",
+              "value": "={{ $('Parse Callback').item.json.callback_query_id }}"
+            },
+            {
+              "name": "text",
+              "value": "❌ Этот заказ уже занят!"
+            },
+            {
+              "name": "show_alert",
+              "value": "true"
+            }
           ]
         },
         "options": {}
@@ -83,13 +133,24 @@
       "name": "Already Taken",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1000, 500]
+      "position": [
+        1000,
+        500
+      ]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Workers",
+          "mode": "list"
+        },
         "filtersUI": {
           "values": [
             {
@@ -104,7 +165,16 @@
       "name": "Lookup Worker",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1000, 200]
+      "position": [
+        1000,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
@@ -114,18 +184,28 @@
       "name": "Check Access",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1260, 200]
+      "position": [
+        1260,
+        200
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "has-access",
               "leftValue": "={{ $json.access }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -135,7 +215,10 @@
       "name": "Has Access?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1500, 200]
+      "position": [
+        1500,
+        200
+      ]
     },
     {
       "parameters": {
@@ -144,9 +227,18 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "callback_query_id", "value": "={{ $('Parse Callback').item.json.callback_query_id }}" },
-            { "name": "text", "value": "⛔ Нет доступа. Зарегистрируйтесь: @Podryad_PRO_bot /start" },
-            { "name": "show_alert", "value": "true" }
+            {
+              "name": "callback_query_id",
+              "value": "={{ $('Parse Callback').item.json.callback_query_id }}"
+            },
+            {
+              "name": "text",
+              "value": "⛔ Нет доступа. Зарегистрируйтесь: @Podryad_PRO_bot /start"
+            },
+            {
+              "name": "show_alert",
+              "value": "true"
+            }
           ]
         },
         "options": {}
@@ -155,7 +247,10 @@
       "name": "No Access Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1760, 400]
+      "position": [
+        1760,
+        400
+      ]
     },
     {
       "parameters": {
@@ -165,13 +260,24 @@
       "name": "Atomic Lock",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1760, 100]
+      "position": [
+        1760,
+        100
+      ]
     },
     {
       "parameters": {
         "operation": "update",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Orders",
+          "mode": "list"
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -179,7 +285,9 @@
             "status": "closed",
             "executor_id": "={{ $json.executor_id }}"
           },
-          "matchingColumns": ["order_id"]
+          "matchingColumns": [
+            "order_id"
+          ]
         },
         "options": {}
       },
@@ -187,31 +295,62 @@
       "name": "Close Order",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [2020, 100]
+      "position": [
+        2020,
+        100
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
         "chatId": "={{ $('Atomic Lock').item.json.executor_id }}",
         "text": "🎉 *Заказ #{{ $('Atomic Lock').item.json.order_id }} — ВАШ!*\n\n📍 {{ $('Atomic Lock').item.json.address }}\n🗺 [Открыть маршрут]({{ $('Atomic Lock').item.json.yandex_link }})\n⏰ {{ $('Atomic Lock').item.json.time || 'не указано' }}\n💰 {{ $('Atomic Lock').item.json.payment || 'не указано' }}\n👥 {{ $('Atomic Lock').item.json.people }} чел. × {{ $('Atomic Lock').item.json.hours }} ч.\n📋 {{ $('Atomic Lock').item.json.work_type }}\n{{ $('Atomic Lock').item.json.comment ? '💬 ' + $('Atomic Lock').item.json.comment : '' }}\n\n✅ По завершении: /done\\_{{ $('Atomic Lock').item.json.order_id }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000012",
       "name": "Notify Worker",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [2280, 0]
+      "position": [
+        2280,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
         "chatId": "={{ $('Atomic Lock').item.json.customer_id }}",
         "text": "✅ *Исполнитель найден!*\n\n👤 {{ $('Atomic Lock').item.json.worker_name }}\n⭐ Рейтинг: {{ $('Atomic Lock').item.json.worker_rating }}\n{{ $('Atomic Lock').item.json.worker_phone !== 'не указан' ? '📞 ' + $('Atomic Lock').item.json.worker_phone : '' }}\n{{ $('Atomic Lock').item.json.worker_username ? '💬 @' + $('Atomic Lock').item.json.worker_username : '' }}\n\nОн уже едет к вам!\nПосле выполнения оцените: /done\\_{{ $('Atomic Lock').item.json.order_id }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000013",
       "name": "Notify Customer",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [2280, 200]
+      "position": [
+        2280,
+        200
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -226,18 +365,28 @@
       "name": "Edit Channel Post",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2280, 400]
+      "position": [
+        2280,
+        400
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
           "conditions": [
             {
               "id": "has-max-id",
               "leftValue": "={{ $('Atomic Lock').item.json.max_message_id }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "notEquals" }
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
             }
           ],
           "combinator": "and"
@@ -247,7 +396,10 @@
       "name": "Has MAX Post?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2280, 700]
+      "position": [
+        2280,
+        700
+      ]
     },
     {
       "parameters": {
@@ -269,13 +421,18 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"text\": \"🧾 *РАБОТА ОМСК | Подряд PRO #{{ $('Atomic Lock').item.json.order_id }}*\\n\\n🔒 ЗАКРЫТ — исполнитель найден\\n\\n📍 {{ $('Atomic Lock').item.json.address }}\\n⏰ {{ $('Atomic Lock').item.json.time || 'не указано' }}\\n\\n#работаомск #омск\",\n  \"format\": \"markdown\"\n}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000019",
       "name": "Edit MAX Post",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2540, 650]
+      "position": [
+        2540,
+        650
+      ]
     },
     {
       "parameters": {
@@ -284,9 +441,18 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "callback_query_id", "value": "={{ $('Parse Callback').item.json.callback_query_id }}" },
-            { "name": "text", "value": "✅ Заказ ваш! Проверьте личные сообщения бота." },
-            { "name": "show_alert", "value": "true" }
+            {
+              "name": "callback_query_id",
+              "value": "={{ $('Parse Callback').item.json.callback_query_id }}"
+            },
+            {
+              "name": "text",
+              "value": "✅ Заказ ваш! Проверьте личные сообщения бота."
+            },
+            {
+              "name": "show_alert",
+              "value": "true"
+            }
           ]
         },
         "options": {}
@@ -295,7 +461,10 @@
       "name": "Answer Callback",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2280, 600]
+      "position": [
+        2280,
+        600
+      ]
     },
     {
       "parameters": {},
@@ -303,90 +472,205 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 800]
+      "position": [
+        0,
+        800
+      ]
     },
     {
       "parameters": {
         "chatId": "407721399",
         "text": "🚨 *ОШИБКА в Handle Response*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000017",
       "name": "Notify Admin Error",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [260, 800]
+      "position": [
+        260,
+        800
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     }
   ],
   "connections": {
     "Callback Trigger": {
       "main": [
-        [{ "node": "Parse Callback", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Parse Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Parse Callback": {
       "main": [
-        [{ "node": "Lookup Order", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Lookup Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Lookup Order": {
       "main": [
-        [{ "node": "Still Open?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Still Open?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Still Open?": {
       "main": [
-        [{ "node": "Lookup Worker", "type": "main", "index": 0 }],
-        [{ "node": "Already Taken", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Lookup Worker",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Already Taken",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Lookup Worker": {
       "main": [
-        [{ "node": "Check Access", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Check Access",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Check Access": {
       "main": [
-        [{ "node": "Has Access?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Has Access?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Has Access?": {
       "main": [
-        [{ "node": "Atomic Lock", "type": "main", "index": 0 }],
-        [{ "node": "No Access Reply", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Atomic Lock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Access Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Atomic Lock": {
       "main": [
-        [{ "node": "Close Order", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Close Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Close Order": {
       "main": [
         [
-          { "node": "Notify Worker", "type": "main", "index": 0 },
-          { "node": "Notify Customer", "type": "main", "index": 0 },
-          { "node": "Edit Channel Post", "type": "main", "index": 0 },
-          { "node": "Answer Callback", "type": "main", "index": 0 },
-          { "node": "Has MAX Post?", "type": "main", "index": 0 }
+          {
+            "node": "Notify Worker",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Customer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Channel Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Answer Callback",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Has MAX Post?",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Has MAX Post?": {
       "main": [
-        [{ "node": "Edit MAX Post", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Edit MAX Post",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
     "Error Trigger": {
       "main": [
-        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Notify Admin Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
   "active": false,
-  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
   "versionId": "podryad-03-response-v2",
-  "meta": { "instanceId": "podryad-pro" },
-  "tags": [{ "name": "podryad-pro" }]
+  "meta": {
+    "instanceId": "podryad-pro"
+  },
+  "tags": [
+    {
+      "name": "podryad-pro"
+    }
+  ]
 }

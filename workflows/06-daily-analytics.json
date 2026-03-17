@@ -16,35 +16,76 @@
       "name": "Daily Cron 20:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0, 300]
+      "position": [
+        0,
+        300
+      ]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Orders",
+          "mode": "list"
+        },
         "filtersUI": {},
-        "options": { "returnAllMatches": true }
+        "options": {
+          "returnAllMatches": true
+        }
       },
       "id": "f1b2c3d4-6666-4000-8000-000000000002",
       "name": "Read All Orders",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [260, 300]
+      "position": [
+        260,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing", "mode": "url" },
-        "sheetName": { "__rl": true, "value": "Workers", "mode": "list" },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Workers",
+          "mode": "list"
+        },
         "filtersUI": {},
-        "options": { "returnAllMatches": true }
+        "options": {
+          "returnAllMatches": true
+        }
       },
       "id": "f1b2c3d4-6666-4000-8000-000000000003",
       "name": "Read All Workers",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [260, 500]
+      "position": [
+        260,
+        500
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
@@ -54,19 +95,33 @@
       "name": "Calculate Metrics",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [540, 400]
+      "position": [
+        540,
+        400
+      ]
     },
     {
       "parameters": {
         "chatId": "407721399",
         "text": "📊 *Подряд PRO | Итоги {{ $json.date }}*\n\n━━━ *Заказы за сегодня* ━━━\n📥 Новых: {{ $json.total }}\n⏳ В ожидании: {{ $json.pending }}\n📤 Опубликовано: {{ $json.published }}\n✅ Закрыто: {{ $json.closed }}\n❌ Отменено: {{ $json.cancelled }}\n\n━━━ *Финансы* ━━━\n💰 Выручка: {{ $json.revenue }}₽\n📈 Конверсия: {{ $json.conversion }}%\n\n━━━ *Исполнители* ━━━\n👥 Всего: {{ $json.totalWorkers }}\n🔧 Активных: {{ $json.activeWorkers }}\n🌟 VIP: {{ $json.vipWorkers }}\n\n🏆 *Топ дня:* {{ $json.topWorker }}\n\n📋 Всего заказов в системе: {{ $json.totalAllOrders }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "f1b2c3d4-6666-4000-8000-000000000005",
       "name": "Send Daily Report",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [800, 400]
+      "position": [
+        800,
+        400
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {},
@@ -74,48 +129,94 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 700]
+      "position": [
+        0,
+        700
+      ]
     },
     {
       "parameters": {
         "chatId": "407721399",
         "text": "🚨 *ОШИБКА в Daily Analytics*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "f1b2c3d4-6666-4000-8000-000000000007",
       "name": "Notify Admin Error",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [260, 700]
+      "position": [
+        260,
+        700
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     }
   ],
   "connections": {
     "Daily Cron 20:00": {
       "main": [
         [
-          { "node": "Read All Orders", "type": "main", "index": 0 },
-          { "node": "Read All Workers", "type": "main", "index": 0 }
+          {
+            "node": "Read All Orders",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read All Workers",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Read All Orders": {
       "main": [
-        [{ "node": "Calculate Metrics", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Calculate Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Read All Workers": {
       "main": [
-        [{ "node": "Calculate Metrics", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Calculate Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Calculate Metrics": {
       "main": [
-        [{ "node": "Send Daily Report", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Error Trigger": {
       "main": [
-        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Notify Admin Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -126,6 +227,12 @@
     "timezone": "Europe/Moscow"
   },
   "versionId": "podryad-06-analytics-v2",
-  "meta": { "instanceId": "podryad-pro" },
-  "tags": [{ "name": "podryad-pro" }]
+  "meta": {
+    "instanceId": "podryad-pro"
+  },
+  "tags": [
+    {
+      "name": "podryad-pro"
+    }
+  ]
 }

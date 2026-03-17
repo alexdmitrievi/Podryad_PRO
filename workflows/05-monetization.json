@@ -3,14 +3,19 @@
   "nodes": [
     {
       "parameters": {
-        "updates": ["message"],
+        "updates": [
+          "message"
+        ],
         "additionalFields": {}
       },
       "id": "telegram-trigger",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [220, 300],
+      "position": [
+        220,
+        300
+      ],
       "credentials": {
         "telegramApi": {
           "id": "1",
@@ -31,13 +36,19 @@
               "id": "cond-vip",
               "leftValue": "={{ $json.message.text }}",
               "rightValue": "/vip",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             },
             {
               "id": "cond-pick",
               "leftValue": "={{ $json.message.text }}",
               "rightValue": "/pick",
-              "operator": { "type": "string", "operation": "startsWith" }
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
             }
           ],
           "combinator": "or"
@@ -48,7 +59,10 @@
       "name": "Switch Command",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [440, 300]
+      "position": [
+        440,
+        300
+      ]
     },
     {
       "parameters": {
@@ -56,7 +70,7 @@
         "documentId": {
           "__rl": true,
           "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing"
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -77,7 +91,10 @@
       "name": "Sheets: Check VIP Status",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [660, 180],
+      "position": [
+        660,
+        180
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "3",
@@ -93,17 +110,25 @@
       "name": "Check VIP Status",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [880, 180]
+      "position": [
+        880,
+        180
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false },
+          "options": {
+            "caseSensitive": false
+          },
           "conditions": [
             {
               "leftValue": "={{ $json.is_vip }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ]
         }
@@ -112,7 +137,10 @@
       "name": "Already VIP?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1100, 180]
+      "position": [
+        1100,
+        180
+      ]
     },
     {
       "parameters": {
@@ -124,7 +152,10 @@
       "name": "Send: Already VIP",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1320, 80],
+      "position": [
+        1320,
+        80
+      ],
       "credentials": {
         "telegramApi": {
           "id": "1",
@@ -140,7 +171,10 @@
       "name": "Build VIP Payment",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1320, 260]
+      "position": [
+        1320,
+        260
+      ]
     },
     {
       "parameters": {
@@ -149,21 +183,35 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "={{ $json.auth_header }}" },
-            { "name": "Idempotence-Key", "value": "={{ $json.idempotence_key }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "={{ $json.auth_header }}"
+            },
+            {
+              "name": "Idempotence-Key",
+              "value": "={{ $json.idempotence_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ $json.request_body }}",
-        "options": { "timeout": 15000 }
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "yukassa-vip-create",
       "name": "YooKassa VIP Payment",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1540, 260]
+      "position": [
+        1540,
+        260
+      ]
     },
     {
       "parameters": {
@@ -173,12 +221,15 @@
       "name": "Build VIP Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1760, 260]
+      "position": [
+        1760,
+        260
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/sendMessage",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"reply_markup\": {{ $json.reply_markup }}\n}",
@@ -188,7 +239,10 @@
       "name": "Send VIP Offer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1980, 260]
+      "position": [
+        1980,
+        260
+      ]
     },
     {
       "parameters": {
@@ -202,7 +256,10 @@
       "name": "Webhook: VIP Payment",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [220, 600],
+      "position": [
+        220,
+        600
+      ],
       "webhookId": "vip-payment"
     },
     {
@@ -213,7 +270,10 @@
       "name": "Parse VIP Payment",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [440, 600]
+      "position": [
+        440,
+        600
+      ]
     },
     {
       "parameters": {
@@ -223,7 +283,10 @@
       "name": "Calculate VIP Expiry",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [660, 600]
+      "position": [
+        660,
+        600
+      ]
     },
     {
       "parameters": {
@@ -231,7 +294,7 @@
         "documentId": {
           "__rl": true,
           "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing"
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -245,15 +308,22 @@
             "is_vip": "={{ $json.is_vip }}",
             "vip_expires_at": "={{ $json.vip_expires_at }}"
           },
-          "matchingColumns": ["telegram_id"]
+          "matchingColumns": [
+            "telegram_id"
+          ]
         },
-        "options": { "cellFormat": "USER_ENTERED" }
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        }
       },
       "id": "sheets-activate-vip",
       "name": "Sheets: Activate VIP",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [880, 600],
+      "position": [
+        880,
+        600
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "3",
@@ -267,7 +337,7 @@
         "documentId": {
           "__rl": true,
           "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing"
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -294,7 +364,10 @@
       "name": "Sheets: Log VIP Payment",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1100, 600],
+      "position": [
+        1100,
+        600
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "3",
@@ -312,7 +385,10 @@
       "name": "Send: VIP Activated",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1320, 600],
+      "position": [
+        1320,
+        600
+      ],
       "credentials": {
         "telegramApi": {
           "id": "1",
@@ -324,13 +400,18 @@
       "parameters": {
         "respondWith": "text",
         "responseBody": "{\"status\": \"ok\"}",
-        "options": { "responseCode": 200 }
+        "options": {
+          "responseCode": 200
+        }
       },
       "id": "webhook-vip-response",
       "name": "VIP Webhook Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1320, 480]
+      "position": [
+        1320,
+        480
+      ]
     },
     {
       "parameters": {
@@ -340,7 +421,10 @@
       "name": "Parse /pick Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [660, 420]
+      "position": [
+        660,
+        420
+      ]
     },
     {
       "parameters": {
@@ -348,7 +432,7 @@
         "documentId": {
           "__rl": true,
           "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLlSNMQIIxieDdHjrvqE15_AkoJIeuWKLRajZlOCk/edit?usp=sharing"
+          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing"
         },
         "sheetName": {
           "__rl": true,
@@ -361,7 +445,10 @@
       "name": "Sheets: Read All Workers",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [880, 420],
+      "position": [
+        880,
+        420
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "3",
@@ -377,17 +464,25 @@
       "name": "Filter Top Workers",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1100, 420]
+      "position": [
+        1100,
+        420
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false },
+          "options": {
+            "caseSensitive": false
+          },
           "conditions": [
             {
               "leftValue": "={{ $json.has_workers }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ]
         }
@@ -396,7 +491,10 @@
       "name": "Has Workers?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1320, 420]
+      "position": [
+        1320,
+        420
+      ]
     },
     {
       "parameters": {
@@ -408,7 +506,10 @@
       "name": "Send: No Workers",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1540, 340],
+      "position": [
+        1540,
+        340
+      ],
       "credentials": {
         "telegramApi": {
           "id": "1",
@@ -440,7 +541,10 @@
       "name": "OpenAI: Generate Pick",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [1540, 500],
+      "position": [
+        1540,
+        500
+      ],
       "credentials": {
         "openAiApi": {
           "id": "2",
@@ -456,7 +560,10 @@
       "name": "Build Pick Payment",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1760, 500]
+      "position": [
+        1760,
+        500
+      ]
     },
     {
       "parameters": {
@@ -465,21 +572,35 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "={{ $json.auth_header }}" },
-            { "name": "Idempotence-Key", "value": "={{ $json.idempotence_key }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "={{ $json.auth_header }}"
+            },
+            {
+              "name": "Idempotence-Key",
+              "value": "={{ $json.idempotence_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ $json.request_body }}",
-        "options": { "timeout": 15000 }
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "yukassa-pick-create",
       "name": "YooKassa Pick Payment",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1980, 500]
+      "position": [
+        1980,
+        500
+      ]
     },
     {
       "parameters": {
@@ -489,12 +610,15 @@
       "name": "Build Pick Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2200, 500]
+      "position": [
+        2200,
+        500
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/sendMessage",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"reply_markup\": {{ $json.reply_markup }}\n}",
@@ -504,7 +628,10 @@
       "name": "Send Pick Result",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2420, 500]
+      "position": [
+        2420,
+        500
+      ]
     },
     {
       "parameters": {
@@ -514,19 +641,27 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [220, 800]
+      "position": [
+        220,
+        800
+      ]
     },
     {
       "parameters": {
         "chatId": "407721399",
         "text": "🚨 *ОШИБКА в Monetization*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "notify-admin-error",
       "name": "Notify Admin Error",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [440, 800],
+      "position": [
+        440,
+        800
+      ],
       "credentials": {
         "telegramApi": {
           "id": "1",
@@ -538,119 +673,271 @@
   "connections": {
     "Telegram Trigger": {
       "main": [
-        [{ "node": "Switch Command", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Switch Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Switch Command": {
       "main": [
-        [{ "node": "Sheets: Check VIP Status", "type": "main", "index": 0 }],
-        [{ "node": "Parse /pick Request", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Sheets: Check VIP Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse /pick Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
     "Sheets: Check VIP Status": {
       "main": [
-        [{ "node": "Check VIP Status", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Check VIP Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Check VIP Status": {
       "main": [
-        [{ "node": "Already VIP?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Already VIP?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Already VIP?": {
       "main": [
-        [{ "node": "Send: Already VIP", "type": "main", "index": 0 }],
-        [{ "node": "Build VIP Payment", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send: Already VIP",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build VIP Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build VIP Payment": {
       "main": [
-        [{ "node": "YooKassa VIP Payment", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "YooKassa VIP Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "YooKassa VIP Payment": {
       "main": [
-        [{ "node": "Build VIP Message", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build VIP Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build VIP Message": {
       "main": [
-        [{ "node": "Send VIP Offer", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send VIP Offer",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Webhook: VIP Payment": {
       "main": [
-        [{ "node": "Parse VIP Payment", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Parse VIP Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Parse VIP Payment": {
       "main": [
-        [{ "node": "Calculate VIP Expiry", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Calculate VIP Expiry",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Calculate VIP Expiry": {
       "main": [
-        [{ "node": "Sheets: Activate VIP", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Sheets: Activate VIP",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Sheets: Activate VIP": {
       "main": [
         [
-          { "node": "Sheets: Log VIP Payment", "type": "main", "index": 0 },
-          { "node": "VIP Webhook Response", "type": "main", "index": 0 }
+          {
+            "node": "Sheets: Log VIP Payment",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "VIP Webhook Response",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Sheets: Log VIP Payment": {
       "main": [
-        [{ "node": "Send: VIP Activated", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send: VIP Activated",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Parse /pick Request": {
       "main": [
-        [{ "node": "Sheets: Read All Workers", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Sheets: Read All Workers",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Sheets: Read All Workers": {
       "main": [
-        [{ "node": "Filter Top Workers", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Filter Top Workers",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Filter Top Workers": {
       "main": [
-        [{ "node": "Has Workers?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Has Workers?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Has Workers?": {
       "main": [
-        [{ "node": "OpenAI: Generate Pick", "type": "main", "index": 0 }],
-        [{ "node": "Send: No Workers", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "OpenAI: Generate Pick",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send: No Workers",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "OpenAI: Generate Pick": {
       "main": [
-        [{ "node": "Build Pick Payment", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build Pick Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build Pick Payment": {
       "main": [
-        [{ "node": "YooKassa Pick Payment", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "YooKassa Pick Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "YooKassa Pick Payment": {
       "main": [
-        [{ "node": "Build Pick Message", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build Pick Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build Pick Message": {
       "main": [
-        [{ "node": "Send Pick Result", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send Pick Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Error Trigger": {
       "main": [
-        [{ "node": "Notify Admin Error", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Notify Admin Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -661,9 +948,15 @@
   },
   "staticData": null,
   "tags": [
-    { "name": "podryad-pro" },
-    { "name": "monetization" },
-    { "name": "vip" }
+    {
+      "name": "podryad-pro"
+    },
+    {
+      "name": "monetization"
+    },
+    {
+      "name": "vip"
+    }
   ],
   "pinData": {},
   "versionId": "5"

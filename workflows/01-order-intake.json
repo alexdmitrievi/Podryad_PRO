@@ -16,7 +16,13 @@
         0,
         320
       ],
-      "webhookId": "podryad-telegram-trigger"
+      "webhookId": "podryad-telegram-trigger",
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -110,7 +116,13 @@
       "position": [
         500,
         40
-      ]
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -127,7 +139,13 @@
       "position": [
         500,
         180
-      ]
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -142,7 +160,13 @@
       "position": [
         500,
         320
-      ]
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -157,7 +181,13 @@
       "position": [
         500,
         460
-      ]
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -172,7 +202,13 @@
       "position": [
         500,
         600
-      ]
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -187,7 +223,13 @@
       "position": [
         500,
         740
-      ]
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -222,7 +264,13 @@
       "position": [
         760,
         980
-      ]
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAI"
+        }
+      }
     },
     {
       "parameters": {
@@ -283,7 +331,13 @@
       "position": [
         1430,
         840
-      ]
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -341,7 +395,7 @@
         "operation": "read",
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}",
+          "value": "1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk",
           "mode": "id"
         },
         "sheetName": {
@@ -366,7 +420,13 @@
       "position": [
         1650,
         1100
-      ]
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
@@ -386,7 +446,7 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}",
+          "value": "1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk",
           "mode": "id"
         },
         "sheetName": {
@@ -431,14 +491,20 @@
       "position": [
         2110,
         1100
-      ]
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
         "operation": "read",
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_SHEETS_ID }}",
+          "value": "1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk",
           "mode": "id"
         },
         "sheetName": {
@@ -467,7 +533,13 @@
       "position": [
         2340,
         1100
-      ]
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3",
+          "name": "Google Sheets"
+        }
+      }
     },
     {
       "parameters": {
@@ -548,7 +620,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/sendMessage",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"parse_mode\": \"Markdown\",\n  \"reply_markup\": {{ $json.reply_markup }}\n}",
@@ -576,7 +648,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "chatId": "407721399",
         "text": "=🚨 *ОШИБКА в Order Intake*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
         "additionalFields": {
           "parse_mode": "Markdown"
@@ -589,7 +661,13 @@
       "position": [
         1160,
         1340
-      ]
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
     }
   ],
   "connections": {
