@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getOrders } from '@/lib/sheets';
+import { getTelegramIdFromSession } from '@/lib/auth';
 
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW = 60_000;
@@ -54,6 +55,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Сервис временно недоступен' }, { status: 503 });
     }
 
+    const telegramId = await getTelegramIdFromSession();
+
     const res = await fetch(`${webhookBase}/order-intake`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -65,6 +68,7 @@ export async function POST(req: Request) {
         people: Math.max(1, Math.min(50, parseInt(body.people) || 1)),
         hours: Math.max(1, Math.min(24, parseInt(body.hours) || 1)),
         comment: String(body.comment ?? '').slice(0, 1000),
+        ...(telegramId && { telegram_id: telegramId }),
       }),
     });
 

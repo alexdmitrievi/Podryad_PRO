@@ -14,6 +14,7 @@ export default function AdminPage() {
   const [pin, setPin] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -24,14 +25,31 @@ export default function AdminPage() {
   const [history, setHistory] = useState<GeneratedUser[]>([]);
 
   const handleAuth = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
+      setAuthError('');
       if (pin.trim().length < 4) {
         setAuthError('Введите PIN (минимум 4 символа)');
         return;
       }
-      setAuthenticated(true);
-      setAuthError('');
+      setAuthLoading(true);
+      try {
+        const res = await fetch('/api/admin/verify-pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: pin.trim() }),
+        });
+        const data = await res.json();
+        if (data.valid) {
+          setAuthenticated(true);
+        } else {
+          setAuthError('Неверный PIN');
+        }
+      } catch {
+        setAuthError('Ошибка проверки');
+      } finally {
+        setAuthLoading(false);
+      }
     },
     [pin]
   );
@@ -119,9 +137,10 @@ export default function AdminPage() {
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl font-semibold text-sm bg-brand-500 text-white hover:bg-brand-600 active:scale-[0.98] transition-all shadow-sm"
+            disabled={authLoading}
+            className="w-full py-3 rounded-xl font-semibold text-sm bg-brand-500 text-white hover:bg-brand-600 active:scale-[0.98] transition-all shadow-sm disabled:opacity-70"
           >
-            Войти
+            {authLoading ? 'Проверка...' : 'Войти'}
           </button>
         </form>
       </div>

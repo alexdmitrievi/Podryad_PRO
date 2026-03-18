@@ -243,6 +243,73 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Аренда техники ── */}
+      <section className="px-6 py-14 max-w-md mx-auto w-full">
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-extrabold text-gray-900">
+            🔧 Аренда техники
+          </h2>
+          <p className="text-gray-500 text-sm mt-2">
+            Строительный инструмент и садовая техника — от 300₽/день
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <Link
+            href="/equipment?cat=garden"
+            className="
+              block bg-white rounded-3xl p-5 shadow-card border border-gray-100
+              hover:shadow-card-hover hover:-translate-y-0.5
+              transition-all duration-300
+            "
+          >
+            <h3 className="font-bold text-gray-900">🌿 Сад и участок</h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Газонокосилки, триммеры, бензопилы, снегоуборщик
+            </p>
+          </Link>
+          <Link
+            href="/equipment?cat=construction"
+            className="
+              block bg-white rounded-3xl p-5 shadow-card border border-gray-100
+              hover:shadow-card-hover hover:-translate-y-0.5
+              transition-all duration-300
+            "
+          >
+            <h3 className="font-bold text-gray-900">🔨 Стройка и ремонт</h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Перфораторы, болгарки, плиткорез, строительный пылесос
+            </p>
+          </Link>
+          <Link
+            href="/equipment?cat=special"
+            className="
+              block bg-white rounded-3xl p-5 shadow-card border border-gray-100
+              hover:shadow-card-hover hover:-translate-y-0.5
+              transition-all duration-300
+            "
+          >
+            <h3 className="font-bold text-gray-900">⚡ Спецтехника</h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Мойка высокого давления, бензогенератор
+            </p>
+          </Link>
+        </div>
+
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
+          <p className="text-sm text-amber-800">
+            🎁 Скидка 15% при заказе исполнителей + техники
+          </p>
+        </div>
+
+        <Link
+          href="/equipment"
+          className="block mt-4 text-center text-[#0088cc] text-sm font-medium hover:text-[#0077b3] transition-colors"
+        >
+          Смотреть весь каталог →
+        </Link>
+      </section>
+
       {/* ── CTA + Footer ── */}
       <section className="px-6 py-14 max-w-md mx-auto w-full space-y-8">
         <MessengerLinks action="order" variant="buttons" />
@@ -264,6 +331,9 @@ export default function HomePage() {
             <div className="space-y-1.5">
               <Link href="/app/order" className="block text-gray-400 hover:text-brand-500 transition-colors">
                 Оформить заказ
+              </Link>
+              <Link href="/equipment" className="block text-gray-400 hover:text-brand-500 transition-colors">
+                Аренда техники
               </Link>
               <Link href="/app/payments" className="block text-gray-400 hover:text-brand-500 transition-colors">
                 Тарифы

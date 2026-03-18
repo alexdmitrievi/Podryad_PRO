@@ -7,13 +7,15 @@ Telegram-бот + канал + PWA + n8n автоматизация.
 
 ```
 podryad-pro/
-├── workflows/                  ← 6 JSON файлов для n8n
-│   ├── 01-order-intake.json    ← Приём заявок
+├── workflows/                  ← 8 JSON файлов для n8n
+│   ├── 01-order-intake.json    ← Приём заявок (Telegram)
 │   ├── 02-publish-order.json   ← Публикация в канал
 │   ├── 03-handle-response.json ← Отклики исполнителей
 │   ├── 04-rating-system.json   ← Рейтинги и штрафы
 │   ├── 05-monetization.json    ← VIP + подбор
-│   └── 06-daily-analytics.json ← Ежедневный отчёт
+│   ├── 06-daily-analytics.json ← Ежедневный отчёт
+│   ├── 07-max-crosspost.json   ← Кросс-пост в MAX
+│   └── 08-order-intake-pwa.json← Приём заявок (PWA форма)
 ├── google-apps-script/
 │   └── createSheets.gs         ← Скрипт создания таблиц
 ├── pwa/                        ← Next.js 15 PWA

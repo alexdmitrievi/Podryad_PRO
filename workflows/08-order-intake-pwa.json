@@ -1,0 +1,150 @@
+{
+  "name": "Подряд PRO — 08 Order Intake (PWA)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "order-intake",
+        "options": {
+          "responseMode": "responseNode",
+          "responseData": "allEntries"
+        }
+      },
+      "id": "pwa-webhook-001",
+      "name": "Webhook PWA",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "podryad-order-intake-pwa"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook PWA').first().json.body || $('Webhook PWA').first().json;\nconst addr = String(body.address || '').trim() || 'Омск';\nconst workType = ['грузчики','уборка','стройка','разнорабочие','другое'].includes(body.work_type) ? body.work_type : 'другое';\nconst people = Math.max(1, Math.min(50, parseInt(body.people) || 1));\nconst hours = Math.max(1, Math.min(24, parseInt(body.hours) || 1));\nconst timeRaw = body.time || '';\nconst timeFormatted = timeRaw ? (() => {\n  try {\n    const d = new Date(timeRaw);\n    if (isNaN(d.getTime())) return timeRaw;\n    return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });\n  } catch { return timeRaw; }\n})() : '';\n\nreturn [{ json: { address: addr, work_type: workType, people, hours, time: timeFormatted, comment: String(body.comment || '').slice(0, 1000), customer_id: body.telegram_id ? String(body.telegram_id) : 'pwa' } }];"
+      },
+      "id": "pwa-parse-002",
+      "name": "Parse PWA Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://nominatim.openstreetmap.org/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "q", "value": "={{ $json.address }}" },
+            { "name": "format", "value": "json" },
+            { "name": "limit", "value": "1" },
+            { "name": "accept-language", "value": "ru" },
+            { "name": "countrycodes", "value": "ru" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "User-Agent", "value": "PodryadPRO/1.0 (n8n-bot)" }]
+        },
+        "options": { "timeout": 10000 }
+      },
+      "id": "pwa-geocode-003",
+      "name": "Nominatim Geocode",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "value": "1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Rates", "mode": "list" },
+        "filtersUI": {
+          "values": [{ "lookupColumn": "work_type", "lookupValue": "={{ $('Parse PWA Body').item.json.work_type }}" }]
+        },
+        "options": {}
+      },
+      "id": "pwa-rates-004",
+      "name": "Read Rates",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [660, 300],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "3", "name": "Google Sheets" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $('Parse PWA Body').first().json;\nconst geoResult = $('Nominatim Geocode').first().json;\nconst ratesResult = $('Read Rates').first()?.json || {};\n\nconst geo = Array.isArray(geoResult) ? geoResult[0] : geoResult;\nconst lat = geo?.lat ? parseFloat(geo.lat) : 54.9894;\nconst lon = geo?.lon ? parseFloat(geo.lon) : 73.3667;\nconst addr = parsed.address || 'Омск';\nconst yandexLink = `https://yandex.ru/maps/?pt=${lon},${lat}&z=16&text=${encodeURIComponent(addr)}`;\n\nconst people = Number(parsed.people || 1);\nconst hours = Number(parsed.hours || 1);\nconst clientRate = parseInt(ratesResult.client_rate, 10) || 600;\nconst workerRate = parseInt(ratesResult.worker_rate, 10) || 400;\nconst minHours = parseInt(ratesResult.min_hours, 10) || 1;\nconst effectiveHours = Math.max(hours, minHours);\nconst clientTotal = clientRate * people * effectiveHours;\nconst workerPayout = workerRate * people * effectiveHours;\nconst margin = clientTotal - workerPayout;\nconst createdAt = new Date().toISOString();\n\nreturn [{\n  json: {\n    customer_id: parsed.customer_id,\n    address: addr,\n    lat,\n    lon,\n    yandex_link: yandexLink,\n    time: parsed.time || '',\n    payment_text: `${clientRate}₽/час × ${people} чел × ${effectiveHours} ч`,\n    people,\n    hours: effectiveHours,\n    work_type: parsed.work_type || 'другое',\n    comment: parsed.comment || '',\n    status: 'pending',\n    executor_id: '',\n    message_id: '',\n    created_at: createdAt,\n    client_rate: clientRate,\n    worker_rate: workerRate,\n    client_total: clientTotal,\n    worker_payout: workerPayout,\n    margin,\n    payout_status: 'pending',\n    payout_at: ''\n  }\n}];"
+      },
+      "id": "pwa-build-005",
+      "name": "Build Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "value": "1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer_id": "={{ $json.customer_id }}",
+            "address": "={{ $json.address }}",
+            "lat": "={{ $json.lat }}",
+            "lon": "={{ $json.lon }}",
+            "yandex_link": "={{ $json.yandex_link }}",
+            "time": "={{ $json.time }}",
+            "payment_text": "={{ $json.payment_text }}",
+            "people": "={{ $json.people }}",
+            "hours": "={{ $json.hours }}",
+            "work_type": "={{ $json.work_type }}",
+            "comment": "={{ $json.comment }}",
+            "status": "={{ $json.status }}",
+            "executor_id": "={{ $json.executor_id }}",
+            "message_id": "={{ $json.message_id }}",
+            "created_at": "={{ $json.created_at }}",
+            "client_rate": "={{ $json.client_rate }}",
+            "worker_rate": "={{ $json.worker_rate }}",
+            "client_total": "={{ $json.client_total }}",
+            "worker_payout": "={{ $json.worker_payout }}",
+            "margin": "={{ $json.margin }}",
+            "payout_status": "={{ $json.payout_status }}",
+            "payout_at": "={{ $json.payout_at }}"
+          },
+          "matchingColumns": []
+        },
+        "options": {}
+      },
+      "id": "pwa-append-006",
+      "name": "Append Order",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1100, 300],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "3", "name": "Google Sheets" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true }) }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "pwa-respond-007",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1320, 300]
+    }
+  ],
+  "connections": {
+    "Webhook PWA": { "main": [[{ "node": "Parse PWA Body", "type": "main", "index": 0 }]] },
+    "Parse PWA Body": { "main": [[{ "node": "Nominatim Geocode", "type": "main", "index": 0 }]] },
+    "Nominatim Geocode": { "main": [[{ "node": "Read Rates", "type": "main", "index": 0 }]] },
+    "Read Rates": { "main": [[{ "node": "Build Order", "type": "main", "index": 0 }]] },
+    "Build Order": { "main": [[{ "node": "Append Order", "type": "main", "index": 0 }]] },
+    "Append Order": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "meta": { "instanceId": "podryad-pro" },
+  "tags": [{ "name": "podryad-pro" }, { "name": "pwa" }, { "name": "order-intake" }]
+}

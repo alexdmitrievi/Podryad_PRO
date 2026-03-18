@@ -1,4 +1,5 @@
 import OrderForm from '@/components/OrderForm';
+import EquipmentUpsell from '@/components/EquipmentUpsell';
 import MessengerLinks from '@/components/MessengerLinks';
 import PageHeader from '@/components/PageHeader';
 
@@ -32,6 +33,8 @@ export default function OrderPage() {
         </div>
 
         <OrderForm />
+
+        <EquipmentUpsell />
       </div>
     </div>
   );

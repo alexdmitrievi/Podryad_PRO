@@ -195,6 +195,14 @@ export default function CustomerPage() {
               Рассчитать стоимость →
             </Link>
           </p>
+
+          <p className="text-sm text-gray-600 mt-4 pt-4 border-t border-gray-100">
+            🔧 Нужна техника?{' '}
+            <Link href="/equipment" className="text-brand-500 font-medium hover:underline">
+              Каталог аренды →
+            </Link>{' '}
+            Скидка 15% при заказе вместе с исполнителями.
+          </p>
         </section>
 
         {/* ══ Блок 4: CTA ══ */}

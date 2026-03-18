@@ -52,6 +52,7 @@ export default function ProfilePage() {
 
           {[
             { emoji: '🗺', label: 'Заказы на карте', href: '/app/map' },
+            { emoji: '🔧', label: 'Аренда техники', href: '/equipment' },
             { emoji: '💳', label: 'Тарифы', href: '/app/payments' },
             { emoji: '📋', label: 'Как стать самозанятым', href: '/selfemployed' },
           ].map((link) => (
