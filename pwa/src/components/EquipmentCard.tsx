@@ -11,25 +11,30 @@ export default function EquipmentCard({ item, showComboDiscount }: Props) {
   const bookUrl = `https://t.me/${botName}?start=rent_${item.id}`;
 
   return (
-    <article className="relative bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-      {showComboDiscount && (
-        <span className="absolute top-3 right-3 text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg">
-          −15% с исполнителями
-        </span>
-      )}
-
+    <article className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
       <div className="flex gap-4">
         <div className="shrink-0 w-14 h-14 rounded-xl bg-gray-50 flex items-center justify-center text-2xl">
           {item.image_placeholder}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-bold text-gray-900">{item.name}</h3>
-          <p className="text-sm text-gray-600 mt-0.5">{item.description}</p>
-          <p className="text-xs text-gray-400 mt-1">{item.specs}</p>
+          <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+            <h3 className="font-bold text-gray-900 break-words flex-1 min-w-0">
+              {item.name}
+            </h3>
+            {showComboDiscount && (
+              <span className="shrink-0 text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg whitespace-nowrap">
+                −15% с исполнителями
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-gray-600 mt-0.5 break-words">
+            {item.description}
+          </p>
+          <p className="text-xs text-gray-400 mt-1 break-words">{item.specs}</p>
         </div>
       </div>
 
-      <div className="flex justify-between gap-2 mt-4 text-sm font-medium text-gray-800">
+      <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 mt-4 text-sm font-medium text-gray-800">
         <span>4 часа: {item.rate_4h.toLocaleString('ru-RU')}₽</span>
         <span>Сутки: {item.rate_day.toLocaleString('ru-RU')}₽</span>
         <span>3 дня: {item.rate_3days.toLocaleString('ru-RU')}₽</span>
