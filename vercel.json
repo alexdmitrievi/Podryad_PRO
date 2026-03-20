@@ -1,3 +1,5 @@
 {
-  "rootDirectory": "pwa"
+  "installCommand": "cd pwa && npm install",
+  "buildCommand": "cd pwa && npm run build",
+  "framework": "nextjs"
 }
