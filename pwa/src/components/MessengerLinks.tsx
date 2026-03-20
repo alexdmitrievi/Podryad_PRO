@@ -5,12 +5,18 @@ import { ExternalLink } from 'lucide-react';
 interface Props {
   action?: 'bot' | 'channel' | 'order' | 'vip' | 'pick';
   variant?: 'buttons' | 'inline' | 'compact';
+  /** Светлый текст подписи (для тёмного градиента hero) */
+  hero?: boolean;
   className?: string;
 }
+
+const heroBtn =
+  'group flex h-14 min-h-[3.5rem] w-full items-center justify-center gap-2 rounded-2xl px-3 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 sm:text-base sm:px-4';
 
 export default function MessengerLinks({
   action = 'bot',
   variant = 'buttons',
+  hero = false,
   className = '',
 }: Props) {
   const tgBot = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
@@ -98,39 +104,26 @@ export default function MessengerLinks({
     );
   }
 
+  const captionClass = hero ? 'text-white/45' : 'text-gray-400';
+
+  const tgClass = hero
+    ? `${heroBtn} border border-white/15 bg-brand-600 text-white hover:bg-brand-500`
+    : `${heroBtn} bg-brand-500 text-white shadow-sm hover:bg-brand-600`;
+  const maxClass = hero
+    ? `${heroBtn} border border-white/15 bg-brand-500 text-white hover:bg-brand-400`
+    : `${heroBtn} bg-max text-white shadow-sm hover:bg-max-dark`;
+
   return (
-    <div className={`flex flex-col gap-2.5 ${className}`}>
-      <a
-        href={telegram.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="
-          group flex items-center justify-center gap-2 w-full
-          bg-brand-500 text-white font-bold py-3.5 px-6
-          rounded-2xl text-base hover:bg-brand-600
-          active:scale-[0.97] transition-all duration-200
-          shadow-sm
-        "
-      >
-        📱 Открыть в Telegram
-        <ExternalLink size={16} className="opacity-60 group-hover:opacity-100 transition-opacity" />
+    <div className={`grid w-full grid-cols-2 gap-2 ${className}`}>
+      <a href={telegram.url} target="_blank" rel="noopener noreferrer" className={tgClass}>
+        <span className="truncate font-semibold">Telegram</span>
+        <ExternalLink size={16} className="shrink-0 opacity-80 group-hover:opacity-100" aria-hidden />
       </a>
-      <a
-        href={max.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="
-          group flex items-center justify-center gap-2 w-full
-          bg-max text-white font-bold py-3.5 px-6
-          rounded-2xl text-base hover:bg-max-dark
-          active:scale-[0.97] transition-all duration-200
-          shadow-sm
-        "
-      >
-        💬 Открыть в MAX
-        <ExternalLink size={16} className="opacity-60 group-hover:opacity-100 transition-opacity" />
+      <a href={max.url} target="_blank" rel="noopener noreferrer" className={maxClass}>
+        <span className="truncate font-semibold">MAX</span>
+        <ExternalLink size={16} className="shrink-0 opacity-80 group-hover:opacity-100" aria-hidden />
       </a>
-      <p className="text-gray-400 text-xs text-center">
+      <p className={`col-span-2 text-center text-[11px] leading-snug ${captionClass}`}>
         MAX работает без VPN на территории РФ
       </p>
     </div>

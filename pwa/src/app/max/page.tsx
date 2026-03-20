@@ -219,13 +219,13 @@ export default function MaxPage() {
           <Link
             href="/dashboard"
             className="
-              flex items-center justify-center gap-2 w-full
-              bg-gray-100 text-gray-700 font-semibold py-3.5 px-6
-              rounded-2xl text-base hover:bg-gray-200
-              active:scale-[0.97] transition-all duration-200
+              flex h-14 min-h-[3.5rem] w-full items-center justify-center gap-2 rounded-2xl
+              bg-gray-100 px-4 text-base font-semibold text-gray-700
+              transition-all duration-200 hover:bg-gray-200 active:scale-[0.98]
+              focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400
             "
           >
-            <MapPin size={18} />
+            <MapPin size={18} className="shrink-0" aria-hidden />
             Смотреть заказы
           </Link>
         </div>

@@ -4,11 +4,10 @@ import {
   Shield, Zap, Crown, Trophy, ChevronRight,
 } from 'lucide-react';
 import CostCalculator from '@/components/CostCalculator';
+import HeroActions from '@/components/HeroActions';
 import MessengerLinks from '@/components/MessengerLinks';
 
 export default function HomePage() {
-  const maxChannel = process.env.NEXT_PUBLIC_MAX_CHANNEL_LINK || 'https://max.ru/podryad_pro';
-
   return (
     <main className="min-h-screen flex flex-col bg-surface">
       {/* ── Hero ── */}
@@ -27,45 +26,7 @@ export default function HomePage() {
             Грузчики · Уборка · Строительство · Любые задачи — быстро и надёжно
           </p>
 
-          {/* VPN banner */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-2.5 text-sm text-white/80 border border-white/10">
-            💡 Telegram заблокирован? Используйте{' '}
-            <a href={maxChannel} target="_blank" rel="noopener noreferrer" className="underline font-semibold text-white hover:text-white/90">
-              MAX
-            </a>{' '}
-            — работает без VPN
-          </div>
-
-          <MessengerLinks action="bot" variant="buttons" />
-
-          <div className="flex flex-col gap-2 w-full max-w-xs mx-auto">
-            <Link
-              href="/auth/register"
-              className="flex items-center justify-center gap-2 bg-white text-brand-700 font-semibold py-3.5 px-6 rounded-2xl text-base shadow-sm hover:bg-white/95 active:scale-[0.97] transition-all duration-200"
-            >
-              Зарегистрироваться
-            </Link>
-            <Link
-              href="/auth/login"
-              className="flex items-center justify-center gap-2 text-white/90 font-medium py-2 text-sm border border-white/30 rounded-2xl hover:bg-white/10"
-            >
-              Войти
-            </Link>
-          </div>
-
-          <Link
-            href="/dashboard"
-            className="
-              flex items-center justify-center gap-2
-              bg-white/15 backdrop-blur-sm text-white font-semibold
-              py-3.5 px-6 rounded-2xl text-base
-              border border-white/20 hover:bg-white/25
-              active:scale-[0.97] transition-all duration-200
-            "
-          >
-            <MapPin size={18} />
-            Смотреть заказы
-          </Link>
+          <HeroActions />
 
           <p className="text-xs text-white/60">
             Все деньги проходят через платформу. Гарантия выполнения.
@@ -327,7 +288,12 @@ export default function HomePage() {
 
       {/* ── CTA + Footer ── */}
       <section className="px-6 py-14 max-w-md mx-auto w-full space-y-8">
-        <MessengerLinks action="order" variant="buttons" />
+        <div className="mx-auto w-full max-w-sm">
+          <p className="mb-1.5 block text-center text-[11px] font-medium uppercase tracking-[0.14em] text-gray-400">
+            Мессенджеры
+          </p>
+          <MessengerLinks action="order" variant="buttons" />
+        </div>
 
         <div className="grid grid-cols-2 gap-6 text-sm">
           <div>

@@ -138,6 +138,14 @@ export default function PushPrompt({
         window.dispatchEvent(new CustomEvent('podryad-push-enabled'));
       }
       setView('success');
+    } catch (e: unknown) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : typeof e === 'string'
+            ? e
+            : 'Не удалось включить уведомления. Попробуйте позже.';
+      setError(msg);
     } finally {
       setBusy(false);
     }

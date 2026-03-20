@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Manrope } from 'next/font/google';
+import DevUnregisterSW from '@/components/DevUnregisterSW';
 import './globals.css';
 
 const inter = Inter({
@@ -56,6 +57,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="bg-surface text-[#2B2B2B] font-sans antialiased">
+        <DevUnregisterSW />
         {children}
       </body>
     </html>
