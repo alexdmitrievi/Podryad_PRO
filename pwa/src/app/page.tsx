@@ -17,7 +17,7 @@ export default function HomePage() {
         <div className="relative max-w-md mx-auto px-6 pt-16 pb-20 text-center space-y-6">
           <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium">
             <Zap size={14} />
-            Работа и подработка в Омске
+            Работа и подработка в Омске и Новосибирске
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1] text-balance">
@@ -37,6 +37,21 @@ export default function HomePage() {
           </div>
 
           <MessengerLinks action="bot" variant="buttons" />
+
+          <div className="flex flex-col gap-2 w-full max-w-xs mx-auto">
+            <Link
+              href="/auth/register"
+              className="flex items-center justify-center gap-2 bg-white text-brand-700 font-semibold py-3.5 px-6 rounded-2xl text-base shadow-sm hover:bg-white/95 active:scale-[0.97] transition-all duration-200"
+            >
+              Зарегистрироваться
+            </Link>
+            <Link
+              href="/auth/login"
+              className="flex items-center justify-center gap-2 text-white/90 font-medium py-2 text-sm border border-white/30 rounded-2xl hover:bg-white/10"
+            >
+              Войти
+            </Link>
+          </div>
 
           <Link
             href="/dashboard"

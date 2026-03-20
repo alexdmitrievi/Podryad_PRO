@@ -247,7 +247,7 @@ export default function WorkerPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-500 mt-0.5">—</span>
-                  Готовность работать в Омске
+                  Готовность работать в Омске или Новосибирске
                 </li>
               </ul>
             </div>

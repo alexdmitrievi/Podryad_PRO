@@ -1,7 +1,7 @@
 {
-  "name": "Подряд PRO | Работа Омск",
+  "name": "Подряд PRO | Работа Омск и Новосибирск",
   "short_name": "ПодрядPRO",
-  "description": "Работа и подработка в Омске",
+  "description": "Работа и подработка в Омске и Новосибирске",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

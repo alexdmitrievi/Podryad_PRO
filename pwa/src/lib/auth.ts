@@ -98,6 +98,46 @@ function base64UrlToBuffer(s: string): Buffer {
   return Buffer.from(b64, 'base64');
 }
 
+function base64UrlEncodeJson(obj: object): string {
+  return Buffer.from(JSON.stringify(obj), 'utf8')
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function base64UrlEncodeBuffer(buf: Buffer): string {
+  return buf
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+/** Подпись JWT для cookie `podryad_session` (совместимо с getSession). */
+export function signPodryadSession(params: {
+  user_id: string;
+  role: 'worker' | 'customer';
+  maxAgeSec?: number;
+}): string {
+  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  if (!secret) {
+    throw new Error('SESSION_SECRET_OR_TELEGRAM_BOT_TOKEN_REQUIRED');
+  }
+
+  const exp = Math.floor(Date.now() / 1000) + (params.maxAgeSec ?? 60 * 60 * 24 * 30);
+  const header = base64UrlEncodeJson({ alg: 'HS256', typ: 'JWT' });
+  const payload = base64UrlEncodeJson({
+    sub: params.user_id,
+    role: params.role,
+    exp,
+  });
+  const signingInput = `${header}.${payload}`;
+  const sig = createHmac('sha256', secret).update(signingInput).digest();
+  const sig64 = base64UrlEncodeBuffer(sig);
+  return `${header}.${payload}.${sig64}`;
+}
+
 /** JWT (HS256) из cookie `podryad_session`: payload { sub|user_id, role, exp? } */
 export async function getSession(): Promise<PodryadSession | null> {
   const store = await cookies();
