@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import NotificationSettings from '@/components/NotificationSettings';
 import PageHeader from '@/components/PageHeader';
 
 const botName = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
@@ -44,6 +45,8 @@ export default function ProfilePage() {
           </Link>
         </section>
 
+        <NotificationSettings pushRole="customer" />
+
         {/* ══ Быстрые ссылки ══ */}
         <section className="space-y-2">
           <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wide px-1 mb-1">
@@ -51,6 +54,7 @@ export default function ProfilePage() {
           </h3>
 
           {[
+            { emoji: '📋', label: 'Доска заказов', href: '/dashboard' },
             { emoji: '🗺', label: 'Заказы на карте', href: '/app/map' },
             { emoji: '🔧', label: 'Аренда техники', href: '/equipment' },
             { emoji: '💳', label: 'Тарифы', href: '/app/payments' },

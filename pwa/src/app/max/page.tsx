@@ -215,7 +215,7 @@ export default function MaxPage() {
         <div className="mt-6 space-y-4">
           <MessengerLinks action="channel" variant="buttons" />
           <Link
-            href="/app/map"
+            href="/dashboard"
             className="
               flex items-center justify-center gap-2 w-full
               bg-gray-100 text-gray-700 font-semibold py-3.5 px-6
@@ -224,7 +224,7 @@ export default function MaxPage() {
             "
           >
             <MapPin size={18} />
-            Смотреть заказы на карте
+            Смотреть заказы
           </Link>
         </div>
         <p className="text-gray-400 text-xs mt-8 text-center">

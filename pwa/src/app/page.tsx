@@ -39,7 +39,7 @@ export default function HomePage() {
           <MessengerLinks action="bot" variant="buttons" />
 
           <Link
-            href="/app/map"
+            href="/dashboard"
             className="
               flex items-center justify-center gap-2
               bg-white/15 backdrop-blur-sm text-white font-semibold
@@ -49,7 +49,7 @@ export default function HomePage() {
             "
           >
             <MapPin size={18} />
-            Заказы на карте
+            Смотреть заказы
           </Link>
 
           <p className="text-xs text-white/60">
@@ -318,8 +318,8 @@ export default function HomePage() {
           <div>
             <p className="font-semibold text-gray-700 mb-2">Исполнителям</p>
             <div className="space-y-1.5">
-              <Link href="/app/map" className="block text-gray-400 hover:text-brand-500 transition-colors">
-                Заказы на карте
+              <Link href="/dashboard" className="block text-gray-400 hover:text-brand-500 transition-colors">
+                Смотреть заказы
               </Link>
               <Link href="/selfemployed" className="block text-gray-400 hover:text-brand-500 transition-colors">
                 Как стать самозанятым

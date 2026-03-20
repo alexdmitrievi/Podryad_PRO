@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
+import { getWorkerByTelegramId } from '@/lib/sheets';
 
 const { createHmac, createHash, timingSafeEqual } = crypto;
 const COOKIE_NAME = 'worker_session';
@@ -84,4 +85,96 @@ export async function getTelegramIdFromSession(): Promise<string | null> {
   const token = await getSessionToken();
   if (!token) return null;
   return verifySessionToken(token);
+}
+
+export type PodryadSession = {
+  user_id: string;
+  role: 'worker' | 'customer';
+};
+
+function base64UrlToBuffer(s: string): Buffer {
+  const pad = s.length % 4 === 0 ? '' : '='.repeat(4 - (s.length % 4));
+  const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + pad;
+  return Buffer.from(b64, 'base64');
+}
+
+/** JWT (HS256) из cookie `podryad_session`: payload { sub|user_id, role, exp? } */
+export async function getSession(): Promise<PodryadSession | null> {
+  const store = await cookies();
+  const token = store.get('podryad_session')?.value;
+  if (!token) return null;
+
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  const [h64, p64, sig64] = parts;
+  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  if (!secret) return null;
+
+  const signingInput = `${h64}.${p64}`;
+  const expectedSig = createHmac('sha256', secret).update(signingInput).digest();
+
+  let actualSig: Buffer;
+  try {
+    actualSig = base64UrlToBuffer(sig64);
+  } catch {
+    return null;
+  }
+  if (expectedSig.length !== actualSig.length) return null;
+  try {
+    if (!timingSafeEqual(expectedSig, actualSig)) return null;
+  } catch {
+    return null;
+  }
+
+  let payload: { sub?: string; user_id?: string; role?: string; exp?: number };
+  try {
+    payload = JSON.parse(base64UrlToBuffer(p64).toString('utf8')) as typeof payload;
+  } catch {
+    return null;
+  }
+
+  if (payload.exp !== undefined && typeof payload.exp === 'number') {
+    if (payload.exp * 1000 < Date.now()) return null;
+  }
+
+  const uid = payload.sub ?? payload.user_id;
+  if (!uid || typeof uid !== 'string') return null;
+  if (payload.role !== 'worker' && payload.role !== 'customer') return null;
+
+  return { user_id: uid, role: payload.role };
+}
+
+/** JWT или Telegram-сессия: роль заказчика, если пользователя нет в таблице Workers. */
+export type ViewerSession = {
+  user_id: string;
+  role: 'worker' | 'customer';
+};
+
+export async function getViewerSession(): Promise<ViewerSession | null> {
+  const jwt = await getSession();
+  if (jwt) {
+    return { user_id: jwt.user_id, role: jwt.role };
+  }
+  const tg = await getTelegramIdFromSession();
+  if (!tg) return null;
+  const worker = await getWorkerByTelegramId(tg);
+  return {
+    user_id: tg,
+    role: worker ? 'worker' : 'customer',
+  };
+}
+
+/** Только исполнитель (JWT worker или Telegram + строка в Workers). */
+export async function getWorkerActor(): Promise<{ user_id: string } | null> {
+  const jwt = await getSession();
+  if (jwt) {
+    if (jwt.role !== 'worker') return null;
+    return { user_id: jwt.user_id };
+  }
+  const tg = await getTelegramIdFromSession();
+  if (!tg) return null;
+  const worker = await getWorkerByTelegramId(tg);
+  if (!worker) return null;
+  return { user_id: tg };
 }

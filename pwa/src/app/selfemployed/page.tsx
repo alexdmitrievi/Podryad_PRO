@@ -218,7 +218,7 @@ export default function SelfemployedPage() {
               Открыть бот →
             </a>
             <Link
-              href="/app/map"
+              href="/dashboard"
               className="block w-full text-center py-3 rounded-2xl font-semibold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all active:scale-[0.98]"
             >
               Смотреть заказы →

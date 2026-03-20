@@ -54,11 +54,11 @@ export default function WorkersPage() {
                 📱 Открыть бот
               </a>
               <a
-                href="/app/map"
+                href="/dashboard"
                 className="bg-gray-100 text-gray-700 font-medium py-2.5 px-6 rounded-xl
                            text-sm hover:bg-gray-200 active:scale-[0.98] transition-all"
               >
-                🗺 Смотреть заказы
+                📋 Смотреть заказы
               </a>
             </div>
           </div>

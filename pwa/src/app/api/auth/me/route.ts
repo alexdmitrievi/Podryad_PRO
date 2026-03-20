@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getTelegramIdFromSession } from '@/lib/auth';
+import { getViewerSession } from '@/lib/auth';
 
 export async function GET() {
-  const telegramId = await getTelegramIdFromSession();
-  if (!telegramId) {
+  const viewer = await getViewerSession();
+  if (!viewer) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
-  return NextResponse.json({ authenticated: true, telegram_id: telegramId });
+  return NextResponse.json({
+    authenticated: true,
+    telegram_id: viewer.user_id,
+    role: viewer.role,
+  });
 }

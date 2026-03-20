@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AuthenticatedPushPrompt } from '@/components/NotificationSettings';
 import PageHeader from '@/components/PageHeader';
 
 const botName = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
@@ -10,6 +11,7 @@ export default function CustomerPage() {
       <PageHeader title="🧾 Для заказчиков" backHref="/" />
 
       <div className="max-w-lg mx-auto p-4 space-y-6 pb-10">
+        <AuthenticatedPushPrompt role="customer" className="mb-2" />
 
         {/* ══ Блок 1: Как заказать работу ══ */}
         <section>

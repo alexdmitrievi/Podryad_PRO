@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AuthenticatedPushPrompt } from '@/components/NotificationSettings';
 import PageHeader from '@/components/PageHeader';
 
 const botName = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
@@ -10,6 +11,7 @@ export default function WorkerPage() {
       <PageHeader title="💼 Для исполнителей" backHref="/" />
 
       <div className="max-w-lg mx-auto p-4 space-y-6 pb-10">
+        <AuthenticatedPushPrompt role="worker" className="mb-2" />
 
         {/* ══ Блок 1: Как начать зарабатывать ══ */}
         <section>
@@ -102,10 +104,10 @@ export default function WorkerPage() {
                     «Беру заказ». Первый подходящий исполнитель получает работу.
                   </p>
                   <Link
-                    href="/app/map"
+                    href="/dashboard"
                     className="inline-block mt-3 px-5 py-2.5 rounded-2xl bg-amber-500 text-white text-sm font-semibold transition-all hover:brightness-95 active:scale-[0.98]"
                   >
-                    🗺 Смотреть заказы на карте
+                    📋 Смотреть заказы
                   </Link>
                 </div>
               </div>
@@ -286,10 +288,10 @@ export default function WorkerPage() {
             📱 Зарегистрироваться в боте
           </a>
           <Link
-            href="/app/map"
+            href="/dashboard"
             className="block w-full text-center py-3.5 rounded-2xl font-bold text-base bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all active:scale-[0.98]"
           >
-            🗺 Смотреть заказы
+            📋 Смотреть заказы
           </Link>
         </section>
       </div>

@@ -1,3 +1,4 @@
+import { JWT } from 'google-auth-library';
 import { Order, Worker } from './types';
 
 // Workers sheet: A(telegram_id) .. P(accepted_offer)
@@ -49,6 +50,64 @@ const SHEET_COLUMNS: Record<string, number> = {
   max_message_id: 24,
 };
 
+const SPREADSHEET_SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+
+function getSheetsJwtClient(): JWT | null {
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  if (!email || !key) return null;
+  return new JWT({
+    email,
+    key,
+    scopes: SPREADSHEET_SCOPES,
+  });
+}
+
+async function getSheetsWriteHeaders(): Promise<Record<string, string>> {
+  const client = getSheetsJwtClient();
+  if (!client) {
+    throw new Error('GOOGLE_CREDENTIALS_MISSING');
+  }
+  const { token } = await client.getAccessToken();
+  if (!token) {
+    throw new Error('GOOGLE_TOKEN_FAILED');
+  }
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+function orderFromRow(row: string[]): Order {
+  return {
+    order_id: parseInt(row[SHEET_COLUMNS.order_id]) || 0,
+    customer_id: row[SHEET_COLUMNS.customer_id] || '',
+    address: row[SHEET_COLUMNS.address] || '',
+    lat: parseFloat(row[SHEET_COLUMNS.lat]) || 54.9894,
+    lon: parseFloat(row[SHEET_COLUMNS.lon]) || 73.3667,
+    yandex_link: row[SHEET_COLUMNS.yandex_link] || '',
+    time: row[SHEET_COLUMNS.time] || '',
+    payment_text: row[SHEET_COLUMNS.payment_text] || '',
+    people: parseInt(row[SHEET_COLUMNS.people]) || 0,
+    hours: parseInt(row[SHEET_COLUMNS.hours]) || 0,
+    work_type: row[SHEET_COLUMNS.work_type] || '',
+    comment: row[SHEET_COLUMNS.comment] || '',
+    status: (row[SHEET_COLUMNS.status] as Order['status']) || 'pending',
+    executor_id: row[SHEET_COLUMNS.executor_id] || '',
+    message_id: row[SHEET_COLUMNS.message_id] || '',
+    created_at: row[SHEET_COLUMNS.created_at] || '',
+    client_rate: parseInt(row[SHEET_COLUMNS.client_rate], 10) || undefined,
+    worker_rate: parseInt(row[SHEET_COLUMNS.worker_rate], 10) || undefined,
+    client_total: parseInt(row[SHEET_COLUMNS.client_total], 10) || undefined,
+    worker_payout: parseInt(row[SHEET_COLUMNS.worker_payout], 10) || undefined,
+    margin: parseInt(row[SHEET_COLUMNS.margin], 10) || undefined,
+    payout_status: row[SHEET_COLUMNS.payout_status] || undefined,
+    payout_at: row[SHEET_COLUMNS.payout_at] || undefined,
+    max_posted: row[SHEET_COLUMNS.max_posted] === 'TRUE',
+    max_message_id: row[SHEET_COLUMNS.max_message_id] || undefined,
+  };
+}
+
 export async function getOrders(statusFilter?: string): Promise<Order[]> {
   const sheetId = process.env.GOOGLE_SHEETS_ID;
   const apiKey = process.env.GOOGLE_API_KEY;
@@ -72,37 +131,95 @@ export async function getOrders(statusFilter?: string): Promise<Order[]> {
         if (statusFilter) return row[SHEET_COLUMNS.status] === statusFilter;
         return true;
       })
-      .map((row) => ({
-        order_id: parseInt(row[SHEET_COLUMNS.order_id]) || 0,
-        customer_id: row[SHEET_COLUMNS.customer_id] || '',
-        address: row[SHEET_COLUMNS.address] || '',
-        lat: parseFloat(row[SHEET_COLUMNS.lat]) || 54.9894,
-        lon: parseFloat(row[SHEET_COLUMNS.lon]) || 73.3667,
-        yandex_link: row[SHEET_COLUMNS.yandex_link] || '',
-        time: row[SHEET_COLUMNS.time] || '',
-        payment_text: row[SHEET_COLUMNS.payment_text] || '',
-        people: parseInt(row[SHEET_COLUMNS.people]) || 0,
-        hours: parseInt(row[SHEET_COLUMNS.hours]) || 0,
-        work_type: row[SHEET_COLUMNS.work_type] || '',
-        comment: row[SHEET_COLUMNS.comment] || '',
-        status: (row[SHEET_COLUMNS.status] as Order['status']) || 'pending',
-        executor_id: row[SHEET_COLUMNS.executor_id] || '',
-        message_id: row[SHEET_COLUMNS.message_id] || '',
-        created_at: row[SHEET_COLUMNS.created_at] || '',
-        client_rate: parseInt(row[SHEET_COLUMNS.client_rate], 10) || undefined,
-        worker_rate: parseInt(row[SHEET_COLUMNS.worker_rate], 10) || undefined,
-        client_total: parseInt(row[SHEET_COLUMNS.client_total], 10) || undefined,
-        worker_payout: parseInt(row[SHEET_COLUMNS.worker_payout], 10) || undefined,
-        margin: parseInt(row[SHEET_COLUMNS.margin], 10) || undefined,
-        payout_status: row[SHEET_COLUMNS.payout_status] || undefined,
-        payout_at: row[SHEET_COLUMNS.payout_at] || undefined,
-        max_posted: row[SHEET_COLUMNS.max_posted] === 'TRUE',
-        max_message_id: row[SHEET_COLUMNS.max_message_id] || undefined,
-      }));
+      .map((row) => orderFromRow(row));
   } catch (error) {
     console.error('Failed to read Google Sheets:', error);
     return [];
   }
+}
+
+async function fetchOrdersSheetRows(): Promise<string[][]> {
+  const sheetId = process.env.GOOGLE_SHEETS_ID;
+  const apiKey = process.env.GOOGLE_API_KEY;
+
+  if (!sheetId || !apiKey) {
+    console.error('Missing GOOGLE_SHEETS_ID or GOOGLE_API_KEY');
+    return [];
+  }
+
+  const range = 'Orders!A2:Y1000';
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+
+  const res = await fetch(url, { cache: 'no-store' });
+  const data = await res.json();
+  return data.values ?? [];
+}
+
+export async function findOrderRowById(
+  orderId: number
+): Promise<{ order: Order; sheetRow: number } | null> {
+  const rows = await fetchOrdersSheetRows();
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const oid = parseInt(row[SHEET_COLUMNS.order_id]) || 0;
+    if (oid === orderId) {
+      return { order: orderFromRow(row), sheetRow: i + 2 };
+    }
+  }
+  return null;
+}
+
+export async function getOrderById(orderId: number): Promise<Order | null> {
+  const found = await findOrderRowById(orderId);
+  return found?.order ?? null;
+}
+
+/**
+ * Закрыть опубликованный заказ и назначить исполнителя. Требует сервисный аккаунт.
+ */
+export async function closePublishedOrder(
+  orderId: number,
+  executorId: string
+): Promise<Order | null> {
+  const found = await findOrderRowById(orderId);
+  if (!found) return null;
+  if (found.order.status !== 'published') {
+    return null;
+  }
+
+  const sheetId = process.env.GOOGLE_SHEETS_ID;
+  if (!sheetId) {
+    throw new Error('GOOGLE_SHEETS_ID_MISSING');
+  }
+
+  const headers = await getSheetsWriteHeaders();
+  const range = `Orders!M${found.sheetRow}:N${found.sheetRow}`;
+  const putUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(
+    range
+  )}?valueInputOption=USER_ENTERED`;
+
+  const res = await fetch(putUrl, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({
+      range,
+      majorDimension: 'ROWS',
+      values: [['closed', executorId]],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('closePublishedOrder update failed:', res.status, text);
+    throw new Error('ORDER_UPDATE_FAILED');
+  }
+
+  const updated: Order = {
+    ...found.order,
+    status: 'closed',
+    executor_id: executorId,
+  };
+  return updated;
 }
 
 export interface WorkerStats {

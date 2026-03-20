@@ -2,11 +2,12 @@
   "name": "Подряд PRO | Работа Омск",
   "short_name": "ПодрядPRO",
   "description": "Работа и подработка в Омске",
-  "start_url": "/app/map",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#0088cc",
   "background_color": "#ffffff",
+  "permissions": ["notifications"],
   "categories": ["business", "productivity"],
   "lang": "ru",
   "icons": [
