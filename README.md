@@ -26,6 +26,7 @@ podryad-pro/
 │   ├── public/
 │   │   └── manifest.json
 │   ├── package.json
+│   ├── vercel.json          ← конфиг Vercel (Root Directory = pwa)
 │   └── next.config.js
 ├── docker/
 │   └── nginx.conf
@@ -75,6 +76,13 @@ podryad-pro/
 
 ### Шаг 5: PWA деплой (Vercel)
 
+**В настройках проекта Vercel (Settings → General):**
+
+- **Root Directory:** `pwa` — обязательно, Next.js лежит в этой папке.
+- **Build / Install / Output:** оставьте **по умолчанию** (без override): `npm install`, `npm run build`, output задаёт Next.js.
+
+Конфиг деплоя лежит в `pwa/vercel.json`. Файла `vercel.json` в корне репозитория **нет** — иначе команды с `cd pwa` конфликтуют с Root Directory.
+
 ```bash
 cd pwa
 cp ../.env.example .env.local
@@ -84,9 +92,11 @@ npm install
 npm run build
 npm run dev          # Локально на :3000
 
-# Деплой на Vercel:
+# Деплой: подключи репозиторий в Vercel или:
 npx vercel deploy
 ```
+
+Переменные окружения продакшена задай в Vercel: **Settings → Environment Variables** (скопируй ключи из `.env.local`, без коммита секретов в git).
 
 ### Шаг 6: VPS деплой n8n (продакшен)
 
