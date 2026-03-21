@@ -27,7 +27,7 @@ export default function WorkersPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-16">
       <PageHeader title="👷 Исполнители" />
 
       <main className="max-w-lg mx-auto p-4 space-y-3">

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -43,8 +44,15 @@ export default function StickyHeader() {
       >
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/logo.png"
+              alt="Подряд PRO"
+              width={28}
+              height={28}
+              className="rounded-lg"
+            />
             <span
-              className={`text-lg font-extrabold transition-colors duration-300 ${
+              className={`text-base md:text-lg font-extrabold transition-colors duration-300 ${
                 scrolled ? 'text-gray-900' : 'text-white'
               }`}
             >

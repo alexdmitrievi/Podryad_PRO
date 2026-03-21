@@ -48,7 +48,7 @@ export default function MaxPage() {
   const maxChannel = process.env.NEXT_PUBLIC_MAX_CHANNEL_LINK || 'https://max.ru/podryad_pro';
 
   return (
-    <main className="min-h-screen bg-surface">
+    <main className="min-h-screen bg-surface pt-16">
       {/* Header */}
       <header className="bg-gradient-to-r from-max to-max-dark text-white px-5 py-3.5">
         <div className="max-w-lg mx-auto flex items-center justify-between">

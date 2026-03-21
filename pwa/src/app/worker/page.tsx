@@ -7,7 +7,7 @@ const maxChannel = process.env.NEXT_PUBLIC_MAX_CHANNEL_LINK || 'https://max.ru/p
 
 export default function WorkerPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-16">
       <PageHeader title="💼 Для исполнителей" backHref="/" />
 
       <div className="max-w-lg mx-auto p-4 space-y-6 pb-10">

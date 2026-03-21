@@ -35,7 +35,7 @@ function EquipmentPageContent() {
   }, [filter]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-16">
       <PageHeader
         title="🔧 Аренда техники"
         subtitle="Строительный инструмент и садовая техника"

@@ -173,7 +173,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50">
+    <div className="flex h-screen flex-col bg-gray-50 pt-16">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <PageHeader
           title="📋 Доска заказов"

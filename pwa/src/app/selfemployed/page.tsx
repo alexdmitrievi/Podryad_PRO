@@ -79,7 +79,7 @@ export default function SelfemployedPage() {
   const [openFaq, setOpenFaq] = useState<number>(0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-16">
       <PageHeader
         title="📋 Как стать самозанятым"
         subtitle="Инструкция — 5 минут"

@@ -109,7 +109,7 @@ export default function AdminPage() {
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center p-4">
+      <div className="min-h-screen bg-surface flex items-center justify-center p-4 pt-16">
         <form
           onSubmit={handleAuth}
           className="bg-white rounded-3xl p-8 shadow-card border border-gray-100 w-full max-w-sm space-y-5"
@@ -148,7 +148,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface pt-16">
       <div className="bg-gradient-to-r from-brand-900 to-brand-600 px-4 py-6 text-white">
         <h1 className="text-xl font-bold">🔧 Админ-панель</h1>
         <p className="text-sm text-white/70 mt-1">
