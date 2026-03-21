@@ -4,8 +4,14 @@ import {
   Shield, Zap, Crown, Trophy, ChevronRight,
 } from 'lucide-react';
 import CostCalculator from '@/components/CostCalculator';
-import HeroActions from '@/components/HeroActions';
-import MessengerLinks from '@/components/MessengerLinks';
+
+const tgBot = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
+const maxChannelUrl =
+  process.env.NEXT_PUBLIC_MAX_CHANNEL_LINK || 'https://max.ru/podryad_pro';
+const telegramUrl = `https://t.me/${tgBot}`;
+
+const cardBase =
+  'bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200';
 
 export default function HomePage() {
   return (
@@ -26,10 +32,29 @@ export default function HomePage() {
             Грузчики · Уборка · Строительство · Любые задачи — быстро и надёжно
           </p>
 
-          <HeroActions />
+          <div className="pt-2">
+            <Link
+              href="/auth/register"
+              className="inline-flex items-center justify-center gap-2 bg-white text-[#0088cc] font-bold py-4 px-8 rounded-2xl text-lg shadow-lg hover:shadow-xl transition-shadow duration-200"
+            >
+              Начать бесплатно
+              <ArrowRight size={20} />
+            </Link>
+          </div>
 
-          <p className="text-xs text-white/60">
-            Все деньги проходят через платформу. Гарантия выполнения.
+          <p className="text-white/60 text-sm">
+            Уже есть аккаунт?{' '}
+            <Link href="/auth/login" className="text-white font-medium underline underline-offset-2 hover:text-white/90">
+              Войти
+            </Link>
+          </p>
+
+          <p className="text-white/50 text-xs flex flex-wrap justify-center gap-x-4 gap-y-1">
+            <span>100+ исполнителей</span>
+            <span>·</span>
+            <span>50+ заказов</span>
+            <span>·</span>
+            <span>⭐ 4.9 рейтинг</span>
           </p>
 
           {/* Trust badges */}
@@ -46,7 +71,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Curved bottom */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
             <path d="M0 48h1440V24C1200 0 240 0 0 24v24z" fill="#F7F9FC" />
@@ -67,14 +91,14 @@ export default function HomePage() {
               num: '01',
               icon: MessageSquare,
               title: 'Опишите задачу',
-              desc: 'Напишите боту в Telegram или MAX — платформа рассчитает стоимость по тарифам.',
+              desc: 'Опишите задачу на сайте или в приложении — платформа рассчитает стоимость.',
               color: 'from-blue-500 to-blue-600',
             },
             {
               num: '02',
               icon: MapPin,
               title: 'Заказ публикуется',
-              desc: 'С точкой на карте, кнопкой навигации и всеми деталями — одновременно в Telegram и MAX.',
+              desc: 'С точкой на карте, кнопкой навигации и всеми деталями.',
               color: 'from-emerald-500 to-emerald-600',
             },
             {
@@ -92,15 +116,14 @@ export default function HomePage() {
               color: 'from-purple-500 to-purple-600',
             },
           ].map((step, i) => (
-            <div
-              key={i}
-              className="flex gap-4 items-start group"
-            >
-              <div className={`
+            <div key={i} className="flex gap-4 items-start group">
+              <div
+                className={`
                 w-12 h-12 rounded-2xl bg-gradient-to-br ${step.color}
                 flex items-center justify-center shrink-0
                 shadow-sm group-hover:scale-105 transition-transform duration-300
-              `}>
+              `}
+              >
                 <step.icon size={20} className="text-white" />
               </div>
               <div className="pt-0.5">
@@ -108,7 +131,7 @@ export default function HomePage() {
                   <span className="text-xs font-bold text-gray-300">{step.num}</span>
                   <h3 className="font-bold text-gray-900">{step.title}</h3>
                 </div>
-                <p className="text-gray-500 text-sm mt-1 leading-relaxed">{step.desc}</p>
+                <p className="text-gray-600 text-sm mt-1 leading-relaxed">{step.desc}</p>
               </div>
             </div>
           ))}
@@ -116,54 +139,66 @@ export default function HomePage() {
       </section>
 
       {/* ── Role selection ── */}
-      <section className="px-6 pb-6 max-w-md mx-auto w-full">
-        <h2 className="text-xl font-extrabold text-center text-gray-900 mb-4">Кто вы?</h2>
+      <section className="px-6 py-16 max-w-md mx-auto w-full">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-extrabold text-gray-900">Кто вы?</h2>
+          <p className="text-gray-500 text-sm mt-2">Выберите роль</p>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Link
             href="/customer"
-            className="
-              group relative bg-white rounded-3xl p-5 shadow-card border border-gray-100
-              hover:shadow-card-hover hover:-translate-y-0.5
-              transition-all duration-300
-            "
+            className={`
+              group relative ${cardBase}
+              border-gray-100 hover:border-[#0088cc]
+            `}
           >
-            <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center mb-3 group-hover:bg-brand-100 transition-colors">
-              <span className="text-xl">🧾</span>
+            <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center mb-3 group-hover:bg-blue-100 transition-colors">
+              <span className="text-3xl">🧾</span>
             </div>
-            <h3 className="font-bold text-gray-900 text-sm">Я заказчик</h3>
-            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-              Оформить заказ на грузчиков, уборку или другие работы
+            <h3 className="font-bold text-base text-gray-900">Я заказчик</h3>
+            <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+              Оформить заказ — от грузчиков до ремонта
             </p>
-            <ChevronRight size={16} className="absolute top-5 right-4 text-gray-300 group-hover:text-brand-500 transition-colors" />
+            <ChevronRight
+              size={22}
+              className="absolute top-5 right-4 text-[#0088cc] opacity-80 group-hover:opacity-100 transition-opacity"
+            />
           </Link>
           <Link
             href="/worker"
-            className="
-              group relative bg-white rounded-3xl p-5 shadow-card border border-gray-100
-              hover:shadow-card-hover hover:-translate-y-0.5
-              transition-all duration-300
-            "
+            className={`
+              group relative ${cardBase}
+              border-gray-100 hover:border-amber-500
+            `}
           >
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center mb-3 group-hover:bg-amber-100 transition-colors">
-              <span className="text-xl">💼</span>
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mb-3 group-hover:bg-amber-100 transition-colors">
+              <span className="text-3xl">💼</span>
             </div>
-            <h3 className="font-bold text-gray-900 text-sm">Я исполнитель</h3>
-            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-              Смотреть заказы на карте и откликаться
+            <h3 className="font-bold text-base text-gray-900">Я исполнитель</h3>
+            <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+              Брать заказы и зарабатывать
             </p>
-            <ChevronRight size={16} className="absolute top-5 right-4 text-gray-300 group-hover:text-brand-500 transition-colors" />
+            <ChevronRight
+              size={22}
+              className="absolute top-5 right-4 text-[#0088cc] opacity-80 group-hover:opacity-100 transition-opacity"
+            />
           </Link>
         </div>
-        <p className="text-xs text-gray-400 text-center mt-3">
+        <p className="text-xs text-gray-400 text-center mt-4">
           Самозанятые получают заказы в приоритете ·{' '}
-          <Link href="/selfemployed" className="text-brand-500 hover:text-brand-700 font-medium transition-colors">
+          <Link href="/selfemployed" className="text-[#0088cc] hover:text-[#0077b3] font-medium transition-colors">
             Подробнее
           </Link>
         </p>
+        <div className="text-center mt-6">
+          <Link href="/dashboard" className="text-[#0088cc] font-medium text-sm hover:underline underline-offset-2">
+            Смотреть заказы →
+          </Link>
+        </div>
       </section>
 
       {/* ── Calculator ── */}
-      <section className="bg-white px-6 py-14">
+      <section className="bg-white px-6 py-16">
         <div className="max-w-md mx-auto space-y-8">
           <div className="text-center">
             <h2 className="text-2xl font-extrabold text-gray-900">Сколько стоит?</h2>
@@ -171,15 +206,19 @@ export default function HomePage() {
           </div>
           <CostCalculator />
 
-          {/* Premium services */}
-          <div className="space-y-6 pt-4">
-            <h2 className="text-xl font-extrabold text-center text-gray-900">Дополнительные услуги</h2>
+          <div className="space-y-4 pt-4">
+            <div className="text-center">
+              <h2 className="text-2xl font-extrabold text-gray-900">Дополнительные услуги</h2>
+              <p className="text-gray-500 text-sm mt-2">Расширьте возможности на платформе</p>
+            </div>
             <div className="space-y-3">
-              <div className="
+              <div
+                className={`
                 bg-gradient-to-r from-amber-50 to-yellow-50
-                rounded-3xl p-5 shadow-card border border-amber-100
-                hover:shadow-card-hover transition-all duration-300
-              ">
+                rounded-2xl p-5 shadow-sm border border-amber-100
+                hover:shadow-md hover:-translate-y-0.5 transition-all duration-200
+              `}
+              >
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center">
@@ -191,27 +230,28 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-2xl font-extrabold text-amber-600">{(1000).toLocaleString('ru-RU')}₽</span>
+                    <span className="text-2xl font-extrabold text-amber-600">
+                      {(1000).toLocaleString('ru-RU')}₽
+                    </span>
                     <span className="text-xs text-gray-400 block">/мес</span>
                   </div>
                 </div>
               </div>
 
-              <div className="
-                bg-white rounded-3xl p-5 shadow-card border border-gray-100
-                hover:shadow-card-hover transition-all duration-300
-              ">
+              <div className={cardBase}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center">
-                      <Trophy size={20} className="text-brand-500" />
+                    <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
+                      <Trophy size={20} className="text-[#0088cc]" />
                     </div>
                     <div>
                       <h3 className="font-bold text-gray-900">Подбор ТОП-3</h3>
                       <p className="text-gray-500 text-xs">Персональная подборка</p>
                     </div>
                   </div>
-                  <span className="text-2xl font-extrabold text-brand-500">{(1000).toLocaleString('ru-RU')}₽</span>
+                  <span className="text-2xl font-extrabold text-[#0088cc]">
+                    {(1000).toLocaleString('ru-RU')}₽
+                  </span>
                 </div>
               </div>
             </div>
@@ -220,12 +260,13 @@ export default function HomePage() {
       </section>
 
       {/* ── Аренда техники ── */}
-      <section className="px-6 py-14 max-w-md mx-auto w-full">
+      <section className="px-6 py-16 max-w-md mx-auto w-full">
         <div className="text-center mb-6">
-          <h2 className="text-xl font-extrabold text-gray-900">
-            🔧 Аренда техники
-          </h2>
+          <h2 className="text-2xl font-extrabold text-gray-900">Аренда техники</h2>
           <p className="text-gray-500 text-sm mt-2">
+            Инструмент в аренду — дешевле, чем покупать
+          </p>
+          <p className="text-gray-500 text-sm mt-1">
             Строительный инструмент и садовая техника — от 300₽/день
           </p>
         </div>
@@ -233,40 +274,37 @@ export default function HomePage() {
         <div className="space-y-3">
           <Link
             href="/equipment?cat=garden"
-            className="
-              block bg-white rounded-3xl p-5 shadow-card border border-gray-100
-              hover:shadow-card-hover hover:-translate-y-0.5
-              transition-all duration-300
-            "
+            className={`
+              block ${cardBase}
+              bg-emerald-50 border-emerald-200 hover:border-emerald-300
+            `}
           >
             <h3 className="font-bold text-gray-900">🌿 Сад и участок</h3>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
               Газонокосилки, триммеры, бензопилы, снегоуборщик
             </p>
           </Link>
           <Link
             href="/equipment?cat=construction"
-            className="
-              block bg-white rounded-3xl p-5 shadow-card border border-gray-100
-              hover:shadow-card-hover hover:-translate-y-0.5
-              transition-all duration-300
-            "
+            className={`
+              block ${cardBase}
+              bg-amber-50 border-amber-200 hover:border-amber-300
+            `}
           >
             <h3 className="font-bold text-gray-900">🔨 Стройка и ремонт</h3>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
               Перфораторы, болгарки, плиткорез, строительный пылесос
             </p>
           </Link>
           <Link
             href="/equipment?cat=special"
-            className="
-              block bg-white rounded-3xl p-5 shadow-card border border-gray-100
-              hover:shadow-card-hover hover:-translate-y-0.5
-              transition-all duration-300
-            "
+            className={`
+              block ${cardBase}
+              bg-blue-50 border-blue-200 hover:border-blue-300
+            `}
           >
             <h3 className="font-bold text-gray-900">⚡ Спецтехника</h3>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
               Мойка высокого давления, бензогенератор
             </p>
           </Link>
@@ -286,47 +324,87 @@ export default function HomePage() {
         </Link>
       </section>
 
-      {/* ── CTA + Footer ── */}
-      <section className="px-6 py-14 max-w-md mx-auto w-full space-y-8">
-        <div className="mx-auto w-full max-w-sm">
-          <p className="mb-1.5 block text-center text-[11px] font-medium uppercase tracking-[0.14em] text-gray-400">
-            Мессенджеры
-          </p>
-          <MessengerLinks action="order" variant="buttons" />
-        </div>
+      {/* ── CTA ── */}
+      <section className="px-6 py-16 max-w-md mx-auto w-full">
+        <Link
+          href="/auth/register"
+          className="
+            flex items-center justify-center gap-2 w-full
+            bg-[#0088cc] text-white font-bold py-4 rounded-2xl
+            shadow-lg text-lg hover:opacity-95 active:scale-[0.99]
+            transition-all duration-200
+          "
+        >
+          Начать бесплатно
+          <ArrowRight size={22} />
+        </Link>
+        <p className="text-center text-gray-500 text-sm mt-4">
+          Уже есть аккаунт?{' '}
+          <Link href="/auth/login" className="text-[#0088cc] font-medium hover:underline underline-offset-2">
+            Войти
+          </Link>
+        </p>
+      </section>
 
-        <div className="grid grid-cols-2 gap-6 text-sm">
+      {/* ── Footer ── */}
+      <footer className="px-6 pb-12 max-w-md mx-auto w-full border-t border-gray-100 pt-10">
+        <div className="grid grid-cols-2 gap-8 text-sm">
           <div>
-            <p className="font-semibold text-gray-700 mb-2">Исполнителям</p>
-            <div className="space-y-1.5">
-              <Link href="/dashboard" className="block text-gray-400 hover:text-brand-500 transition-colors">
+            <p className="font-semibold text-gray-900 mb-3">Исполнителям</p>
+            <div className="space-y-2">
+              <Link href="/dashboard" className="block text-gray-600 hover:text-[#0088cc] transition-colors leading-relaxed">
                 Смотреть заказы
               </Link>
-              <Link href="/selfemployed" className="block text-gray-400 hover:text-brand-500 transition-colors">
+              <Link href="/selfemployed" className="block text-gray-600 hover:text-[#0088cc] transition-colors leading-relaxed">
                 Как стать самозанятым
               </Link>
             </div>
           </div>
           <div>
-            <p className="font-semibold text-gray-700 mb-2">Заказчикам</p>
-            <div className="space-y-1.5">
-              <Link href="/app/order" className="block text-gray-400 hover:text-brand-500 transition-colors">
+            <p className="font-semibold text-gray-900 mb-3">Заказчикам</p>
+            <div className="space-y-2">
+              <Link href="/app/order" className="block text-gray-600 hover:text-[#0088cc] transition-colors leading-relaxed">
                 Оформить заказ
               </Link>
-              <Link href="/equipment" className="block text-gray-400 hover:text-brand-500 transition-colors">
+              <Link href="/equipment" className="block text-gray-600 hover:text-[#0088cc] transition-colors leading-relaxed">
                 Аренда техники
               </Link>
-              <Link href="/app/payments" className="block text-gray-400 hover:text-brand-500 transition-colors">
+              <Link href="/app/payments" className="block text-gray-600 hover:text-[#0088cc] transition-colors leading-relaxed">
                 Тарифы
               </Link>
             </div>
           </div>
         </div>
 
-        <p className="text-gray-300 text-xs text-center">
-          © {new Date().getFullYear()} Подряд PRO · podryad.pro
+        <p className="text-gray-600 text-sm mt-8 text-center">
+          Мы в мессенджерах:{' '}
+          <a
+            href={telegramUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#0088cc] font-medium hover:underline underline-offset-2"
+          >
+            Telegram
+          </a>
+          <span className="text-gray-300 mx-1.5">·</span>
+          <a
+            href={maxChannelUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#0088cc] font-medium hover:underline underline-offset-2"
+          >
+            MAX
+          </a>
         </p>
-      </section>
+
+        <p className="text-gray-400 text-xs text-center mt-4 leading-relaxed">
+          💡 Telegram заблокирован? MAX работает без VPN
+        </p>
+
+        <p className="text-gray-400 text-xs text-center mt-6">
+          © 2026 Подряд PRO · podryad.pro
+        </p>
+      </footer>
     </main>
   );
 }
