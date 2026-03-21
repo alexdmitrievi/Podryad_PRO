@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import {
   ArrowRight, MapPin, Star, Users, MessageSquare,
@@ -26,25 +25,20 @@ export default function HomePage() {
             Работа и подработка в Омске и Новосибирске
           </div>
 
-          <Image
-            src="/logo.png"
-            alt=""
-            width={64}
-            height={64}
-            className="mx-auto rounded-2xl shadow-lg"
-          />
-
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1] text-balance">
             Подряд PRO
           </h1>
-          <p className="text-lg text-white/80 max-w-xs md:max-w-lg mx-auto leading-relaxed">
-            Грузчики · Уборка · Строительство · Любые задачи — быстро и надёжно
+          <p className="text-lg text-white/85 max-w-sm md:max-w-lg mx-auto leading-relaxed">
+            Исполнители и аренда техники — с гарантией оплаты и возврата
+          </p>
+          <p className="text-sm text-white/50 mt-3">
+            Грузчики · Уборка · Строительство · Разнорабочие · Аренда инструмента
           </p>
 
           <div className="pt-2">
             <Link
               href="/auth/register"
-              className="inline-flex items-center justify-center gap-2 bg-white text-[#0088cc] font-bold py-4 px-8 md:px-12 rounded-2xl text-lg shadow-lg hover:shadow-xl transition-shadow duration-200 md:w-auto"
+              className="inline-flex items-center justify-center gap-2 bg-white text-[#0088cc] font-bold py-4 px-8 rounded-2xl text-lg shadow-lg hover:shadow-xl transition-shadow duration-200 md:w-auto md:px-12"
             >
               Начать бесплатно
               <ArrowRight size={20} />
