@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface Props {
   title: string;
@@ -13,8 +16,13 @@ export default function PageHeader({
   backHref = '/',
   backLabel = '← Главная',
 }: Props) {
+  const pathname = usePathname();
+  const stickyOffset = pathname?.startsWith('/auth') ? '' : 'md:mt-16';
+
   return (
-    <header className="bg-gradient-to-r from-brand-900 to-brand-600 text-white px-4 py-3 flex-shrink-0">
+    <header
+      className={`bg-gradient-to-r from-brand-900 to-brand-600 text-white px-4 py-3 flex-shrink-0 ${stickyOffset}`}
+    >
       <div className="max-w-lg mx-auto">
         <Link
           href={backHref}

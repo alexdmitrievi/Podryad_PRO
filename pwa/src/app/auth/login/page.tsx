@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import BottomNav from '@/components/BottomNav';
@@ -15,6 +16,13 @@ function LoginContent() {
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-gray-50">
       <PageHeader title="Вход" backHref="/dashboard" />
       <div className="mx-auto max-w-md space-y-4 p-4 pb-8">
+        <Image
+          src="/logo.png"
+          alt="Подряд PRO"
+          width={48}
+          height={48}
+          className="mx-auto rounded-xl mb-4"
+        />
         <p className="text-sm leading-relaxed text-gray-600">
           Чтобы откликаться на заказы, авторизуйтесь через Telegram-бота — сессия
           сохранится в браузере.

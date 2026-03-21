@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import BottomNav from '@/components/BottomNav';
@@ -52,6 +53,13 @@ export default function AuthRegisterPage() {
     <div className="flex h-screen flex-col bg-gray-50">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <PageHeader title="Регистрация" backHref="/" />
+        <Image
+          src="/logo.png"
+          alt="Подряд PRO"
+          width={48}
+          height={48}
+          className="mx-auto rounded-xl mb-4"
+        />
         <form onSubmit={onSubmit} className="mx-auto w-full max-w-md space-y-4 p-4 pb-8">
           <p className="text-sm text-gray-600">
             Укажите роль и контакты — сессия сохранится в браузере.

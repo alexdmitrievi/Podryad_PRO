@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Manrope } from 'next/font/google';
 import DevUnregisterSW from '@/components/DevUnregisterSW';
+import StickyHeader from '@/components/StickyHeader';
 import './globals.css';
 
 const inter = Inter({
@@ -31,8 +32,8 @@ export const metadata: Metadata = {
   },
   robots: 'index, follow',
   icons: {
-    icon: '/icon-192.png',
-    apple: '/icon-192.png',
+    icon: '/logo.png',
+    apple: '/logo.png',
   },
 };
 
@@ -58,6 +59,7 @@ export default function RootLayout({
       </head>
       <body className="bg-surface text-[#2B2B2B] font-sans antialiased">
         <DevUnregisterSW />
+        <StickyHeader />
         {children}
       </body>
     </html>

@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   ArrowRight, MapPin, Star, Users, MessageSquare,
@@ -19,11 +20,19 @@ export default function HomePage() {
       {/* ── Hero ── */}
       <section className="relative bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 text-white overflow-hidden">
         <div className="hero-pattern absolute inset-0" />
-        <div className="relative max-w-2xl mx-auto px-6 pt-16 pb-20 md:pt-24 md:pb-28 text-center space-y-6">
+        <div className="relative max-w-2xl mx-auto px-6 pt-16 pb-20 md:pt-28 md:pb-28 text-center space-y-6">
           <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium">
             <Zap size={14} />
             Работа и подработка в Омске и Новосибирске
           </div>
+
+          <Image
+            src="/logo.png"
+            alt=""
+            width={64}
+            height={64}
+            className="mx-auto rounded-2xl shadow-lg"
+          />
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1] text-balance">
             Подряд PRO
