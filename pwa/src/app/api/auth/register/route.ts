@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { hashPassword, signPodryadSession } from '@/lib/auth';
-import { createUser, findUserByPhone } from '@/lib/db';
+import { hashPassword, signPodryadSession, normalizePhone } from '@/lib/auth';
+import { createUser, findUserByPhone, createWorkerProfile } from '@/lib/db';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
-
-function normalizePhone(raw: string): string {
-  const d = raw.replace(/\D/g, '');
-  if (d.length === 10) return `7${d}`;
-  if (d.length === 11 && d.startsWith('8')) return `7${d.slice(1)}`;
-  if (d.length === 11 && d.startsWith('7')) return d;
-  return d;
-}
 
 export async function POST(req: NextRequest) {
   let body: {
@@ -59,6 +51,20 @@ export async function POST(req: NextRequest) {
       password_hash,
       role: roleIn,
     });
+
+    // Для воркеров — создаём профиль в workers (white_list=false, ожидает модерации)
+    if (roleIn === 'worker') {
+      try {
+        await createWorkerProfile({
+          telegram_id: `pwa:${normalized}`,
+          name,
+          phone: normalized,
+          user_phone: normalized,
+        });
+      } catch (e) {
+        console.error('Worker profile creation (non-critical):', e);
+      }
+    }
 
     const token = signPodryadSession({
       user_id: userId,

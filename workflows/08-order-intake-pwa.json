@@ -16,7 +16,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $('Webhook PWA').first().json.body || $('Webhook PWA').first().json;\nconst addr = String(body.address || '').trim() || 'Омск';\nconst workType = ['грузчики','уборка','стройка','разнорабочие','другое'].includes(body.work_type) ? body.work_type : 'другое';\nconst people = Math.max(1, Math.min(50, parseInt(body.people) || 1));\nconst hours = Math.max(1, Math.min(24, parseInt(body.hours) || 1));\nconst timeRaw = body.time || '';\nconst timeFormatted = timeRaw ? (() => {\n  try {\n    const d = new Date(timeRaw);\n    if (isNaN(d.getTime())) return timeRaw;\n    return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });\n  } catch { return timeRaw; }\n})() : '';\n\nreturn [{ json: { address: addr, work_type: workType, people, hours, time: timeFormatted, comment: String(body.comment || '').slice(0, 1000), customer_id: body.telegram_id ? String(body.telegram_id) : 'pwa' } }];"
+        "jsCode": "const body = $('Webhook PWA').first().json.body || $('Webhook PWA').first().json;\nconst addr = String(body.address || '').trim() || 'Омск';\nconst workType = ['грузчики','уборка','стройка','разнорабочие','другое'].includes(body.work_type) ? body.work_type : 'другое';\nconst people = Math.max(1, Math.min(50, parseInt(body.people) || 1));\nconst hours = Math.max(1, Math.min(24, parseInt(body.hours) || 1));\nconst timeRaw = body.time || '';\nconst timeFormatted = timeRaw ? (() => {\n  try {\n    const d = new Date(timeRaw);\n    if (isNaN(d.getTime())) return timeRaw;\n    return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });\n  } catch { return timeRaw; }\n})() : '';\n\nreturn [{ json: { address: addr, work_type: workType, people, hours, time: timeFormatted, comment: String(body.comment || '').slice(0, 1000), customer_id: body.telegram_id ? String(body.telegram_id) : (body.customer_id || 'pwa'), return_url: body.return_url || '' } }];"
       },
       "id": "pwa-parse-002",
       "name": "Parse PWA Body",
@@ -82,7 +82,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const parsed = $('Parse PWA Body').first().json;\nconst geoResult = $('Nominatim Geocode').first().json;\nconst ratesResult = $('Normalize Rates Row').first().json;\n\nconst geo = Array.isArray(geoResult) ? geoResult[0] : geoResult;\nconst lat = geo?.lat ? parseFloat(geo.lat) : 54.9894;\nconst lon = geo?.lon ? parseFloat(geo.lon) : 73.3667;\nconst addr = parsed.address || 'Омск';\nconst yandexLink = `https://yandex.ru/maps/?pt=${lon},${lat}&z=16&text=${encodeURIComponent(addr)}`;\n\nconst people = Number(parsed.people || 1);\nconst hours = Number(parsed.hours || 1);\nconst clientRate = parseInt(ratesResult.client_rate, 10) || 600;\nconst workerRate = parseInt(ratesResult.worker_rate, 10) || 400;\nconst minHours = parseInt(ratesResult.min_hours, 10) || 1;\nconst effectiveHours = Math.max(hours, minHours);\nconst clientTotal = clientRate * people * effectiveHours;\nconst workerPayout = workerRate * people * effectiveHours;\nconst margin = clientTotal - workerPayout;\nconst createdAt = new Date().toISOString();\nconst orderId = `n8n-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;\n\nreturn [{\n  json: {\n    order_id: orderId,\n    customer_id: parsed.customer_id,\n    address: addr,\n    lat,\n    lon,\n    yandex_link: yandexLink,\n    time: parsed.time || '',\n    payment_text: `${clientRate}₽/час × ${people} чел × ${effectiveHours} ч`,\n    people,\n    hours: effectiveHours,\n    work_type: parsed.work_type || 'другое',\n    comment: parsed.comment || '',\n    status: 'pending',\n    executor_id: '',\n    message_id: '',\n    created_at: createdAt,\n    client_rate: clientRate,\n    worker_rate: workerRate,\n    client_total: clientTotal,\n    worker_payout: workerPayout,\n    margin,\n    payout_status: 'pending'\n  }\n}];"
+        "jsCode": "const parsed = $('Parse PWA Body').first().json;\nconst geoResult = $('Nominatim Geocode').first().json;\nconst ratesResult = $('Normalize Rates Row').first().json;\n\nconst geo = Array.isArray(geoResult) ? geoResult[0] : geoResult;\nconst lat = geo?.lat ? parseFloat(geo.lat) : 54.9894;\nconst lon = geo?.lon ? parseFloat(geo.lon) : 73.3667;\nconst addr = parsed.address || 'Омск';\nconst yandexLink = `https://yandex.ru/maps/?pt=${lon},${lat}&z=16&text=${encodeURIComponent(addr)}`;\n\nconst people = Number(parsed.people || 1);\nconst hours = Number(parsed.hours || 1);\nconst clientRate = parseInt(ratesResult.client_rate, 10) || 600;\nconst workerRate = parseInt(ratesResult.worker_rate, 10) || 400;\nconst minHours = parseInt(ratesResult.min_hours, 10) || 1;\nconst effectiveHours = Math.max(hours, minHours);\nconst clientTotal = clientRate * people * effectiveHours;\nconst workerPayout = workerRate * people * effectiveHours;\nconst margin = clientTotal - workerPayout;\nconst createdAt = new Date().toISOString();\nconst orderId = `n8n-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;\n\nreturn [{\n  json: {\n    order_id: orderId,\n    customer_id: parsed.customer_id,\n    address: addr,\n    lat,\n    lon,\n    yandex_link: yandexLink,\n    time: parsed.time || '',\n    payment_text: `${clientRate}₽/час × ${people} чел × ${effectiveHours} ч`,\n    people,\n    hours: effectiveHours,\n    work_type: parsed.work_type || 'другое',\n    comment: parsed.comment || '',\n    status: 'pending',\n    executor_id: '',\n    message_id: '',\n    created_at: createdAt,\n    client_rate: clientRate,\n    worker_rate: workerRate,\n    client_total: clientTotal,\n    worker_payout: workerPayout,\n    margin,\n    payout_status: 'pending',\n    return_url: parsed.return_url || ''\n  }\n}];"
       },
       "id": "pwa-build-005",
       "name": "Build Order",
@@ -117,15 +117,48 @@
     },
     {
       "parameters": {
+        "method": "POST",
+        "url": "https://api.yookassa.ru/v3/payments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Basic {{ Buffer.from($env.YUKASSA_SHOP_ID + ':' + $env.YUKASSA_SECRET_KEY).toString('base64') }}" },
+            { "name": "Idempotence-Key", "value": "={{ $('Build Order').first().json.order_id }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ amount: { value: String($('Build Order').first().json.client_total) + '.00', currency: 'RUB' }, confirmation: { type: 'redirect', return_url: $('Build Order').first().json.return_url || ($env.SITE_URL || 'https://podryad.pro') + '/dashboard' }, capture: true, description: 'Заказ ' + $('Build Order').first().json.order_id + ': ' + $('Build Order').first().json.payment_text, metadata: { order_id: $('Build Order').first().json.order_id, source: 'pwa' } }) }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "pwa-yukassa-008",
+      "name": "YooKassa Create Payment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1430, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const paymentResult = $('YooKassa Create Payment').first().json;\nconst orderData = $('Build Order').first().json;\nconst confirmationUrl = paymentResult.confirmation?.confirmation_url || '';\nconst yukassaId = paymentResult.id || '';\nreturn [{ json: { success: true, order_id: orderData.order_id, payment_url: confirmationUrl, yukassa_id: yukassaId, client_total: orderData.client_total } }];"
+      },
+      "id": "pwa-build-response-009",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ success: true }) }}",
+        "responseBody": "={{ JSON.stringify($json) }}",
         "options": { "responseCode": 200 }
       },
       "id": "pwa-respond-007",
       "name": "Respond OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1430, 300]
+      "position": [1870, 300]
     }
   ],
   "connections": {
@@ -135,7 +168,9 @@
     "Fetch Rates Supabase": { "main": [[{ "node": "Normalize Rates Row", "type": "main", "index": 0 }]] },
     "Normalize Rates Row": { "main": [[{ "node": "Build Order", "type": "main", "index": 0 }]] },
     "Build Order": { "main": [[{ "node": "Insert Order Supabase", "type": "main", "index": 0 }]] },
-    "Insert Order Supabase": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
+    "Insert Order Supabase": { "main": [[{ "node": "YooKassa Create Payment", "type": "main", "index": 0 }]] },
+    "YooKassa Create Payment": { "main": [[{ "node": "Build Response", "type": "main", "index": 0 }]] },
+    "Build Response": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1", "saveManualExecutions": true },

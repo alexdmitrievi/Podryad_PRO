@@ -2,6 +2,15 @@ import { cookies } from 'next/headers';
 import crypto from 'crypto';
 import { getWorkerByTelegramId } from '@/lib/db';
 
+/** Нормализация телефона: 79001234567 */
+export function normalizePhone(raw: string): string {
+  const d = raw.replace(/\D/g, '');
+  if (d.length === 10) return `7${d}`;
+  if (d.length === 11 && d.startsWith('8')) return `7${d.slice(1)}`;
+  if (d.length === 11 && d.startsWith('7')) return d;
+  return d;
+}
+
 const { createHmac, createHash, timingSafeEqual, randomBytes, scryptSync } = crypto;
 const COOKIE_NAME = 'worker_session';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
@@ -47,7 +56,8 @@ export function verifyTelegramAuth(params: {
 }
 
 export async function createSession(telegramId: string): Promise<string> {
-  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN || 'fallback-secret';
+  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  if (!secret) throw new Error('SESSION_SECRET or TELEGRAM_BOT_TOKEN required');
   const payload = `${telegramId}.${Date.now()}`;
   const sig = createHmac('sha256', secret).update(payload).digest('hex');
   return `${payload}.${sig}`;
@@ -63,7 +73,8 @@ export function verifySessionToken(token: string): string | null {
   if (parts.length !== 3) return null;
 
   const [telegramId, ts, sig] = parts;
-  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN || 'fallback-secret';
+  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  if (!secret) return null;
   const payload = `${telegramId}.${ts}`;
   const expectedSig = createHmac('sha256', secret).update(payload).digest('hex');
 

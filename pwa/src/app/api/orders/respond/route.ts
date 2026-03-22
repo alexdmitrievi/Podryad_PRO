@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getViewerSession, getWorkerActor } from '@/lib/auth';
-import { getOrderById, orderFromDb, updateOrder } from '@/lib/db';
+import {
+  getOrderById,
+  orderFromDb,
+  getWorkerByUserId,
+  validateWorkerAccess,
+  atomicClaimOrder,
+} from '@/lib/db';
 
 export async function POST(req: Request) {
   try {
@@ -27,6 +33,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Укажите order_id' }, { status: 400 });
     }
 
+    // Проверяем профиль воркера (whitelist, рейтинг, бан)
+    const workerRow = await getWorkerByUserId(actor.user_id);
+    if (!workerRow) {
+      return NextResponse.json(
+        { error: 'Профиль исполнителя не найден. Пройдите регистрацию.' },
+        { status: 403 }
+      );
+    }
+
+    const validationError = validateWorkerAccess(workerRow);
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 403 });
+    }
+
+    // Проверяем что заказ существует и published
     const row = await getOrderById(orderIdStr);
     if (!row) {
       return NextResponse.json({ error: 'Заказ не найден' }, { status: 404 });
@@ -37,10 +58,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Заказ уже занят' }, { status: 409 });
     }
 
-    await updateOrder(String(row.order_id), {
-      status: 'closed',
-      executor_id: actor.user_id,
-    });
+    // Атомарный захват — если кто-то уже забрал, вернёт 0
+    const claimed = await atomicClaimOrder(orderIdStr, actor.user_id);
+    if (claimed === 0) {
+      return NextResponse.json({ error: 'Заказ уже занят другим исполнителем' }, { status: 409 });
+    }
 
     const order = orderFromDb({
       ...(row as Record<string, unknown>),
@@ -48,25 +70,25 @@ export async function POST(req: Request) {
       executor_id: actor.user_id,
     });
 
+    // Уведомляем n8n (обновление Telegram-канала, уведомление заказчика)
     const webhookBase = process.env.N8N_WEBHOOK_BASE;
-    if (!webhookBase) {
-      console.error('N8N_WEBHOOK_BASE is not configured');
-      return NextResponse.json({ error: 'Сервис временно недоступен' }, { status: 500 });
-    }
-
-    const whRes = await fetch(`${webhookBase.replace(/\/$/, '')}/order-response-pwa`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        order_id: order.order_id,
-        executor_id: actor.user_id,
-        order,
-      }),
-    });
-
-    if (!whRes.ok) {
-      console.error('n8n order-response-pwa returned', whRes.status);
-      return NextResponse.json({ error: 'Ошибка уведомления' }, { status: 500 });
+    if (webhookBase) {
+      try {
+        await fetch(`${webhookBase.replace(/\/$/, '')}/order-response-pwa`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_id: order.order_id,
+            executor_id: actor.user_id,
+            executor_name: String(workerRow.name || ''),
+            executor_phone: String(workerRow.phone || ''),
+            order,
+          }),
+        });
+      } catch (e) {
+        // Не блокируем отклик из-за ошибки webhook — заказ уже захвачен
+        console.error('n8n order-response-pwa webhook error:', e);
+      }
     }
 
     const { margin, ...orderOut } = order;

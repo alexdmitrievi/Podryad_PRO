@@ -219,12 +219,92 @@ export async function getTopWorkers(limit = 20) {
   });
 }
 
+/** Создать профиль воркера (при PWA-регистрации). white_list=false по умолчанию. */
+export async function createWorkerProfile(data: {
+  telegram_id: string;
+  name: string;
+  phone: string;
+  user_phone: string;
+}) {
+  const { error } = await db()
+    .from('workers')
+    .insert({
+      telegram_id: data.telegram_id,
+      name: data.name,
+      phone: data.phone,
+      user_phone: data.user_phone,
+      white_list: false,
+      rating: 5.0,
+      jobs_count: 0,
+    });
+  if (error) throw error;
+}
+
 export async function updateWorker(phone: string, updates: Record<string, unknown>) {
   const { error } = await db()
     .from('workers')
     .update(updates)
     .eq('phone', phone);
   if (error) throw error;
+}
+
+/** Найти профиль воркера по user_id (ищет и по telegram_id, и по user_phone). */
+export async function getWorkerByUserId(userId: string): Promise<Record<string, unknown> | null> {
+  // Сначала ищем по telegram_id (Telegram-авторизация)
+  const { data: byTg } = await db()
+    .from('workers')
+    .select('*')
+    .eq('telegram_id', userId)
+    .single();
+  if (byTg) return byTg as Record<string, unknown>;
+
+  // Потом по user_phone (PWA-регистрация: userId = 'reg:<phone>')
+  const phoneMatch = userId.match(/^reg:(\d+)$/);
+  if (phoneMatch) {
+    const { data: byPhone } = await db()
+      .from('workers')
+      .select('*')
+      .eq('phone', phoneMatch[1])
+      .single();
+    if (byPhone) return byPhone as Record<string, unknown>;
+
+    const { data: byUserPhone } = await db()
+      .from('workers')
+      .select('*')
+      .eq('user_phone', phoneMatch[1])
+      .single();
+    if (byUserPhone) return byUserPhone as Record<string, unknown>;
+  }
+
+  return null;
+}
+
+/** Валидация воркера: whitelist, рейтинг, бан. Возвращает null если OK, иначе строку ошибки. */
+export function validateWorkerAccess(worker: Record<string, unknown>): string | null {
+  if (!worker.white_list) return 'Вы не в белом списке. Обратитесь к администратору.';
+  if (worker.ban_until && new Date(String(worker.ban_until)) > new Date()) {
+    return `Вы заблокированы до ${new Date(String(worker.ban_until)).toLocaleDateString('ru-RU')}`;
+  }
+  const rating = Number(worker.rating) || 0;
+  if (worker.jobs_count != null && Number(worker.jobs_count) >= 5 && rating < 4.0) {
+    return `Ваш рейтинг (${rating.toFixed(1)}) ниже минимального (4.0)`;
+  }
+  return null;
+}
+
+/**
+ * Атомарный захват заказа: обновляет только если status='published'.
+ * Возвращает количество обновлённых строк (0 = кто-то уже забрал).
+ */
+export async function atomicClaimOrder(orderId: string, executorId: string): Promise<number> {
+  const { data, error } = await db()
+    .from('orders')
+    .update({ status: 'closed', executor_id: executorId })
+    .eq('order_id', orderId)
+    .eq('status', 'published')
+    .select('order_id');
+  if (error) throw error;
+  return data?.length ?? 0;
 }
 
 // ── ТЕХНИКА ──

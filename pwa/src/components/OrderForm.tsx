@@ -26,6 +26,8 @@ export default function OrderForm() {
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState('');
+  const [clientTotal, setClientTotal] = useState(0);
   const [error, setError] = useState('');
 
   const people = parseInt(form.people, 10) || 1;
@@ -56,12 +58,19 @@ export default function OrderForm() {
         }),
       });
 
+      const data = await res.json().catch(() => ({})) as {
+        error?: string;
+        success?: boolean;
+        payment_url?: string;
+        client_total?: number;
+      };
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Ошибка отправки');
       }
 
       setSuccess(true);
+      if (data.payment_url) setPaymentUrl(data.payment_url);
+      if (data.client_total) setClientTotal(data.client_total);
       setForm({ address: '', time: '', people: '2', hours: '2', work_type: 'грузчики', comment: '' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось отправить заявку');
@@ -77,11 +86,33 @@ export default function OrderForm() {
           <CheckCircle2 size={32} className="text-emerald-600" />
         </div>
         <h3 className="font-bold text-emerald-900 text-xl">Заявка отправлена!</h3>
-        <p className="text-emerald-700 text-sm leading-relaxed max-w-xs mx-auto">
-          Мы рассчитаем стоимость и пришлём вам предложение через бота.
-        </p>
+        {paymentUrl ? (
+          <>
+            <p className="text-emerald-700 text-sm leading-relaxed max-w-xs mx-auto">
+              {clientTotal > 0 ? `Стоимость: ${clientTotal.toLocaleString('ru-RU')}₽. ` : ''}
+              Оплатите заказ для публикации.
+            </p>
+            <a
+              href={paymentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
+                inline-flex items-center gap-2 mt-2
+                bg-brand-500 text-white px-8 py-3 rounded-2xl font-bold text-base
+                hover:bg-brand-600 active:scale-[0.98] transition-all duration-200
+                shadow-sm shadow-brand-500/20
+              "
+            >
+              Оплатить
+            </a>
+          </>
+        ) : (
+          <p className="text-emerald-700 text-sm leading-relaxed max-w-xs mx-auto">
+            Мы рассчитаем стоимость и пришлём вам ссылку на оплату.
+          </p>
+        )}
         <button
-          onClick={() => setSuccess(false)}
+          onClick={() => { setSuccess(false); setPaymentUrl(''); setClientTotal(0); }}
           className="
             inline-flex items-center gap-2 mt-2
             bg-emerald-600 text-white px-6 py-2.5 rounded-2xl font-semibold text-sm

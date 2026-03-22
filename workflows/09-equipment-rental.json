@@ -161,7 +161,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/equipment?select=*&equipment_id=eq.' + encodeURIComponent($('Parse Command').item.json.equipment_id)' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/equipment?select=*&equipment_id=eq.' + encodeURIComponent($('Parse Command').item.json.equipment_id) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -363,7 +363,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/equipment?select=*&equipment_id=eq.' + encodeURIComponent($json.equipment_id)' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/equipment?select=*&equipment_id=eq.' + encodeURIComponent($json.equipment_id) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -634,7 +634,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/rentals?select=*&rental_id=eq.' + encodeURIComponent($json.rental_id)' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/rentals?select=*&rental_id=eq.' + encodeURIComponent($json.rental_id) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -681,7 +681,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/rentals?rental_id=eq.' + encodeURIComponent($('Parse Payment Callback').first().json.rental_id)' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/rentals?rental_id=eq.' + encodeURIComponent($('Parse Payment Callback').first().json.rental_id) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -726,7 +726,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/equipment?equipment_id=eq.' + encodeURIComponent($('Normalize Rental Row').first().json.equipment_id)' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/equipment?equipment_id=eq.' + encodeURIComponent($('Normalize Rental Row').first().json.equipment_id) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

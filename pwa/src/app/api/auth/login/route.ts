@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { signPodryadSession, verifyPassword } from '@/lib/auth';
+import { signPodryadSession, verifyPassword, normalizePhone } from '@/lib/auth';
 import { findUserByPhone, updateUserLastLogin } from '@/lib/db';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
-
-function normalizePhone(raw: string): string {
-  const d = raw.replace(/\D/g, '');
-  if (d.length === 10) return `7${d}`;
-  if (d.length === 11 && d.startsWith('8')) return `7${d.slice(1)}`;
-  if (d.length === 11 && d.startsWith('7')) return d;
-  return d;
-}
 
 export async function POST(req: NextRequest) {
   let body: { phone?: string; password?: string };

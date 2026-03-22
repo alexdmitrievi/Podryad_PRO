@@ -34,14 +34,15 @@ export interface Worker {
   phone: string;
   rating: number;
   jobs_count: number;
-  white_list: string;
-  is_vip: string;
+  white_list: boolean;
+  is_vip: boolean;
   vip_expires_at?: string;
   skills: string;
   balance: number;
   ban_until?: string;
   created_at: string;
-  is_selfemployed?: string;
+  is_selfemployed?: boolean;
   card_last4?: string;
-  accepted_offer?: string;
+  accepted_offer?: boolean;
+  user_phone?: string;
 }

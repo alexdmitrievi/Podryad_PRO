@@ -30,6 +30,8 @@ export const supabase = new Proxy({} as SupabaseClient, {
   },
 });
 
+let serviceClient: SupabaseClient | undefined;
+
 /** Клиент для серверного кода (обходит RLS) */
 export function getServiceClient() {
   if (!supabaseServiceKey) {
@@ -39,5 +41,8 @@ export function getServiceClient() {
   if (!url) {
     throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set');
   }
-  return createClient(url, supabaseServiceKey);
+  if (!serviceClient) {
+    serviceClient = createClient(url, supabaseServiceKey);
+  }
+  return serviceClient;
 }

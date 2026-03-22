@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPublishedOrders, orderFromDb } from '@/lib/db';
-import { getTelegramIdFromSession } from '@/lib/auth';
+import { getTelegramIdFromSession, getViewerSession } from '@/lib/auth';
 
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW = 60_000;
@@ -57,6 +57,9 @@ export async function POST(req: Request) {
     }
 
     const telegramId = await getTelegramIdFromSession();
+    const viewer = await getViewerSession();
+    const customerId = telegramId || (viewer ? viewer.user_id : 'pwa');
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://podryad.pro';
 
     const res = await fetch(`${webhookBase}/order-intake`, {
       method: 'POST',
@@ -69,7 +72,9 @@ export async function POST(req: Request) {
         people: Math.max(1, Math.min(50, parseInt(body.people) || 1)),
         hours: Math.max(1, Math.min(24, parseInt(body.hours) || 1)),
         comment: String(body.comment ?? '').slice(0, 1000),
+        customer_id: customerId,
         ...(telegramId && { telegram_id: telegramId }),
+        return_url: `${siteUrl}/dashboard`,
       }),
     });
 
@@ -77,7 +82,19 @@ export async function POST(req: Request) {
       throw new Error(`n8n webhook returned ${res.status}`);
     }
 
-    return NextResponse.json({ success: true });
+    const n8nData = await res.json().catch(() => ({})) as {
+      success?: boolean;
+      order_id?: string;
+      payment_url?: string;
+      client_total?: number;
+    };
+
+    return NextResponse.json({
+      success: true,
+      order_id: n8nData.order_id,
+      payment_url: n8nData.payment_url,
+      client_total: n8nData.client_total,
+    });
   } catch (error) {
     console.error('POST /api/orders error:', error);
     return NextResponse.json(

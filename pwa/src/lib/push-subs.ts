@@ -27,27 +27,8 @@ interface Row {
   is_active: boolean;
 }
 
-function rowToParsed(r: Row) {
-  return {
-    id: r.id,
-    userId: r.user_id,
-    phone: r.phone,
-    role: r.role,
-    endpoint: r.endpoint,
-    keys: { p256dh: r.p256dh, auth: r.auth },
-    isActive: r.is_active,
-  };
-}
-
-async function fetchAllRows(): Promise<ReturnType<typeof rowToParsed>[]> {
-  const { data, error } = await db()
-    .from('push_subscriptions')
-    .select('id, user_id, phone, role, endpoint, p256dh, auth, is_active');
-  if (error) {
-    console.error('push_subscriptions read:', error);
-    throw new Error('PUSHSUBS_READ_FAILED');
-  }
-  return (data || []).map((r) => rowToParsed(r as Row));
+function rowToSubscription(r: Row): PushSubscriptionData {
+  return { endpoint: r.endpoint, keys: { p256dh: r.p256dh, auth: r.auth } };
 }
 
 /** Сохранить подписку (вставка или обновление по endpoint). */
@@ -81,13 +62,16 @@ export async function savePushSubscription(
 export async function findPushSubscriptions(
   userId: string
 ): Promise<PushSubscriptionData[]> {
-  const all = await fetchAllRows();
-  return all
-    .filter((r) => r.userId === userId && r.isActive)
-    .map((r) => ({
-      endpoint: r.endpoint,
-      keys: r.keys,
-    }));
+  const { data, error } = await db()
+    .from('push_subscriptions')
+    .select('endpoint, p256dh, auth')
+    .eq('user_id', userId)
+    .eq('is_active', true);
+  if (error) {
+    console.error('push_subscriptions read:', error);
+    return [];
+  }
+  return (data || []).map((r) => rowToSubscription(r as Row));
 }
 
 /** Найти подписки по телефону */
@@ -95,28 +79,33 @@ export async function findPushSubscriptionsByPhone(
   phone: string
 ): Promise<PushSubscriptionData[]> {
   const digits = phoneDigits(phone);
-  const all = await fetchAllRows();
-  return all
-    .filter(
-      (r) => r.isActive && digits.length > 0 && phoneDigits(r.phone) === digits
-    )
-    .map((r) => ({
-      endpoint: r.endpoint,
-      keys: r.keys,
-    }));
+  if (!digits) return [];
+  const { data, error } = await db()
+    .from('push_subscriptions')
+    .select('endpoint, p256dh, auth')
+    .eq('phone', digits)
+    .eq('is_active', true);
+  if (error) {
+    console.error('push_subscriptions read:', error);
+    return [];
+  }
+  return (data || []).map((r) => rowToSubscription(r as Row));
 }
 
 /** Найти подписки по роли */
 export async function findPushSubscriptionsByRole(
   role: string
 ): Promise<PushSubscriptionData[]> {
-  const all = await fetchAllRows();
-  return all
-    .filter((r) => r.isActive && r.role === role)
-    .map((r) => ({
-      endpoint: r.endpoint,
-      keys: r.keys,
-    }));
+  const { data, error } = await db()
+    .from('push_subscriptions')
+    .select('endpoint, p256dh, auth')
+    .eq('role', role)
+    .eq('is_active', true);
+  if (error) {
+    console.error('push_subscriptions read:', error);
+    return [];
+  }
+  return (data || []).map((r) => rowToSubscription(r as Row));
 }
 
 /** Подписки для рассылки с привязкой к user_id (для деактивации при 410). */
@@ -125,27 +114,37 @@ export async function listPushSubscriptionsForSend(filter: {
   phone?: string;
   role?: string;
 }): Promise<Array<{ userId: string; subscription: PushSubscriptionData }>> {
-  const all = await fetchAllRows();
-  const digits = filter.phone ? phoneDigits(filter.phone) : '';
+  let query = db()
+    .from('push_subscriptions')
+    .select('user_id, endpoint, p256dh, auth')
+    .eq('is_active', true);
 
-  const matched = all.filter((r) => {
-    if (!r.isActive) return false;
-    if (filter.userId !== undefined) return r.userId === filter.userId;
-    if (filter.phone !== undefined) {
-      return digits.length > 0 && phoneDigits(r.phone) === digits;
-    }
-    if (filter.role !== undefined) return r.role === filter.role;
-    return false;
-  });
+  if (filter.userId !== undefined) {
+    query = query.eq('user_id', filter.userId);
+  } else if (filter.phone !== undefined) {
+    const digits = phoneDigits(filter.phone);
+    if (!digits) return [];
+    query = query.eq('phone', digits);
+  } else if (filter.role !== undefined) {
+    query = query.eq('role', filter.role);
+  } else {
+    return [];
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('push_subscriptions read:', error);
+    return [];
+  }
 
   const seen = new Set<string>();
   const out: Array<{ userId: string; subscription: PushSubscriptionData }> = [];
-  for (const r of matched) {
+  for (const r of (data || []) as Row[]) {
     if (seen.has(r.endpoint)) continue;
     seen.add(r.endpoint);
     out.push({
-      userId: r.userId,
-      subscription: { endpoint: r.endpoint, keys: r.keys },
+      userId: r.user_id,
+      subscription: { endpoint: r.endpoint, keys: { p256dh: r.p256dh, auth: r.auth } },
     });
   }
   return out;

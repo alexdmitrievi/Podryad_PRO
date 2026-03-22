@@ -167,7 +167,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?order_id=eq.' + encodeURIComponent(String($('Build MAX Post').first().json.order_id))' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?order_id=eq.' + encodeURIComponent(String($('Build MAX Post').first().json.order_id)) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

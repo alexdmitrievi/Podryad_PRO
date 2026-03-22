@@ -16,7 +16,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const root = $('Webhook PWA Response').first().json;\nconst b = root.body || root;\nconst order = b.order || {};\nconst oid = order.order_id ?? b.order_id;\nconst exec = String(b.executor_id || '');\nreturn [{ json: { order_id: oid, executor_id: exec, order } }];"
+        "jsCode": "const root = $('Webhook PWA Response').first().json;\nconst b = root.body || root;\nconst order = b.order || {};\nconst oid = order.order_id ?? b.order_id;\nconst exec = String(b.executor_id || '');\nconst execName = String(b.executor_name || '');\nconst execPhone = String(b.executor_phone || '');\nconst customerId = String(order.customer_id || '');\nconst messageId = order.message_id || null;\nconst address = String(order.address || '');\nconst time = String(order.time || '');\nconst maxPosted = Boolean(order.max_posted);\nconst maxMessageId = order.max_message_id || null;\nreturn [{ json: { order_id: oid, executor_id: exec, executor_name: execName, executor_phone: execPhone, customer_id: customerId, message_id: messageId, address, time, max_posted: maxPosted, max_message_id: maxMessageId, order } }];"
       },
       "id": "resp-pwa-parse-002",
       "name": "Parse Body",
@@ -34,30 +34,162 @@
       "name": "Respond OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [480, 200]
+      "position": [480, 100]
     },
     {
       "parameters": {
         "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
-        "text": "=📌 PWA: заказ #{{ $json.order_id }} взят исполнителем {{ $json.executor_id }}",
+        "text": "=📌 PWA: заказ #{{ $json.order_id }} взят исполнителем {{ $json.executor_name || $json.executor_id }}\n📞 {{ $json.executor_phone || '—' }}",
         "additionalFields": {}
       },
       "id": "resp-pwa-admin-004",
       "name": "Notify Admin",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [480, 420],
+      "position": [480, 300],
       "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-message-id",
+              "leftValue": "={{ $json.message_id }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "isNotEmpty" }
+            }
+          ]
+        }
+      },
+      "id": "resp-pwa-check-msg-005",
+      "name": "Has Channel Post?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [480, 520]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/editMessageText' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": {{ $env.TELEGRAM_CHANNEL_ID }},\n  \"message_id\": {{ $('Parse Body').first().json.message_id }},\n  \"text\": \"🧾 *РАБОТА ОМСК | Подряд PRO #{{ $('Parse Body').first().json.order_id }}*\\n\\n🔒 ЗАКРЫТ — исполнитель найден (PWA)\\n\\n📍 {{ $('Parse Body').first().json.address }}\\n⏰ {{ $('Parse Body').first().json.time || 'не указано' }}\\n\\n#работаомск #омск\",\n  \"parse_mode\": \"Markdown\"\n}",
+        "options": {}
+      },
+      "id": "resp-pwa-edit-channel-006",
+      "name": "Edit Channel Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 440]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-customer-tg",
+              "leftValue": "={{ $('Parse Body').first().json.customer_id }}",
+              "rightValue": "reg:",
+              "operator": { "type": "string", "operation": "notStartsWith" }
+            }
+          ]
+        }
+      },
+      "id": "resp-pwa-check-customer-007",
+      "name": "Customer is TG user?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [480, 740]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse Body').first().json.customer_id }}",
+        "text": "=✅ Исполнитель найден для заказа #{{ $('Parse Body').first().json.order_id }}!\n\n👷 {{ $('Parse Body').first().json.executor_name || 'Исполнитель' }}\n📞 {{ $('Parse Body').first().json.executor_phone || '—' }}\n📍 {{ $('Parse Body').first().json.address }}\n⏰ {{ $('Parse Body').first().json.time || '—' }}\n\nСвяжитесь с исполнителем для уточнения деталей.",
+        "additionalFields": {}
+      },
+      "id": "resp-pwa-notify-customer-008",
+      "name": "Notify Customer (TG)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [720, 660],
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-max-post",
+              "leftValue": "={{ $('Parse Body').first().json.max_posted }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ]
+        }
+      },
+      "id": "resp-pwa-check-max-009",
+      "name": "Has MAX Post?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [480, 960]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $env.MAX_API_BASE + '/messages' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{ 'access_token=\"' + $env.MAX_BOT_TOKEN + '\"' }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message_id\": \"{{ $('Parse Body').first().json.max_message_id }}\",\n  \"text\": \"🔒 ЗАКРЫТ — исполнитель найден\\n\\n📍 {{ $('Parse Body').first().json.address }}\\n⏰ {{ $('Parse Body').first().json.time || '—' }}\"\n}",
+        "options": {}
+      },
+      "id": "resp-pwa-edit-max-010",
+      "name": "Edit MAX Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 880]
     }
   ],
   "connections": {
-    "Webhook PWA Response": { "main": [[{ "node": "Parse Body", "type": "main", "index": 0 }]] },
+    "Webhook PWA Response": {
+      "main": [[{ "node": "Parse Body", "type": "main", "index": 0 }]]
+    },
     "Parse Body": {
       "main": [
         [
           { "node": "Respond OK", "type": "main", "index": 0 },
-          { "node": "Notify Admin", "type": "main", "index": 0 }
+          { "node": "Notify Admin", "type": "main", "index": 0 },
+          { "node": "Has Channel Post?", "type": "main", "index": 0 },
+          { "node": "Customer is TG user?", "type": "main", "index": 0 },
+          { "node": "Has MAX Post?", "type": "main", "index": 0 }
         ]
+      ]
+    },
+    "Has Channel Post?": {
+      "main": [
+        [{ "node": "Edit Channel Post", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Customer is TG user?": {
+      "main": [
+        [{ "node": "Notify Customer (TG)", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Has MAX Post?": {
+      "main": [
+        [{ "node": "Edit MAX Post", "type": "main", "index": 0 }],
+        []
       ]
     }
   },

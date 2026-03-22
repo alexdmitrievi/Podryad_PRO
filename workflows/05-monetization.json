@@ -67,7 +67,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?select=*&telegram_id=eq.' + encodeURIComponent(String($('Telegram Trigger').first().json.message.from.id))' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?select=*&telegram_id=eq.' + encodeURIComponent(String($('Telegram Trigger').first().json.message.from.id)) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -300,7 +300,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?telegram_id=eq.' + encodeURIComponent(String($('Calculate VIP Expiry').first().json.telegram_id))' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?telegram_id=eq.' + encodeURIComponent(String($('Calculate VIP Expiry').first().json.telegram_id)) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

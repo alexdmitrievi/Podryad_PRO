@@ -71,7 +71,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?select=*&order_id=eq.' + encodeURIComponent(String($('Extract Done Data').first().json.order_id))' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?select=*&order_id=eq.' + encodeURIComponent(String($('Extract Done Data').first().json.order_id)) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -272,7 +272,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?select=*&telegram_id=eq.' + encodeURIComponent(String($('Find Executor').first().json.executor_id))' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?select=*&telegram_id=eq.' + encodeURIComponent(String($('Find Executor').first().json.executor_id)) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -332,7 +332,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?telegram_id=eq.' + encodeURIComponent(String($('Calculate Rating').first().json.telegram_id))' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?telegram_id=eq.' + encodeURIComponent(String($('Calculate Rating').first().json.telegram_id)) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
