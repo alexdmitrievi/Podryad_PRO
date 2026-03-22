@@ -23,73 +23,75 @@
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?select=*' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            }
+          ]
         },
-        "sheetName": {
-          "__rl": true,
-          "value": "Orders",
-          "mode": "list"
-        },
-        "filtersUI": {},
         "options": {
-          "returnAllMatches": true
+          "timeout": 60000
         }
       },
       "id": "f1b2c3d4-6666-4000-8000-000000000002",
-      "name": "Read All Orders",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "name": "Fetch Orders Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         260,
         300
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?select=*' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            }
+          ]
         },
-        "sheetName": {
-          "__rl": true,
-          "value": "Workers",
-          "mode": "list"
-        },
-        "filtersUI": {},
         "options": {
-          "returnAllMatches": true
+          "timeout": 60000
         }
       },
       "id": "f1b2c3d4-6666-4000-8000-000000000003",
-      "name": "Read All Workers",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "name": "Fetch Workers Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         260,
         500
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const allOrders = $('Read All Orders').all().map(i => i.json);\nconst allWorkers = $('Read All Workers').all().map(i => i.json);\n\n// Сегодняшняя дата (MSK = UTC+3)\nconst now = new Date();\nconst mskOffset = 3 * 60 * 60 * 1000;\nconst mskNow = new Date(now.getTime() + mskOffset);\nconst todayStr = mskNow.toISOString().slice(0, 10); // YYYY-MM-DD\n\n// Фильтруем заказы за сегодня\nconst todayOrders = allOrders.filter(o => {\n  if (!o.created_at) return false;\n  const orderDate = new Date(o.created_at);\n  const orderMsk = new Date(orderDate.getTime() + mskOffset);\n  return orderMsk.toISOString().slice(0, 10) === todayStr;\n});\n\nconst total = todayOrders.length;\nconst published = todayOrders.filter(o => o.status === 'published').length;\nconst closed = todayOrders.filter(o => o.status === 'closed').length;\nconst pending = todayOrders.filter(o => o.status === 'pending').length;\nconst cancelled = todayOrders.filter(o => o.status === 'cancelled').length;\nconst revenue = (closed + published) * 500; // 500р за публикацию\nconst conversion = total > 0 ? Math.round(closed / total * 100) : 0;\n\n// Топ исполнитель дня\nconst todayExecutors = todayOrders\n  .filter(o => o.status === 'closed' && o.executor_id)\n  .reduce((acc, o) => {\n    acc[o.executor_id] = (acc[o.executor_id] || 0) + 1;\n    return acc;\n  }, {});\n\nlet topWorker = 'нет данных';\nconst topExecutorId = Object.entries(todayExecutors)\n  .sort((a, b) => b[1] - a[1])[0];\n\nif (topExecutorId) {\n  const w = allWorkers.find(w => String(w.telegram_id) === String(topExecutorId[0]));\n  if (w) {\n    topWorker = `${w.name || w.username} (⭐${w.rating}, ${topExecutorId[1]} заказов)`;\n  }\n}\n\n// Общая статистика\nconst totalWorkers = allWorkers.length;\nconst activeWorkers = allWorkers.filter(w => parseInt(w.jobs_count || 0) > 0).length;\nconst vipWorkers = allWorkers.filter(w => w.is_vip === 'TRUE' || w.is_vip === true).length;\n\nconst dateFormatted = mskNow.toLocaleDateString('ru-RU', {\n  day: '2-digit', month: '2-digit', year: 'numeric'\n});\n\nreturn [{\n  json: {\n    date: dateFormatted,\n    total, published, closed, pending, cancelled,\n    revenue, conversion,\n    topWorker,\n    totalWorkers, activeWorkers, vipWorkers,\n    totalAllOrders: allOrders.length\n  }\n}];"
+        "jsCode": "const ordersRaw = $('Fetch Orders Supabase').first().json;\nconst allOrders = Array.isArray(ordersRaw) ? ordersRaw : [ordersRaw].filter(Boolean);\nconst workersRaw = $('Fetch Workers Supabase').first().json;\nconst allWorkers = Array.isArray(workersRaw) ? workersRaw : [workersRaw].filter(Boolean);\n\n// Сегодняшняя дата (MSK = UTC+3)\nconst now = new Date();\nconst mskOffset = 3 * 60 * 60 * 1000;\nconst mskNow = new Date(now.getTime() + mskOffset);\nconst todayStr = mskNow.toISOString().slice(0, 10); // YYYY-MM-DD\n\n// Фильтруем заказы за сегодня\nconst todayOrders = allOrders.filter(o => {\n  if (!o.created_at) return false;\n  const orderDate = new Date(o.created_at);\n  const orderMsk = new Date(orderDate.getTime() + mskOffset);\n  return orderMsk.toISOString().slice(0, 10) === todayStr;\n});\n\nconst total = todayOrders.length;\nconst published = todayOrders.filter(o => o.status === 'published').length;\nconst closed = todayOrders.filter(o => o.status === 'closed').length;\nconst pending = todayOrders.filter(o => o.status === 'pending').length;\nconst cancelled = todayOrders.filter(o => o.status === 'cancelled').length;\nconst revenue = (closed + published) * 500; // 500р за публикацию\nconst conversion = total > 0 ? Math.round(closed / total * 100) : 0;\n\n// Топ исполнитель дня\nconst todayExecutors = todayOrders\n  .filter(o => o.status === 'closed' && o.executor_id)\n  .reduce((acc, o) => {\n    acc[o.executor_id] = (acc[o.executor_id] || 0) + 1;\n    return acc;\n  }, {});\n\nlet topWorker = 'нет данных';\nconst topExecutorId = Object.entries(todayExecutors)\n  .sort((a, b) => b[1] - a[1])[0];\n\nif (topExecutorId) {\n  const w = allWorkers.find(w => String(w.telegram_id) === String(topExecutorId[0]));\n  if (w) {\n    topWorker = `${w.name || w.username} (⭐${w.rating}, ${topExecutorId[1]} заказов)`;\n  }\n}\n\n// Общая статистика\nconst totalWorkers = allWorkers.length;\nconst activeWorkers = allWorkers.filter(w => parseInt(w.jobs_count || 0) > 0).length;\nconst vipWorkers = allWorkers.filter(w => w.is_vip === 'TRUE' || w.is_vip === true).length;\n\nconst dateFormatted = mskNow.toLocaleDateString('ru-RU', {\n  day: '2-digit', month: '2-digit', year: 'numeric'\n});\n\nreturn [{\n  json: {\n    date: dateFormatted,\n    total, published, closed, pending, cancelled,\n    revenue, conversion,\n    topWorker,\n    totalWorkers, activeWorkers, vipWorkers,\n    totalAllOrders: allOrders.length\n  }\n}];"
       },
       "id": "f1b2c3d4-6666-4000-8000-000000000004",
       "name": "Calculate Metrics",
@@ -102,7 +104,7 @@
     },
     {
       "parameters": {
-        "chatId": "407721399",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
         "text": "📊 *Подряд PRO | Итоги {{ $json.date }}*\n\n━━━ *Заказы за сегодня* ━━━\n📥 Новых: {{ $json.total }}\n⏳ В ожидании: {{ $json.pending }}\n📤 Опубликовано: {{ $json.published }}\n✅ Закрыто: {{ $json.closed }}\n❌ Отменено: {{ $json.cancelled }}\n\n━━━ *Финансы* ━━━\n💰 Выручка: {{ $json.revenue }}₽\n📈 Конверсия: {{ $json.conversion }}%\n\n━━━ *Исполнители* ━━━\n👥 Всего: {{ $json.totalWorkers }}\n🔧 Активных: {{ $json.activeWorkers }}\n🌟 VIP: {{ $json.vipWorkers }}\n\n🏆 *Топ дня:* {{ $json.topWorker }}\n\n📋 Всего заказов в системе: {{ $json.totalAllOrders }}",
         "additionalFields": {
           "parse_mode": "Markdown"
@@ -136,7 +138,7 @@
     },
     {
       "parameters": {
-        "chatId": "407721399",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
         "text": "🚨 *ОШИБКА в Daily Analytics*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
         "additionalFields": {
           "parse_mode": "Markdown"
@@ -163,34 +165,7 @@
       "main": [
         [
           {
-            "node": "Read All Orders",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Read All Workers",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Read All Orders": {
-      "main": [
-        [
-          {
-            "node": "Calculate Metrics",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Read All Workers": {
-      "main": [
-        [
-          {
-            "node": "Calculate Metrics",
+            "node": "Fetch Orders Supabase",
             "type": "main",
             "index": 0
           }
@@ -218,6 +193,28 @@
           }
         ]
       ]
+    },
+    "Fetch Orders Supabase": {
+      "main": [
+        [
+          {
+            "node": "Fetch Workers Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Workers Supabase": {
+      "main": [
+        [
+          {
+            "node": "Calculate Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -226,7 +223,7 @@
     "saveManualExecutions": true,
     "timezone": "Europe/Moscow"
   },
-  "versionId": "podryad-06-analytics-v2",
+  "versionId": "podryad-06-analytics-v3-supabase",
   "meta": {
     "instanceId": "podryad-pro"
   },

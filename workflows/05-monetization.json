@@ -66,45 +66,54 @@
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Workers"
-        },
-        "filtersUI": {
-          "values": [
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?select=*&telegram_id=eq.' + encodeURIComponent(String($('Telegram Trigger').first().json.message.from.id))' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
             {
-              "lookupColumn": "telegram_id",
-              "lookupValue": "={{ $('Telegram Trigger').first().json.message.from.id }}"
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
             }
           ]
         },
-        "options": {}
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "sheets-lookup-worker-vip",
-      "name": "Sheets: Check VIP Status",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "name": "HTTP Get Worker VIP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         660,
         180
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const workers = $('Sheets: Check VIP Status').all();\nconst userId = String($('Telegram Trigger').first().json.message.from.id);\n\nif (workers.length === 0) {\n  return [{\n    json: {\n      is_vip: false,\n      is_registered: false,\n      user_id: userId\n    }\n  }];\n}\n\nconst worker = workers[0].json;\nconst isVip = worker.is_vip === 'TRUE' || worker.is_vip === true;\nlet vipActive = false;\n\nif (isVip && worker.vip_expires_at) {\n  vipActive = new Date(worker.vip_expires_at) > new Date();\n}\n\nreturn [{\n  json: {\n    is_vip: vipActive,\n    is_registered: true,\n    vip_expires_at: worker.vip_expires_at || '',\n    user_id: userId,\n    worker_name: worker.name || ''\n  }\n}];"
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nreturn rows.filter((r) => r && r.telegram_id).map((r) => ({ json: r }));"
+      },
+      "id": "norm-vip-worker-05",
+      "name": "Normalize VIP Worker",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const workers = $('Normalize VIP Worker').all();\nconst userId = String($('Telegram Trigger').first().json.message.from.id);\n\nif (workers.length === 0) {\n  return [{\n    json: {\n      is_vip: false,\n      is_registered: false,\n      user_id: userId\n    }\n  }];\n}\n\nconst worker = workers[0].json;\nconst isVip = worker.is_vip === 'TRUE' || worker.is_vip === true;\nlet vipActive = false;\n\nif (isVip && worker.vip_expires_at) {\n  vipActive = new Date(worker.vip_expires_at) > new Date();\n}\n\nreturn [{\n  json: {\n    is_vip: vipActive,\n    is_registered: true,\n    vip_expires_at: worker.vip_expires_at || '',\n    user_id: userId,\n    worker_name: worker.name || ''\n  }\n}];"
       },
       "id": "check-vip",
       "name": "Check VIP Status",
@@ -229,7 +238,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/sendMessage",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"reply_markup\": {{ $json.reply_markup }}\n}",
@@ -290,90 +299,93 @@
     },
     {
       "parameters": {
-        "operation": "update",
-        "documentId": {
-          "__rl": true,
-          "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Workers"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "telegram_id": "={{ $json.telegram_id }}",
-            "is_vip": "={{ $json.is_vip }}",
-            "vip_expires_at": "={{ $json.vip_expires_at }}"
-          },
-          "matchingColumns": [
-            "telegram_id"
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?telegram_id=eq.' + encodeURIComponent(String($('Calculate VIP Expiry').first().json.telegram_id))' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
           ]
         },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ is_vip: 'TRUE', vip_expires_at: $('Calculate VIP Expiry').first().json.vip_expires_at }) }}",
         "options": {
-          "cellFormat": "USER_ENTERED"
+          "timeout": 20000
         }
       },
       "id": "sheets-activate-vip",
-      "name": "Sheets: Activate VIP",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "name": "Supabase Activate VIP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         880,
         600
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing"
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/payments' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
         },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Payments"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "payment_id": "={{ $('Parse VIP Payment').first().json.yukassa_id }}",
-            "order_id": "",
-            "payer_id": "={{ $('Parse VIP Payment').first().json.user_id }}",
-            "amount": "={{ $('Parse VIP Payment').first().json.amount }}",
-            "type": "vip",
-            "status": "paid",
-            "yukassa_id": "={{ $('Parse VIP Payment').first().json.yukassa_id }}",
-            "created_at": "={{ new Date().toISOString() }}",
-            "paid_at": "={{ new Date().toISOString() }}"
-          }
-        },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ yukassa_id: $('Parse VIP Payment').first().json.yukassa_id, order_id: null, payer_id: String($('Parse VIP Payment').first().json.user_id), amount: $('Parse VIP Payment').first().json.amount, type: 'vip', status: 'paid', paid_at: new Date().toISOString(), created_at: new Date().toISOString() }) }}",
+        "options": {
+          "timeout": 20000
+        }
       },
       "id": "sheets-log-vip-payment",
-      "name": "Sheets: Log VIP Payment",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "name": "Supabase Log VIP Payment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1100,
         600
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -428,37 +440,54 @@
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing"
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?select=*' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            }
+          ]
         },
-        "sheetName": {
-          "__rl": true,
-          "mode": "list",
-          "value": "Workers"
-        },
-        "options": {}
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "sheets-read-all-workers",
-      "name": "Sheets: Read All Workers",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "name": "Fetch All Workers Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         880,
         420
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const allWorkers = $('Sheets: Read All Workers').all().map(i => i.json);\nconst description = $('Parse /pick Request').first().json.description;\n\nconst eligible = allWorkers\n  .filter(w => {\n    const whitelisted = w.white_list === 'TRUE' || w.white_list === true;\n    const highRating = parseFloat(w.rating || '0') >= 4.5;\n    const notBanned = !w.ban_until || new Date(w.ban_until) < new Date();\n    return whitelisted && highRating && notBanned;\n  })\n  .sort((a, b) => {\n    const ratingDiff = parseFloat(b.rating || '0') - parseFloat(a.rating || '0');\n    if (ratingDiff !== 0) return ratingDiff;\n    return parseInt(b.jobs_count || '0') - parseInt(a.jobs_count || '0');\n  })\n  .slice(0, 3);\n\nif (eligible.length === 0) {\n  return [{\n    json: {\n      has_workers: false,\n      description: description\n    }\n  }];\n}\n\nconst workersData = eligible.map(w => ({\n  name: w.name,\n  rating: w.rating,\n  jobs_count: w.jobs_count,\n  skills: w.skills,\n  is_vip: w.is_vip\n}));\n\nreturn [{\n  json: {\n    has_workers: true,\n    workers_array: JSON.stringify(workersData),\n    description: description,\n    top_workers: eligible\n  }\n}];"
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nreturn rows.filter(Boolean).map((r) => ({ json: r }));"
+      },
+      "id": "norm-all-workers-05",
+      "name": "Normalize All Workers",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const allWorkers = $('Normalize All Workers').all().map(i => i.json);\nconst description = $('Parse /pick Request').first().json.description;\n\nconst eligible = allWorkers\n  .filter(w => {\n    const whitelisted = w.white_list === 'TRUE' || w.white_list === true;\n    const highRating = parseFloat(w.rating || '0') >= 4.5;\n    const notBanned = !w.ban_until || new Date(w.ban_until) < new Date();\n    return whitelisted && highRating && notBanned;\n  })\n  .sort((a, b) => {\n    const ratingDiff = parseFloat(b.rating || '0') - parseFloat(a.rating || '0');\n    if (ratingDiff !== 0) return ratingDiff;\n    return parseInt(b.jobs_count || '0') - parseInt(a.jobs_count || '0');\n  })\n  .slice(0, 3);\n\nif (eligible.length === 0) {\n  return [{\n    json: {\n      has_workers: false,\n      description: description\n    }\n  }];\n}\n\nconst workersData = eligible.map(w => ({\n  name: w.name,\n  rating: w.rating,\n  jobs_count: w.jobs_count,\n  skills: w.skills,\n  is_vip: w.is_vip\n}));\n\nreturn [{\n  json: {\n    has_workers: true,\n    workers_array: JSON.stringify(workersData),\n    description: description,\n    top_workers: eligible\n  }\n}];"
       },
       "id": "filter-top-workers",
       "name": "Filter Top Workers",
@@ -618,7 +647,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/sendMessage",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"reply_markup\": {{ $json.reply_markup }}\n}",
@@ -648,7 +677,7 @@
     },
     {
       "parameters": {
-        "chatId": "407721399",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
         "text": "🚨 *ОШИБКА в Monetization*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
         "additionalFields": {
           "parse_mode": "Markdown"
@@ -686,7 +715,7 @@
       "main": [
         [
           {
-            "node": "Sheets: Check VIP Status",
+            "node": "HTTP Get Worker VIP",
             "type": "main",
             "index": 0
           }
@@ -699,17 +728,6 @@
           }
         ],
         []
-      ]
-    },
-    "Sheets: Check VIP Status": {
-      "main": [
-        [
-          {
-            "node": "Check VIP Status",
-            "type": "main",
-            "index": 0
-          }
-        ]
       ]
     },
     "Check VIP Status": {
@@ -800,34 +818,7 @@
       "main": [
         [
           {
-            "node": "Sheets: Activate VIP",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Sheets: Activate VIP": {
-      "main": [
-        [
-          {
-            "node": "Sheets: Log VIP Payment",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "VIP Webhook Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Sheets: Log VIP Payment": {
-      "main": [
-        [
-          {
-            "node": "Send: VIP Activated",
+            "node": "Supabase Activate VIP",
             "type": "main",
             "index": 0
           }
@@ -838,18 +829,7 @@
       "main": [
         [
           {
-            "node": "Sheets: Read All Workers",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Sheets: Read All Workers": {
-      "main": [
-        [
-          {
-            "node": "Filter Top Workers",
+            "node": "Fetch All Workers Supabase",
             "type": "main",
             "index": 0
           }
@@ -939,6 +919,77 @@
           }
         ]
       ]
+    },
+    "HTTP Get Worker VIP": {
+      "main": [
+        [
+          {
+            "node": "Normalize VIP Worker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize VIP Worker": {
+      "main": [
+        [
+          {
+            "node": "Check VIP Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Activate VIP": {
+      "main": [
+        [
+          {
+            "node": "Supabase Log VIP Payment",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "VIP Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Log VIP Payment": {
+      "main": [
+        [
+          {
+            "node": "Send: VIP Activated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch All Workers Supabase": {
+      "main": [
+        [
+          {
+            "node": "Normalize All Workers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize All Workers": {
+      "main": [
+        [
+          {
+            "node": "Filter Top Workers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -959,5 +1010,5 @@
     }
   ],
   "pinData": {},
-  "versionId": "5"
+  "versionId": "podryad-05-monetization-v3-supabase"
 }

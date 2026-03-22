@@ -1,0 +1,68 @@
+{
+  "name": "Подряд PRO — 10 Order Response (PWA)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "order-response-pwa",
+        "options": { "responseMode": "responseNode", "responseData": "allEntries" }
+      },
+      "id": "resp-pwa-wh-001",
+      "name": "Webhook PWA Response",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "podryad-order-response-pwa"
+    },
+    {
+      "parameters": {
+        "jsCode": "const root = $('Webhook PWA Response').first().json;\nconst b = root.body || root;\nconst order = b.order || {};\nconst oid = order.order_id ?? b.order_id;\nconst exec = String(b.executor_id || '');\nreturn [{ json: { order_id: oid, executor_id: exec, order } }];"
+      },
+      "id": "resp-pwa-parse-002",
+      "name": "Parse Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true }) }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "resp-pwa-ok-003",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "text": "=📌 PWA: заказ #{{ $json.order_id }} взят исполнителем {{ $json.executor_id }}",
+        "additionalFields": {}
+      },
+      "id": "resp-pwa-admin-004",
+      "name": "Notify Admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [480, 420],
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
+    }
+  ],
+  "connections": {
+    "Webhook PWA Response": { "main": [[{ "node": "Parse Body", "type": "main", "index": 0 }]] },
+    "Parse Body": {
+      "main": [
+        [
+          { "node": "Respond OK", "type": "main", "index": 0 },
+          { "node": "Notify Admin", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "meta": { "instanceId": "podryad-pro" },
+  "tags": [{ "name": "podryad-pro" }, { "name": "pwa" }]
+}

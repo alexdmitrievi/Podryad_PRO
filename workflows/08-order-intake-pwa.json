@@ -5,10 +5,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "order-intake",
-        "options": {
-          "responseMode": "responseNode",
-          "responseData": "allEntries"
-        }
+        "options": { "responseMode": "responseNode", "responseData": "allEntries" }
       },
       "id": "pwa-webhook-001",
       "name": "Webhook PWA",
@@ -55,72 +52,68 @@
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": { "__rl": true, "value": "1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk", "mode": "id" },
-        "sheetName": { "__rl": true, "value": "Rates", "mode": "list" },
-        "filtersUI": {
-          "values": [{ "lookupColumn": "work_type", "lookupValue": "={{ $('Parse PWA Body').item.json.work_type }}" }]
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/rates?select=*&is_active=eq.true&work_type=eq.' + encodeURIComponent($('Parse PWA Body').first().json.work_type) + '&limit=1' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Accept-Profile", "value": "public" }
+          ]
         },
-        "options": {}
+        "options": { "timeout": 15000 }
       },
       "id": "pwa-rates-004",
-      "name": "Read Rates",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [660, 300],
-      "credentials": { "googleSheetsOAuth2Api": { "id": "3", "name": "Google Sheets" } }
+      "name": "Fetch Rates Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300]
     },
     {
       "parameters": {
-        "jsCode": "const parsed = $('Parse PWA Body').first().json;\nconst geoResult = $('Nominatim Geocode').first().json;\nconst ratesResult = $('Read Rates').first()?.json || {};\n\nconst geo = Array.isArray(geoResult) ? geoResult[0] : geoResult;\nconst lat = geo?.lat ? parseFloat(geo.lat) : 54.9894;\nconst lon = geo?.lon ? parseFloat(geo.lon) : 73.3667;\nconst addr = parsed.address || 'Омск';\nconst yandexLink = `https://yandex.ru/maps/?pt=${lon},${lat}&z=16&text=${encodeURIComponent(addr)}`;\n\nconst people = Number(parsed.people || 1);\nconst hours = Number(parsed.hours || 1);\nconst clientRate = parseInt(ratesResult.client_rate, 10) || 600;\nconst workerRate = parseInt(ratesResult.worker_rate, 10) || 400;\nconst minHours = parseInt(ratesResult.min_hours, 10) || 1;\nconst effectiveHours = Math.max(hours, minHours);\nconst clientTotal = clientRate * people * effectiveHours;\nconst workerPayout = workerRate * people * effectiveHours;\nconst margin = clientTotal - workerPayout;\nconst createdAt = new Date().toISOString();\n\nreturn [{\n  json: {\n    customer_id: parsed.customer_id,\n    address: addr,\n    lat,\n    lon,\n    yandex_link: yandexLink,\n    time: parsed.time || '',\n    payment_text: `${clientRate}₽/час × ${people} чел × ${effectiveHours} ч`,\n    people,\n    hours: effectiveHours,\n    work_type: parsed.work_type || 'другое',\n    comment: parsed.comment || '',\n    status: 'pending',\n    executor_id: '',\n    message_id: '',\n    created_at: createdAt,\n    client_rate: clientRate,\n    worker_rate: workerRate,\n    client_total: clientTotal,\n    worker_payout: workerPayout,\n    margin,\n    payout_status: 'pending',\n    payout_at: ''\n  }\n}];"
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nconst row = rows[0];\nif (!row || row.client_rate == null) throw new Error('RATE_NOT_FOUND');\nreturn [{ json: row }];"
+      },
+      "id": "pwa-norm-rates",
+      "name": "Normalize Rates Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [770, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $('Parse PWA Body').first().json;\nconst geoResult = $('Nominatim Geocode').first().json;\nconst ratesResult = $('Normalize Rates Row').first().json;\n\nconst geo = Array.isArray(geoResult) ? geoResult[0] : geoResult;\nconst lat = geo?.lat ? parseFloat(geo.lat) : 54.9894;\nconst lon = geo?.lon ? parseFloat(geo.lon) : 73.3667;\nconst addr = parsed.address || 'Омск';\nconst yandexLink = `https://yandex.ru/maps/?pt=${lon},${lat}&z=16&text=${encodeURIComponent(addr)}`;\n\nconst people = Number(parsed.people || 1);\nconst hours = Number(parsed.hours || 1);\nconst clientRate = parseInt(ratesResult.client_rate, 10) || 600;\nconst workerRate = parseInt(ratesResult.worker_rate, 10) || 400;\nconst minHours = parseInt(ratesResult.min_hours, 10) || 1;\nconst effectiveHours = Math.max(hours, minHours);\nconst clientTotal = clientRate * people * effectiveHours;\nconst workerPayout = workerRate * people * effectiveHours;\nconst margin = clientTotal - workerPayout;\nconst createdAt = new Date().toISOString();\nconst orderId = `n8n-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;\n\nreturn [{\n  json: {\n    order_id: orderId,\n    customer_id: parsed.customer_id,\n    address: addr,\n    lat,\n    lon,\n    yandex_link: yandexLink,\n    time: parsed.time || '',\n    payment_text: `${clientRate}₽/час × ${people} чел × ${effectiveHours} ч`,\n    people,\n    hours: effectiveHours,\n    work_type: parsed.work_type || 'другое',\n    comment: parsed.comment || '',\n    status: 'pending',\n    executor_id: '',\n    message_id: '',\n    created_at: createdAt,\n    client_rate: clientRate,\n    worker_rate: workerRate,\n    client_total: clientTotal,\n    worker_payout: workerPayout,\n    margin,\n    payout_status: 'pending'\n  }\n}];"
       },
       "id": "pwa-build-005",
       "name": "Build Order",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [880, 300]
+      "position": [990, 300]
     },
     {
       "parameters": {
-        "operation": "append",
-        "documentId": { "__rl": true, "value": "1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk", "mode": "id" },
-        "sheetName": { "__rl": true, "value": "Orders", "mode": "list" },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "customer_id": "={{ $json.customer_id }}",
-            "address": "={{ $json.address }}",
-            "lat": "={{ $json.lat }}",
-            "lon": "={{ $json.lon }}",
-            "yandex_link": "={{ $json.yandex_link }}",
-            "time": "={{ $json.time }}",
-            "payment_text": "={{ $json.payment_text }}",
-            "people": "={{ $json.people }}",
-            "hours": "={{ $json.hours }}",
-            "work_type": "={{ $json.work_type }}",
-            "comment": "={{ $json.comment }}",
-            "status": "={{ $json.status }}",
-            "executor_id": "={{ $json.executor_id }}",
-            "message_id": "={{ $json.message_id }}",
-            "created_at": "={{ $json.created_at }}",
-            "client_rate": "={{ $json.client_rate }}",
-            "worker_rate": "={{ $json.worker_rate }}",
-            "client_total": "={{ $json.client_total }}",
-            "worker_payout": "={{ $json.worker_payout }}",
-            "margin": "={{ $json.margin }}",
-            "payout_status": "={{ $json.payout_status }}",
-            "payout_at": "={{ $json.payout_at }}"
-          },
-          "matchingColumns": []
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" },
+            { "name": "Accept-Profile", "value": "public" }
+          ]
         },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ order_id: $json.order_id, customer_id: $json.customer_id, address: $json.address, lat: $json.lat, lon: $json.lon, yandex_link: $json.yandex_link, time: $json.time, payment_text: $json.payment_text, people: $json.people, hours: $json.hours, work_type: $json.work_type, comment: $json.comment || null, status: $json.status, executor_id: $json.executor_id || null, message_id: $json.message_id || null, created_at: $json.created_at, client_rate: $json.client_rate, worker_rate: $json.worker_rate, client_total: $json.client_total, worker_payout: $json.worker_payout, margin: $json.margin, payout_status: $json.payout_status }) }}",
+        "options": { "timeout": 20000 }
       },
-      "id": "pwa-append-006",
-      "name": "Append Order",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [1100, 300],
-      "credentials": { "googleSheetsOAuth2Api": { "id": "3", "name": "Google Sheets" } }
+      "id": "pwa-insert-006",
+      "name": "Insert Order Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1210, 300]
     },
     {
       "parameters": {
@@ -132,16 +125,17 @@
       "name": "Respond OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1320, 300]
+      "position": [1430, 300]
     }
   ],
   "connections": {
     "Webhook PWA": { "main": [[{ "node": "Parse PWA Body", "type": "main", "index": 0 }]] },
     "Parse PWA Body": { "main": [[{ "node": "Nominatim Geocode", "type": "main", "index": 0 }]] },
-    "Nominatim Geocode": { "main": [[{ "node": "Read Rates", "type": "main", "index": 0 }]] },
-    "Read Rates": { "main": [[{ "node": "Build Order", "type": "main", "index": 0 }]] },
-    "Build Order": { "main": [[{ "node": "Append Order", "type": "main", "index": 0 }]] },
-    "Append Order": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
+    "Nominatim Geocode": { "main": [[{ "node": "Fetch Rates Supabase", "type": "main", "index": 0 }]] },
+    "Fetch Rates Supabase": { "main": [[{ "node": "Normalize Rates Row", "type": "main", "index": 0 }]] },
+    "Normalize Rates Row": { "main": [[{ "node": "Build Order", "type": "main", "index": 0 }]] },
+    "Build Order": { "main": [[{ "node": "Insert Order Supabase", "type": "main", "index": 0 }]] },
+    "Insert Order Supabase": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1", "saveManualExecutions": true },

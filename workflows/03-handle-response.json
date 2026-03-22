@@ -2,96 +2,65 @@
   "name": "Подряд PRO — 03 Handle Response",
   "nodes": [
     {
-      "parameters": {
-        "updates": [
-          "callback_query"
-        ],
-        "additionalFields": {}
-      },
+      "parameters": { "updates": ["callback_query"], "additionalFields": {} },
       "id": "c1b2c3d4-3333-4000-8000-000000000001",
       "name": "Callback Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [
-        0,
-        300
-      ],
+      "position": [0, 300],
       "webhookId": "podryad-callback",
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
     },
     {
       "parameters": {
-        "jsCode": "const cb = $input.first().json.callback_query;\nconst data = cb.data; // ready_123, go_123, book_123\nconst parts = data.split('_');\nconst action = parts[0]; // ready, go, book\nconst orderId = parts.slice(1).join('_');\nconst userId = String(cb.from.id);\nconst username = cb.from.username || '';\nconst firstName = cb.from.first_name || '';\n\n// Фильтруем: нас интересуют только ready и go\nif (!['ready', 'go', 'book'].includes(action)) {\n  throw new Error('UNKNOWN_ACTION');\n}\n\nreturn [{\n  json: {\n    action,\n    order_id: orderId,\n    user_id: userId,\n    username,\n    first_name: firstName,\n    callback_query_id: cb.id\n  }\n}];"
+        "jsCode": "const cb = $input.first().json.callback_query;\nconst data = cb.data;\nconst parts = data.split('_');\nconst action = parts[0];\nconst orderId = parts.slice(1).join('_');\nconst userId = String(cb.from.id);\nconst username = cb.from.username || '';\nconst firstName = cb.from.first_name || '';\nif (!['ready', 'go', 'book'].includes(action)) throw new Error('UNKNOWN_ACTION');\nreturn [{ json: { action, order_id: orderId, user_id: userId, username, first_name: firstName, callback_query_id: cb.id } }];"
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000002",
       "name": "Parse Callback",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        260,
-        300
-      ]
+      "position": [260, 300]
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Orders",
-          "mode": "list"
-        },
-        "filtersUI": {
-          "values": [
-            {
-              "lookupColumn": "order_id",
-              "lookupValue": "={{ $json.order_id }}"
-            }
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?select=*&order_id=eq.' + encodeURIComponent(String($json.order_id)) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Accept-Profile", "value": "public" }
           ]
         },
-        "options": {}
+        "options": { "timeout": 20000 }
+      },
+      "id": "c1-fetch-order-raw",
+      "name": "Fetch Order Raw",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nif (!rows.length) throw new Error('ORDER_NOT_FOUND');\nreturn [{ json: rows[0] }];"
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000003",
       "name": "Lookup Order",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [
-        500,
-        300
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [540, 300]
     },
     {
       "parameters": {
         "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
           "conditions": [
             {
               "id": "is-published",
               "leftValue": "={{ $json.status }}",
               "rightValue": "published",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
+              "operator": { "type": "string", "operation": "equals" }
             }
           ],
           "combinator": "and"
@@ -101,30 +70,18 @@
       "name": "Still Open?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [
-        740,
-        300
-      ]
+      "position": [740, 300]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/answerCallbackQuery",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/answerCallbackQuery' }}",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "callback_query_id",
-              "value": "={{ $('Parse Callback').item.json.callback_query_id }}"
-            },
-            {
-              "name": "text",
-              "value": "❌ Этот заказ уже занят!"
-            },
-            {
-              "name": "show_alert",
-              "value": "true"
-            }
+            { "name": "callback_query_id", "value": "={{ $('Parse Callback').item.json.callback_query_id }}" },
+            { "name": "text", "value": "❌ Этот заказ уже занят!" },
+            { "name": "show_alert", "value": "true" }
           ]
         },
         "options": {}
@@ -133,79 +90,58 @@
       "name": "Already Taken",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        1000,
-        500
-      ]
+      "position": [1000, 500]
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Workers",
-          "mode": "list"
-        },
-        "filtersUI": {
-          "values": [
-            {
-              "lookupColumn": "telegram_id",
-              "lookupValue": "={{ $('Parse Callback').item.json.user_id }}"
-            }
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?select=*&telegram_id=eq.' + encodeURIComponent(String($('Parse Callback').item.json.user_id)) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Accept-Profile", "value": "public" }
           ]
         },
-        "options": {}
+        "options": { "timeout": 20000 }
+      },
+      "id": "c1-fetch-worker-raw",
+      "name": "Fetch Worker Raw",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nif (!rows.length) return [{ json: {} }];\nreturn [{ json: rows[0] }];"
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000006",
       "name": "Lookup Worker",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [
-        1000,
-        200
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1140, 200]
     },
     {
       "parameters": {
-        "jsCode": "const worker = $('Lookup Worker').first().json;\nconst userId = $('Parse Callback').first().json.user_id;\n\n// Если исполнитель не найден в базе — автоматическая регистрация\nif (!worker || !worker.telegram_id) {\n  return [{\n    json: {\n      access: false,\n      reason: 'NOT_REGISTERED',\n      user_id: userId\n    }\n  }];\n}\n\n// Проверка бана\nif (worker.ban_until) {\n  const banDate = new Date(worker.ban_until);\n  if (banDate > new Date()) {\n    return [{\n      json: {\n        access: false,\n        reason: 'BANNED',\n        ban_until: worker.ban_until,\n        user_id: userId\n      }\n    }];\n  }\n}\n\n// Проверка white_list\nif (worker.white_list !== 'TRUE' && worker.white_list !== true) {\n  return [{\n    json: {\n      access: false,\n      reason: 'NOT_WHITELISTED',\n      user_id: userId\n    }\n  }];\n}\n\n// Проверка рейтинга\nconst rating = parseFloat(worker.rating) || 5.0;\nif (rating < 4.0) {\n  return [{\n    json: {\n      access: false,\n      reason: 'LOW_RATING',\n      rating,\n      user_id: userId\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    access: true,\n    worker_id: worker.telegram_id,\n    worker_name: worker.name || worker.username || 'Исполнитель',\n    worker_phone: worker.phone || 'не указан',\n    worker_rating: rating,\n    worker_username: worker.username || '',\n    is_vip: worker.is_vip === 'TRUE' || worker.is_vip === true\n  }\n}];"
+        "jsCode": "const worker = $('Lookup Worker').first().json;\nconst userId = $('Parse Callback').first().json.user_id;\nif (!worker || !worker.telegram_id) {\n  return [{ json: { access: false, reason: 'NOT_REGISTERED', user_id: userId } }];\n}\nif (worker.ban_until) {\n  const banDate = new Date(worker.ban_until);\n  if (banDate > new Date()) {\n    return [{ json: { access: false, reason: 'BANNED', ban_until: worker.ban_until, user_id: userId } }];\n  }\n}\nconst wl = worker.white_list === true || worker.white_list === 'TRUE';\nif (!wl) {\n  return [{ json: { access: false, reason: 'NOT_WHITELISTED', user_id: userId } }];\n}\nconst rating = typeof worker.rating === 'string' ? parseFloat(worker.rating) : Number(worker.rating) || 5.0;\nif (rating < 4.0) {\n  return [{ json: { access: false, reason: 'LOW_RATING', rating, user_id: userId } }];\n}\nreturn [{\n  json: {\n    access: true,\n    worker_id: String(worker.telegram_id),\n    worker_name: worker.name || worker.username || 'Исполнитель',\n    worker_phone: worker.phone || 'не указан',\n    worker_rating: rating,\n    worker_username: worker.username || '',\n    is_vip: worker.is_vip === true || worker.is_vip === 'TRUE'\n  }\n}];"
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000007",
       "name": "Check Access",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        1260,
-        200
-      ]
+      "position": [1260, 200]
     },
     {
       "parameters": {
         "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
           "conditions": [
             {
               "id": "has-access",
               "leftValue": "={{ $json.access }}",
               "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "equals"
-              }
+              "operator": { "type": "boolean", "operation": "equals" }
             }
           ],
           "combinator": "and"
@@ -215,30 +151,18 @@
       "name": "Has Access?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [
-        1500,
-        200
-      ]
+      "position": [1500, 200]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/answerCallbackQuery",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/answerCallbackQuery' }}",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "callback_query_id",
-              "value": "={{ $('Parse Callback').item.json.callback_query_id }}"
-            },
-            {
-              "name": "text",
-              "value": "⛔ Нет доступа. Зарегистрируйтесь: @Podryad_PRO_bot /start"
-            },
-            {
-              "name": "show_alert",
-              "value": "true"
-            }
+            { "name": "callback_query_id", "value": "={{ $('Parse Callback').item.json.callback_query_id }}" },
+            { "name": "text", "value": "⛔ Нет доступа. Зарегистрируйтесь: @Podryad_PRO_bot /start" },
+            { "name": "show_alert", "value": "true" }
           ]
         },
         "options": {}
@@ -247,146 +171,93 @@
       "name": "No Access Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        1760,
-        400
-      ]
+      "position": [1760, 400]
     },
     {
       "parameters": {
-        "jsCode": "// Атомарная проверка — повторное чтение перед записью\nconst order = $('Lookup Order').first().json;\nconst worker = $('Check Access').first().json;\n\nif (order.status !== 'published') {\n  throw new Error('ORDER_ALREADY_TAKEN');\n}\n\nreturn [{\n  json: {\n    order_id: order.order_id,\n    status: 'closed',\n    executor_id: worker.worker_id,\n    customer_id: order.customer_id,\n    address: order.address,\n    yandex_link: order.yandex_link,\n    time: order.time,\n    payment: order.payment,\n    people: order.people,\n    hours: order.hours,\n    work_type: order.work_type,\n    comment: order.comment,\n    message_id: order.message_id,\n    max_message_id: order.max_message_id || '',\n    worker_name: worker.worker_name,\n    worker_phone: worker.worker_phone,\n    worker_rating: worker.worker_rating,\n    worker_username: worker.worker_username\n  }\n}];"
+        "jsCode": "const order = $('Lookup Order').first().json;\nconst worker = $('Check Access').first().json;\nif (order.status !== 'published') throw new Error('ORDER_ALREADY_TAKEN');\nreturn [{\n  json: {\n    order_id: order.order_id,\n    status: 'closed',\n    executor_id: worker.worker_id,\n    customer_id: order.customer_id,\n    address: order.address,\n    yandex_link: order.yandex_link,\n    time: order.time,\n    payment_text: order.payment_text,\n    people: order.people,\n    hours: order.hours,\n    work_type: order.work_type,\n    comment: order.comment,\n    message_id: order.message_id,\n    max_message_id: order.max_message_id || '',\n    worker_name: worker.worker_name,\n    worker_phone: worker.worker_phone,\n    worker_rating: worker.worker_rating,\n    worker_username: worker.worker_username\n  }\n}];"
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000010",
       "name": "Atomic Lock",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        1760,
-        100
-      ]
+      "position": [1760, 100]
     },
     {
       "parameters": {
-        "operation": "update",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Orders",
-          "mode": "list"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "order_id": "={{ $json.order_id }}",
-            "status": "closed",
-            "executor_id": "={{ $json.executor_id }}"
-          },
-          "matchingColumns": [
-            "order_id"
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?order_id=eq.' + encodeURIComponent(String($json.order_id)) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
           ]
         },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'closed', executor_id: $json.executor_id }) }}",
+        "options": { "timeout": 20000 }
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000011",
       "name": "Close Order",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [
-        2020,
-        100
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2020, 100]
     },
     {
       "parameters": {
         "chatId": "={{ $('Atomic Lock').item.json.executor_id }}",
-        "text": "🎉 *Заказ #{{ $('Atomic Lock').item.json.order_id }} — ВАШ!*\n\n📍 {{ $('Atomic Lock').item.json.address }}\n🗺 [Открыть маршрут]({{ $('Atomic Lock').item.json.yandex_link }})\n⏰ {{ $('Atomic Lock').item.json.time || 'не указано' }}\n💰 {{ $('Atomic Lock').item.json.payment || 'не указано' }}\n👥 {{ $('Atomic Lock').item.json.people }} чел. × {{ $('Atomic Lock').item.json.hours }} ч.\n📋 {{ $('Atomic Lock').item.json.work_type }}\n{{ $('Atomic Lock').item.json.comment ? '💬 ' + $('Atomic Lock').item.json.comment : '' }}\n\n✅ По завершении: /done\\_{{ $('Atomic Lock').item.json.order_id }}",
-        "additionalFields": {
-          "parse_mode": "Markdown"
-        }
+        "text": "🎉 *Заказ #{{ $('Atomic Lock').item.json.order_id }} — ВАШ!*\n\n📍 {{ $('Atomic Lock').item.json.address }}\n🗺 [Открыть маршрут]({{ $('Atomic Lock').item.json.yandex_link }})\n⏰ {{ $('Atomic Lock').item.json.time || 'не указано' }}\n💰 {{ $('Atomic Lock').item.json.payment_text || 'не указано' }}\n👥 {{ $('Atomic Lock').item.json.people }} чел. × {{ $('Atomic Lock').item.json.hours }} ч.\n📋 {{ $('Atomic Lock').item.json.work_type }}\n{{ $('Atomic Lock').item.json.comment ? '💬 ' + $('Atomic Lock').item.json.comment : '' }}\n\n✅ По завершении: /done\\_{{ $('Atomic Lock').item.json.order_id }}",
+        "additionalFields": { "parse_mode": "Markdown" }
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000012",
       "name": "Notify Worker",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [
-        2280,
-        0
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [2280, 0],
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
     },
     {
       "parameters": {
         "chatId": "={{ $('Atomic Lock').item.json.customer_id }}",
         "text": "✅ *Исполнитель найден!*\n\n👤 {{ $('Atomic Lock').item.json.worker_name }}\n⭐ Рейтинг: {{ $('Atomic Lock').item.json.worker_rating }}\n{{ $('Atomic Lock').item.json.worker_phone !== 'не указан' ? '📞 ' + $('Atomic Lock').item.json.worker_phone : '' }}\n{{ $('Atomic Lock').item.json.worker_username ? '💬 @' + $('Atomic Lock').item.json.worker_username : '' }}\n\nОн уже едет к вам!\nПосле выполнения оцените: /done\\_{{ $('Atomic Lock').item.json.order_id }}",
-        "additionalFields": {
-          "parse_mode": "Markdown"
-        }
+        "additionalFields": { "parse_mode": "Markdown" }
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000013",
       "name": "Notify Customer",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [
-        2280,
-        200
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [2280, 200],
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/editMessageText",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/editMessageText' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"chat_id\": \"-1003710991577\",\n  \"message_id\": {{ $('Atomic Lock').item.json.message_id }},\n  \"text\": \"🧾 РАБОТА ОМСК | Подряд PRO #{{ $('Atomic Lock').item.json.order_id }}\\n\\n🔒 ЗАКРЫТ — исполнитель найден\\n\\n📍 {{ $('Atomic Lock').item.json.address }}\\n⏰ {{ $('Atomic Lock').item.json.time || 'не указано' }}\\n💰 {{ $('Atomic Lock').item.json.payment || 'не указано' }}\\n\\n#работаомск #омск\",\n  \"parse_mode\": \"HTML\"\n}",
+        "jsonBody": "={\n  \"chat_id\": \"{{ $env.TELEGRAM_CHANNEL_ID }}\",\n  \"message_id\": {{ $('Atomic Lock').item.json.message_id }},\n  \"text\": \"🧾 РАБОТА ОМСК | Подряд PRO #{{ $('Atomic Lock').item.json.order_id }}\\n\\n🔒 ЗАКРЫТ — исполнитель найден\\n\\n📍 {{ $('Atomic Lock').item.json.address }}\\n⏰ {{ $('Atomic Lock').item.json.time || 'не указано' }}\\n💰 {{ $('Atomic Lock').item.json.payment_text || 'не указано' }}\\n\\n#работаомск #омск\",\n  \"parse_mode\": \"HTML\"\n}",
         "options": {}
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000014",
       "name": "Edit Channel Post",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        2280,
-        400
-      ]
+      "position": [2280, 400]
     },
     {
       "parameters": {
         "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose"
-          },
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
           "conditions": [
             {
               "id": "has-max-id",
               "leftValue": "={{ $('Atomic Lock').item.json.max_message_id }}",
               "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEquals"
-              }
+              "operator": { "type": "string", "operation": "notEquals" }
             }
           ],
           "combinator": "and"
@@ -396,10 +267,7 @@
       "name": "Has MAX Post?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [
-        2280,
-        700
-      ]
+      "position": [2280, 700]
     },
     {
       "parameters": {
@@ -408,51 +276,31 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=access_token=\"{{ $env.MAX_BOT_TOKEN }}\""
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
+            { "name": "Authorization", "value": "=access_token=\"{{ $env.MAX_BOT_TOKEN }}\"" },
+            { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"text\": \"🧾 *РАБОТА ОМСК | Подряд PRO #{{ $('Atomic Lock').item.json.order_id }}*\\n\\n🔒 ЗАКРЫТ — исполнитель найден\\n\\n📍 {{ $('Atomic Lock').item.json.address }}\\n⏰ {{ $('Atomic Lock').item.json.time || 'не указано' }}\\n\\n#работаомск #омск\",\n  \"format\": \"markdown\"\n}",
-        "options": {
-          "timeout": 10000
-        }
+        "options": { "timeout": 10000 }
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000019",
       "name": "Edit MAX Post",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        2540,
-        650
-      ]
+      "position": [2540, 650]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/answerCallbackQuery",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/answerCallbackQuery' }}",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "callback_query_id",
-              "value": "={{ $('Parse Callback').item.json.callback_query_id }}"
-            },
-            {
-              "name": "text",
-              "value": "✅ Заказ ваш! Проверьте личные сообщения бота."
-            },
-            {
-              "name": "show_alert",
-              "value": "true"
-            }
+            { "name": "callback_query_id", "value": "={{ $('Parse Callback').item.json.callback_query_id }}" },
+            { "name": "text", "value": "✅ Заказ ваш! Проверьте личные сообщения бота." },
+            { "name": "show_alert", "value": "true" }
           ]
         },
         "options": {}
@@ -461,10 +309,7 @@
       "name": "Answer Callback",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        2280,
-        600
-      ]
+      "position": [2280, 600]
     },
     {
       "parameters": {},
@@ -472,205 +317,65 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [
-        0,
-        800
-      ]
+      "position": [0, 800]
     },
     {
       "parameters": {
-        "chatId": "407721399",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
         "text": "🚨 *ОШИБКА в Handle Response*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
-        "additionalFields": {
-          "parse_mode": "Markdown"
-        }
+        "additionalFields": { "parse_mode": "Markdown" }
       },
       "id": "c1b2c3d4-3333-4000-8000-000000000017",
       "name": "Notify Admin Error",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [
-        260,
-        800
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [260, 800],
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
     }
   ],
   "connections": {
-    "Callback Trigger": {
-      "main": [
-        [
-          {
-            "node": "Parse Callback",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse Callback": {
-      "main": [
-        [
-          {
-            "node": "Lookup Order",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Lookup Order": {
-      "main": [
-        [
-          {
-            "node": "Still Open?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
+    "Callback Trigger": { "main": [[{ "node": "Parse Callback", "type": "main", "index": 0 }]] },
+    "Parse Callback": { "main": [[{ "node": "Fetch Order Raw", "type": "main", "index": 0 }]] },
+    "Fetch Order Raw": { "main": [[{ "node": "Lookup Order", "type": "main", "index": 0 }]] },
+    "Lookup Order": { "main": [[{ "node": "Still Open?", "type": "main", "index": 0 }]] },
     "Still Open?": {
       "main": [
-        [
-          {
-            "node": "Lookup Worker",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Already Taken",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{ "node": "Fetch Worker Raw", "type": "main", "index": 0 }],
+        [{ "node": "Already Taken", "type": "main", "index": 0 }]
       ]
     },
-    "Lookup Worker": {
-      "main": [
-        [
-          {
-            "node": "Check Access",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Access": {
-      "main": [
-        [
-          {
-            "node": "Has Access?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
+    "Fetch Worker Raw": { "main": [[{ "node": "Lookup Worker", "type": "main", "index": 0 }]] },
+    "Lookup Worker": { "main": [[{ "node": "Check Access", "type": "main", "index": 0 }]] },
+    "Check Access": { "main": [[{ "node": "Has Access?", "type": "main", "index": 0 }]] },
     "Has Access?": {
       "main": [
-        [
-          {
-            "node": "Atomic Lock",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "No Access Reply",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{ "node": "Atomic Lock", "type": "main", "index": 0 }],
+        [{ "node": "No Access Reply", "type": "main", "index": 0 }]
       ]
     },
-    "Atomic Lock": {
-      "main": [
-        [
-          {
-            "node": "Close Order",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
+    "Atomic Lock": { "main": [[{ "node": "Close Order", "type": "main", "index": 0 }]] },
     "Close Order": {
       "main": [
         [
-          {
-            "node": "Notify Worker",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Notify Customer",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Edit Channel Post",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Answer Callback",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Has MAX Post?",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Notify Worker", "type": "main", "index": 0 },
+          { "node": "Notify Customer", "type": "main", "index": 0 },
+          { "node": "Edit Channel Post", "type": "main", "index": 0 },
+          { "node": "Answer Callback", "type": "main", "index": 0 },
+          { "node": "Has MAX Post?", "type": "main", "index": 0 }
         ]
       ]
     },
     "Has MAX Post?": {
       "main": [
-        [
-          {
-            "node": "Edit MAX Post",
-            "type": "main",
-            "index": 0
-          }
-        ],
+        [{ "node": "Edit MAX Post", "type": "main", "index": 0 }],
         []
       ]
     },
-    "Error Trigger": {
-      "main": [
-        [
-          {
-            "node": "Notify Admin Error",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
+    "Error Trigger": { "main": [[{ "node": "Notify Admin Error", "type": "main", "index": 0 }]] }
   },
   "active": false,
-  "settings": {
-    "executionOrder": "v1",
-    "saveManualExecutions": true
-  },
-  "versionId": "podryad-03-response-v2",
-  "meta": {
-    "instanceId": "podryad-pro"
-  },
-  "tags": [
-    {
-      "name": "podryad-pro"
-    }
-  ]
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "versionId": "podryad-03-response-v3-supabase",
+  "meta": { "instanceId": "podryad-pro" },
+  "tags": [{ "name": "podryad-pro" }]
 }

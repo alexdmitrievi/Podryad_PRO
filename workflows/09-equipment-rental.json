@@ -3,17 +3,25 @@
   "nodes": [
     {
       "parameters": {
-        "updates": ["message"],
+        "updates": [
+          "message"
+        ],
         "additionalFields": {}
       },
       "id": "rent-trigger-001",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [0, 300],
+      "position": [
+        0,
+        300
+      ],
       "webhookId": "podryad-rent-trigger",
       "credentials": {
-        "telegramApi": { "id": "1", "name": "Telegram Bot" }
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
       }
     },
     {
@@ -24,30 +32,46 @@
       "name": "Parse Command",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "is-catalog",
               "leftValue": "={{ $json.action }}",
               "rightValue": "catalog",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             },
             {
               "id": "is-book",
               "leftValue": "={{ $json.action }}",
               "rightValue": "book",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             },
             {
               "id": "is-my-rentals",
               "leftValue": "={{ $json.action }}",
               "rightValue": "my_rentals",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "or"
@@ -58,38 +82,57 @@
       "name": "Route Action",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [480, 300]
+      "position": [
+        480,
+        300
+      ]
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/equipment?select=*' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            }
+          ]
         },
-        "sheetName": { "__rl": true, "value": "Equipment", "mode": "list" },
-        "filtersUI": {},
-        "options": { "returnAllMatches": true }
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "rent-read-equip-004",
       "name": "Read All Equipment",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [740, 100],
-      "credentials": {
-        "googleSheetsOAuth2Api": { "id": "3", "name": "Google Sheets" }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        740,
+        100
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const items = $('Read All Equipment').all().map(i => i.json);\nconst available = items.filter(i => i.status === 'available');\n\nconst categories = {\n  'garden': '🌿 Сад и участок',\n  'construction': '🔨 Стройка и ремонт',\n  'special': '⚡ Спецтехника'\n};\n\nlet text = '🔧 *Аренда техники | Подряд PRO*\\n\\n';\n\nconst grouped = {};\nfor (const item of available) {\n  const cat = item.category || 'other';\n  if (!grouped[cat]) grouped[cat] = [];\n  grouped[cat].push(item);\n}\n\nfor (const [cat, catItems] of Object.entries(grouped)) {\n  const catName = categories[cat] || '📋 Другое';\n  text += `*${catName}*\\n`;\n  for (const item of catItems) {\n    text += `• ${item.name} — от ${item.rate_4h}₽/4ч\\n`;\n    text += `  /rent ${item.equipment_id}\\n`;\n  }\n  text += '\\n';\n}\n\ntext += '💡 Нажмите на команду /rent ID чтобы забронировать\\n';\ntext += '🎁 Скидка 15% при заказе вместе с исполнителями\\n\\n';\ntext += '🌐 Каталог на сайте: podryad.pro/equipment';\n\nconst chatId = $('Parse Command').first().json.chat_id;\n\nreturn [{ json: { chat_id: chatId, text } }];"
+        "jsCode": "const raw = $('Read All Equipment').first().json;\nconst items = (Array.isArray(raw) ? raw : [raw]).filter(Boolean);\nconst available = items.filter(i => i.status === 'available');\n\nconst categories = {\n  'garden': '🌿 Сад и участок',\n  'construction': '🔨 Стройка и ремонт',\n  'special': '⚡ Спецтехника'\n};\n\nlet text = '🔧 *Аренда техники | Подряд PRO*\\n\\n';\n\nconst grouped = {};\nfor (const item of available) {\n  const cat = item.category || 'other';\n  if (!grouped[cat]) grouped[cat] = [];\n  grouped[cat].push(item);\n}\n\nfor (const [cat, catItems] of Object.entries(grouped)) {\n  const catName = categories[cat] || '📋 Другое';\n  text += `*${catName}*\\n`;\n  for (const item of catItems) {\n    text += `• ${item.name} — от ${item.rate_4h}₽/4ч\\n`;\n    text += `  /rent ${item.equipment_id}\\n`;\n  }\n  text += '\\n';\n}\n\ntext += '💡 Нажмите на команду /rent ID чтобы забронировать\\n';\ntext += '🎁 Скидка 15% при заказе вместе с исполнителями\\n\\n';\ntext += '🌐 Каталог на сайте: podryad.pro/equipment';\n\nconst chatId = $('Parse Command').first().json.chat_id;\n\nreturn [{ json: { chat_id: chatId, text } }];"
       },
       "id": "rent-build-catalog-005",
       "name": "Build Catalog Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1000, 100]
+      "position": [
+        1000,
+        100
+      ]
     },
     {
       "parameters": {
@@ -104,49 +147,81 @@
       "name": "Send Catalog",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1260, 100],
+      "position": [
+        1260,
+        100
+      ],
       "credentials": {
-        "telegramApi": { "id": "1", "name": "Telegram Bot" }
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
       }
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": { "__rl": true, "value": "Equipment", "mode": "list" },
-        "filtersUI": {
-          "values": [
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/equipment?select=*&equipment_id=eq.' + encodeURIComponent($('Parse Command').item.json.equipment_id)' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
             {
-              "lookupColumn": "equipment_id",
-              "lookupValue": "={{ $('Parse Command').item.json.equipment_id }}"
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
             }
           ]
         },
-        "options": {}
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "rent-lookup-equip-007",
       "name": "Lookup Equipment",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [740, 350],
-      "credentials": {
-        "googleSheetsOAuth2Api": { "id": "3", "name": "Google Sheets" }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        740,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nif (!rows[0]?.equipment_id) throw new Error('EQUIPMENT_NOT_FOUND');\nreturn [{ json: rows[0] }];"
+      },
+      "id": "norm-eq-09a",
+      "name": "Normalize Equipment Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        350
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "is-available",
               "leftValue": "={{ $json.status }}",
               "rightValue": "available",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -156,37 +231,51 @@
       "name": "Is Available?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [980, 350]
+      "position": [
+        980,
+        350
+      ]
     },
     {
       "parameters": {
         "chatId": "={{ $('Parse Command').item.json.chat_id }}",
         "text": "❌ К сожалению, *{{ $json.name }}* сейчас в аренде.\n\nПопробуйте позже или выберите другую технику: /rent",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "rent-not-available-009",
       "name": "Not Available",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1220, 500],
+      "position": [
+        1220,
+        500
+      ],
       "credentials": {
-        "telegramApi": { "id": "1", "name": "Telegram Bot" }
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
       }
     },
     {
       "parameters": {
-        "jsCode": "const equip = $('Lookup Equipment').first().json;\nconst cmd = $('Parse Command').first().json;\n\nlet text = `🔧 *${equip.name}*\\n\\n`;\ntext += `${equip.description}\\n`;\ntext += `📐 ${equip.specs}\\n\\n`;\ntext += `*Тарифы:*\\n`;\ntext += `⏱ 4 часа: *${equip.rate_4h}₽*\\n`;\ntext += `📅 Сутки: *${equip.rate_day}₽*\\n`;\ntext += `📦 3 суток: *${equip.rate_3days}₽* (выгодно!)\\n\\n`;\ntext += `🔒 Залог: ${equip.deposit}₽ (возвращается при сдаче)\\n`;\ntext += `🚚 Доставка: 500₽ по городу / самовывоз бесплатно\\n\\n`;\ntext += `🎁 _Скидка 15% при заказе вместе с исполнителями_\\n\\n`;\ntext += `Выберите срок аренды:`;\n\nconst keyboard = {\n  inline_keyboard: [\n    [\n      { text: `4 часа — ${equip.rate_4h}₽`, callback_data: `rent_4h_${equip.equipment_id}` },\n      { text: `Сутки — ${equip.rate_day}₽`, callback_data: `rent_day_${equip.equipment_id}` }\n    ],\n    [\n      { text: `3 суток — ${equip.rate_3days}₽`, callback_data: `rent_3d_${equip.equipment_id}` }\n    ],\n    [\n      { text: '« Назад к каталогу', callback_data: 'rent_catalog' }\n    ]\n  ]\n};\n\nreturn [{ json: { chat_id: cmd.chat_id, text, keyboard: JSON.stringify(keyboard), equipment_id: equip.equipment_id } }];"
+        "jsCode": "const equip = $('Normalize Equipment Row').first().json;\nconst cmd = $('Parse Command').first().json;\n\nlet text = `🔧 *${equip.name}*\\n\\n`;\ntext += `${equip.description}\\n`;\ntext += `📐 ${equip.specs}\\n\\n`;\ntext += `*Тарифы:*\\n`;\ntext += `⏱ 4 часа: *${equip.rate_4h}₽*\\n`;\ntext += `📅 Сутки: *${equip.rate_day}₽*\\n`;\ntext += `📦 3 суток: *${equip.rate_3days}₽* (выгодно!)\\n\\n`;\ntext += `🔒 Залог: ${equip.deposit}₽ (возвращается при сдаче)\\n`;\ntext += `🚚 Доставка: 500₽ по городу / самовывоз бесплатно\\n\\n`;\ntext += `🎁 _Скидка 15% при заказе вместе с исполнителями_\\n\\n`;\ntext += `Выберите срок аренды:`;\n\nconst keyboard = {\n  inline_keyboard: [\n    [\n      { text: `4 часа — ${equip.rate_4h}₽`, callback_data: `rent_4h_${equip.equipment_id}` },\n      { text: `Сутки — ${equip.rate_day}₽`, callback_data: `rent_day_${equip.equipment_id}` }\n    ],\n    [\n      { text: `3 суток — ${equip.rate_3days}₽`, callback_data: `rent_3d_${equip.equipment_id}` }\n    ],\n    [\n      { text: '« Назад к каталогу', callback_data: 'rent_catalog' }\n    ]\n  ]\n};\n\nreturn [{ json: { chat_id: cmd.chat_id, text, keyboard: JSON.stringify(keyboard), equipment_id: equip.equipment_id } }];"
       },
       "id": "rent-build-detail-010",
       "name": "Build Detail Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1220, 300]
+      "position": [
+        1220,
+        300
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $credentials.telegramApi.token }}/sendMessage",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"parse_mode\": \"Markdown\",\n  \"reply_markup\": {{ $json.keyboard }}\n}",
@@ -196,24 +285,35 @@
       "name": "Send Detail",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1460, 300],
+      "position": [
+        1460,
+        300
+      ],
       "credentials": {
         "httpBasicAuth": {}
       }
     },
     {
       "parameters": {
-        "updates": ["callback_query"],
+        "updates": [
+          "callback_query"
+        ],
         "additionalFields": {}
       },
       "id": "rent-callback-012",
       "name": "Callback Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [0, 700],
+      "position": [
+        0,
+        700
+      ],
       "webhookId": "podryad-rent-callback",
       "credentials": {
-        "telegramApi": { "id": "1", "name": "Telegram Bot" }
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
       }
     },
     {
@@ -224,18 +324,28 @@
       "name": "Parse Rent Callback",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 700]
+      "position": [
+        240,
+        700
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "is-confirm",
               "leftValue": "={{ $json.action }}",
               "rightValue": "confirm_booking",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -245,56 +355,88 @@
       "name": "Is Booking?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [480, 700]
+      "position": [
+        480,
+        700
+      ]
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": { "__rl": true, "value": "Equipment", "mode": "list" },
-        "filtersUI": {
-          "values": [
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/equipment?select=*&equipment_id=eq.' + encodeURIComponent($json.equipment_id)' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
             {
-              "lookupColumn": "equipment_id",
-              "lookupValue": "={{ $json.equipment_id }}"
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
             }
           ]
         },
-        "options": {}
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "rent-lookup-for-book-015",
       "name": "Lookup For Booking",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [740, 650],
-      "credentials": {
-        "googleSheetsOAuth2Api": { "id": "3", "name": "Google Sheets" }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        740,
+        650
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const equip = $('Lookup For Booking').first().json;\nconst cmd = $('Parse Rent Callback').first().json;\n\nif (equip.status !== 'available') {\n  return [{ json: { ...cmd, error: true, message: 'Техника уже занята' } }];\n}\n\nconst durationMap = {\n  '4h': { label: '4 часа', rate_field: 'rate_4h', hours: 4 },\n  'day': { label: 'Сутки (24 часа)', rate_field: 'rate_day', hours: 24 },\n  '3d': { label: '3 суток', rate_field: 'rate_3days', hours: 72 }\n};\n\nconst dur = durationMap[cmd.duration] || durationMap['day'];\nconst price = parseInt(equip[dur.rate_field], 10) || 0;\nconst deposit = parseInt(equip.deposit, 10) || 0;\nconst totalToPay = price; // Залог берётся отдельно при получении\n\nconst rentalId = `R${Date.now().toString(36).toUpperCase()}`;\nconst createdAt = new Date().toISOString();\n\nreturn [{\n  json: {\n    rental_id: rentalId,\n    equipment_id: equip.equipment_id,\n    equipment_name: equip.name,\n    user_id: cmd.user_id,\n    first_name: cmd.first_name,\n    chat_id: cmd.chat_id,\n    callback_id: cmd.callback_id,\n    duration: cmd.duration,\n    duration_label: dur.label,\n    duration_hours: dur.hours,\n    price,\n    deposit,\n    total_to_pay: totalToPay,\n    status: 'pending',\n    created_at: createdAt,\n    error: false\n  }\n}];"
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nif (!rows[0]?.equipment_id) throw new Error('EQUIPMENT_NOT_FOUND');\nreturn [{ json: rows[0] }];"
+      },
+      "id": "norm-eq-book-09",
+      "name": "Normalize Equipment Booking",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        650
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const equip = $('Normalize Equipment Booking').first().json;\nconst cmd = $('Parse Rent Callback').first().json;\n\nif (equip.status !== 'available') {\n  return [{ json: { ...cmd, error: true, message: 'Техника уже занята' } }];\n}\n\nconst durationMap = {\n  '4h': { label: '4 часа', rate_field: 'rate_4h', hours: 4 },\n  'day': { label: 'Сутки (24 часа)', rate_field: 'rate_day', hours: 24 },\n  '3d': { label: '3 суток', rate_field: 'rate_3days', hours: 72 }\n};\n\nconst dur = durationMap[cmd.duration] || durationMap['day'];\nconst price = parseInt(equip[dur.rate_field], 10) || 0;\nconst deposit = parseInt(equip.deposit, 10) || 0;\nconst totalToPay = price; // Залог берётся отдельно при получении\n\nconst rentalId = `R${Date.now().toString(36).toUpperCase()}`;\nconst createdAt = new Date().toISOString();\n\nreturn [{\n  json: {\n    rental_id: rentalId,\n    equipment_id: equip.equipment_id,\n    equipment_name: equip.name,\n    user_id: cmd.user_id,\n    first_name: cmd.first_name,\n    chat_id: cmd.chat_id,\n    callback_id: cmd.callback_id,\n    duration: cmd.duration,\n    duration_label: dur.label,\n    duration_hours: dur.hours,\n    price,\n    deposit,\n    total_to_pay: totalToPay,\n    status: 'pending',\n    created_at: createdAt,\n    error: false\n  }\n}];"
       },
       "id": "rent-calc-price-016",
       "name": "Calculate Rental Price",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [980, 650]
+      "position": [
+        980,
+        650
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "no-error",
               "leftValue": "={{ $json.error }}",
               "rightValue": false,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -304,47 +446,55 @@
       "name": "No Error?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1220, 650]
+      "position": [
+        1220,
+        650
+      ]
     },
     {
       "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/rentals' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
         },
-        "sheetName": { "__rl": true, "value": "Rentals", "mode": "list" },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "rental_id": "={{ $json.rental_id }}",
-            "equipment_id": "={{ $json.equipment_id }}",
-            "equipment_name": "={{ $json.equipment_name }}",
-            "renter_id": "={{ $json.user_id }}",
-            "renter_name": "={{ $json.first_name }}",
-            "duration": "={{ $json.duration_label }}",
-            "duration_hours": "={{ $json.duration_hours }}",
-            "price": "={{ $json.price }}",
-            "deposit": "={{ $json.deposit }}",
-            "status": "pending",
-            "created_at": "={{ $json.created_at }}",
-            "paid_at": "",
-            "returned_at": "",
-            "yukassa_id": ""
-          },
-          "matchingColumns": []
-        },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ rental_id: $json.rental_id, equipment_id: $json.equipment_id, equipment_name: $json.equipment_name, renter_id: $json.user_id, renter_name: $json.first_name, duration: $json.duration_label, duration_hours: $json.duration_hours, price: $json.price, deposit: $json.deposit, status: 'pending', created_at: $json.created_at, paid_at: null, returned_at: null, yukassa_id: null }) }}",
+        "options": {
+          "timeout": 20000
+        }
       },
       "id": "rent-save-018",
       "name": "Save Rental",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [1460, 600],
-      "credentials": {
-        "googleSheetsOAuth2Api": { "id": "3", "name": "Google Sheets" }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1460,
+        600
+      ]
     },
     {
       "parameters": {
@@ -354,7 +504,10 @@
       "name": "Build YooKassa Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1700, 600]
+      "position": [
+        1700,
+        600
+      ]
     },
     {
       "parameters": {
@@ -363,21 +516,35 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Basic {{ $json.auth }}" },
-            { "name": "Idempotence-Key", "value": "={{ $json.idempotence_key }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Basic {{ $json.auth }}"
+            },
+            {
+              "name": "Idempotence-Key",
+              "value": "={{ $json.idempotence_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.payload) }}",
-        "options": { "timeout": 15000 }
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "rent-yukassa-020",
       "name": "YooKassa Create Payment",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1940, 600]
+      "position": [
+        1940,
+        600
+      ]
     },
     {
       "parameters": {
@@ -387,12 +554,15 @@
       "name": "Build Payment Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2180, 600]
+      "position": [
+        2180,
+        600
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $credentials.telegramApi.token }}/sendMessage",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"parse_mode\": \"Markdown\",\n  \"reply_markup\": {{ $json.keyboard }}\n}",
@@ -402,21 +572,32 @@
       "name": "Send Payment Link",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2420, 600]
+      "position": [
+        2420,
+        600
+      ]
     },
     {
       "parameters": {
-        "chatId": "407721399",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
         "text": "📦 *Новая бронь техники!*\n\n🔧 {{ $('Calculate Rental Price').item.json.equipment_name }}\n⏱ {{ $('Calculate Rental Price').item.json.duration_label }}\n💰 {{ $('Calculate Rental Price').item.json.price }}₽\n👤 {{ $('Calculate Rental Price').item.json.first_name }} ({{ $('Calculate Rental Price').item.json.user_id }})\n🆔 {{ $('Calculate Rental Price').item.json.rental_id }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "rent-notify-admin-023",
       "name": "Notify Admin New Rental",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [2420, 800],
+      "position": [
+        2420,
+        800
+      ],
       "credentials": {
-        "telegramApi": { "id": "1", "name": "Telegram Bot" }
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
       }
     },
     {
@@ -431,7 +612,10 @@
       "name": "Webhook Rental Payment",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [0, 1100],
+      "position": [
+        0,
+        1100
+      ],
       "webhookId": "podryad-rental-payment-cb"
     },
     {
@@ -442,119 +626,192 @@
       "name": "Parse Payment Callback",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 1100]
+      "position": [
+        240,
+        1100
+      ]
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": { "__rl": true, "value": "Rentals", "mode": "list" },
-        "filtersUI": {
-          "values": [
-            { "lookupColumn": "rental_id", "lookupValue": "={{ $json.rental_id }}" }
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/rentals?select=*&rental_id=eq.' + encodeURIComponent($json.rental_id)' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            }
           ]
         },
-        "options": {}
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "rent-lookup-rental-026",
       "name": "Lookup Rental",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [480, 1100],
-      "credentials": {
-        "googleSheetsOAuth2Api": { "id": "3", "name": "Google Sheets" }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        1100
+      ]
     },
     {
       "parameters": {
-        "operation": "update",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nif (!rows[0]?.rental_id) throw new Error('RENTAL_NOT_FOUND');\nreturn [{ json: rows[0] }];"
+      },
+      "id": "norm-rental-09",
+      "name": "Normalize Rental Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        1100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/rentals?rental_id=eq.' + encodeURIComponent($('Parse Payment Callback').first().json.rental_id)' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
         },
-        "sheetName": { "__rl": true, "value": "Rentals", "mode": "list" },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "rental_id": "={{ $('Parse Payment Callback').item.json.rental_id }}",
-            "status": "paid",
-            "paid_at": "={{ new Date().toISOString() }}",
-            "yukassa_id": "={{ $('Parse Payment Callback').item.json.yukassa_id }}"
-          },
-          "matchingColumns": ["rental_id"]
-        },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'paid', paid_at: new Date().toISOString(), yukassa_id: $('Parse Payment Callback').first().json.yukassa_id }) }}",
+        "options": {
+          "timeout": 20000
+        }
       },
       "id": "rent-update-rental-027",
       "name": "Update Rental Paid",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [720, 1100],
-      "credentials": {
-        "googleSheetsOAuth2Api": { "id": "3", "name": "Google Sheets" }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        1100
+      ]
     },
     {
       "parameters": {
-        "operation": "update",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/equipment?equipment_id=eq.' + encodeURIComponent($('Normalize Rental Row').first().json.equipment_id)' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
         },
-        "sheetName": { "__rl": true, "value": "Equipment", "mode": "list" },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "equipment_id": "={{ $('Lookup Rental').item.json.equipment_id }}",
-            "status": "rented"
-          },
-          "matchingColumns": ["equipment_id"]
-        },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: \"rented\" }) }}",
+        "options": {
+          "timeout": 20000
+        }
       },
       "id": "rent-mark-rented-028",
       "name": "Mark Equipment Rented",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [960, 1100],
-      "credentials": {
-        "googleSheetsOAuth2Api": { "id": "3", "name": "Google Sheets" }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        1100
+      ]
     },
     {
       "parameters": {
-        "chatId": "={{ $('Lookup Rental').item.json.renter_id }}",
-        "text": "✅ *Техника забронирована!*\n\n🔧 {{ $('Lookup Rental').item.json.equipment_name }}\n⏱ {{ $('Lookup Rental').item.json.duration }}\n🆔 Бронь: {{ $('Lookup Rental').item.json.rental_id }}\n\n📍 *Как получить:*\nСамовывоз: бокс «Кладовка55», Омск\nДоставка: 500₽ (напишите адрес в ответ)\n\n🔒 При получении — залог {{ $('Lookup Rental').item.json.deposit }}₽\n(возвращается при сдаче в исправном состоянии)\n\n📞 Для согласования времени выдачи свяжитесь с нами в боте.",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "chatId": "={{ $('Normalize Rental Row').item.json.renter_id }}",
+        "text": "✅ *Техника забронирована!*\n\n🔧 {{ $('Normalize Rental Row').item.json.equipment_name }}\n⏱ {{ $('Normalize Rental Row').item.json.duration }}\n🆔 Бронь: {{ $('Normalize Rental Row').item.json.rental_id }}\n\n📍 *Как получить:*\nСамовывоз: бокс «Кладовка55», Омск\nДоставка: 500₽ (напишите адрес в ответ)\n\n🔒 При получении — залог {{ $('Normalize Rental Row').item.json.deposit }}₽\n(возвращается при сдаче в исправном состоянии)\n\n📞 Для согласования времени выдачи свяжитесь с нами в боте.",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "rent-confirm-user-029",
       "name": "Confirm to Renter",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1200, 1050],
+      "position": [
+        1200,
+        1050
+      ],
       "credentials": {
-        "telegramApi": { "id": "1", "name": "Telegram Bot" }
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
       }
     },
     {
       "parameters": {
-        "chatId": "407721399",
-        "text": "✅ *Оплата аренды получена!*\n\n🔧 {{ $('Lookup Rental').item.json.equipment_name }}\n⏱ {{ $('Lookup Rental').item.json.duration }}\n💰 {{ $('Lookup Rental').item.json.price }}₽\n👤 {{ $('Lookup Rental').item.json.renter_name }} (ID: {{ $('Lookup Rental').item.json.renter_id }})\n🆔 {{ $('Lookup Rental').item.json.rental_id }}\n\n📦 Подготовьте технику к выдаче!",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "text": "✅ *Оплата аренды получена!*\n\n🔧 {{ $('Normalize Rental Row').item.json.equipment_name }}\n⏱ {{ $('Normalize Rental Row').item.json.duration }}\n💰 {{ $('Normalize Rental Row').item.json.price }}₽\n👤 {{ $('Normalize Rental Row').item.json.renter_name }} (ID: {{ $('Normalize Rental Row').item.json.renter_id }})\n🆔 {{ $('Normalize Rental Row').item.json.rental_id }}\n\n📦 Подготовьте технику к выдаче!",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "rent-confirm-admin-030",
       "name": "Confirm to Admin",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1200, 1200],
+      "position": [
+        1200,
+        1200
+      ],
       "credentials": {
-        "telegramApi": { "id": "1", "name": "Telegram Bot" }
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
       }
     },
     {
@@ -563,120 +820,360 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 1400]
+      "position": [
+        0,
+        1400
+      ]
     },
     {
       "parameters": {
-        "chatId": "407721399",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
         "text": "🚨 *ОШИБКА в Equipment Rental*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "rent-error-notify-032",
       "name": "Notify Admin Error",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [260, 1400],
+      "position": [
+        260,
+        1400
+      ],
       "credentials": {
-        "telegramApi": { "id": "1", "name": "Telegram Bot" }
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
       }
     }
   ],
   "connections": {
     "Telegram Trigger": {
-      "main": [[{ "node": "Parse Command", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Parse Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse Command": {
-      "main": [[{ "node": "Route Action", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Route Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Route Action": {
       "main": [
-        [{ "node": "Read All Equipment", "type": "main", "index": 0 }],
-        [{ "node": "Lookup Equipment", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Read All Equipment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Lookup Equipment",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [],
         []
       ]
     },
     "Read All Equipment": {
-      "main": [[{ "node": "Build Catalog Message", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Build Catalog Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Build Catalog Message": {
-      "main": [[{ "node": "Send Catalog", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Send Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Lookup Equipment": {
-      "main": [[{ "node": "Is Available?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize Equipment Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Is Available?": {
       "main": [
-        [{ "node": "Build Detail Message", "type": "main", "index": 0 }],
-        [{ "node": "Not Available", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build Detail Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build Detail Message": {
-      "main": [[{ "node": "Send Detail", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Send Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Callback Trigger": {
-      "main": [[{ "node": "Parse Rent Callback", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Parse Rent Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse Rent Callback": {
-      "main": [[{ "node": "Is Booking?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Is Booking?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Is Booking?": {
       "main": [
-        [{ "node": "Lookup For Booking", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Lookup For Booking",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
     "Lookup For Booking": {
-      "main": [[{ "node": "Calculate Rental Price", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize Equipment Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Calculate Rental Price": {
-      "main": [[{ "node": "No Error?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "No Error?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "No Error?": {
       "main": [
-        [{ "node": "Save Rental", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Save Rental",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
     "Save Rental": {
-      "main": [[{ "node": "Build YooKassa Request", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Build YooKassa Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Build YooKassa Request": {
-      "main": [[{ "node": "YooKassa Create Payment", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "YooKassa Create Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "YooKassa Create Payment": {
-      "main": [[{ "node": "Build Payment Message", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Build Payment Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Build Payment Message": {
       "main": [
         [
-          { "node": "Send Payment Link", "type": "main", "index": 0 },
-          { "node": "Notify Admin New Rental", "type": "main", "index": 0 }
+          {
+            "node": "Send Payment Link",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Admin New Rental",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Webhook Rental Payment": {
-      "main": [[{ "node": "Parse Payment Callback", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Parse Payment Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse Payment Callback": {
-      "main": [[{ "node": "Lookup Rental", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Lookup Rental",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Lookup Rental": {
-      "main": [[{ "node": "Update Rental Paid", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize Rental Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Update Rental Paid": {
-      "main": [[{ "node": "Mark Equipment Rented", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Mark Equipment Rented",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Mark Equipment Rented": {
       "main": [
         [
-          { "node": "Confirm to Renter", "type": "main", "index": 0 },
-          { "node": "Confirm to Admin", "type": "main", "index": 0 }
+          {
+            "node": "Confirm to Renter",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Confirm to Admin",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Error Trigger": {
-      "main": [[{ "node": "Notify Admin Error", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Notify Admin Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Equipment Row": {
+      "main": [
+        [
+          {
+            "node": "Is Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Equipment Booking": {
+      "main": [
+        [
+          {
+            "node": "Calculate Rental Price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Rental Row": {
+      "main": [
+        [
+          {
+            "node": "Update Rental Paid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -684,11 +1181,19 @@
     "executionOrder": "v1",
     "saveManualExecutions": true
   },
-  "versionId": "podryad-09-equipment-rental-v1",
-  "meta": { "instanceId": "podryad-pro" },
+  "versionId": "podryad-09-rental-v2-supabase",
+  "meta": {
+    "instanceId": "podryad-pro"
+  },
   "tags": [
-    { "name": "podryad-pro" },
-    { "name": "rental" },
-    { "name": "equipment" }
+    {
+      "name": "podryad-pro"
+    },
+    {
+      "name": "rental"
+    },
+    {
+      "name": "equipment"
+    }
   ]
 }

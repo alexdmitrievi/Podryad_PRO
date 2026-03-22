@@ -70,45 +70,54 @@
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Orders",
-          "mode": "list"
-        },
-        "filtersUI": {
-          "values": [
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?select=*&order_id=eq.' + encodeURIComponent(String($('Extract Done Data').first().json.order_id))' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
             {
-              "lookupColumn": "order_id",
-              "lookupValue": "={{ $json.order_id }}"
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
             }
           ]
         },
-        "options": {}
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000004",
       "name": "Lookup Order",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         740,
         200
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const order = $('Lookup Order').first().json;\nconst userId = $('Extract Done Data').first().json.user_id;\n\n// Определяем кто вызвал /done — заказчик или исполнитель\nconst isCustomer = userId === String(order.customer_id);\nconst isExecutor = userId === String(order.executor_id);\n\nif (order.status !== 'closed') {\n  return [{ json: { valid: false, reason: 'NOT_CLOSED' } }];\n}\n\nreturn [{\n  json: {\n    valid: true,\n    is_customer: isCustomer,\n    is_executor: isExecutor,\n    order_id: order.order_id,\n    customer_id: order.customer_id,\n    executor_id: order.executor_id\n  }\n}];"
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nif (!rows[0]?.order_id) throw new Error('ORDER_NOT_FOUND');\nreturn [{ json: rows[0] }];"
+      },
+      "id": "norm-order-done-04",
+      "name": "Normalize Order Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const order = $('Normalize Order Row').first().json;\nconst userId = $('Extract Done Data').first().json.user_id;\n\n// Определяем кто вызвал /done — заказчик или исполнитель\nconst isCustomer = userId === String(order.customer_id);\nconst isExecutor = userId === String(order.executor_id);\n\nif (order.status !== 'closed') {\n  return [{ json: { valid: false, reason: 'NOT_CLOSED' } }];\n}\n\nreturn [{\n  json: {\n    valid: true,\n    is_customer: isCustomer,\n    is_executor: isExecutor,\n    order_id: order.order_id,\n    customer_id: order.customer_id,\n    executor_id: order.executor_id\n  }\n}];"
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000005",
       "name": "Determine Role",
@@ -149,10 +158,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/sendPoll",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendPoll' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"chat_id\": {{ $json.customer_id }},\n  \"question\": \"❓ Как прошёл заказ #{{ $json.order_id }}? Оцените исполнителя:\",\n  \"options\": [\n    \"⭐ Плохо (1)\",\n    \"⭐⭐ Ниже среднего (2)\",\n    \"⭐⭐⭐ Нормально (3)\",\n    \"⭐⭐⭐⭐ Хорошо (4)\",\n    \"⭐⭐⭐⭐⭐ Отлично (5)\"\n  ],\n  \"is_anonymous\": false,\n  \"allows_multiple_answers\": false\n}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($json.customer_id), question: \"❓ Как прошёл заказ #\" + String($json.order_id) + \"? Оцените исполнителя:\", options: [\"⭐ Плохо (1)\", \"⭐⭐ Ниже среднего (2)\", \"⭐⭐⭐ Нормально (3)\", \"⭐⭐⭐⭐ Хорошо (4)\", \"⭐⭐⭐⭐⭐ Отлично (5)\"], is_anonymous: false, allows_multiple_answers: false }) }}",
         "options": {}
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000006",
@@ -202,47 +211,54 @@
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Orders",
-          "mode": "list"
-        },
-        "filtersUI": {
-          "values": [
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?select=*&customer_id=eq.' + encodeURIComponent($('Parse Poll Answer').first().json.voter_id) + '&status=eq.closed&order=created_at.desc&limit=1' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
             {
-              "lookupColumn": "customer_id",
-              "lookupValue": "={{ $json.voter_id }}"
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
             }
           ]
         },
         "options": {
-          "returnAllMatches": true
+          "timeout": 15000
         }
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000009",
-      "name": "Find Voter Orders",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "name": "Fetch Last Closed Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         500,
         700
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const orders = $('Find Voter Orders').all().map(i => i.json);\nconst score = $('Parse Poll Answer').first().json.score;\n\n// Находим последний закрытый заказ этого заказчика\nconst closedOrders = orders\n  .filter(o => o.status === 'closed' && o.executor_id)\n  .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));\n\nif (closedOrders.length === 0) {\n  throw new Error('NO_CLOSED_ORDERS');\n}\n\nconst lastOrder = closedOrders[0];\n\nreturn [{\n  json: {\n    executor_id: lastOrder.executor_id,\n    order_id: lastOrder.order_id,\n    score\n  }\n}];"
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nif (!rows[0]?.order_id) throw new Error('NO_CLOSED_ORDERS');\nreturn [{ json: rows[0] }];"
+      },
+      "id": "norm-closed-04",
+      "name": "Normalize Last Closed Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const order = $('Normalize Last Closed Order').first().json;\nconst score = $('Parse Poll Answer').first().json.score;\nif (!order.executor_id) {\n  throw new Error('NO_EXECUTOR');\n}\nreturn [{\n  json: {\n    executor_id: order.executor_id,\n    order_id: order.order_id,\n    score\n  }\n}];"
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000010",
       "name": "Find Executor",
@@ -255,45 +271,54 @@
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Workers",
-          "mode": "list"
-        },
-        "filtersUI": {
-          "values": [
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?select=*&telegram_id=eq.' + encodeURIComponent(String($('Find Executor').first().json.executor_id))' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
             {
-              "lookupColumn": "telegram_id",
-              "lookupValue": "={{ $json.executor_id }}"
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
             }
           ]
         },
-        "options": {}
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000011",
       "name": "Lookup Worker",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         980,
         700
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const worker = $('Lookup Worker').first().json;\nconst score = $('Find Executor').first().json.score;\nconst oldRating = parseFloat(worker.rating) || 5.0;\nconst count = parseInt(worker.jobs_count) || 0;\n\n// Средневзвешенный рейтинг\nconst newRating = Math.round(((oldRating * count) + score) / (count + 1) * 100) / 100;\n\nlet needsBan = false;\nlet penaltyAmount = 0;\nlet penaltyMsg = '';\n\nif (score <= 2) {\n  // TODO: проверить предыдущие оценки для серийных штрафов\n  // Пока — предупреждение при каждой низкой оценке\n  penaltyMsg = '⚠️ Вы получили низкую оценку. При повторных низких оценках возможен штраф или бан.';\n  \n  // Если рейтинг упал ниже 3.0 после 5+ заказов — бан\n  if (newRating < 3.0 && count >= 5) {\n    needsBan = true;\n    const banDate = new Date();\n    banDate.setDate(banDate.getDate() + 30);\n    penaltyMsg = '🚫 Ваш рейтинг критически низкий. Вы заблокированы на 30 дней.';\n  }\n}\n\nreturn [{\n  json: {\n    telegram_id: worker.telegram_id,\n    rating: newRating,\n    jobs_count: count + 1,\n    needs_ban: needsBan,\n    ban_until: needsBan ? new Date(Date.now() + 30*24*60*60*1000).toISOString() : '',\n    penalty_msg: penaltyMsg,\n    score\n  }\n}];"
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nif (!rows[0]?.telegram_id) throw new Error('WORKER_NOT_FOUND');\nreturn [{ json: rows[0] }];"
+      },
+      "id": "norm-worker-04",
+      "name": "Normalize Worker Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const worker = $('Normalize Worker Row').first().json;\nconst score = $('Find Executor').first().json.score;\nconst oldRating = parseFloat(worker.rating) || 5.0;\nconst count = parseInt(worker.jobs_count) || 0;\n\n// Средневзвешенный рейтинг\nconst newRating = Math.round(((oldRating * count) + score) / (count + 1) * 100) / 100;\n\nlet needsBan = false;\nlet penaltyAmount = 0;\nlet penaltyMsg = '';\n\nif (score <= 2) {\n  // TODO: проверить предыдущие оценки для серийных штрафов\n  // Пока — предупреждение при каждой низкой оценке\n  penaltyMsg = '⚠️ Вы получили низкую оценку. При повторных низких оценках возможен штраф или бан.';\n  \n  // Если рейтинг упал ниже 3.0 после 5+ заказов — бан\n  if (newRating < 3.0 && count >= 5) {\n    needsBan = true;\n    const banDate = new Date();\n    banDate.setDate(banDate.getDate() + 30);\n    penaltyMsg = '🚫 Ваш рейтинг критически низкий. Вы заблокированы на 30 дней.';\n  }\n}\n\nreturn [{\n  json: {\n    telegram_id: worker.telegram_id,\n    rating: newRating,\n    jobs_count: count + 1,\n    needs_ban: needsBan,\n    ban_until: needsBan ? new Date(Date.now() + 30*24*60*60*1000).toISOString() : '',\n    penalty_msg: penaltyMsg,\n    score\n  }\n}];"
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000012",
       "name": "Calculate Rating",
@@ -306,45 +331,48 @@
     },
     {
       "parameters": {
-        "operation": "update",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Workers",
-          "mode": "list"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "telegram_id": "={{ $json.telegram_id }}",
-            "rating": "={{ $json.rating }}",
-            "jobs_count": "={{ $json.jobs_count }}",
-            "ban_until": "={{ $json.ban_until }}"
-          },
-          "matchingColumns": [
-            "telegram_id"
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?telegram_id=eq.' + encodeURIComponent(String($('Calculate Rating').first().json.telegram_id))' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
           ]
         },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ rating: $('Calculate Rating').first().json.rating, jobs_count: $('Calculate Rating').first().json.jobs_count, ban_until: $('Calculate Rating').first().json.ban_until || null }) }}",
+        "options": {
+          "timeout": 20000
+        }
       },
       "id": "d1b2c3d4-4444-4000-8000-000000000013",
       "name": "Update Worker Rating",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1460,
         700
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -382,7 +410,7 @@
     },
     {
       "parameters": {
-        "chatId": "407721399",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
         "text": "🚨 *ОШИБКА в Rating System*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
         "additionalFields": {
           "parse_mode": "Markdown"
@@ -443,7 +471,7 @@
       "main": [
         [
           {
-            "node": "Determine Role",
+            "node": "Normalize Order Row",
             "type": "main",
             "index": 0
           }
@@ -488,18 +516,7 @@
       "main": [
         [
           {
-            "node": "Find Voter Orders",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Find Voter Orders": {
-      "main": [
-        [
-          {
-            "node": "Find Executor",
+            "node": "Fetch Last Closed Order",
             "type": "main",
             "index": 0
           }
@@ -521,7 +538,7 @@
       "main": [
         [
           {
-            "node": "Calculate Rating",
+            "node": "Normalize Worker Row",
             "type": "main",
             "index": 0
           }
@@ -560,6 +577,50 @@
           }
         ]
       ]
+    },
+    "Normalize Order Row": {
+      "main": [
+        [
+          {
+            "node": "Determine Role",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Last Closed Order": {
+      "main": [
+        [
+          {
+            "node": "Normalize Last Closed Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Last Closed Order": {
+      "main": [
+        [
+          {
+            "node": "Find Executor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Worker Row": {
+      "main": [
+        [
+          {
+            "node": "Calculate Rating",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -567,7 +628,7 @@
     "executionOrder": "v1",
     "saveManualExecutions": true
   },
-  "versionId": "podryad-04-rating-v2",
+  "versionId": "podryad-04-rating-v3-supabase",
   "meta": {
     "instanceId": "podryad-pro"
   },

@@ -5,112 +5,78 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "payment-callback",
-        "options": {
-          "responseMode": "onReceived",
-          "responseData": "allEntries"
-        }
+        "options": { "responseMode": "onReceived", "responseData": "allEntries" }
       },
       "id": "b1b2c3d4-2222-4000-8000-000000000001",
       "name": "Webhook Payment",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [
-        0,
-        200
-      ],
+      "position": [0, 200],
       "webhookId": "podryad-payment-cb"
     },
     {
       "parameters": {
-        "updates": [
-          "callback_query"
-        ],
+        "updates": ["callback_query"],
         "additionalFields": {}
       },
       "id": "b1b2c3d4-2222-4000-8000-000000000002",
       "name": "Telegram Admin Approve",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [
-        0,
-        500
-      ],
+      "position": [0, 500],
       "webhookId": "podryad-admin-approve",
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
     },
     {
       "parameters": {
-        "jsCode": "// Определяем источник: webhook ЮKassa или Telegram admin\nconst webhookData = $('Webhook Payment').first()?.json;\nconst tgData = $('Telegram Admin Approve').first()?.json;\n\nlet orderId, source;\n\nif (webhookData?.object?.metadata?.order_id) {\n  // ЮKassa webhook\n  orderId = webhookData.object.metadata.order_id;\n  source = 'yukassa';\n} else if (tgData?.callback_query?.data) {\n  // Admin approve: approve_123\n  const data = tgData.callback_query.data;\n  if (data.startsWith('approve_')) {\n    orderId = data.replace('approve_', '');\n    source = 'admin';\n  }\n}\n\nif (!orderId) {\n  throw new Error('NO_ORDER_ID: не удалось определить order_id');\n}\n\nreturn [{ json: { order_id: orderId, source } }];"
+        "jsCode": "const webhookData = $('Webhook Payment').first()?.json;\nconst tgData = $('Telegram Admin Approve').first()?.json;\nlet orderId, source;\nif (webhookData?.object?.metadata?.order_id) {\n  orderId = webhookData.object.metadata.order_id;\n  source = 'yukassa';\n} else if (tgData?.callback_query?.data) {\n  const data = tgData.callback_query.data;\n  if (data.startsWith('approve_')) {\n    orderId = data.replace('approve_', '');\n    source = 'admin';\n  }\n}\nif (!orderId) throw new Error('NO_ORDER_ID');\nreturn [{ json: { order_id: String(orderId), source } }];"
       },
       "id": "b1b2c3d4-2222-4000-8000-000000000003",
       "name": "Extract Order ID",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        280,
-        350
-      ]
+      "position": [280, 350]
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Orders",
-          "mode": "list"
-        },
-        "filtersUI": {
-          "values": [
-            {
-              "lookupColumn": "order_id",
-              "lookupValue": "={{ $json.order_id }}"
-            }
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?select=*&order_id=eq.' + encodeURIComponent(String($json.order_id)) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Accept-Profile", "value": "public" }
           ]
         },
-        "options": {}
+        "options": { "timeout": 20000 }
+      },
+      "id": "b1b2c3d4-2222-4000-8000-000000000004a",
+      "name": "Fetch Order Raw",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 350]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : [raw];\nif (!rows.length) throw new Error('ORDER_NOT_FOUND');\nconst row = rows[0];\nreturn [{ json: row }];"
       },
       "id": "b1b2c3d4-2222-4000-8000-000000000004",
       "name": "Lookup Order",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [
-        520,
-        350
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 350]
     },
     {
       "parameters": {
         "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
           "conditions": [
             {
               "id": "is-pending",
               "leftValue": "={{ $json.status }}",
               "rightValue": "pending",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
+              "operator": { "type": "string", "operation": "equals" }
             }
           ],
           "combinator": "and"
@@ -120,16 +86,13 @@
       "name": "Is Pending?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [
-        760,
-        350
-      ]
+      "position": [760, 350]
     },
     {
       "parameters": {
         "resource": "message",
         "operation": "sendLocation",
-        "chatId": "-1003710991577",
+        "chatId": "={{ $env.TELEGRAM_CHANNEL_ID }}",
         "latitude": "={{ $json.lat }}",
         "longitude": "={{ $json.lon }}",
         "additionalFields": {}
@@ -138,33 +101,22 @@
       "name": "Send Location",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [
-        1020,
-        300
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [1020, 300],
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
     },
     {
       "parameters": {
-        "jsCode": "const order = $('Lookup Order').first().json;\n\nconst workTypeHashtag = {\n  'грузчики': '#грузчикиомск',\n  'уборка': '#уборкаомск',\n  'стройка': '#стройкаомск',\n  'другое': '#подработкаомск'\n};\n\nconst hashtag = workTypeHashtag[order.work_type] || '#подработкаомск';\n\nlet text = `🧾 РАБОТА ОМСК | Подряд PRO #${order.order_id}\\n\\n`;\ntext += `📍 ${order.address}\\n`;\ntext += `🗺 <a href=\"${order.yandex_link}\">Открыть на карте</a>\\n\\n`;\n\nif (order.time) text += `⏰ ${order.time}\\n`;\nif (order.payment) text += `💰 ${order.payment}\\n`;\nif (order.people) text += `👥 ${order.people} чел.`;\nif (order.hours) text += ` × ${order.hours} ч.`;\ntext += `\\n📋 ${order.work_type}\\n`;\nif (order.comment) text += `💬 ${order.comment}\\n`;\n\ntext += `\\n👇 Нажми кнопку чтобы взять заказ!\\n@Podryad_PRO_bot\\n\\n`;\ntext += `#работаомск #подработка ${hashtag} #омск`;\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [\n      { text: 'Готов 👍', callback_data: `ready_${order.order_id}` },\n      { text: 'Еду 🚚', callback_data: `go_${order.order_id}` }\n    ],\n    [\n      { text: '🔒 Забронировать за 1000р', callback_data: `book_${order.order_id}` }\n    ]\n  ]\n});\n\nreturn [{ json: { text, keyboard, order_id: order.order_id } }];"
+        "jsCode": "const order = $('Lookup Order').first().json;\nconst workTypeHashtag = {\n  'грузчики': '#грузчикиомск',\n  'уборка': '#уборкаомск',\n  'стройка': '#стройкаомск',\n  'другое': '#подработкаомск'\n};\nconst hashtag = workTypeHashtag[order.work_type] || '#подработкаомск';\nlet text = `🧾 РАБОТА ОМСК | Подряд PRO #${order.order_id}\\n\\n`;\ntext += `📍 ${order.address}\\n`;\ntext += `🗺 <a href=\"${order.yandex_link}\">Открыть на карте</a>\\n\\n`;\nif (order.time) text += `⏰ ${order.time}\\n`;\nif (order.payment_text) text += `💰 ${order.payment_text}\\n`;\nif (order.people) text += `👥 ${order.people} чел.`;\nif (order.hours) text += ` × ${order.hours} ч.`;\ntext += `\\n📋 ${order.work_type}\\n`;\nif (order.comment) text += `💬 ${order.comment}\\n`;\ntext += `\\n👇 Нажми кнопку чтобы взять заказ!\\n@Podryad_PRO_bot\\n\\n`;\ntext += `#работаомск #подработка ${hashtag} #омск`;\nreturn [{ json: { text, keyboard: '{}', order_id: order.order_id } }];"
       },
       "id": "b1b2c3d4-2222-4000-8000-000000000007",
       "name": "Build Post",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        1260,
-        300
-      ]
+      "position": [1260, 300]
     },
     {
       "parameters": {
-        "chatId": "-1003710991577",
+        "chatId": "={{ $env.TELEGRAM_CHANNEL_ID }}",
         "text": "={{ $json.text }}",
         "additionalFields": {
           "parse_mode": "HTML",
@@ -174,30 +126,15 @@
               {
                 "row": {
                   "buttons": [
-                    {
-                      "text": "Готов 👍",
-                      "additionalFields": {
-                        "callbackData": "ready_{{ $json.order_id }}"
-                      }
-                    },
-                    {
-                      "text": "Еду 🚚",
-                      "additionalFields": {
-                        "callbackData": "go_{{ $json.order_id }}"
-                      }
-                    }
+                    { "text": "Готов 👍", "additionalFields": { "callbackData": "ready_{{ $json.order_id }}" } },
+                    { "text": "Еду 🚚", "additionalFields": { "callbackData": "go_{{ $json.order_id }}" } }
                   ]
                 }
               },
               {
                 "row": {
                   "buttons": [
-                    {
-                      "text": "🔒 Забронировать за 1000р",
-                      "additionalFields": {
-                        "callbackData": "book_{{ $json.order_id }}"
-                      }
-                    }
+                    { "text": "🔒 Забронировать за 1000р", "additionalFields": { "callbackData": "book_{{ $json.order_id }}" } }
                   ]
                 }
               }
@@ -209,98 +146,57 @@
       "name": "Publish to Channel",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [
-        1500,
-        300
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [1500, 300],
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
     },
     {
       "parameters": {
-        "operation": "update",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Orders",
-          "mode": "list"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "order_id": "={{ $('Build Post').item.json.order_id }}",
-            "status": "published",
-            "message_id": "={{ $('Publish to Channel').item.json.message_id }}"
-          },
-          "matchingColumns": [
-            "order_id"
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?order_id=eq.' + encodeURIComponent(String($('Extract Order ID').first().json.order_id)) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" },
+            { "name": "Accept-Profile", "value": "public" }
           ]
         },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'published', message_id: String($('Publish to Channel').item.json.message_id) }) }}",
+        "options": { "timeout": 20000 }
       },
       "id": "b1b2c3d4-2222-4000-8000-000000000009",
       "name": "Update Order Status",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [
-        1740,
-        300
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1740, 300]
     },
     {
       "parameters": {
-        "operation": "update",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Payments",
-          "mode": "list"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "order_id": "={{ $('Extract Order ID').item.json.order_id }}",
-            "status": "paid",
-            "paid_at": "={{ new Date().toISOString() }}"
-          },
-          "matchingColumns": [
-            "order_id"
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/payments?order_id=eq.' + encodeURIComponent(String($('Extract Order ID').first().json.order_id)) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
           ]
         },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'paid', paid_at: new Date().toISOString() }) }}",
+        "options": { "timeout": 20000 }
       },
       "id": "b1b2c3d4-2222-4000-8000-000000000010",
       "name": "Update Payment",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [
-        1740,
-        500
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1740, 500]
     },
     {
       "parameters": {
@@ -312,16 +208,8 @@
       "name": "Notify Customer",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [
-        1980,
-        300
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [1980, 300],
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
     },
     {
       "parameters": {},
@@ -329,162 +217,52 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [
-        0,
-        800
-      ]
+      "position": [0, 800]
     },
     {
       "parameters": {
-        "chatId": "407721399",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
         "text": "🚨 *ОШИБКА в Publish Order*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
-        "additionalFields": {
-          "parse_mode": "Markdown"
-        }
+        "additionalFields": { "parse_mode": "Markdown" }
       },
       "id": "b1b2c3d4-2222-4000-8000-000000000013",
       "name": "Notify Admin Error",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [
-        260,
-        800
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "1",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [260, 800],
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
     }
   ],
   "connections": {
-    "Webhook Payment": {
-      "main": [
-        [
-          {
-            "node": "Extract Order ID",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Telegram Admin Approve": {
-      "main": [
-        [
-          {
-            "node": "Extract Order ID",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract Order ID": {
-      "main": [
-        [
-          {
-            "node": "Lookup Order",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
+    "Webhook Payment": { "main": [[{ "node": "Extract Order ID", "type": "main", "index": 0 }]] },
+    "Telegram Admin Approve": { "main": [[{ "node": "Extract Order ID", "type": "main", "index": 0 }]] },
+    "Extract Order ID": { "main": [[{ "node": "Fetch Order Raw", "type": "main", "index": 0 }]] },
+    "Fetch Order Raw": { "main": [[{ "node": "Lookup Order", "type": "main", "index": 0 }]] },
     "Lookup Order": {
-      "main": [
-        [
-          {
-            "node": "Is Pending?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "Is Pending?", "type": "main", "index": 0 }]]
     },
     "Is Pending?": {
       "main": [
-        [
-          {
-            "node": "Send Location",
-            "type": "main",
-            "index": 0
-          }
-        ],
+        [{ "node": "Send Location", "type": "main", "index": 0 }],
         []
       ]
     },
-    "Send Location": {
-      "main": [
-        [
-          {
-            "node": "Build Post",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Post": {
-      "main": [
-        [
-          {
-            "node": "Publish to Channel",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
+    "Send Location": { "main": [[{ "node": "Build Post", "type": "main", "index": 0 }]] },
+    "Build Post": { "main": [[{ "node": "Publish to Channel", "type": "main", "index": 0 }]] },
     "Publish to Channel": {
       "main": [
         [
-          {
-            "node": "Update Order Status",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Update Payment",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Notify Customer",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Update Order Status", "type": "main", "index": 0 },
+          { "node": "Update Payment", "type": "main", "index": 0 },
+          { "node": "Notify Customer", "type": "main", "index": 0 }
         ]
       ]
     },
-    "Error Trigger": {
-      "main": [
-        [
-          {
-            "node": "Notify Admin Error",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
+    "Error Trigger": { "main": [[{ "node": "Notify Admin Error", "type": "main", "index": 0 }]] }
   },
   "active": false,
-  "settings": {
-    "executionOrder": "v1",
-    "saveManualExecutions": true
-  },
-  "versionId": "podryad-02-publish-v2",
-  "meta": {
-    "instanceId": "podryad-pro"
-  },
-  "tags": [
-    {
-      "name": "podryad-pro"
-    },
-    {
-      "name": "channel"
-    }
-  ]
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "versionId": "podryad-02-publish-v3-supabase",
+  "meta": { "instanceId": "podryad-pro" },
+  "tags": [{ "name": "podryad-pro" }, { "name": "channel" }]
 }

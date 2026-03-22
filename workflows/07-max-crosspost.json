@@ -23,45 +23,41 @@
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Orders",
-          "mode": "list"
-        },
-        "filtersUI": {
-          "values": [
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?select=*&status=eq.published' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
             {
-              "lookupColumn": "status",
-              "lookupValue": "published"
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
             }
           ]
         },
-        "options": {}
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "g1b2c3d4-7777-4000-8000-000000000002",
       "name": "Read Published Orders",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         260,
         300
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst unpublished = items.filter(item => {\n  const maxPosted = item.json.max_posted;\n  return maxPosted !== 'TRUE' && maxPosted !== true && maxPosted !== 'true';\n});\n\nif (unpublished.length === 0) {\n  return [];\n}\n\nreturn unpublished;"
+        "jsCode": "const raw = $('Read Published Orders').first().json;\nconst items = (Array.isArray(raw) ? raw : [raw]).filter(Boolean).map((row) => ({ json: row }));\nconst unpublished = items.filter((item) => {\n  const m = item.json.max_posted;\n  return m !== true && m !== 'TRUE' && m !== 'true';\n});\nif (unpublished.length === 0) return [];\nreturn unpublished;"
       },
       "id": "g1b2c3d4-7777-4000-8000-000000000003",
       "name": "Filter Unposted",
@@ -170,44 +166,48 @@
     },
     {
       "parameters": {
-        "operation": "update",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk/edit?usp=sharing",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Orders",
-          "mode": "list"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "order_id": "={{ $('Build MAX Post').item.json.order_id }}",
-            "max_posted": "TRUE",
-            "max_message_id": "={{ $json.body?.message?.body?.mid || $json.message?.body?.mid || '' }}"
-          },
-          "matchingColumns": [
-            "order_id"
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?order_id=eq.' + encodeURIComponent(String($('Build MAX Post').first().json.order_id))' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
           ]
         },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ max_posted: true, max_message_id: String($json.body?.message?.body?.mid || $json.message?.body?.mid || $json.body?.mid || '') }) }}",
+        "options": {
+          "timeout": 20000
+        }
       },
       "id": "g1b2c3d4-7777-4000-8000-000000000008",
       "name": "Update Order MAX Status",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1740,
         250
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3",
-          "name": "Google Sheets"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -236,7 +236,7 @@
     },
     {
       "parameters": {
-        "chatId": "407721399",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
         "text": "🚨 *ОШИБКА в MAX Cross-Post*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}\n\nВозможно, MAX API недоступен. Проверьте токен и chat_id.",
         "additionalFields": {
           "parse_mode": "Markdown"
@@ -378,7 +378,7 @@
     "saveManualExecutions": true,
     "errorWorkflow": ""
   },
-  "versionId": "podryad-07-max-crosspost-v1",
+  "versionId": "podryad-07-max-v2-supabase",
   "meta": {
     "instanceId": "podryad-pro"
   },
