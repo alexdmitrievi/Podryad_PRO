@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { hashPassword, signPodryadSession } from '@/lib/auth';
-import { createUser, findUserByPhone } from '@/lib/db';
+import { signPodryadSession, verifyPassword } from '@/lib/auth';
+import { findUserByPhone, updateUserLastLogin } from '@/lib/db';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
@@ -13,56 +13,50 @@ function normalizePhone(raw: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  let body: {
-    role?: string;
-    phone?: string;
-    name?: string;
-    password?: string;
-  };
+  let body: { phone?: string; password?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  const roleIn = body.role;
-  const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
-  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  const phoneRaw = typeof body.phone === 'string' ? body.phone.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
 
-  if (roleIn !== 'customer' && roleIn !== 'worker') {
-    return NextResponse.json({ error: 'invalid_role' }, { status: 400 });
-  }
-  if (phone.length < 10 || normalizePhone(phone).length < 10) {
+  if (phoneRaw.length < 10 || normalizePhone(phoneRaw).length < 10) {
     return NextResponse.json({ error: 'invalid_phone' }, { status: 400 });
   }
-  if (name.length < 2) {
-    return NextResponse.json({ error: 'invalid_name' }, { status: 400 });
-  }
-  if (password.length < 6) {
+  if (password.length < 1) {
     return NextResponse.json({ error: 'invalid_password' }, { status: 400 });
   }
 
-  const normalized = normalizePhone(phone);
+  const normalized = normalizePhone(phoneRaw);
   const userId = `reg:${normalized}`;
 
   try {
-    const existing = await findUserByPhone(normalized);
-    if (existing) {
-      return NextResponse.json({ error: 'user_exists' }, { status: 409 });
+    const user = await findUserByPhone(normalized);
+    if (!user) {
+      return NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });
+    }
+    if (user.is_active === false) {
+      return NextResponse.json({ error: 'account_disabled' }, { status: 403 });
     }
 
-    const password_hash = hashPassword(password);
-    await createUser({
-      phone: normalized,
-      name,
-      password_hash,
-      role: roleIn,
-    });
+    const hash = user.password_hash as string;
+    if (!verifyPassword(password, hash)) {
+      return NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });
+    }
+
+    const role = user.role;
+    if (role !== 'customer' && role !== 'worker') {
+      return NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });
+    }
+
+    await updateUserLastLogin(normalized);
 
     const token = signPodryadSession({
       user_id: userId,
-      role: roleIn,
+      role,
       maxAgeSec: COOKIE_MAX_AGE,
     });
 
@@ -76,7 +70,7 @@ export async function POST(req: NextRequest) {
     });
     return res;
   } catch (e) {
-    console.error('POST /api/auth/register:', e);
+    console.error('POST /api/auth/login:', e);
     return NextResponse.json({ error: 'server_config' }, { status: 500 });
   }
 }

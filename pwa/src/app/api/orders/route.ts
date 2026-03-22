@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getOrders } from '@/lib/sheets';
+import { getPublishedOrders, orderFromDb } from '@/lib/db';
 import { getTelegramIdFromSession } from '@/lib/auth';
 
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
@@ -19,7 +19,8 @@ function isRateLimited(ip: string): boolean {
 
 export async function GET() {
   try {
-    const orders = await getOrders('published');
+    const rows = await getPublishedOrders();
+    const orders = rows.map((r) => orderFromDb(r as Record<string, unknown>));
     return NextResponse.json(orders);
   } catch (error) {
     console.error('GET /api/orders error:', error);

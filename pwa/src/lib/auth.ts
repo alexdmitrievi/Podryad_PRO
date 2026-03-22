@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
-import { getWorkerByTelegramId } from '@/lib/sheets';
+import { getWorkerByTelegramId } from '@/lib/db';
 
-const { createHmac, createHash, timingSafeEqual } = crypto;
+const { createHmac, createHash, timingSafeEqual, randomBytes, scryptSync } = crypto;
 const COOKIE_NAME = 'worker_session';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 const AUTH_MAX_AGE = 60 * 60 * 24; // 24 hours - reject auth older than this
@@ -112,6 +112,29 @@ function base64UrlEncodeBuffer(buf: Buffer): string {
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');
+}
+
+const SCRYPT_SALT_BYTES = 16;
+const SCRYPT_KEYLEN = 64;
+
+/** Хеш пароля для хранения в БД (scrypt). */
+export function hashPassword(password: string): string {
+  const salt = randomBytes(SCRYPT_SALT_BYTES);
+  const key = scryptSync(password, salt, SCRYPT_KEYLEN);
+  return `scrypt1$${salt.toString('hex')}$${key.toString('hex')}`;
+}
+
+export function verifyPassword(password: string, stored: string): boolean {
+  const parts = stored.split('$');
+  if (parts.length !== 3 || parts[0] !== 'scrypt1') return false;
+  const salt = Buffer.from(parts[1], 'hex');
+  const key = Buffer.from(parts[2], 'hex');
+  const key2 = scryptSync(password, salt, key.length);
+  try {
+    return timingSafeEqual(key, key2);
+  } catch {
+    return false;
+  }
 }
 
 /** Подпись JWT для cookie `podryad_session` (совместимо с getSession). */

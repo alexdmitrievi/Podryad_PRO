@@ -1,7 +1,20 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Copy, Check, UserPlus, Lock, ExternalLink } from 'lucide-react';
+
+function supabaseDashboardHref(): string {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) return 'https://supabase.com/dashboard';
+  try {
+    const host = new URL(base).hostname;
+    const ref = host.split('.')[0];
+    if (ref) return `https://supabase.com/dashboard/project/${ref}`;
+  } catch {
+    /* ignore */
+  }
+  return 'https://supabase.com/dashboard';
+}
 
 interface GeneratedUser {
   userId: string;
@@ -11,6 +24,8 @@ interface GeneratedUser {
 }
 
 export default function AdminPage() {
+  const supabaseHref = useMemo(() => supabaseDashboardHref(), []);
+
   const [pin, setPin] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -265,24 +280,25 @@ export default function AdminPage() {
 
             <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
               <p className="text-sm font-semibold text-amber-800 mb-2">
-                📋 Не забудьте добавить в Google Sheets:
+                📋 Не забудьте добавить в Supabase (таблица <b>workers</b>):
               </p>
               <ol className="text-xs text-amber-700 space-y-1.5">
                 <li>
-                  1. Откройте таблицу → лист <b>Workers</b>
+                  1. Table Editor → <b>workers</b> → Insert row
                 </li>
                 <li>
-                  2. Добавьте строку: telegram_id = <code className="bg-amber-100 px-1 rounded font-mono">{result.userId}</code>
+                  2. Поле <code className="bg-amber-100 px-1 rounded">telegram_id</code> ={' '}
+                  <code className="bg-amber-100 px-1 rounded font-mono">{result.userId}</code>
                 </li>
                 <li>3. Заполните name, phone, skills</li>
               </ol>
               <a
-                href={`https://docs.google.com/spreadsheets/d/${process.env.NEXT_PUBLIC_SHEETS_ID || '1gEHLSNMQIIxieDdHjrvgE15_AkoJleuWKLRajZIOCk'}/edit`}
+                href={supabaseHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-amber-800 font-medium underline underline-offset-2"
               >
-                Открыть таблицу <ExternalLink size={12} />
+                Открыть Supabase <ExternalLink size={12} />
               </a>
             </div>
           </section>
@@ -340,7 +356,7 @@ export default function AdminPage() {
               <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center text-xs font-bold">
                 3
               </span>
-              <span>Добавляете пользователя в Google Sheets (лист Workers)</span>
+              <span>Добавляете пользователя в Supabase (таблица workers)</span>
             </li>
             <li className="flex gap-3">
               <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center text-xs font-bold">

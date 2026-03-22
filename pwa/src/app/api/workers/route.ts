@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getTopWorkers } from '@/lib/db';
 
 interface TopWorker {
   name: string;
@@ -10,37 +11,14 @@ interface TopWorker {
 
 export async function GET() {
   try {
-    const sheetId = process.env.GOOGLE_SHEETS_ID;
-    const apiKey = process.env.GOOGLE_API_KEY;
-
-    if (!sheetId || !apiKey) {
-      console.warn('Missing GOOGLE_SHEETS_ID or GOOGLE_API_KEY');
-      return NextResponse.json([]);
-    }
-
-    const range = 'Workers!A2:N500';
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
-    const res = await fetch(url, { next: { revalidate: 60 } });
-    const data = await res.json();
-    const rows: string[][] = data.values ?? [];
-
-    const workers: TopWorker[] = rows
-      .filter((row) => row[6] === 'TRUE')
-      .filter((row) => {
-        if (!row[11]) return true;
-        const banDate = new Date(row[11]);
-        return !isNaN(banDate.getTime()) && banDate < new Date();
-      })
-      .map((row) => ({
-        name: row[2] || row[1] || 'Исполнитель',
-        rating: parseFloat(row[4]) || 5.0,
-        jobs_count: parseInt(row[5], 10) || 0,
-        is_vip: row[7] === 'TRUE',
-        skills: row[9] || '',
-      }))
-      .sort((a, b) => b.rating - a.rating)
-      .slice(0, 20);
-
+    const rows = await getTopWorkers(20);
+    const workers: TopWorker[] = rows.map((w) => ({
+      name: (w.name as string) || (w.username as string) || 'Исполнитель',
+      rating: typeof w.rating === 'string' ? parseFloat(w.rating) : Number(w.rating) || 5,
+      jobs_count: Number(w.jobs_count) || 0,
+      is_vip: Boolean(w.is_vip),
+      skills: String(w.skills ?? ''),
+    }));
     return NextResponse.json(workers);
   } catch (error) {
     console.error('GET /api/workers error:', error);

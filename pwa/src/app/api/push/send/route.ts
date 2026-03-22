@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendPushNotification, type PushSubscriptionData } from '@/lib/push';
 import {
+  PUSH_STORAGE_NOT_CONFIGURED,
   deactivatePushSubscription,
   listPushSubscriptionsForSend,
 } from '@/lib/push-subs';
@@ -77,10 +78,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (
-      msg === 'GOOGLE_CREDENTIALS_MISSING' ||
-      msg === 'GOOGLE_SHEETS_ID_MISSING'
-    ) {
+    if (msg === PUSH_STORAGE_NOT_CONFIGURED) {
       return NextResponse.json(
         { error: 'Сервер не настроен для чтения подписок' },
         { status: 503 }

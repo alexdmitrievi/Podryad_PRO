@@ -1,35 +1,22 @@
 # 🔨 Подряд PRO | Работа Омск
 
-Платформа для поиска работы и подработки в Омске.
-Telegram-бот + канал + PWA + n8n автоматизация.
+Платформа для поиска работы и подработки в Омске.  
+Telegram-бот + канал + PWA + n8n автоматизация. **Данные: Supabase (PostgreSQL)**, не Google Sheets.
 
 ## 📂 Структура проекта
 
 ```
 podryad-pro/
-├── workflows/                  ← 8 JSON файлов для n8n
-│   ├── 01-order-intake.json    ← Приём заявок (Telegram)
-│   ├── 02-publish-order.json   ← Публикация в канал
-│   ├── 03-handle-response.json ← Отклики исполнителей
-│   ├── 04-rating-system.json   ← Рейтинги и штрафы
-│   ├── 05-monetization.json    ← VIP + подбор
-│   ├── 06-daily-analytics.json ← Ежедневный отчёт
-│   ├── 07-max-crosspost.json   ← Кросс-пост в MAX
-│   └── 08-order-intake-pwa.json← Приём заявок (PWA форма)
-├── google-apps-script/
-│   └── createSheets.gs         ← Скрипт создания таблиц
+├── workflows/                  ← JSON для импорта в n8n (+ README про Supabase)
+├── google-apps-script/         ← устарело: было для создания листов (архив)
+├── supabase/                   ← SQL-фрагменты (push_subscriptions и др.)
+├── scripts/                    ← cron / GitHub Actions (Supabase)
+├── .github/workflows/          ← GitHub Actions (проверка Supabase)
 ├── pwa/                        ← Next.js 15 PWA
 │   ├── src/
-│   │   ├── app/               ← App Router pages
-│   │   ├── components/        ← React компоненты
-│   │   └── lib/               ← Утилиты
-│   ├── public/
-│   │   └── manifest.json
-│   ├── package.json
-│   ├── vercel.json          ← конфиг Vercel (Root Directory = pwa)
-│   └── next.config.js
+│   ├── vercel.json
+│   └── package.json
 ├── docker/
-│   └── nginx.conf
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
@@ -37,16 +24,17 @@ podryad-pro/
 
 ## 🚀 Быстрый старт
 
-### Шаг 1: Google Sheets
+### Шаг 1: Supabase
 
-1. Создай новую Google Таблицу
-2. **Extensions → Apps Script**
-3. Вставь код из `google-apps-script/createSheets.gs`
-4. **Run → `createPodraydProSheets`** → подтверди доступ
-5. Скопируй ID таблицы из URL:
-   `https://docs.google.com/spreadsheets/d/ЭТОТ_ID/edit`
-6. Включи Google Sheets API в [Google Cloud Console](https://console.cloud.google.com/)
-7. Создай API Key с доступом к Sheets API
+1. Создай проект на [supabase.com](https://supabase.com/).
+2. В **SQL Editor** выполни SQL схемы таблиц (`orders`, `workers`, `rates`, …) — ориентир в репозитории: `supabase/schema.sql` и полный скрипт схемы из вашей документации/миграции.
+3. Включи **Realtime** для таблицы `orders`, если нужен живой дашборд PWA (**Database → Publications**).
+4. Скопируй в `.env` / Vercel:
+   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+   - **anon public** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **service_role** → `SUPABASE_SERVICE_ROLE_KEY` (только сервер, не в браузер)
+
+Подробнее переменные: `.env.example`.
 
 ### Шаг 2: Telegram бот
 
@@ -62,102 +50,83 @@ podryad-pro/
 2. Создай API ключ
 3. Пополни баланс (GPT-4o-mini стоит ~$0.15/1M tokens)
 
-### Шаг 4: n8n Cloud (быстрый вариант)
+### Шаг 4: n8n
 
-1. Зарегистрируйся на [n8n.cloud](https://n8n.cloud/) (бесплатный trial)
-2. Для каждого файла из `workflows/`:
-   - **Settings → Import from File** → выбрать JSON
-3. Настрой Credentials:
-   - **Telegram API** → вставь токен бота
-   - **Google Sheets** → OAuth2 или Service Account
-   - **OpenAI** → API ключ
-4. В каждом workflow замени переменные окружения на свои значения
-5. **Activate** каждый workflow
+1. Зарегистрируйся на [n8n.cloud](https://n8n.cloud/) или подними свой инстанс (см. `docker-compose.yml`).
+2. Импортируй JSON из папки `workflows/`.
+3. **Важно:** старые файлы ссылаются на **Google Sheets** — замени ноды на **Supabase / HTTP (PostgREST) / Postgres** (см. `workflows/README.md`).
+4. Настрой креды: **Telegram**, **OpenAI**, переменные `SUPABASE_*` для HTTP-запросов к API.
+5. **Activate** каждый workflow.
 
 ### Шаг 5: PWA деплой (Vercel)
 
 **В настройках проекта Vercel (Settings → General):**
 
 - **Root Directory:** `pwa` — обязательно, Next.js лежит в этой папке.
-- **Build / Install / Output:** оставьте **по умолчанию** (без override): `npm install`, `npm run build`, output задаёт Next.js.
-
-Конфиг деплоя лежит в `pwa/vercel.json`. Файла `vercel.json` в корне репозитория **нет** — иначе команды с `cd pwa` конфликтуют с Root Directory.
+- **Build / Install / Output:** по умолчанию: `npm install`, `npm run build`.
 
 ```bash
 cd pwa
 cp ../.env.example .env.local
-# Отредактируй .env.local — заполни все переменные
+# Заполни .env.local — в т.ч. Supabase и SESSION_SECRET
 
 npm install
 npm run build
 npm run dev          # Локально на :3000
-
-# Деплой: подключи репозиторий в Vercel или:
-npx vercel deploy
 ```
 
-Переменные окружения продакшена задай в Vercel: **Settings → Environment Variables** (скопируй ключи из `.env.local`, без коммита секретов в git).
+Переменные продакшена: **Vercel → Environment Variables** (как в `.env.example`, без коммита секретов).
 
 ### Шаг 6: VPS деплой n8n (продакшен)
 
 ```bash
-# На сервере:
 cp .env.example .env
 # Заполни .env
 
-# Первый запуск (получить SSL):
-docker-compose up -d nginx
-docker-compose run --rm certbot
-
-# Перезапуск с SSL:
-docker-compose down
 docker-compose up -d
-
-# Логи:
 docker-compose logs -f n8n
 ```
 
 ## ⚙️ Переменные окружения
 
-| Переменная | Описание | Где взять |
-|---|---|---|
-| `TELEGRAM_BOT_TOKEN` | Токен бота | @BotFather |
-| `TELEGRAM_CHANNEL_ID` | ID канала (-100...) | @userinfobot |
-| `TELEGRAM_ADMIN_ID` | Ваш Telegram ID | @userinfobot |
-| `OPENAI_API_KEY` | Ключ OpenAI | platform.openai.com |
-| `GOOGLE_SHEETS_ID` | ID таблицы | URL таблицы |
-| `GOOGLE_API_KEY` | API ключ Google | Cloud Console |
-| `N8N_WEBHOOK_BASE` | Базовый URL n8n | n8n.cloud или свой VPS |
-| `YUKASSA_SHOP_ID` | ID магазина ЮKassa | yookassa.ru |
-| `YUKASSA_SECRET_KEY` | Секретный ключ | yookassa.ru |
-| `NEXT_PUBLIC_BOT_NAME` | Username бота | Podryad_PRO_bot |
+Актуальный список и комментарии — в **`.env.example`**. Кратко:
+
+| Переменная | Описание |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | Токен бота |
+| `TELEGRAM_CHANNEL_ID` | ID канала |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL проекта Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key (клиент) |
+| `SUPABASE_SERVICE_ROLE_KEY` | service role (сервер, API, n8n) |
+| `N8N_WEBHOOK_BASE` | Базовый URL webhooks n8n |
+| `SESSION_SECRET` | Подпись cookie личного кабинета |
 
 ## 🔄 Как работает система
 
 ```
 Заказчик пишет боту
         ↓
-[Workflow 1] GPT парсит текст → геокодинг → сохранение в Sheets
+[Workflow 1] GPT парсит текст → геокодинг → запись в Supabase (orders)
         ↓
-Заказчик оплачивает 500₽
+Заказчик оплачивает
         ↓
 [Workflow 2] Пост с картой в канал
         ↓
-Исполнитель жмёт "Готов"
+Исполнитель жмёт «Готов»
         ↓
-[Workflow 3] Проверка доступа → блокировка заказа → уведомления обоим
+[Workflow 3] Проверка → обновление заказа в БД → уведомления
         ↓
 Работа выполнена → /done
         ↓
-[Workflow 4] Опрос → рейтинг → штрафы если нужно
+[Workflow 4] Опрос → рейтинг → обновление workers / orders
         ↓
-[Workflow 6] Ежедневный отчёт админу в 20:00
+[Workflow 6] Ежедневный отчёт админу
 ```
 
 ## 💰 Монетизация
 
 - **500₽** — публикация заказа
-- **1 000₽/мес** — VIP подписка (ранний доступ к заказам)
+- **1 000₽/мес** — VIP подписка
 - **1 000₽** — подбор ТОП-3 исполнителей (/pick)
 - **Реклама** — платные посты от подрядчиков
 
@@ -167,20 +136,18 @@ docker-compose logs -f n8n
 |---|---|
 | Бот не отвечает | Проверь что Telegram Trigger активен в n8n |
 | Геокодер не работает | Проверь User-Agent в Nominatim запросе |
-| Sheets не пишет | Проверь OAuth2/Service Account credentials |
-| PWA не ставится | Проверь manifest.json и что сайт на HTTPS |
-| Карта не показывается | Проверь что `leaflet` CSS подключен |
-| n8n webhook 404 | Проверь что workflow активирован |
+| n8n не пишет в БД | Проверь `SUPABASE_SERVICE_ROLE_KEY` и URL в HTTP-нодах |
+| PWA не видит заказы | Проверь RLS и что API использует service role на сервере |
+| Realtime на дашборде молчит | Включи таблицу `orders` в Realtime (Publications) |
+| GitHub Action падает | Задай секреты `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 
 ## 📝 TODO на будущее
 
+- [ ] Полная замена Google-нод в экспортированных JSON n8n на Supabase
 - [ ] Подключить боевую ЮKassa (сейчас заглушка через /approve)
 - [ ] Telegram Mini App вместо PWA
-- [ ] Push-уведомления через Service Worker
 - [ ] Автоматическое продление VIP
-- [ ] Серия штрафов (трекинг последних 3 оценок)
 - [ ] Admin panel (React dashboard)
-- [ ] Миграция с Google Sheets на PostgreSQL при масштабировании
 
 ## 📄 Лицензия
 

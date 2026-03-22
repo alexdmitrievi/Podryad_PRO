@@ -7,6 +7,7 @@ import BottomNav from '@/components/BottomNav';
 import PageHeader from '@/components/PageHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { DEFAULT_RATES, type Rate } from '@/lib/rates';
+import { supabase } from '@/lib/supabase';
 import type { Order } from '@/lib/types';
 
 const MapView = dynamic(() => import('@/components/MapView'), {
@@ -96,11 +97,30 @@ export default function DashboardPage() {
 
   useEffect(() => {
     void loadOrders(false);
-  }, [loadOrders]);
 
-  useEffect(() => {
-    const id = setInterval(() => void loadOrders(false), 30_000);
-    return () => clearInterval(id);
+    const hasRealtime =
+      Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
+      Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+    if (!hasRealtime) {
+      const poll = setInterval(() => void loadOrders(false), 30_000);
+      return () => clearInterval(poll);
+    }
+
+    const channel = supabase
+      .channel('dashboard-orders')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => {
+          void loadOrders(false);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [loadOrders]);
 
   useEffect(() => {

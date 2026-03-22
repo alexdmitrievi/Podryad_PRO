@@ -3,7 +3,7 @@ import { getTelegramIdFromSession } from '@/lib/auth';
 import {
   getWorkerByTelegramId,
   getWorkerStats,
-} from '@/lib/sheets';
+} from '@/lib/db';
 
 export async function GET() {
   const telegramId = await getTelegramIdFromSession();
@@ -30,14 +30,17 @@ export async function GET() {
       username: worker.username,
       name: worker.name,
       phone: worker.phone,
-      rating: worker.rating,
+      rating:
+        (typeof worker.rating === 'string'
+          ? parseFloat(worker.rating)
+          : Number(worker.rating)) || 5,
       jobs_count: worker.jobs_count,
-      is_vip: worker.is_vip === 'TRUE',
+      is_vip: Boolean(worker.is_vip),
       vip_expires_at: worker.vip_expires_at,
       skills: worker.skills,
       balance: worker.balance,
       ban_until: worker.ban_until,
-      is_selfemployed: worker.is_selfemployed === 'TRUE',
+      is_selfemployed: Boolean(worker.is_selfemployed),
     },
     stats: {
       total_earned: stats.total_earned,

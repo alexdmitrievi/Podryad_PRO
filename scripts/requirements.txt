@@ -1,0 +1,2 @@
+# Cron / GitHub Actions (например .github/workflows/update_status.yml)
+supabase>=2.3.0

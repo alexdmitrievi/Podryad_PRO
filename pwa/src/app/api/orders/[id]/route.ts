@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getViewerSession, type ViewerSession } from '@/lib/auth';
 import type { Order } from '@/lib/types';
-import { getOrderById } from '@/lib/sheets';
+import { getOrderById, orderFromDb } from '@/lib/db';
 
 type OrderResponse = Record<string, unknown>;
 
@@ -56,11 +56,12 @@ export async function GET(
       return NextResponse.json({ error: 'Некорректный id' }, { status: 400 });
     }
 
-    const order = await getOrderById(id);
-    if (!order) {
+    const row = await getOrderById(String(id));
+    if (!row) {
       return NextResponse.json({ error: 'Заказ не найден' }, { status: 404 });
     }
 
+    const order = orderFromDb(row as Record<string, unknown>);
     const viewer = await getViewerSession();
     const payload = buildOrderPayload(order, viewer);
     return NextResponse.json(payload);

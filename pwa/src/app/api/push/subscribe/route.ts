@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTelegramIdFromSession } from '@/lib/auth';
 import type { PushSubscriptionData } from '@/lib/push';
-import { savePushSubscription } from '@/lib/push-subs';
-import { getWorkerByTelegramId } from '@/lib/sheets';
+import {
+  PUSH_STORAGE_NOT_CONFIGURED,
+  savePushSubscription,
+} from '@/lib/push-subs';
+import { getWorkerByTelegramId } from '@/lib/db';
 
 const ROLES = new Set(['customer', 'worker']);
 
@@ -65,10 +68,7 @@ export async function POST(req: NextRequest) {
     await savePushSubscription(userId, phone, role, subscription);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (
-      msg === 'GOOGLE_CREDENTIALS_MISSING' ||
-      msg === 'GOOGLE_SHEETS_ID_MISSING'
-    ) {
+    if (msg === PUSH_STORAGE_NOT_CONFIGURED) {
       return NextResponse.json(
         { error: 'Сервер не настроен для сохранения подписок' },
         { status: 503 }

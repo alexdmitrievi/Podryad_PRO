@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getViewerSession, getWorkerActor } from '@/lib/auth';
-import { closePublishedOrder, findOrderRowById } from '@/lib/sheets';
+import { getOrderById, orderFromDb, updateOrder } from '@/lib/db';
 
 export async function POST(req: Request) {
   try {
@@ -25,19 +25,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Укажите order_id' }, { status: 400 });
     }
 
-    const found = await findOrderRowById(orderId);
-    if (!found) {
+    const row = await getOrderById(String(orderId));
+    if (!row) {
       return NextResponse.json({ error: 'Заказ не найден' }, { status: 404 });
     }
 
-    if (found.order.status !== 'published') {
+    const found = orderFromDb(row as Record<string, unknown>);
+    if (found.status !== 'published') {
       return NextResponse.json({ error: 'Заказ уже занят' }, { status: 409 });
     }
 
-    const order = await closePublishedOrder(orderId, actor.user_id);
-    if (!order) {
-      return NextResponse.json({ error: 'Заказ уже занят' }, { status: 409 });
-    }
+    await updateOrder(String(row.order_id), {
+      status: 'closed',
+      executor_id: actor.user_id,
+    });
+
+    const order = orderFromDb({
+      ...(row as Record<string, unknown>),
+      status: 'closed',
+      executor_id: actor.user_id,
+    });
 
     const webhookBase = process.env.N8N_WEBHOOK_BASE;
     if (!webhookBase) {
