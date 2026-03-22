@@ -77,7 +77,7 @@ export default function DashboardPage() {
   const [view, setView] = useState<'list' | 'map'>('list');
   const [workFilter, setWorkFilter] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>('new');
-  const [respondingId, setRespondingId] = useState<number | null>(null);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
 
   const loadOrders = useCallback(async (isManual = false) => {
     try {
@@ -170,7 +170,7 @@ export default function DashboardPage() {
     return s.size;
   }, [filtered]);
 
-  const handleRespond = async (orderId: number) => {
+  const handleRespond = async (orderId: string) => {
     setRespondError(null);
     setRespondingId(orderId);
     try {

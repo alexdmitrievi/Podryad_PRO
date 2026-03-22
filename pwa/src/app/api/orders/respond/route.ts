@@ -20,12 +20,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Некорректное тело запроса' }, { status: 400 });
     }
 
-    const orderId = Number((body as { order_id?: unknown }).order_id);
-    if (!Number.isFinite(orderId) || orderId < 1) {
+    const rawId = (body as { order_id?: unknown }).order_id;
+    const orderIdStr =
+      rawId != null ? String(rawId).trim() : '';
+    if (!orderIdStr) {
       return NextResponse.json({ error: 'Укажите order_id' }, { status: 400 });
     }
 
-    const row = await getOrderById(String(orderId));
+    const row = await getOrderById(orderIdStr);
     if (!row) {
       return NextResponse.json({ error: 'Заказ не найден' }, { status: 404 });
     }

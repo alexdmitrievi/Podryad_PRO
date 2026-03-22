@@ -1,5 +1,6 @@
 export interface Order {
-  order_id: number;
+  /** Совпадает с TEXT в Supabase (в т.ч. префикс n8n-…). */
+  order_id: string;
   customer_id: string;
   address: string;
   lat: number;

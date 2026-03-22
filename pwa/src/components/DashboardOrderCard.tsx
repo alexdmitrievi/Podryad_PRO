@@ -37,7 +37,7 @@ export interface DashboardOrderCardProps {
   order: Order;
   userRole: 'customer' | 'worker' | null;
   /** Должен резолвиться после завершения запроса (для модалки и спиннера). */
-  onRespond: (orderId: number) => Promise<void>;
+  onRespond: (orderId: string) => Promise<void>;
   isResponding: boolean;
   isMyOrder: boolean;
 }

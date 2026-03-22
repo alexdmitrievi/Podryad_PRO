@@ -51,12 +51,12 @@ export async function GET(
 ) {
   try {
     const { id: idParam } = await context.params;
-    const id = parseInt(idParam, 10);
-    if (!Number.isFinite(id) || id < 1) {
+    const id = idParam.trim();
+    if (!id) {
       return NextResponse.json({ error: 'Некорректный id' }, { status: 400 });
     }
 
-    const row = await getOrderById(String(id));
+    const row = await getOrderById(id);
     if (!row) {
       return NextResponse.json({ error: 'Заказ не найден' }, { status: 404 });
     }

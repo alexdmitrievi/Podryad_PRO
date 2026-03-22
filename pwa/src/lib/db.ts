@@ -6,8 +6,9 @@ const db = () => getServiceClient();
 /** Приводит строку из Supabase к типу Order (order_id в БД — TEXT). */
 export function orderFromDb(row: Record<string, unknown>): Order {
   const oid = row.order_id;
+  const orderIdStr = oid != null && String(oid).trim() !== '' ? String(oid) : '';
   return {
-    order_id: typeof oid === 'string' ? parseInt(oid, 10) || 0 : Number(oid) || 0,
+    order_id: orderIdStr,
     customer_id: String(row.customer_id ?? ''),
     address: String(row.address ?? ''),
     lat: Number(row.lat) || 0,
