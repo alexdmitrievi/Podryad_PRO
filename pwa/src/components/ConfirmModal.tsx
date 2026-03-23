@@ -66,7 +66,7 @@ export default function ConfirmModal({
             type="button"
             disabled={loading}
             onClick={onConfirm}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0088cc] px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-60 sm:w-auto sm:min-w-[140px]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-60 sm:w-auto sm:min-w-[140px]"
           >
             {loading && (
               <span

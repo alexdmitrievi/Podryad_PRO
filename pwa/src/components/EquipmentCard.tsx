@@ -52,9 +52,9 @@ export default function EquipmentCard({ item, showComboDiscount }: Props) {
             rel="noopener noreferrer"
             className="
               flex items-center justify-center gap-2
-              bg-[#0088cc] text-white
+              bg-brand-500 text-white
               py-2.5 rounded-xl font-semibold text-sm
-              hover:bg-[#0077b3] active:scale-[0.98]
+              hover:bg-brand-600 active:scale-[0.98]
               transition-all duration-200
             "
           >

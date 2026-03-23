@@ -79,7 +79,7 @@ export default function SelfemployedPage() {
   const [openFaq, setOpenFaq] = useState<number>(0);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg pt-16">
       <PageHeader
         title="📋 Как стать самозанятым"
         subtitle="Инструкция — 5 минут"
@@ -89,15 +89,15 @@ export default function SelfemployedPage() {
 
       <div className="max-w-lg mx-auto p-4 space-y-6 pb-10">
         {/* ── Зачем это нужно ── */}
-        <section className="bg-white rounded-3xl p-6 shadow-card border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
+        <section className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-card border border-gray-100 dark:border-dark-border">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white dark:text-white mb-4">
             Зачем статус самозанятого?
           </h2>
 
-          <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
+          <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
             <p>
               Самозанятые исполнители получают заказы{' '}
-              <span className="font-bold text-gray-900">В ПРИОРИТЕТЕ</span>.
+              <span className="font-bold text-gray-900 dark:text-white">В ПРИОРИТЕТЕ</span>.
               Кроме того, выплаты самозанятым проходят быстрее —
               в течение 24 часов после подтверждения заказа.
             </p>
@@ -108,7 +108,7 @@ export default function SelfemployedPage() {
             </p>
 
             <div>
-              <p className="font-semibold text-gray-800 mb-2">
+              <p className="font-semibold text-gray-800 dark:text-gray-100 mb-2">
                 Самозанятость — это НЕ ИП:
               </p>
               <ul className="space-y-1.5">
@@ -139,7 +139,7 @@ export default function SelfemployedPage() {
 
         {/* ── 3 способа регистрации ── */}
         <section className="space-y-4">
-          <h2 className="text-lg font-bold text-gray-900 px-1">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white px-1">
             3 способа регистрации
           </h2>
 
@@ -147,10 +147,10 @@ export default function SelfemployedPage() {
             <div
               key={i}
               className={`
-                bg-white rounded-3xl p-5 shadow-card border
+                bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border
                 ${m.recommended
                   ? 'border-amber-300 ring-2 ring-amber-100'
-                  : 'border-gray-100'}
+                  : 'border-gray-100 dark:border-dark-border'}
               `}
             >
               {m.recommended && (
@@ -161,14 +161,14 @@ export default function SelfemployedPage() {
 
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-2xl">{m.icon}</span>
-                <h3 className="font-bold text-gray-900">{m.title}</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white">{m.title}</h3>
               </div>
 
-              <p className="text-sm text-gray-500 mb-4">{m.description}</p>
+              <p className="text-sm text-gray-500 dark:text-dark-muted mb-4">{m.description}</p>
 
               <ol className="space-y-2 mb-5">
                 {m.steps.map((step, si) => (
-                  <li key={si} className="flex items-start gap-3 text-sm text-gray-700">
+                  <li key={si} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-200">
                     <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center text-xs font-bold">
                       {si + 1}
                     </span>
@@ -196,12 +196,12 @@ export default function SelfemployedPage() {
         </section>
 
         {/* ── Что дальше ── */}
-        <section className="bg-white rounded-3xl p-6 shadow-card border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900 mb-3">
+        <section className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-card border border-gray-100 dark:border-dark-border">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
             Что дальше?
           </h2>
 
-          <p className="text-sm text-gray-600 leading-relaxed mb-5">
+          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-5">
             Зарегистрировались? Вернитесь в бот{' '}
             <span className="font-semibold text-gray-900">@{botName}</span>{' '}
             и подтвердите статус самозанятого. После проверки модератором
@@ -228,7 +228,7 @@ export default function SelfemployedPage() {
 
         {/* ── FAQ ── */}
         <section>
-          <h2 className="text-lg font-bold text-gray-900 px-1 mb-4">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white px-1 mb-4">
             Частые вопросы
           </h2>
 
@@ -238,11 +238,11 @@ export default function SelfemployedPage() {
               return (
                 <div
                   key={i}
-                  className="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden"
+                  className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border overflow-hidden"
                 >
                   <button
                     onClick={() => setOpenFaq(isOpen ? -1 : i)}
-                    className="w-full flex items-center justify-between px-5 py-4 text-left transition-all hover:bg-gray-50 active:scale-[0.98]"
+                    className="w-full flex items-center justify-between px-5 py-4 text-left transition-all hover:bg-gray-50 dark:hover:bg-dark-bg active:scale-[0.98]"
                   >
                     <span className="font-semibold text-sm text-gray-900 pr-4">
                       {item.q}
@@ -260,7 +260,7 @@ export default function SelfemployedPage() {
                     className="transition-all duration-300 ease-in-out overflow-hidden"
                     style={{ maxHeight: isOpen ? '200px' : '0px' }}
                   >
-                    <p className="px-5 pb-4 text-sm text-gray-600 leading-relaxed">
+                    <p className="px-5 pb-4 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                       {item.a}
                     </p>
                   </div>

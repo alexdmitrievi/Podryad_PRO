@@ -45,19 +45,29 @@ export const viewport: Viewport = {
   themeColor: '#2F5BFF',
 };
 
+const THEME_SCRIPT = `
+(function(){try{
+  var d=document.documentElement;
+  if(localStorage.getItem('theme')==='dark'||(
+    !localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme:dark)').matches
+  )){d.classList.add('dark')}
+}catch(e){}})();
+`;
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ru" className={`${inter.variable} ${manrope.variable}`}>
+    <html lang="ru" className={`${inter.variable} ${manrope.variable}`} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="bg-surface text-[#2B2B2B] font-sans antialiased">
+      <body className="bg-surface dark:bg-dark-bg text-[#2B2B2B] dark:text-dark-text font-sans antialiased transition-colors duration-300">
         <DevUnregisterSW />
         <StickyHeader />
         {children}

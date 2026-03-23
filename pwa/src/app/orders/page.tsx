@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import {
-  MapPin, Loader2, Inbox, ExternalLink,
+  MapPin, Inbox, ExternalLink,
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
+import { SkeletonOrderCard } from '@/components/ui/Skeleton';
 import type { Order } from '@/lib/types';
 
 const statusLabel: Record<string, string> = {
@@ -40,20 +41,21 @@ export default function OrdersPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg pt-16">
       <PageHeader title="📋 Заказы" />
 
       <main className="max-w-lg mx-auto p-4 space-y-3">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 size={28} className="text-brand-500 animate-spin" />
-            <span className="text-sm text-gray-400">Загрузка заказов...</span>
-          </div>
+          <>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonOrderCard key={i} />
+            ))}
+          </>
         ) : orders.length === 0 ? (
           <div className="text-center py-16 px-6">
             <p className="text-5xl mb-4">📋</p>
-            <p className="font-bold text-lg text-gray-800">Нет активных заказов</p>
-            <p className="text-sm text-gray-500 mt-2 mb-6">
+            <p className="font-bold text-lg text-gray-800 dark:text-gray-100">Нет активных заказов</p>
+            <p className="text-sm text-gray-500 dark:text-dark-muted mt-2 mb-6">
               Новые заказы появятся совсем скоро!
             </p>
             <div className="flex flex-col gap-2 max-w-xs mx-auto">
@@ -82,14 +84,14 @@ export default function OrdersPage() {
               <div
                 key={order.order_id}
                 className="
-                  bg-white rounded-3xl p-5 shadow-card border border-gray-100
+                  bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border
                   hover:shadow-card-hover transition-all duration-300
                   animate-fade-in
                 "
                 style={{ animationDelay: `${i * 60}ms` }}
               >
                 <div className="flex justify-between items-center mb-3">
-                  <span className="font-bold text-gray-900">#{order.order_id}</span>
+                  <span className="font-bold text-gray-900 dark:text-white">#{order.order_id}</span>
                   <span className={`
                     inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold
                     ${s.bg} ${s.text}
@@ -99,12 +101,12 @@ export default function OrdersPage() {
                   </span>
                 </div>
 
-                <div className="flex items-start gap-2 text-sm text-gray-700 mb-2">
+                <div className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-200 mb-2">
                   <MapPin size={15} className="text-gray-400 mt-0.5 shrink-0" />
                   <span className="font-medium">{order.address}</span>
                 </div>
 
-                <p className="text-sm text-gray-500 leading-relaxed">
+                <p className="text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
                   📋 {order.work_type}
                   {order.worker_payout != null
                     ? <span className="font-semibold text-emerald-600"> · {order.worker_payout.toLocaleString('ru-RU')}₽ на руки</span>

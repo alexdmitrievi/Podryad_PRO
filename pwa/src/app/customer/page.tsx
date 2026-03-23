@@ -7,7 +7,7 @@ const maxChannel = process.env.NEXT_PUBLIC_MAX_CHANNEL_LINK || 'https://max.ru/p
 
 export default function CustomerPage() {
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg pt-16">
       <PageHeader title="🧾 Для заказчиков" backHref="/" />
 
       <div className="max-w-lg mx-auto p-4 space-y-6 pb-10">
@@ -15,20 +15,20 @@ export default function CustomerPage() {
 
         {/* ══ Блок 1: Как заказать работу ══ */}
         <section>
-          <h2 className="text-xl font-extrabold text-gray-900 px-1 mb-5">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-white px-1 mb-5">
             Как заказать работу
           </h2>
 
           <div className="space-y-4">
             {/* Шаг 1 */}
-            <div className="bg-white rounded-3xl p-5 shadow-card border border-gray-100">
+            <div className="bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border">
               <div className="flex items-start gap-4">
                 <span className="flex-shrink-0 w-10 h-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg font-extrabold">
                   1
                 </span>
                 <div className="flex-1">
-                  <h3 className="font-bold text-gray-900 mb-1">Зарегистрируйтесь в боте</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-1">Зарегистрируйтесь в боте</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                     Откройте бот @{botName} в Telegram,
                     нажмите «Начать» и выберите «Я заказчик». Бот запомнит вас —
                     регистрация занимает 30 секунд.
@@ -41,7 +41,7 @@ export default function CustomerPage() {
                   >
                     📱 Открыть бот
                   </a>
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                     Telegram недоступен?{' '}
                     <a
                       href={maxChannel}
@@ -62,14 +62,14 @@ export default function CustomerPage() {
             </div>
 
             {/* Шаг 2 */}
-            <div className="bg-white rounded-3xl p-5 shadow-card border border-gray-100">
+            <div className="bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border">
               <div className="flex items-start gap-4">
                 <span className="flex-shrink-0 w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-extrabold">
                   2
                 </span>
                 <div className="flex-1">
-                  <h3 className="font-bold text-gray-900 mb-1">Опишите задачу</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-1">Опишите задачу</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                     Напишите боту что нужно сделать. Пример:
                     «Нужны 2 грузчика на ул. Ленина 50, завтра в 10:00».
                     Или заполните форму на сайте — бот рассчитает стоимость.
@@ -90,14 +90,14 @@ export default function CustomerPage() {
             </div>
 
             {/* Шаг 3 */}
-            <div className="bg-white rounded-3xl p-5 shadow-card border border-gray-100">
+            <div className="bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border">
               <div className="flex items-start gap-4">
                 <span className="flex-shrink-0 w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg font-extrabold">
                   3
                 </span>
                 <div className="flex-1">
-                  <h3 className="font-bold text-gray-900 mb-1">Оплатите и ждите исполнителя</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-1">Оплатите и ждите исполнителя</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                     Бот пришлёт точную стоимость. Оплатите через ЮKassa
                     (карта, SBP, кошелёк). Заказ опубликуется в канале, исполнитель
                     откликнется — вы получите уведомление.
@@ -112,14 +112,14 @@ export default function CustomerPage() {
             </div>
 
             {/* Шаг 4 */}
-            <div className="bg-white rounded-3xl p-5 shadow-card border border-gray-100">
+            <div className="bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border">
               <div className="flex items-start gap-4">
                 <span className="flex-shrink-0 w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg font-extrabold">
                   4
                 </span>
                 <div className="flex-1">
-                  <h3 className="font-bold text-gray-900 mb-1">Оцените работу</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-1">Оцените работу</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                     После выполнения бот пришлёт короткий опрос — оцените
                     исполнителя от 1 до 5 звёзд. Это занимает 5 секунд и помогает
                     поддерживать качество на платформе. При оценке ниже 3 — мы
@@ -133,31 +133,31 @@ export default function CustomerPage() {
 
         {/* ══ Блок 2: Гарантии ══ */}
         <section>
-          <h2 className="text-xl font-extrabold text-gray-900 px-1 mb-4">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-white px-1 mb-4">
             Ваши гарантии
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-white rounded-3xl p-5 shadow-card border border-gray-100 text-center">
+            <div className="bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border text-center">
               <span className="text-3xl block mb-3">🛡</span>
-              <h3 className="font-bold text-gray-900 text-sm mb-1">Безопасная оплата</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Безопасная оплата</h3>
+              <p className="text-xs text-gray-500 dark:text-dark-muted leading-relaxed">
                 Деньги списываются только после вашего подтверждения
               </p>
             </div>
 
-            <div className="bg-white rounded-3xl p-5 shadow-card border border-gray-100 text-center">
+            <div className="bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border text-center">
               <span className="text-3xl block mb-3">↩️</span>
-              <h3 className="font-bold text-gray-900 text-sm mb-1">Возврат при неявке</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Возврат при неявке</h3>
+              <p className="text-xs text-gray-500 dark:text-dark-muted leading-relaxed">
                 Если исполнитель не вышел — полный возврат средств
               </p>
             </div>
 
-            <div className="bg-white rounded-3xl p-5 shadow-card border border-gray-100 text-center">
+            <div className="bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border text-center">
               <span className="text-3xl block mb-3">⭐</span>
-              <h3 className="font-bold text-gray-900 text-sm mb-1">Проверенные исполнители</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Проверенные исполнители</h3>
+              <p className="text-xs text-gray-500 dark:text-dark-muted leading-relaxed">
                 Рейтинг, отзывы, модерация — только надёжные люди
               </p>
             </div>
@@ -165,8 +165,8 @@ export default function CustomerPage() {
         </section>
 
         {/* ══ Блок 3: Тарифы ══ */}
-        <section className="bg-white rounded-3xl p-6 shadow-card border border-gray-100">
-          <h2 className="text-xl font-extrabold text-gray-900 mb-4">
+        <section className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-card border border-gray-100 dark:border-dark-border">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-4">
             Сколько стоит
           </h2>
 
@@ -179,26 +179,26 @@ export default function CustomerPage() {
             ].map((item) => (
               <div
                 key={item.label}
-                className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-dark-border last:border-0"
               >
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-gray-700 dark:text-gray-200">
                   {item.emoji} {item.label}
                 </span>
-                <span className="text-sm font-bold text-gray-900">
+                <span className="text-sm font-bold text-gray-900 dark:text-white">
                   от {item.price}₽/час
                 </span>
               </div>
             ))}
           </div>
 
-          <p className="text-xs text-gray-400 mt-4 leading-relaxed">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 leading-relaxed">
             Точная стоимость зависит от количества людей и часов.{' '}
             <Link href="/app/order" className="text-brand-500 font-medium hover:underline">
               Рассчитать стоимость →
             </Link>
           </p>
 
-          <p className="text-sm text-gray-600 mt-4 pt-4 border-t border-gray-100">
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-4 pt-4 border-t border-gray-100 dark:border-dark-border">
             🔧 Нужна техника?{' '}
             <Link href="/equipment" className="text-brand-500 font-medium hover:underline">
               Каталог аренды →

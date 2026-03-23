@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Star, Briefcase, Crown, Loader2, Users } from 'lucide-react';
+import { Star, Briefcase, Crown, Users } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
+import { SkeletonWorkerCard } from '@/components/ui/Skeleton';
 
 interface TopWorker {
   name: string;
@@ -27,20 +28,21 @@ export default function WorkersPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg pt-16">
       <PageHeader title="👷 Исполнители" />
 
       <main className="max-w-lg mx-auto p-4 space-y-3">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 size={28} className="text-brand-500 animate-spin" />
-            <span className="text-sm text-gray-400">Загрузка...</span>
-          </div>
+          <>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonWorkerCard key={i} />
+            ))}
+          </>
         ) : workers.length === 0 ? (
           <div className="text-center py-16 px-6">
             <p className="text-5xl mb-4">👥</p>
-            <p className="font-bold text-lg text-gray-800">Пока нет исполнителей</p>
-            <p className="text-sm text-gray-500 mt-2 mb-6">
+            <p className="font-bold text-lg text-gray-800 dark:text-gray-100">Пока нет исполнителей</p>
+            <p className="text-sm text-gray-500 dark:text-dark-muted mt-2 mb-6">
               Зарегистрируйтесь через бот @{process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot'}
             </p>
             <div className="flex flex-col gap-2 max-w-xs mx-auto">
@@ -67,7 +69,7 @@ export default function WorkersPage() {
             <div
               key={i}
               className="
-                bg-white rounded-3xl p-5 shadow-card border border-gray-100
+                bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border
                 hover:shadow-card-hover transition-all duration-300
                 flex items-center gap-4 animate-fade-in
               "
@@ -93,7 +95,7 @@ export default function WorkersPage() {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-gray-900 truncate">{w.name}</span>
+                  <span className="font-bold text-gray-900 dark:text-white truncate">{w.name}</span>
                   {w.is_vip && (
                     <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border border-amber-100">
                       VIP
@@ -105,13 +107,13 @@ export default function WorkersPage() {
                     <Star size={13} fill="currentColor" />
                     {w.rating.toFixed(1)}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-sm text-gray-400">
+                  <span className="inline-flex items-center gap-1 text-sm text-gray-400 dark:text-gray-500">
                     <Briefcase size={13} />
                     {w.jobs_count} заказов
                   </span>
                 </div>
                 {w.skills && (
-                  <p className="text-xs text-gray-400 mt-1.5 truncate">{w.skills}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 truncate">{w.skills}</p>
                 )}
               </div>
             </div>

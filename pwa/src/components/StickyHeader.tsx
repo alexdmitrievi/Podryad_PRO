@@ -37,7 +37,7 @@ export default function StickyHeader() {
         fixed top-0 left-0 right-0 z-50
         transition-all duration-300
         ${scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100'
+          ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:bg-dark-card/95 dark:border-dark-border'
           : 'bg-transparent'
         }
       `}
@@ -53,7 +53,7 @@ export default function StickyHeader() {
             />
             <span
               className={`text-base md:text-lg font-extrabold transition-colors duration-300 ${
-                scrolled ? 'text-gray-900' : 'text-white'
+                scrolled ? 'text-gray-900 dark:text-dark-text' : 'text-white'
               }`}
             >
               Подряд PRO
@@ -69,10 +69,10 @@ export default function StickyHeader() {
                 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300
                 ${pathname === item.href
                   ? scrolled
-                    ? 'bg-[#0088cc]/10 text-[#0088cc]'
+                    ? 'bg-brand-500/10 text-brand-500'
                     : 'bg-white/20 text-white'
                   : scrolled
-                    ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-dark-muted dark:hover:text-dark-text dark:hover:bg-dark-border'
                     : 'text-white/70 hover:text-white hover:bg-white/10'
                 }
               `}
@@ -88,7 +88,7 @@ export default function StickyHeader() {
                 <Link
                   href="/dashboard"
                   className={`text-sm font-medium transition-colors duration-300 ${
-                    scrolled ? 'text-gray-600 hover:text-gray-900' : 'text-white/80 hover:text-white'
+                    scrolled ? 'text-gray-600 hover:text-gray-900 dark:text-dark-muted dark:hover:text-dark-text' : 'text-white/80 hover:text-white'
                   }`}
                 >
                   📋 Мои заказы
@@ -112,7 +112,7 @@ export default function StickyHeader() {
                   href="/auth/login"
                   className={`
                   text-sm font-medium transition-colors duration-300
-                  ${scrolled ? 'text-gray-600 hover:text-gray-900' : 'text-white/80 hover:text-white'}
+                  ${scrolled ? 'text-gray-600 hover:text-gray-900 dark:text-dark-muted dark:hover:text-dark-text' : 'text-white/80 hover:text-white'}
                 `}
                 >
                   Войти
@@ -122,8 +122,8 @@ export default function StickyHeader() {
                   className={`
                   text-sm font-bold px-5 py-2 rounded-xl transition-all duration-300
                   ${scrolled
-                    ? 'bg-[#0088cc] text-white hover:bg-[#0077b3] shadow-sm'
-                    : 'bg-white text-[#0088cc] hover:bg-white/90 shadow-sm'
+                    ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-sm'
+                    : 'bg-white text-brand-500 hover:bg-white/90 shadow-sm'
                   }
                 `}
                 >
@@ -149,7 +149,7 @@ export default function StickyHeader() {
       </header>
 
       {menuOpen && (
-        <div className="md:hidden fixed inset-0 top-16 z-40 bg-white/95 backdrop-blur-md overflow-y-auto">
+        <div className="md:hidden fixed inset-0 top-16 z-40 bg-white/95 dark:bg-dark-bg/95 backdrop-blur-md overflow-y-auto">
           <nav className="flex flex-col p-6 space-y-1">
             {NAV_ITEMS.map((item) => (
               <Link
@@ -191,7 +191,7 @@ export default function StickyHeader() {
                 <Link
                   href="/auth/register"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center justify-center px-4 py-3.5 rounded-xl bg-[#0088cc] text-white font-bold hover:bg-[#0077b3]"
+                  className="flex items-center justify-center px-4 py-3.5 rounded-xl bg-brand-500 text-white font-bold hover:bg-brand-600"
                 >
                   Регистрация
                 </Link>

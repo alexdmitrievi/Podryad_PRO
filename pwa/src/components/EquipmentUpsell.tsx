@@ -70,8 +70,8 @@ export default function EquipmentUpsell({ workType = null }: Props) {
       <Link
         href="/equipment"
         className="
-          inline-flex items-center gap-1.5 text-[#0088cc] text-sm font-semibold
-          hover:text-[#0077b3] transition-colors
+          inline-flex items-center gap-1.5 text-brand-500 text-sm font-semibold
+          hover:text-brand-600 transition-colors
         "
       >
         Весь каталог техники →

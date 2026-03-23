@@ -50,7 +50,7 @@ export default function AuthRegisterPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50 pt-16">
+    <div className="flex h-screen flex-col bg-gray-50 dark:bg-dark-bg pt-16">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <PageHeader title="Регистрация" backHref="/" />
         <Image
@@ -61,7 +61,7 @@ export default function AuthRegisterPage() {
           className="mx-auto rounded-xl mb-4"
         />
         <form onSubmit={onSubmit} className="mx-auto w-full max-w-md space-y-4 p-4 pb-8">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             Укажите роль и контакты — сессия сохранится в браузере.
           </p>
 
@@ -72,7 +72,7 @@ export default function AuthRegisterPage() {
               className={`flex-1 rounded-2xl py-3 text-sm font-semibold transition-colors ${
                 role === 'customer'
                   ? 'bg-brand-500 text-white'
-                  : 'bg-white text-gray-700 ring-1 ring-gray-200'
+                  : 'bg-white dark:bg-dark-card text-gray-700 dark:text-gray-200 ring-1 ring-gray-200 dark:ring-dark-border'
               }`}
             >
               Я заказчик
@@ -83,7 +83,7 @@ export default function AuthRegisterPage() {
               className={`flex-1 rounded-2xl py-3 text-sm font-semibold transition-colors ${
                 role === 'worker'
                   ? 'bg-brand-500 text-white'
-                  : 'bg-white text-gray-700 ring-1 ring-gray-200'
+                  : 'bg-white dark:bg-dark-card text-gray-700 dark:text-gray-200 ring-1 ring-gray-200 dark:ring-dark-border'
               }`}
             >
               Я исполнитель
@@ -91,30 +91,30 @@ export default function AuthRegisterPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Телефон</label>
+            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Телефон</label>
             <input
               type="tel"
               required
               autoComplete="tel"
               value={phone}
               onChange={(ev) => setPhone(ev.target.value)}
-              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none ring-brand-500 focus:ring-2"
+              className="w-full rounded-2xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card px-4 py-3 text-sm dark:text-white outline-none ring-brand-500 focus:ring-2"
               placeholder="+7 …"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Имя</label>
+            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Имя</label>
             <input
               type="text"
               required
               autoComplete="name"
               value={name}
               onChange={(ev) => setName(ev.target.value)}
-              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none ring-brand-500 focus:ring-2"
+              className="w-full rounded-2xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card px-4 py-3 text-sm dark:text-white outline-none ring-brand-500 focus:ring-2"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Пароль</label>
+            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Пароль</label>
             <input
               type="password"
               required
@@ -122,7 +122,7 @@ export default function AuthRegisterPage() {
               minLength={6}
               value={password}
               onChange={(ev) => setPassword(ev.target.value)}
-              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none ring-brand-500 focus:ring-2"
+              className="w-full rounded-2xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card px-4 py-3 text-sm dark:text-white outline-none ring-brand-500 focus:ring-2"
             />
           </div>
 

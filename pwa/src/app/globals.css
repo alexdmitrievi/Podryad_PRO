@@ -3,6 +3,26 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-bg: #F7F9FC;
+    --color-card: #ffffff;
+    --color-border: #f1f5f9;
+    --color-text: #2B2B2B;
+    --color-muted: #71717a;
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --scrollbar-thumb: #c5cdd8;
+  }
+
+  .dark {
+    --color-bg: #0f1117;
+    --color-card: #1a1d27;
+    --color-border: #2a2d3a;
+    --color-text: #e4e4e7;
+    --color-muted: #71717a;
+    --glass-bg: rgba(15, 17, 23, 0.8);
+    --scrollbar-thumb: #3a3d4a;
+  }
+
   * {
     -webkit-tap-highlight-color: transparent;
   }
@@ -29,7 +49,7 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #c5cdd8;
+    background: var(--scrollbar-thumb);
     border-radius: 999px;
   }
 
@@ -76,6 +96,11 @@
   border-radius: 0.75rem;
 }
 
+.dark .skeleton {
+  background: linear-gradient(90deg, #1a1d27 25%, #2a2d3a 50%, #1a1d27 75%);
+  background-size: 200% 100%;
+}
+
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -96,10 +121,20 @@
   50%      { transform: translateY(-6px); }
 }
 
+@keyframes slide-in-bottom {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+
 /* ─── Utility classes ─── */
 
 .glass {
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--glass-bg);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
 }
@@ -116,7 +151,13 @@
 
 .hero-pattern {
   background-image:
-    radial-gradient(circle at 20% 50%, rgba(108,92,231,0.12) 0%, transparent 50%),
+    radial-gradient(circle at 20% 50%, rgba(47,91,255,0.15) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 40%),
     radial-gradient(circle at 60% 80%, rgba(47,91,255,0.08) 0%, transparent 50%);
+}
+
+/* Scroll fade edges for horizontal scroll containers */
+.scroll-fade-x {
+  mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
 }

@@ -127,14 +127,14 @@ export default function AdminPage() {
       <div className="min-h-screen bg-surface flex items-center justify-center p-4 pt-16">
         <form
           onSubmit={handleAuth}
-          className="bg-white rounded-3xl p-8 shadow-card border border-gray-100 w-full max-w-sm space-y-5"
+          className="bg-white dark:bg-dark-card rounded-3xl p-8 shadow-card border border-gray-100 dark:border-dark-border w-full max-w-sm space-y-5"
         >
           <div className="text-center space-y-2">
             <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto">
               <Lock size={24} className="text-brand-600" />
             </div>
-            <h1 className="text-xl font-bold text-gray-900">Админ-панель</h1>
-            <p className="text-sm text-gray-500">Введите PIN для доступа</p>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Админ-панель</h1>
+            <p className="text-sm text-gray-500 dark:text-dark-muted">Введите PIN для доступа</p>
           </div>
 
           <input
@@ -142,7 +142,7 @@ export default function AdminPage() {
             value={pin}
             onChange={(e) => setPin(e.target.value)}
             placeholder="PIN-код"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-center text-lg font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card dark:text-white text-center text-lg font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
             autoFocus
           />
 
@@ -173,17 +173,17 @@ export default function AdminPage() {
 
       <div className="p-4 max-w-md mx-auto space-y-5 pb-8">
         {/* Form */}
-        <section className="bg-white rounded-3xl p-6 shadow-card border border-gray-100">
+        <section className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-card border border-gray-100 dark:border-dark-border">
           <div className="flex items-center gap-3 mb-4">
             <UserPlus size={20} className="text-brand-600" />
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
               Новый пользователь
             </h2>
           </div>
 
           <form onSubmit={handleGenerate} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                 Имя *
               </label>
               <input
@@ -192,12 +192,12 @@ export default function AdminPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Иванов Иван"
                 required
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                 Телефон
               </label>
               <input
@@ -205,7 +205,7 @@ export default function AdminPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+7 900 123-45-67"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 
@@ -235,29 +235,29 @@ export default function AdminPage() {
 
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Имя</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-gray-500 dark:text-dark-muted">Имя</span>
+                <span className="font-medium text-gray-900 dark:text-white">
                   {result.name}
                 </span>
               </div>
               {result.phone && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Телефон</span>
-                  <span className="font-medium text-gray-900">
+                  <span className="text-gray-500 dark:text-dark-muted">Телефон</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
                     {result.phone}
                   </span>
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-gray-500">ID</span>
-                <span className="font-mono text-xs text-gray-700">
+                <span className="text-gray-500 dark:text-dark-muted">ID</span>
+                <span className="font-mono text-xs text-gray-700 dark:text-gray-200">
                   {result.userId}
                 </span>
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-500 mb-2">Ссылка для входа:</p>
+            <div className="bg-gray-50 dark:bg-dark-bg rounded-xl p-3">
+              <p className="text-xs text-gray-500 dark:text-dark-muted mb-2">Ссылка для входа:</p>
               <p className="text-xs font-mono text-brand-600 break-all leading-relaxed">
                 {result.accessLink}
               </p>
@@ -306,18 +306,18 @@ export default function AdminPage() {
 
         {/* History */}
         {history.length > 1 && (
-          <section className="bg-white rounded-3xl p-6 shadow-card border border-gray-100">
-            <h3 className="font-bold text-gray-900 mb-3">
+          <section className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-card border border-gray-100 dark:border-dark-border">
+            <h3 className="font-bold text-gray-900 dark:text-white mb-3">
               Созданные ссылки ({history.length})
             </h3>
             <div className="space-y-3">
               {history.map((u, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                  className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-dark-border last:border-0"
                 >
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {u.name}
                     </p>
                     <p className="text-xs text-gray-400 font-mono">
@@ -337,8 +337,8 @@ export default function AdminPage() {
         )}
 
         {/* Instructions */}
-        <section className="bg-white rounded-3xl p-6 shadow-card border border-gray-100">
-          <h3 className="font-bold text-gray-900 mb-3">📖 Как это работает</h3>
+        <section className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-card border border-gray-100 dark:border-dark-border">
+          <h3 className="font-bold text-gray-900 dark:text-white mb-3">📖 Как это работает</h3>
           <ol className="space-y-3 text-sm text-gray-600">
             <li className="flex gap-3">
               <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center text-xs font-bold">

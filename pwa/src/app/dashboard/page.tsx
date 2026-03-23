@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { DEFAULT_RATES, type Rate } from '@/lib/rates';
 import { supabase } from '@/lib/supabase';
 import type { Order } from '@/lib/types';
+import { SkeletonOrderCard, SkeletonStatsGrid } from '@/components/ui/Skeleton';
 
 const MapView = dynamic(() => import('@/components/MapView'), {
   ssr: false,
@@ -193,7 +194,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50 pt-16">
+    <div className="flex h-screen flex-col bg-gray-50 dark:bg-dark-bg pt-16">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <PageHeader
           title="📋 Доска заказов"
@@ -203,25 +204,29 @@ export default function DashboardPage() {
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto max-w-lg space-y-4 p-4 pb-6">
-            <div className="grid grid-cols-3 gap-2 text-center text-xs sm:text-sm">
-              <div className="rounded-2xl bg-white px-2 py-3 shadow-card">
-                <div className="text-lg leading-none">🟢</div>
-                <div className="mt-1 font-bold text-gray-900">{filtered.length}</div>
-                <div className="text-[10px] text-gray-500 sm:text-xs">активных</div>
-              </div>
-              <div className="rounded-2xl bg-white px-2 py-3 shadow-card">
-                <div className="text-lg leading-none">💰</div>
-                <div className="mt-1 font-bold text-gray-900">
-                  от {minWorkerRate.toLocaleString('ru-RU')}₽/ч
+            {lastFetchAt == null && orders.length === 0 ? (
+              <SkeletonStatsGrid />
+            ) : (
+              <div className="grid grid-cols-3 gap-2 text-center text-xs sm:text-sm">
+                <div className="rounded-2xl bg-white dark:bg-dark-card px-2 py-3 shadow-card">
+                  <div className="text-lg leading-none">🟢</div>
+                  <div className="mt-1 font-bold text-gray-900 dark:text-white">{filtered.length}</div>
+                  <div className="text-[10px] text-gray-500 dark:text-dark-muted sm:text-xs">активных</div>
                 </div>
-                <div className="text-[10px] text-gray-500 sm:text-xs">ставка</div>
+                <div className="rounded-2xl bg-white dark:bg-dark-card px-2 py-3 shadow-card">
+                  <div className="text-lg leading-none">💰</div>
+                  <div className="mt-1 font-bold text-gray-900 dark:text-white">
+                    от {minWorkerRate.toLocaleString('ru-RU')}₽/ч
+                  </div>
+                  <div className="text-[10px] text-gray-500 dark:text-dark-muted sm:text-xs">ставка</div>
+                </div>
+                <div className="rounded-2xl bg-white dark:bg-dark-card px-2 py-3 shadow-card">
+                  <div className="text-lg leading-none">👥</div>
+                  <div className="mt-1 font-bold text-gray-900 dark:text-white">{distinctTypes}</div>
+                  <div className="text-[10px] text-gray-500 dark:text-dark-muted sm:text-xs">типов</div>
+                </div>
               </div>
-              <div className="rounded-2xl bg-white px-2 py-3 shadow-card">
-                <div className="text-lg leading-none">👥</div>
-                <div className="mt-1 font-bold text-gray-900">{distinctTypes}</div>
-                <div className="text-[10px] text-gray-500 sm:text-xs">типов</div>
-              </div>
-            </div>
+            )}
 
             <div className="flex gap-2">
               <button
@@ -229,8 +234,8 @@ export default function DashboardPage() {
                 onClick={() => setView('list')}
                 className={`flex-1 rounded-2xl py-2.5 text-sm font-semibold transition-colors ${
                   view === 'list'
-                    ? 'bg-[#0088cc] text-white'
-                    : 'bg-white text-gray-600 shadow-card'
+                    ? 'bg-brand-500 text-white'
+                    : 'bg-white dark:bg-dark-card text-gray-600 dark:text-gray-300 shadow-card'
                 }`}
               >
                 📋 Список
@@ -240,15 +245,15 @@ export default function DashboardPage() {
                 onClick={() => setView('map')}
                 className={`flex-1 rounded-2xl py-2.5 text-sm font-semibold transition-colors ${
                   view === 'map'
-                    ? 'bg-[#0088cc] text-white'
-                    : 'bg-white text-gray-600 shadow-card'
+                    ? 'bg-brand-500 text-white'
+                    : 'bg-white dark:bg-dark-card text-gray-600 dark:text-gray-300 shadow-card'
                 }`}
               >
                 🗺 Карта
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 dark:text-dark-muted">
               <span>
                 {secsLabel != null
                   ? `Обновлено ${secsLabel} сек назад`
@@ -258,7 +263,7 @@ export default function DashboardPage() {
                 type="button"
                 disabled={manualRefresh}
                 onClick={() => void loadOrders(true)}
-                className="rounded-xl bg-white px-3 py-1.5 font-semibold text-gray-700 shadow-sm ring-1 ring-gray-200 disabled:opacity-50"
+                className="rounded-xl bg-white dark:bg-dark-card px-3 py-1.5 font-semibold text-gray-700 dark:text-gray-200 shadow-sm ring-1 ring-gray-200 dark:ring-dark-border disabled:opacity-50"
               >
                 🔄 Обновить
               </button>
@@ -286,7 +291,7 @@ export default function DashboardPage() {
                     className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
                       active
                         ? 'bg-brand-500 text-white'
-                        : 'bg-white text-gray-600 shadow-sm ring-1 ring-gray-200'
+                        : 'bg-white dark:bg-dark-card text-gray-600 dark:text-gray-300 shadow-sm ring-1 ring-gray-200 dark:ring-dark-border'
                     }`}
                   >
                     {chip.label}
@@ -303,7 +308,7 @@ export default function DashboardPage() {
                 id="dash-sort"
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortMode)}
-                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 shadow-sm"
+                className="w-full rounded-2xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card px-4 py-2.5 text-sm font-medium text-gray-800 dark:text-gray-100 shadow-sm"
               >
                 <option value="new">Новые сначала</option>
                 <option value="pay_desc">По оплате ↓</option>
@@ -312,20 +317,26 @@ export default function DashboardPage() {
             </div>
 
             {view === 'list' ? (
-              sorted.length === 0 ? (
-                <div className="rounded-2xl bg-white p-8 text-center shadow-card">
+              lastFetchAt == null && orders.length === 0 ? (
+                <div className="space-y-3">
+                  <SkeletonOrderCard />
+                  <SkeletonOrderCard />
+                  <SkeletonOrderCard />
+                </div>
+              ) : sorted.length === 0 ? (
+                <div className="rounded-2xl bg-white dark:bg-dark-card p-8 text-center shadow-card">
                   <div className="text-4xl">📭</div>
-                  <p className="mt-3 font-semibold text-gray-900">
+                  <p className="mt-3 font-semibold text-gray-900 dark:text-white">
                     Пока нет активных заказов
                   </p>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-gray-500 dark:text-dark-muted">
                     Новые заказы появляются ежедневно.
                   </p>
                   <button
                     type="button"
                     disabled={manualRefresh}
                     onClick={() => void loadOrders(true)}
-                    className="mt-4 rounded-2xl bg-[#0088cc] px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                    className="mt-4 rounded-2xl bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
                   >
                     Обновить
                   </button>
@@ -350,7 +361,7 @@ export default function DashboardPage() {
                 </ul>
               )
             ) : (
-              <div className="h-[min(55vh,420px)] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
+              <div className="h-[min(55vh,420px)] overflow-hidden rounded-2xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card shadow-card">
                 <MapView orders={sorted} />
               </div>
             )}

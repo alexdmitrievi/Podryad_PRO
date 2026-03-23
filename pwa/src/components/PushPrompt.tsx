@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { Bell, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import {
   getPushPermissionStatus,
   subscribeToPush,
@@ -166,8 +167,11 @@ export default function PushPrompt({
 
   if (view === 'denied') {
     return (
-      <div className={`px-1 ${className}`}>
-        <p className="text-xs text-gray-400 leading-relaxed">
+      <div
+        className={`flex items-center gap-3 p-4 rounded-card bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 ${className}`}
+      >
+        <AlertTriangle className="h-5 w-5 flex-shrink-0 text-amber-500" />
+        <p className="text-sm text-amber-700 dark:text-amber-300">
           Уведомления заблокированы в настройках браузера
         </p>
       </div>
@@ -177,65 +181,46 @@ export default function PushPrompt({
   if (view === 'success') {
     return (
       <div
-        className={`rounded-3xl bg-white p-5 shadow-card border border-emerald-100 ${className}`}
+        className={`flex items-center gap-3 p-4 rounded-card bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 ${className}`}
       >
-        <p className="text-sm font-semibold text-emerald-700">
-          ✅ Уведомления включены!
+        <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-500" />
+        <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+          Уведомления включены
         </p>
       </div>
     );
   }
 
   return (
-    <div
-      className={`rounded-3xl bg-white p-5 shadow-card border border-gray-100 ${className}`}
-    >
-      <h3 className="text-base font-bold text-gray-900 mb-3">
-        🔔 Включите уведомления
-      </h3>
-
-      <p className="text-sm text-gray-600 mb-3">Мы сообщим когда:</p>
-      <ul className="text-sm text-gray-700 space-y-2 mb-5 list-none pl-0">
-        <li className="flex gap-2">
-          <span className="text-gray-400">•</span>
-          <span>Исполнитель откликнулся на ваш заказ</span>
-        </li>
-        <li className="flex gap-2">
-          <span className="text-gray-400">•</span>
-          <span>Заказчик оценил вашу работу</span>
-        </li>
-        <li className="flex gap-2">
-          <span className="text-gray-400">•</span>
-          <span>Появился новый заказ в вашей категории</span>
-        </li>
-        <li className="flex gap-2">
-          <span className="text-gray-400">•</span>
-          <span>Выплата поступила на карту</span>
-        </li>
-      </ul>
+    <div className={`space-y-2 ${className}`}>
+      <div className="flex items-center gap-3 p-4 rounded-card bg-brand-50 dark:bg-brand-900/20 border border-brand-100 dark:border-brand-800">
+        <Bell className="h-5 w-5 flex-shrink-0 text-brand-500" />
+        <p className="flex-1 text-sm text-gray-700 dark:text-gray-200">
+          Включите уведомления, чтобы не пропустить заказы
+        </p>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onEnable}
+          className="flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold bg-brand-500 text-white transition-colors hover:bg-brand-600 active:scale-[0.97] disabled:opacity-60"
+        >
+          {busy ? '...' : 'Включить'}
+        </button>
+        <button
+          type="button"
+          onClick={onLater}
+          className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          aria-label="Закрыть"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
 
       {error ? (
-        <p className="text-sm text-red-600 mb-3" role="alert">
+        <p className="text-sm text-red-600 dark:text-red-400 px-1" role="alert">
           {error}
         </p>
       ) : null}
-
-      <button
-        type="button"
-        disabled={busy}
-        onClick={onEnable}
-        className="w-full py-3.5 rounded-2xl font-semibold text-sm bg-brand-500 text-white transition-all hover:bg-brand-600 active:scale-[0.98] shadow-sm shadow-brand-500/20 disabled:opacity-60"
-      >
-        {busy ? '…' : '🔔 Включить уведомления'}
-      </button>
-
-      <button
-        type="button"
-        onClick={onLater}
-        className="w-full mt-3 text-center text-sm text-gray-500 hover:text-gray-700"
-      >
-        Позже
-      </button>
     </div>
   );
 }

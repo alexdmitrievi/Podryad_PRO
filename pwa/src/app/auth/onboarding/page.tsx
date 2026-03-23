@@ -91,14 +91,14 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-dark-bg">
         <p className="text-sm text-gray-400">Загрузка...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-dark-bg">
       <PageHeader
         title="Заполните профиль"
         subtitle="Расскажите о себе — это поможет находить заказы"
@@ -112,7 +112,7 @@ export default function OnboardingPage() {
       >
         {/* ── Навыки ── */}
         <fieldset>
-          <legend className="mb-2 text-sm font-semibold text-gray-700">
+          <legend className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
             Навыки
           </legend>
           <div className="flex flex-wrap gap-2">
@@ -126,7 +126,7 @@ export default function OnboardingPage() {
                   className={`rounded-2xl px-4 py-2 text-sm font-medium transition-colors ${
                     active
                       ? 'bg-brand-500 text-white'
-                      : 'bg-white text-gray-700 ring-1 ring-gray-200'
+                      : 'bg-white dark:bg-dark-card text-gray-700 dark:text-gray-200 ring-1 ring-gray-200 dark:ring-dark-border'
                   }`}
                 >
                   {skill}
@@ -138,13 +138,13 @@ export default function OnboardingPage() {
 
         {/* ── Город ── */}
         <div>
-          <label className="mb-1 block text-sm font-semibold text-gray-700">
+          <label className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-200">
             Город
           </label>
           <select
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none ring-brand-500 focus:ring-2"
+            className="w-full rounded-2xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card dark:text-white px-4 py-3 text-sm outline-none ring-brand-500 focus:ring-2"
           >
             {CITY_OPTIONS.map((c) => (
               <option key={c} value={c}>
@@ -155,8 +155,8 @@ export default function OnboardingPage() {
         </div>
 
         {/* ── Самозанятость ── */}
-        <div className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 ring-1 ring-gray-200">
-          <span className="text-sm text-gray-700">Я самозанятый</span>
+        <div className="flex items-center justify-between rounded-2xl bg-white dark:bg-dark-card px-4 py-3 ring-1 ring-gray-200 dark:ring-dark-border">
+          <span className="text-sm text-gray-700 dark:text-gray-200">Я самозанятый</span>
           <button
             type="button"
             role="switch"
@@ -176,7 +176,7 @@ export default function OnboardingPage() {
 
         {/* ── О себе ── */}
         <div>
-          <label className="mb-1 block text-sm font-semibold text-gray-700">
+          <label className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-200">
             О себе
           </label>
           <textarea
@@ -185,7 +185,7 @@ export default function OnboardingPage() {
             maxLength={300}
             rows={4}
             placeholder="Кратко опишите свой опыт..."
-            className="w-full resize-none rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none ring-brand-500 focus:ring-2"
+            className="w-full resize-none rounded-2xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card dark:text-white px-4 py-3 text-sm outline-none ring-brand-500 focus:ring-2"
           />
           <p className="mt-1 text-right text-xs text-gray-400">
             {about.length}/300

@@ -109,61 +109,71 @@ export default function NotificationSettings({
     window.location.reload();
   };
 
+  const handleToggle = () => {
+    if (pushOn) {
+      // Already enabled — nothing to toggle off from JS; user must revoke in browser settings
+      return;
+    }
+    try {
+      if (localStorage.getItem('podryad_push_prompt_dismissed')) {
+        reopenPushSetup();
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+    scrollToPush();
+  };
+
   if (auth === false || auth === null) {
     return null;
   }
 
+  const isEnabled = pushOn && perm === 'granted';
+
   return (
     <section className={`space-y-4 ${className}`}>
-      <h2 className="text-lg font-bold text-gray-900 px-1">📬 Уведомления</h2>
+      <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 px-1">📬 Уведомления</h2>
 
-      <div className="rounded-3xl bg-white p-4 shadow-card border border-gray-100 space-y-3">
+      <div className="rounded-3xl bg-white dark:bg-dark-card p-4 shadow-card border border-gray-100 dark:border-dark-border space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-          <span className="text-gray-700">🔔 Push-уведомления</span>
+          <span className="text-gray-700 dark:text-gray-200">🔔 Push-уведомления</span>
           <span className="text-right">
             {perm === 'unsupported' ? (
-              <span className="text-gray-400">Не поддерживаются</span>
+              <span className="text-gray-400 dark:text-gray-500">Не поддерживаются</span>
             ) : perm === 'denied' ? (
-              <span className="text-gray-400">Заблокированы в браузере</span>
-            ) : pushOn ? (
-              <span className="font-medium text-emerald-700">Включены ✅</span>
+              <span className="text-gray-400 dark:text-gray-500">Заблокированы в браузере</span>
             ) : (
-              <span className="text-gray-600">
-                Выключены —{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    try {
-                      if (localStorage.getItem('podryad_push_prompt_dismissed')) {
-                        reopenPushSetup();
-                        return;
-                      }
-                    } catch {
-                      /* ignore */
-                    }
-                    scrollToPush();
-                  }}
-                  className="text-brand-600 font-semibold hover:underline"
-                >
-                  Включить
-                </button>
-              </span>
+              <button
+                role="switch"
+                aria-checked={isEnabled}
+                onClick={handleToggle}
+                className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${
+                  isEnabled ? 'bg-brand-500' : 'bg-gray-200 dark:bg-dark-border'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    isEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
             )}
           </span>
         </div>
 
-        <div className="border-t border-gray-100 pt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
-          <span className="text-gray-700">📱 Telegram</span>
+        <div className="border-t border-gray-100 dark:border-dark-border pt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span className="text-gray-700 dark:text-gray-200">📱 Telegram</span>
           <span className="text-right">
             {telegramLinked ? (
-              <span className="font-medium text-emerald-700">Привязан ✅</span>
+              <span className="font-medium text-emerald-700 dark:text-emerald-400">Привязан ✅</span>
             ) : (
-              <span className="text-gray-600">
+              <span className="text-gray-600 dark:text-gray-400">
                 Не привязан —{' '}
                 <button
                   type="button"
                   onClick={scrollToTg}
-                  className="text-brand-600 font-semibold hover:underline"
+                  className="text-brand-600 dark:text-brand-400 font-semibold hover:underline"
                 >
                   Привязать
                 </button>

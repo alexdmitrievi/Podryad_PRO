@@ -7,23 +7,23 @@ const maxChannel = process.env.NEXT_PUBLIC_MAX_CHANNEL_LINK || 'https://max.ru/p
 
 export default function ProfilePage() {
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto bg-white dark:bg-dark-bg">
       <PageHeader title="👤 Личный кабинет" backHref="/" />
 
       <div className="p-4 space-y-6 max-w-md mx-auto pb-8">
 
         {/* ══ Выберите ваш кабинет ══ */}
         <section className="space-y-3">
-          <h2 className="text-lg font-bold text-gray-900 px-1">Выберите ваш кабинет</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white px-1">Выберите ваш кабинет</h2>
 
           <Link
             href="/customer"
-            className="flex items-center gap-4 bg-white rounded-3xl p-5 shadow-card border border-gray-100 transition-all hover:shadow-card-hover active:scale-[0.98]"
+            className="flex items-center gap-4 bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border transition-all hover:shadow-card-hover active:scale-[0.98]"
           >
             <span className="text-3xl flex-shrink-0">🧾</span>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-gray-900">Кабинет заказчика</h3>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <h3 className="font-bold text-gray-900 dark:text-white">Кабинет заказчика</h3>
+              <p className="text-sm text-gray-500 dark:text-dark-muted mt-0.5">
                 Оформление заказов, оплата, статус выполнения
               </p>
             </div>
@@ -32,12 +32,12 @@ export default function ProfilePage() {
 
           <Link
             href="/worker"
-            className="flex items-center gap-4 bg-white rounded-3xl p-5 shadow-card border border-gray-100 transition-all hover:shadow-card-hover active:scale-[0.98]"
+            className="flex items-center gap-4 bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border transition-all hover:shadow-card-hover active:scale-[0.98]"
           >
             <span className="text-3xl flex-shrink-0">💼</span>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-gray-900">Кабинет исполнителя</h3>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <h3 className="font-bold text-gray-900 dark:text-white">Кабинет исполнителя</h3>
+              <p className="text-sm text-gray-500 dark:text-dark-muted mt-0.5">
                 Заказы, заработок, рейтинг, выплаты
               </p>
             </div>
@@ -49,7 +49,7 @@ export default function ProfilePage() {
 
         {/* ══ Быстрые ссылки ══ */}
         <section className="space-y-2">
-          <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wide px-1 mb-1">
+          <h3 className="font-bold text-sm text-gray-500 dark:text-dark-muted uppercase tracking-wide px-1 mb-1">
             Быстрые ссылки
           </h3>
 
@@ -63,10 +63,10 @@ export default function ProfilePage() {
             <Link
               key={link.label}
               href={link.href}
-              className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3.5 shadow-card border border-gray-100 transition-all hover:shadow-card-hover active:scale-[0.98]"
+              className="flex items-center gap-3 bg-white dark:bg-dark-card rounded-2xl px-4 py-3.5 shadow-card border border-gray-100 dark:border-dark-border transition-all hover:shadow-card-hover active:scale-[0.98]"
             >
               <span className="text-lg">{link.emoji}</span>
-              <span className="text-sm font-medium text-gray-700">{link.label}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{link.label}</span>
               <span className="ml-auto text-gray-300 text-sm">→</span>
             </Link>
           ))}

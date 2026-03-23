@@ -34,16 +34,16 @@ export default function PaymentsPage() {
   }, []);
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto bg-white dark:bg-dark-bg">
       <PageHeader title="💳 Тарифы" subtitle="Безопасные платежи через ЮKassa" />
 
       <div className="p-4 max-w-md mx-auto space-y-5 pb-8">
 
         {/* ══ БЛОК ДЛЯ ЗАКАЗЧИКА ══ */}
-        <section className="bg-white rounded-3xl p-6 shadow-card border border-gray-100">
+        <section className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-card border border-gray-100 dark:border-dark-border">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-2xl">💰</span>
-            <h2 className="text-lg font-bold text-gray-900">Для заказчиков</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Для заказчиков</h2>
           </div>
 
           <p className="text-sm text-gray-600 leading-relaxed mb-5">
@@ -56,24 +56,24 @@ export default function PaymentsPage() {
               <Loader2 size={22} className="text-gray-400 animate-spin" />
             </div>
           ) : (
-            <div className="bg-gray-50 rounded-2xl overflow-hidden mb-5">
-              <div className="grid grid-cols-3 gap-px bg-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                <div className="bg-gray-50 px-4 py-2.5">Работа</div>
-                <div className="bg-gray-50 px-4 py-2.5 text-right">₽/час</div>
-                <div className="bg-gray-50 px-4 py-2.5 text-right">Мин. часы</div>
+            <div className="bg-gray-50 dark:bg-dark-bg rounded-2xl overflow-hidden mb-5">
+              <div className="grid grid-cols-3 gap-px bg-gray-200 dark:bg-dark-border text-xs font-semibold text-gray-500 dark:text-dark-muted uppercase tracking-wide">
+                <div className="bg-gray-50 dark:bg-dark-bg px-4 py-2.5">Работа</div>
+                <div className="bg-gray-50 dark:bg-dark-bg px-4 py-2.5 text-right">₽/час</div>
+                <div className="bg-gray-50 dark:bg-dark-bg px-4 py-2.5 text-right">Мин. часы</div>
               </div>
               {rates.map((rate, i) => (
                 <div
                   key={i}
-                  className="grid grid-cols-3 gap-px bg-gray-200"
+                  className="grid grid-cols-3 gap-px bg-gray-200 dark:bg-dark-border"
                 >
-                  <div className="bg-white px-4 py-3 text-sm text-gray-800 font-medium">
+                  <div className="bg-white dark:bg-dark-card px-4 py-3 text-sm text-gray-800 dark:text-gray-200 font-medium">
                     {WORK_TYPE_LABELS[rate.work_type] || rate.work_type}
                   </div>
-                  <div className="bg-white px-4 py-3 text-sm text-right font-bold text-gray-900">
+                  <div className="bg-white dark:bg-dark-card px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">
                     {rate.client_rate.toLocaleString('ru-RU')}₽
                   </div>
-                  <div className="bg-white px-4 py-3 text-sm text-right text-gray-500">
+                  <div className="bg-white dark:bg-dark-card px-4 py-3 text-sm text-right text-gray-500 dark:text-dark-muted">
                     {rate.min_hours} ч
                   </div>
                 </div>
@@ -82,7 +82,7 @@ export default function PaymentsPage() {
           )}
 
           {/* Как проходит оплата */}
-          <h3 className="font-semibold text-gray-900 text-sm mb-3">Как проходит оплата:</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-3">Как проходит оплата:</h3>
           <ol className="space-y-2.5 mb-5">
             {[
               'Вы оформляете заказ — система рассчитывает стоимость',
@@ -120,10 +120,10 @@ export default function PaymentsPage() {
         </section>
 
         {/* ══ БЛОК ДЛЯ ИСПОЛНИТЕЛЯ ══ */}
-        <section className="bg-white rounded-3xl p-6 shadow-card border border-gray-100">
+        <section className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-card border border-gray-100 dark:border-dark-border">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-2xl">💸</span>
-            <h2 className="text-lg font-bold text-gray-900">Для исполнителей</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Для исполнителей</h2>
           </div>
 
           <p className="text-sm text-gray-600 leading-relaxed mb-5">
@@ -132,7 +132,7 @@ export default function PaymentsPage() {
           </p>
 
           {/* Как получить выплату */}
-          <h3 className="font-semibold text-gray-900 text-sm mb-3">Как получить выплату:</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-3">Как получить выплату:</h3>
           <ol className="space-y-2.5 mb-5">
             {[
               'Вы берёте заказ и выполняете работу',
@@ -161,25 +161,25 @@ export default function PaymentsPage() {
             </Link>
           </div>
 
-          <p className="text-sm text-gray-500 leading-relaxed">
+          <p className="text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
             💡 Нет статуса самозанятого? Вы всё равно можете брать заказы,
             но самозанятые исполнители получают их первыми.
           </p>
         </section>
 
         {/* ══ РЕКВИЗИТЫ ИП ══ */}
-        <section className="bg-white rounded-3xl p-6 shadow-card border border-gray-100">
+        <section className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-card border border-gray-100 dark:border-dark-border">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-2xl">🏢</span>
-            <h2 className="text-lg font-bold text-gray-900">Реквизиты</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Реквизиты</h2>
           </div>
 
-          <div className="space-y-3 text-sm text-gray-700">
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+          <div className="space-y-3 text-sm text-gray-700 dark:text-gray-200">
+            <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-dark-border">
               <span className="text-gray-500">ИНН</span>
               <span className="font-mono font-semibold text-gray-900">550516401202</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+            <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-dark-border">
               <span className="text-gray-500">ОГРНИП</span>
               <span className="font-mono font-semibold text-gray-900">322554300070581</span>
             </div>

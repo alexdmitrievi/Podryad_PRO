@@ -136,17 +136,17 @@ function PaymentContent() {
 
   if (!orderId) {
     return (
-      <div className="rounded-2xl bg-white p-8 text-center shadow-card">
+      <div className="rounded-2xl bg-white dark:bg-dark-card p-8 text-center shadow-card">
         <p className="text-4xl">🔍</p>
-        <p className="mt-3 font-semibold text-gray-900">
+        <p className="mt-3 font-semibold text-gray-900 dark:text-white">
           Заказ не указан
         </p>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-gray-500 dark:text-dark-muted">
           Отсутствует параметр order_id
         </p>
         <Link
           href="/"
-          className="mt-4 inline-block rounded-2xl bg-[#0088cc] px-6 py-2.5 text-sm font-semibold text-white"
+          className="mt-4 inline-block rounded-2xl bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white"
         >
           На главную
         </Link>
@@ -165,9 +165,9 @@ function PaymentContent() {
 
   if (error || !order) {
     return (
-      <div className="rounded-2xl bg-white p-8 text-center shadow-card">
+      <div className="rounded-2xl bg-white dark:bg-dark-card p-8 text-center shadow-card">
         <p className="text-4xl">⚠️</p>
-        <p className="mt-3 font-semibold text-gray-900">Ошибка</p>
+        <p className="mt-3 font-semibold text-gray-900 dark:text-white">Ошибка</p>
         <p className="mt-1 text-sm text-red-600">{error || 'Заказ не найден'}</p>
         <button
           type="button"
@@ -175,7 +175,7 @@ function PaymentContent() {
             setLoading(true);
             void fetchOrder();
           }}
-          className="mt-4 rounded-2xl bg-[#0088cc] px-6 py-2.5 text-sm font-semibold text-white"
+          className="mt-4 rounded-2xl bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white"
         >
           Повторить
         </button>
@@ -189,7 +189,7 @@ function PaymentContent() {
   return (
     <div className="space-y-4">
       {/* Status card */}
-      <div className="rounded-2xl bg-white p-6 text-center shadow-card">
+      <div className="rounded-2xl bg-white dark:bg-dark-card p-6 text-center shadow-card">
         <p className="text-5xl">{config.emoji}</p>
         <h2 className={`mt-3 text-lg font-bold ${config.color}`}>
           {config.title}
@@ -203,24 +203,24 @@ function PaymentContent() {
       </div>
 
       {/* Order summary */}
-      <div className="rounded-2xl bg-white p-5 shadow-card">
-        <h3 className="mb-3 text-sm font-bold text-gray-900">
+      <div className="rounded-2xl bg-white dark:bg-dark-card p-5 shadow-card">
+        <h3 className="mb-3 text-sm font-bold text-gray-900 dark:text-white">
           Информация о заказе
         </h3>
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <dt className="text-gray-500">Номер заказа</dt>
-            <dd className="font-semibold text-gray-900">#{orderId}</dd>
+            <dt className="text-gray-500 dark:text-dark-muted">Номер заказа</dt>
+            <dd className="font-semibold text-gray-900 dark:text-white">#{orderId}</dd>
           </div>
           {order.work_type && (
             <div className="flex justify-between">
-              <dt className="text-gray-500">Тип работ</dt>
-              <dd className="font-semibold text-gray-900">{order.work_type}</dd>
+              <dt className="text-gray-500 dark:text-dark-muted">Тип работ</dt>
+              <dd className="font-semibold text-gray-900 dark:text-white">{order.work_type}</dd>
             </div>
           )}
           {order.address && (
             <div className="flex justify-between">
-              <dt className="text-gray-500">Адрес</dt>
+              <dt className="text-gray-500 dark:text-dark-muted">Адрес</dt>
               <dd className="font-semibold text-gray-900 text-right max-w-[60%]">
                 {order.address}
               </dd>
@@ -228,7 +228,7 @@ function PaymentContent() {
           )}
           {order.client_total != null && (
             <div className="flex justify-between">
-              <dt className="text-gray-500">Сумма</dt>
+              <dt className="text-gray-500 dark:text-dark-muted">Сумма</dt>
               <dd className="font-bold text-brand-500">
                 {order.client_total.toLocaleString('ru-RU')} ₽
               </dd>
@@ -239,8 +239,8 @@ function PaymentContent() {
 
       {/* Action buttons by status */}
       {status === 'pending' && (
-        <div className="rounded-2xl bg-white p-5 shadow-card text-center">
-          <p className="text-sm text-gray-500 mb-3">
+        <div className="rounded-2xl bg-white dark:bg-dark-card p-5 shadow-card text-center">
+          <p className="text-sm text-gray-500 dark:text-dark-muted mb-3">
             Если оплата не прошла, попробуйте ещё раз
           </p>
           <button
@@ -249,7 +249,7 @@ function PaymentContent() {
               // Redirect to the same payment flow
               window.location.href = `/customer?retry_order=${orderId}`;
             }}
-            className="w-full rounded-2xl bg-[#0088cc] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#006da3] active:scale-[0.98]"
+            className="w-full rounded-2xl bg-brand-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-600 active:scale-[0.98]"
           >
             Повторить оплату
           </button>
@@ -257,13 +257,13 @@ function PaymentContent() {
       )}
 
       {(status === 'paid' || status === 'published') && (
-        <div className="rounded-2xl bg-white p-5 shadow-card text-center">
-          <p className="text-sm text-gray-500 mb-3">
+        <div className="rounded-2xl bg-white dark:bg-dark-card p-5 shadow-card text-center">
+          <p className="text-sm text-gray-500 dark:text-dark-muted mb-3">
             Ваш заказ размещён на доске. Исполнители уже видят его.
           </p>
           <Link
             href="/dashboard"
-            className="inline-block w-full rounded-2xl bg-[#0088cc] py-3 text-sm font-semibold text-white text-center transition-colors hover:bg-[#006da3]"
+            className="inline-block w-full rounded-2xl bg-brand-500 py-3 text-sm font-semibold text-white text-center transition-colors hover:bg-brand-600"
           >
             Перейти в личный кабинет
           </Link>
@@ -271,11 +271,11 @@ function PaymentContent() {
       )}
 
       {status === 'done' && !ratingDone && (
-        <div className="rounded-2xl bg-white p-5 shadow-card">
-          <h3 className="mb-2 text-sm font-bold text-gray-900 text-center">
+        <div className="rounded-2xl bg-white dark:bg-dark-card p-5 shadow-card">
+          <h3 className="mb-2 text-sm font-bold text-gray-900 dark:text-white text-center">
             Оцените работу исполнителя
           </h3>
-          <p className="text-xs text-gray-500 text-center mb-4">
+          <p className="text-xs text-gray-500 dark:text-dark-muted text-center mb-4">
             Ваша оценка поможет другим заказчикам
           </p>
           <div className="flex justify-center mb-4">
@@ -290,7 +290,7 @@ function PaymentContent() {
             type="button"
             disabled={rating < 1 || ratingSubmitting}
             onClick={() => void handleRate()}
-            className="w-full rounded-2xl bg-[#0088cc] py-3 text-sm font-semibold text-white disabled:opacity-50 transition-colors hover:bg-[#006da3] active:scale-[0.98]"
+            className="w-full rounded-2xl bg-brand-500 py-3 text-sm font-semibold text-white disabled:opacity-50 transition-colors hover:bg-brand-600 active:scale-[0.98]"
           >
             {ratingSubmitting ? 'Отправка...' : 'Отправить оценку'}
           </button>
@@ -298,7 +298,7 @@ function PaymentContent() {
       )}
 
       {status === 'done' && ratingDone && (
-        <div className="rounded-2xl bg-white p-5 shadow-card text-center">
+        <div className="rounded-2xl bg-white dark:bg-dark-card p-5 shadow-card text-center">
           <p className="text-2xl">⭐</p>
           <p className="mt-2 text-sm font-semibold text-emerald-600">
             Спасибо за оценку!
@@ -321,7 +321,7 @@ function PaymentContent() {
 
 export default function PaymentPage() {
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg pt-16">
       <PageHeader
         title="Статус оплаты"
         subtitle="Информация о заказе и оплате"

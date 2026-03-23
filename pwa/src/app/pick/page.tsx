@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Search, Star, Briefcase, Crown, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
+import { SkeletonBlock } from '@/components/ui/Skeleton';
 import BottomNav from '@/components/BottomNav';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -74,7 +75,7 @@ export default function PickPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg pt-16 pb-20">
       <PageHeader
         title="Подбор исполнителей"
         subtitle="ИИ подберёт лучших под вашу задачу"
@@ -83,15 +84,24 @@ export default function PickPage() {
 
       <main className="max-w-lg mx-auto p-4 space-y-6">
         {authLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 size={28} className="text-brand-500 animate-spin" />
-            <span className="text-sm text-gray-400">Загрузка...</span>
-          </div>
+          <>
+            <SkeletonBlock className="h-[200px] rounded-card" />
+            <div className="space-y-5">
+              <SkeletonBlock className="h-[44px] rounded-card" />
+              <div className="grid grid-cols-2 gap-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <SkeletonBlock key={i} className="h-[48px] rounded-2xl" />
+                ))}
+              </div>
+              <SkeletonBlock className="h-[120px] rounded-2xl" />
+              <SkeletonBlock className="h-[56px] rounded-2xl" />
+            </div>
+          </>
         ) : !userId ? (
           <div className="text-center py-16 px-6">
             <p className="text-5xl mb-4">🔒</p>
             <p className="font-bold text-lg text-gray-800">Требуется авторизация</p>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-500 dark:text-dark-muted mt-2">
               Войдите в систему, чтобы воспользоваться подбором
             </p>
           </div>
@@ -111,7 +121,7 @@ export default function PickPage() {
                 <div
                   key={i}
                   className="
-                    bg-white rounded-2xl p-5 shadow-card border border-gray-100
+                    bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card border border-gray-100 dark:border-dark-border
                     hover:shadow-card-hover transition-all duration-300
                     flex items-center gap-4 animate-fade-in
                   "
@@ -132,7 +142,7 @@ export default function PickPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900 truncate">{w.name}</span>
+                      <span className="font-bold text-gray-900 dark:text-white truncate">{w.name}</span>
                       {w.is_vip && (
                         <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border border-amber-100">
                           VIP
@@ -177,7 +187,7 @@ export default function PickPage() {
               onClick={() => { setWorkers([]); setPaymentUrl(''); setDescription(''); }}
               className="
                 w-full flex items-center justify-center gap-2
-                bg-gray-100 text-gray-700 font-semibold py-3 rounded-2xl text-sm
+                bg-gray-100 dark:bg-dark-card text-gray-700 dark:text-gray-200 font-semibold py-3 rounded-2xl text-sm
                 hover:bg-gray-200 active:scale-[0.98] transition-all duration-200
               "
             >
@@ -188,7 +198,7 @@ export default function PickPage() {
           /* ─── Form ─── */
           <>
             {/* Hero */}
-            <div className="relative bg-gradient-to-br from-[#0088cc] via-[#0077b5] to-[#006699] rounded-2xl p-6 text-white overflow-hidden">
+            <div className="relative bg-gradient-to-br from-brand-500 via-[#0077b5] to-[#006699] rounded-2xl p-6 text-white overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-6 -translate-x-6" />
               <div className="relative z-10">
@@ -210,7 +220,7 @@ export default function PickPage() {
             <form onSubmit={handlePick} className="space-y-5">
               {/* Work type */}
               <fieldset>
-                <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                   Тип работы
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -224,7 +234,7 @@ export default function PickPage() {
                         transition-all duration-200 border active:scale-[0.98]
                         ${workType === wt.value
                           ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-brand-200 hover:bg-brand-50'}
+                          : 'bg-white dark:bg-dark-card text-gray-600 border-gray-200 dark:border-dark-border hover:border-brand-200 hover:bg-brand-50'}
                       `}
                     >
                       <span className="text-base">{wt.emoji}</span>
@@ -236,7 +246,7 @@ export default function PickPage() {
 
               {/* Description */}
               <fieldset>
-                <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                   Опишите задачу
                   <span className="text-red-400">*</span>
                 </label>
@@ -247,9 +257,9 @@ export default function PickPage() {
                   rows={4}
                   required
                   className="
-                    w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-white
+                    w-full px-4 py-3.5 rounded-2xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card
                     focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
-                    outline-none transition-all duration-200 text-sm resize-none
+                    outline-none transition-all duration-200 text-sm resize-none dark:text-white
                     placeholder:text-gray-300
                   "
                 />

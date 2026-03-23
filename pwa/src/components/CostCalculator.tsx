@@ -34,7 +34,7 @@ export default function CostCalculator() {
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-6 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
-          <Calculator size={20} className="text-[#0088cc]" />
+          <Calculator size={20} className="text-brand-500" />
         </div>
         <div>
           <h3 className="font-bold text-lg text-gray-900">Рассчитать стоимость</h3>
@@ -51,7 +51,7 @@ export default function CostCalculator() {
             className={`
               rounded-2xl px-3 py-2 text-sm font-medium transition-all duration-200
               ${workType === wt
-                ? 'bg-[#0088cc] text-white shadow-sm'
+                ? 'bg-brand-500 text-white shadow-sm'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
             `}
           >
@@ -71,7 +71,7 @@ export default function CostCalculator() {
           max={10}
           value={people}
           onChange={(e) => setPeople(Number(e.target.value))}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#0088cc]"
+          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-500"
         />
       </div>
 
@@ -86,7 +86,7 @@ export default function CostCalculator() {
           max={12}
           value={hours}
           onChange={(e) => setHours(Number(e.target.value))}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#0088cc]"
+          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-500"
         />
       </div>
 
@@ -103,7 +103,7 @@ export default function CostCalculator() {
         href="/auth/register"
         className="
           flex items-center justify-center gap-2 w-full
-          bg-[#0088cc] text-white font-bold py-3.5 px-4 rounded-2xl
+          bg-brand-500 text-white font-bold py-3.5 px-4 rounded-2xl
           hover:opacity-95 active:scale-[0.98]
           transition-all duration-200 text-sm shadow-lg
         "

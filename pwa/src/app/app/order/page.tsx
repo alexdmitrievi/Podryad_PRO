@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader';
 
 export default function OrderPage() {
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto bg-white dark:bg-dark-bg">
       <PageHeader title="➕ Новый заказ" subtitle="Заполните форму или напишите боту" />
 
       <div className="p-4 space-y-5 max-w-md mx-auto pb-6">
@@ -27,9 +27,9 @@ export default function OrderPage() {
 
         {/* Divider */}
         <div className="flex items-center gap-3">
-          <div className="h-px bg-gray-200 flex-1" />
+          <div className="h-px bg-gray-200 dark:bg-dark-border flex-1" />
           <span className="text-xs text-gray-400 font-medium">или заполните форму</span>
-          <div className="h-px bg-gray-200 flex-1" />
+          <div className="h-px bg-gray-200 dark:bg-dark-border flex-1" />
         </div>
 
         <OrderForm />

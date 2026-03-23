@@ -26,7 +26,7 @@ export default function MapPage() {
   const published = orders.filter((o) => o.status === 'published');
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white dark:bg-dark-bg">
       <PageHeader
         title="🔨 Подряд PRO"
         subtitle={loading ? 'Загрузка...' : `${published.length} заказов`}
@@ -36,7 +36,7 @@ export default function MapPage() {
       <div className="h-56 w-full flex-shrink-0 relative">
         {!loading && <MapView orders={published} />}
         {loading && (
-          <div className="h-full w-full bg-gray-100 flex flex-col items-center justify-center gap-2">
+          <div className="h-full w-full bg-gray-100 dark:bg-dark-card flex flex-col items-center justify-center gap-2">
             <Loader2 size={24} className="text-gray-400 animate-spin" />
             <span className="text-gray-400 text-xs">Загрузка карты...</span>
           </div>
@@ -57,7 +57,7 @@ export default function MapPage() {
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto">
                 <Inbox size={28} className="text-gray-400" />
               </div>
-              <p className="font-semibold text-gray-500 text-lg">Пока нет заказов</p>
+              <p className="font-semibold text-gray-500 dark:text-dark-muted text-lg">Пока нет заказов</p>
               <p className="text-sm text-gray-400">Новые появятся совсем скоро!</p>
             </div>
           ) : (

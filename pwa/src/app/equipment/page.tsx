@@ -102,7 +102,7 @@ function EquipmentPageContent() {
   );
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50 pt-16">
+    <div className="flex h-screen flex-col bg-gray-50 dark:bg-dark-bg pt-16">
       <div className="min-h-0 flex-1 overflow-y-auto">
         <PageHeader
           title="🔧 Аренда техники"
@@ -118,8 +118,8 @@ function EquipmentPageContent() {
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                 filter === FILTER_ALL
-                  ? 'bg-[#0088cc] text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-brand-500 text-white'
+                  : 'bg-gray-100 dark:bg-dark-card text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-border'
               }`}
             >
               Все
@@ -139,8 +139,8 @@ function EquipmentPageContent() {
                     onClick={() => setFilter(key as string)}
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                       filter === key
-                        ? 'bg-[#0088cc] text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-gray-100 dark:bg-dark-card text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-border'
                     }`}
                   >
                     {icon} {shortLabel}
@@ -152,7 +152,7 @@ function EquipmentPageContent() {
 
           {/* Баннер скидки */}
           <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-4">
-            <p className="text-sm font-medium text-gray-800">
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
               🎁 Скидка 15% на аренду техники при заказе исполнителей через
               Подряд PRO
             </p>
@@ -207,7 +207,7 @@ function EquipmentPageContent() {
 
 export default function EquipmentPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 dark:bg-dark-bg" />}>
       <EquipmentPageContent />
     </Suspense>
   );

@@ -48,7 +48,7 @@ export default function MaxPage() {
   const maxChannel = process.env.NEXT_PUBLIC_MAX_CHANNEL_LINK || 'https://max.ru/podryad_pro';
 
   return (
-    <main className="min-h-screen bg-surface pt-16">
+    <main className="min-h-screen bg-surface dark:bg-dark-bg pt-16">
       {/* Header */}
       <header className="bg-gradient-to-r from-max to-max-dark text-white px-5 py-3.5">
         <div className="max-w-lg mx-auto flex items-center justify-between">
@@ -105,7 +105,7 @@ export default function MaxPage() {
 
       {/* Why MAX */}
       <section className="px-6 py-14 max-w-md mx-auto">
-        <h2 className="text-2xl font-extrabold text-center text-gray-900 mb-8">Почему MAX?</h2>
+        <h2 className="text-2xl font-extrabold text-center text-gray-900 dark:text-white mb-8">Почему MAX?</h2>
         <div className="space-y-5">
           {[
             {
@@ -142,8 +142,8 @@ export default function MaxPage() {
                 <item.icon size={20} className="text-white" />
               </div>
               <div className="pt-0.5">
-                <h3 className="font-bold text-gray-900">{item.title}</h3>
-                <p className="text-gray-500 text-sm mt-1 leading-relaxed">{item.desc}</p>
+                <h3 className="font-bold text-gray-900 dark:text-white">{item.title}</h3>
+                <p className="text-gray-500 dark:text-dark-muted text-sm mt-1 leading-relaxed">{item.desc}</p>
               </div>
             </div>
           ))}
@@ -151,20 +151,20 @@ export default function MaxPage() {
       </section>
 
       {/* How to subscribe */}
-      <section className="bg-gray-50 px-6 py-14">
+      <section className="bg-gray-50 dark:bg-dark-bg px-6 py-14">
         <div className="max-w-md mx-auto space-y-6">
-          <h2 className="text-2xl font-extrabold text-center text-gray-900">Как подписаться</h2>
+          <h2 className="text-2xl font-extrabold text-center text-gray-900 dark:text-white">Как подписаться</h2>
           <div className="space-y-4">
             {[
               { num: '1', text: 'Установите MAX из App Store, Google Play или RuStore' },
               { num: '2', text: 'Перейдите в наш канал по ссылке ниже' },
               { num: '3', text: 'Нажмите «Подписаться» — готово!' },
             ].map((step) => (
-              <div key={step.num} className="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-card border border-gray-100">
+              <div key={step.num} className="flex items-center gap-4 bg-white dark:bg-dark-card rounded-2xl p-4 shadow-card border border-gray-100 dark:border-dark-border">
                 <div className="w-10 h-10 rounded-full bg-max text-white flex items-center justify-center font-bold text-lg shrink-0">
                   {step.num}
                 </div>
-                <p className="text-sm text-gray-700 font-medium">{step.text}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-200 font-medium">{step.text}</p>
               </div>
             ))}
           </div>
@@ -189,19 +189,19 @@ export default function MaxPage() {
 
       {/* FAQ */}
       <section className="px-6 py-14 max-w-md mx-auto">
-        <h2 className="text-2xl font-extrabold text-center text-gray-900 mb-8">Частые вопросы</h2>
+        <h2 className="text-2xl font-extrabold text-center text-gray-900 dark:text-white mb-8">Частые вопросы</h2>
         <div className="space-y-3">
           {FAQ.map((item, i) => (
             <details
               key={i}
-              className="bg-white rounded-2xl shadow-card border border-gray-100 group"
+              className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border group"
             >
               <summary className="flex items-center justify-between p-4 cursor-pointer select-none">
-                <span className="font-semibold text-sm text-gray-900 pr-4">{item.q}</span>
+                <span className="font-semibold text-sm text-gray-900 dark:text-white pr-4">{item.q}</span>
                 <ChevronDown size={18} className="text-gray-400 shrink-0 transition-transform group-open:rotate-180" />
               </summary>
               <div className="px-4 pb-4 pt-0">
-                <p className="text-sm text-gray-500 leading-relaxed">{item.a}</p>
+                <p className="text-sm text-gray-500 dark:text-dark-muted leading-relaxed">{item.a}</p>
               </div>
             </details>
           ))}
@@ -211,8 +211,8 @@ export default function MaxPage() {
       {/* CTA */}
       <section className="px-6 py-14 max-w-md mx-auto">
         <div className="text-center space-y-4">
-          <h2 className="text-xl font-extrabold text-gray-900">Выберите удобный мессенджер</h2>
-          <p className="text-gray-500 text-sm">Заказы одинаковые — выбирайте, что удобнее</p>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-white">Выберите удобный мессенджер</h2>
+          <p className="text-gray-500 dark:text-dark-muted text-sm">Заказы одинаковые — выбирайте, что удобнее</p>
         </div>
         <div className="mt-6 space-y-4">
           <MessengerLinks action="channel" variant="buttons" />
@@ -229,7 +229,7 @@ export default function MaxPage() {
             Смотреть заказы
           </Link>
         </div>
-        <p className="text-gray-400 text-xs mt-8 text-center">
+        <p className="text-gray-400 dark:text-gray-500 text-xs mt-8 text-center">
           © {new Date().getFullYear()} Подряд PRO · podryad.pro
         </p>
       </section>

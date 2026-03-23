@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -19,7 +20,6 @@ module.exports = {
           700: '#1d38b3',
           800: '#152a8c',
           900: '#1E2A5A',
-          yandex: '#FC3F1D',
         },
         violet: {
           DEFAULT: '#6C5CE7',
@@ -30,7 +30,14 @@ module.exports = {
           DEFAULT: '#2787F5',
           dark: '#1a6fd4',
           light: '#e8f1fd',
-        }
+        },
+        dark: {
+          bg:     '#0f1117',
+          card:   '#1a1d27',
+          border: '#2a2d3a',
+          text:   '#e4e4e7',
+          muted:  '#71717a',
+        },
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', '-apple-system', 'sans-serif'],
@@ -45,6 +52,9 @@ module.exports = {
         'inner-soft': 'inset 0 2px 4px rgba(0,0,0,0.04)',
       },
       borderRadius: {
+        'card': '1rem',
+        'button': '1rem',
+        'input': '1rem',
         '2xl': '1rem',
         '3xl': '1.25rem',
         '4xl': '1.5rem',
@@ -54,6 +64,8 @@ module.exports = {
         'slide-up': 'slide-up 0.6s ease-out forwards',
         'scale-in': 'scale-in 0.4s ease-out forwards',
         'float': 'float 3s ease-in-out infinite',
+        'slide-in-bottom': 'slide-in-bottom 0.35s cubic-bezier(0.16,1,0.3,1) forwards',
+        'pulse-dot': 'pulse-dot 2s ease-in-out infinite',
       },
       keyframes: {
         'fade-in': {
@@ -71,6 +83,14 @@ module.exports = {
         'float': {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-6px)' },
+        },
+        'slide-in-bottom': {
+          from: { opacity: '0', transform: 'translateY(100%)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'pulse-dot': {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.5', transform: 'scale(0.8)' },
         },
       },
     },

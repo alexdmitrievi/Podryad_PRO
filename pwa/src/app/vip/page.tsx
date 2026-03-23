@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Crown, Clock, Star, Users, Sparkles, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
+import { SkeletonBlock } from '@/components/ui/Skeleton';
 import BottomNav from '@/components/BottomNav';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -92,7 +93,7 @@ export default function VipPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg pt-16 pb-20">
       <PageHeader
         title="VIP-подписка"
         subtitle="Преимущества для исполнителей"
@@ -101,15 +102,17 @@ export default function VipPage() {
 
       <main className="max-w-lg mx-auto p-4 space-y-6">
         {authLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 size={28} className="text-brand-500 animate-spin" />
-            <span className="text-sm text-gray-400">Загрузка...</span>
-          </div>
+          <>
+            <SkeletonBlock className="h-[200px] rounded-card" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonBlock key={i} className="h-[72px] rounded-card" />
+            ))}
+          </>
         ) : !userId ? (
           <div className="text-center py-16 px-6">
             <p className="text-5xl mb-4">🔒</p>
             <p className="font-bold text-lg text-gray-800">Требуется авторизация</p>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-500 dark:text-dark-muted mt-2">
               Войдите в систему, чтобы оформить VIP-подписку
             </p>
           </div>
@@ -154,7 +157,7 @@ export default function VipPage() {
 
             {/* Benefits */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-dark-muted uppercase tracking-wide px-1">
                 Преимущества
               </h3>
               {VIP_BENEFITS.map((benefit, i) => {
@@ -163,7 +166,7 @@ export default function VipPage() {
                   <div
                     key={i}
                     className="
-                      bg-white rounded-2xl p-4 shadow-card border border-gray-100
+                      bg-white dark:bg-dark-card rounded-2xl p-4 shadow-card border border-gray-100 dark:border-dark-border
                       hover:shadow-card-hover transition-all duration-300
                       flex items-start gap-4 animate-fade-in
                     "
@@ -173,8 +176,8 @@ export default function VipPage() {
                       <Icon size={20} className="text-amber-500" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm">{benefit.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{benefit.description}</p>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">{benefit.title}</p>
+                      <p className="text-xs text-gray-500 dark:text-dark-muted mt-0.5">{benefit.description}</p>
                     </div>
                   </div>
                 );
