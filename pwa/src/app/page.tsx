@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Users, Wrench, Shield, Clock, Star, ChevronRight, Truck, HardHat, Sparkles } from 'lucide-react';
 import CostCalculator from '@/components/CostCalculator';
 import AnimatedCounter from '@/components/AnimatedCounter';
 import Testimonials from '@/components/Testimonials';
@@ -13,53 +13,86 @@ const telegramUrl = `https://t.me/${tgBot}`;
 export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col bg-white dark:bg-dark-bg">
-      {/* Секция 1: Hero */}
-      <section className="relative bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 text-white overflow-hidden">
+
+      {/* ─── Section 1: HERO ─── */}
+      <section className="relative bg-gradient-to-br from-[#0a0c14] via-brand-900 to-brand-700 text-white overflow-hidden">
         <div className="hero-pattern absolute inset-0" />
-        <div className="relative max-w-2xl mx-auto px-6 pt-28 pb-24 md:pt-40 md:pb-32 text-center">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.1]">
-            Найдём исполнителя за 15 минут
-          </h1>
-          <p className="text-base md:text-xl text-white/60 mt-4 md:mt-6 max-w-md md:max-w-xl mx-auto">
-            Грузчики, уборка, ремонт и аренда техники — в Омске и Новосибирске
-          </p>
-          <Link
-            href="/app/order"
-            className="mt-8 md:mt-10 inline-flex items-center gap-2 bg-white text-brand-700 font-bold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg shadow-xl shadow-white/10 hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5 transition-all duration-300"
-          >
-            Оформить заказ →
-          </Link>
-          <p className="mt-4 text-sm text-white/40">
-            Регистрация бесплатно ·{' '}
-            <Link
-              href="/auth/login"
-              className="text-white/60 underline underline-offset-2 hover:text-white/80"
-            >
-              Войти
-            </Link>
-          </p>
+        <div className="noise-overlay relative">
+          <div className="relative z-10 max-w-3xl mx-auto px-6 pt-28 pb-24 md:pt-40 md:pb-32 text-center">
+            <span className="badge-brand inline-block mb-6">
+              <Sparkles size={14} className="inline -mt-0.5 mr-1.5" />
+              Комплексное решение кадрового вопроса
+            </span>
+
+            <h1 className="text-4xl md:text-6xl font-extrabold text-gradient tracking-tight leading-[1.1] text-balance">
+              Кадры и техника — под&nbsp;вашу&nbsp;задачу
+            </h1>
+
+            <p className="text-base md:text-xl text-white/60 mt-4 md:mt-6 max-w-xl mx-auto leading-relaxed">
+              Качественные исполнители + спецтехника в аренду со скидкой 15%.
+              Грузчики, строители, уборка — в Омске и Новосибирске
+            </p>
+
+            <div className="mt-8 md:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+              <Link
+                href="/app/order"
+                className="inline-flex items-center gap-2 bg-white text-brand-700 font-bold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg shadow-hero hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
+              >
+                Оформить заказ
+                <ArrowRight size={20} />
+              </Link>
+              <Link
+                href="/equipment"
+                className="inline-flex items-center gap-2 bg-white/10 text-white font-semibold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg border border-white/20 hover:bg-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
+              >
+                <Truck size={18} />
+                Каталог техники
+              </Link>
+            </div>
+
+            <p className="mt-4 text-sm text-white/40">
+              Бесплатная регистрация &middot;{' '}
+              <Link
+                href="/auth/login"
+                className="text-white/60 underline underline-offset-2 hover:text-white/80 transition-colors"
+              >
+                Войти
+              </Link>
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* Секция 2: Цифры (animated counters) */}
-      <section className="bg-white dark:bg-dark-card py-12 md:py-16">
+      {/* ─── Section 2: TRUST BAR ─── */}
+      <section className="bg-white dark:bg-dark-card py-8">
         <div className="max-w-3xl mx-auto px-6 grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white">
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mb-2">
+              <Users size={18} className="text-brand-500" />
+            </div>
+            <p className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white tabular-nums">
               <AnimatedCounter end={100} suffix="+" />
             </p>
-            <p className="text-xs md:text-sm text-gray-400 dark:text-dark-muted mt-1">исполнителей</p>
+            <p className="text-xs md:text-sm text-gray-400 dark:text-dark-muted mt-1">
+              исполнителей
+            </p>
           </div>
-          <div>
-            <p className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white">
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mb-2">
+              <Star size={18} className="text-brand-500" />
+            </div>
+            <p className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white tabular-nums">
               <AnimatedCounter end={4.9} decimals={1} />
             </p>
             <p className="text-xs md:text-sm text-gray-400 dark:text-dark-muted mt-1">
               средний рейтинг
             </p>
           </div>
-          <div>
-            <p className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white">
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mb-2">
+              <Clock size={18} className="text-brand-500" />
+            </div>
+            <p className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white tabular-nums">
               <AnimatedCounter end={15} suffix=" мин" />
             </p>
             <p className="text-xs md:text-sm text-gray-400 dark:text-dark-muted mt-1">
@@ -69,60 +102,156 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Секция 2.5: Отзывы */}
-      <Testimonials />
-
-      {/* Секция 3: Как это работает */}
+      {/* ─── Section 3: UTP / WHY US ─── */}
       <section className="bg-gray-50 dark:bg-dark-bg py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-center text-gray-900 dark:text-white">
-            Как это работает
-          </h2>
+          <div className="text-center">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white">
+              Комплексное решение — не просто кадры
+            </h2>
+            <p className="text-gray-500 dark:text-dark-muted mt-3 max-w-2xl mx-auto leading-relaxed">
+              Мы не только закрываем кадровый вопрос, а делаем это под ключ:
+              проверенные исполнители + вся необходимая техника в аренду со скидкой
+            </p>
+          </div>
 
-          <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
-            {[
-              { step: '1', title: 'Опишите задачу', desc: 'Заполните форму на сайте — адрес, тип работы, сколько людей и на сколько часов' },
-              { step: '2', title: 'Оплатите онлайн', desc: 'Платформа рассчитает стоимость. Оплата картой или через СБП. Деньги в безопасности до завершения' },
-              { step: '3', title: 'Исполнитель приедет', desc: 'Проверенный исполнитель с рейтингом откликнется и выполнит работу. Вы оцените результат' },
-            ].map((item, i) => (
-              <ScrollReveal key={item.step} delay={i * 150}>
-                <div className="text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-brand-700 flex items-center justify-center mx-auto">
-                    <span className="text-white text-lg font-bold">{item.step}</span>
-                  </div>
-                  <h3 className="mt-4 font-bold text-gray-900 dark:text-white">{item.title}</h3>
-                  <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
-                    {item.desc}
-                  </p>
+          <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <ScrollReveal delay={0}>
+              <div className="card-premium p-6 md:p-8 h-full">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mb-5">
+                  <Users size={22} className="text-white" />
                 </div>
-              </ScrollReveal>
-            ))}
+                <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                  Проверенные кадры
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
+                  Все исполнители с рейтингом и отзывами. Самозанятые и бригады — под любую задачу
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={150}>
+              <div className="card-premium p-6 md:p-8 h-full">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mb-5">
+                  <Truck size={22} className="text-white" />
+                </div>
+                <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                  Техника в комплекте
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
+                  Самосвалы, краны, вышки, строительный инструмент — со скидкой 15% при заказе исполнителей
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={300}>
+              <div className="card-premium p-6 md:p-8 h-full">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mb-5">
+                  <Shield size={22} className="text-white" />
+                </div>
+                <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                  Безопасная сделка
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
+                  Оплата онлайн, деньги в безопасности до завершения работы. Рейтинг и гарантия качества
+                </p>
+              </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
 
-      {/* Секция 4: Выбор роли */}
+      {/* ─── Section 4: TESTIMONIALS ─── */}
+      <Testimonials />
+
+      {/* ─── Section 5: HOW IT WORKS ─── */}
       <section className="bg-white dark:bg-dark-card py-20 md:py-28">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-center text-gray-900 dark:text-white">
+            Три шага к результату
+          </h2>
+
+          <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 relative">
+            {/* Decorative connector line (hidden on mobile) */}
+            <div className="hidden md:block absolute top-7 left-[calc(16.67%+28px)] right-[calc(16.67%+28px)] divider-gradient" />
+
+            <ScrollReveal delay={0}>
+              <div className="text-center relative">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mx-auto shadow-glow">
+                  <span className="text-white text-lg font-bold">1</span>
+                </div>
+                <h3 className="mt-4 font-bold text-gray-900 dark:text-white">
+                  Опишите задачу
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
+                  Заполните форму — адрес, тип работы, количество людей и часов. Добавьте технику при необходимости
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={150}>
+              <div className="text-center relative">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mx-auto shadow-glow">
+                  <span className="text-white text-lg font-bold">2</span>
+                </div>
+                <h3 className="mt-4 font-bold text-gray-900 dark:text-white">
+                  Оплатите онлайн
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
+                  Моментальный расчёт. Оплата картой или через СБП. Средства защищены до завершения
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={300}>
+              <div className="text-center relative">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mx-auto shadow-glow">
+                  <span className="text-white text-lg font-bold">3</span>
+                </div>
+                <h3 className="mt-4 font-bold text-gray-900 dark:text-white">
+                  Получите результат
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
+                  Проверенный исполнитель с техникой приедет в срок. Оцените работу — рейтинг влияет на будущие заказы
+                </p>
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Section 6: ROLE SELECTION ─── */}
+      <section className="bg-gray-50 dark:bg-dark-bg py-20 md:py-28">
         <div className="max-w-2xl mx-auto px-6">
           <h2 className="text-2xl md:text-3xl font-extrabold text-center text-gray-900 dark:text-white">
-            Начните сейчас
+            Начните прямо сейчас
           </h2>
-          <p className="text-center text-gray-500 dark:text-dark-muted mt-3">Выберите свою роль</p>
+          <p className="text-center text-gray-500 dark:text-dark-muted mt-3">
+            Выберите свою роль
+          </p>
 
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <ScrollReveal delay={0}>
               <Link
                 href="/customer"
-                className="group relative bg-gray-50 dark:bg-dark-bg rounded-2xl p-6 border-2 border-transparent hover:border-brand-500 hover:bg-white dark:hover:bg-dark-card hover:shadow-lg transition-all duration-300 block"
+                className="group relative bg-white dark:bg-dark-card rounded-2xl p-6 border-2 border-transparent hover:border-brand-500 hover:shadow-lg transition-all duration-300 block"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center group-hover:bg-brand-500/20 transition-colors">
-                    <span className="text-2xl">📋</span>
+                  <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center group-hover:bg-brand-100 dark:group-hover:bg-brand-800/30 transition-colors">
+                    <HardHat size={24} className="text-brand-500" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white">Я заказчик</h3>
-                    <p className="text-sm text-gray-500 dark:text-dark-muted">Найти исполнителя</p>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-900 dark:text-white">
+                      Я заказчик
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-dark-muted">
+                      Найти исполнителя и технику
+                    </p>
                   </div>
+                  <ChevronRight
+                    size={20}
+                    className="text-gray-300 dark:text-dark-muted group-hover:text-brand-500 group-hover:translate-x-1 transition-all"
+                  />
                 </div>
               </Link>
             </ScrollReveal>
@@ -130,23 +259,31 @@ export default function HomePage() {
             <ScrollReveal delay={100}>
               <Link
                 href="/worker"
-                className="group relative bg-gray-50 dark:bg-dark-bg rounded-2xl p-6 border-2 border-transparent hover:border-amber-400 hover:bg-white dark:hover:bg-dark-card hover:shadow-lg transition-all duration-300 block"
+                className="group relative bg-white dark:bg-dark-card rounded-2xl p-6 border-2 border-transparent hover:border-amber-400 hover:shadow-lg transition-all duration-300 block"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center group-hover:bg-amber-200 dark:group-hover:bg-amber-800/30 transition-colors">
-                    <span className="text-2xl">💼</span>
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-800/30 transition-colors">
+                    <Wrench size={24} className="text-amber-500" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white">Я исполнитель</h3>
-                    <p className="text-sm text-gray-500 dark:text-dark-muted">Зарабатывать на заказах</p>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-900 dark:text-white">
+                      Я исполнитель
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-dark-muted">
+                      Зарабатывать на заказах
+                    </p>
                   </div>
+                  <ChevronRight
+                    size={20}
+                    className="text-gray-300 dark:text-dark-muted group-hover:text-amber-500 group-hover:translate-x-1 transition-all"
+                  />
                 </div>
               </Link>
             </ScrollReveal>
           </div>
 
           <p className="text-center text-xs text-gray-400 dark:text-dark-muted mt-4">
-            Самозанятые получают заказы в приоритете ·{' '}
+            Самозанятые получают заказы в приоритете &middot;{' '}
             <Link
               href="/selfemployed"
               className="text-brand-600 dark:text-brand-400 hover:underline"
@@ -157,62 +294,86 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Секция 5: Калькулятор */}
-      <section className="bg-gray-50 dark:bg-dark-bg py-20 md:py-28">
+      {/* ─── Section 7: CALCULATOR ─── */}
+      <section className="bg-white dark:bg-dark-card py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-2xl md:text-3xl font-extrabold text-center text-gray-900 dark:text-white">
-            Сколько стоит
+            Рассчитайте стоимость
           </h2>
-          <div className="mt-10 max-w-md mx-auto bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border p-6">
+          <div className="mt-10 max-w-md mx-auto">
             <CostCalculator />
           </div>
         </div>
       </section>
 
-      {/* Секция 6: Аренда техники */}
-      <section className="bg-white dark:bg-dark-card py-20 md:py-28">
-        <div className="max-w-3xl mx-auto px-6">
+      {/* ─── Section 8: EQUIPMENT PREVIEW ─── */}
+      <section className="bg-gray-50 dark:bg-dark-bg py-20 md:py-28">
+        <div className="max-w-4xl mx-auto px-6">
           <div className="text-center">
             <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white">
-              Аренда техники
+              Техника и спецтехника в аренду
             </h2>
             <p className="text-gray-500 dark:text-dark-muted mt-2">
-              Инструмент дешевле арендовать, чем покупать
+              От перфоратора до самосвала — всё для вашего проекта
             </p>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link
               href="/equipment?cat=garden"
-              className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-5 hover:shadow-md transition-all border border-transparent dark:border-dark-border"
+              className="group bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent dark:border-dark-border"
             >
-              <p className="font-bold text-gray-900 dark:text-white">🌿 Сад</p>
-              <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <span className="text-lg">🌿</span>
+              </div>
+              <p className="font-bold text-gray-900 dark:text-white">Сад</p>
+              <p className="text-xs text-gray-500 dark:text-dark-muted mt-1 leading-relaxed">
                 Газонокосилки, триммеры, бензопилы
               </p>
             </Link>
 
             <Link
               href="/equipment?cat=construction"
-              className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-5 hover:shadow-md transition-all border border-transparent dark:border-dark-border"
+              className="group bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent dark:border-dark-border"
             >
-              <p className="font-bold text-gray-900 dark:text-white">🔨 Стройка</p>
-              <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <span className="text-lg">🔨</span>
+              </div>
+              <p className="font-bold text-gray-900 dark:text-white">Стройка</p>
+              <p className="text-xs text-gray-500 dark:text-dark-muted mt-1 leading-relaxed">
                 Перфораторы, болгарки, плиткорез
               </p>
             </Link>
 
             <Link
               href="/equipment?cat=special"
-              className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-5 hover:shadow-md transition-all border border-transparent dark:border-dark-border"
+              className="group bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent dark:border-dark-border"
             >
-              <p className="font-bold text-gray-900 dark:text-white">⚡ Спецтехника</p>
-              <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">Мойка, генератор</p>
+              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <span className="text-lg">⚡</span>
+              </div>
+              <p className="font-bold text-gray-900 dark:text-white">Спецтехника</p>
+              <p className="text-xs text-gray-500 dark:text-dark-muted mt-1 leading-relaxed">
+                Мойки, генераторы, компрессоры
+              </p>
+            </Link>
+
+            <Link
+              href="/equipment?cat=heavy"
+              className="group bg-violet-50 dark:bg-violet-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent dark:border-dark-border"
+            >
+              <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <span className="text-lg">🏗️</span>
+              </div>
+              <p className="font-bold text-gray-900 dark:text-white">Тяжёлая техника</p>
+              <p className="text-xs text-gray-500 dark:text-dark-muted mt-1 leading-relaxed">
+                Самосвалы, краны, вышки, экскаваторы
+              </p>
             </Link>
           </div>
 
-          <div className="mt-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 text-center border border-transparent dark:border-dark-border">
-            <p className="text-sm text-amber-800 dark:text-amber-300">
+          <div className="mt-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 text-center border border-amber-100 dark:border-amber-800/30">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
               🎁 Скидка 15% при заказе исполнителей + техники
             </p>
           </div>
@@ -220,75 +381,127 @@ export default function HomePage() {
           <p className="text-center mt-4">
             <Link
               href="/equipment"
-              className="text-brand-600 dark:text-brand-400 text-sm font-medium hover:underline"
+              className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 text-sm font-medium hover:underline"
             >
-              Весь каталог →
+              Весь каталог
+              <ArrowRight size={14} />
             </Link>
           </p>
         </div>
       </section>
 
-      {/* Секция 7: Финальный CTA */}
-      <section className="bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 py-20 md:py-28">
-        <div className="max-w-lg mx-auto px-6 text-center">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white">
+      {/* ─── Section 9: FINAL CTA ─── */}
+      <section className="relative bg-gradient-to-br from-[#0a0c14] via-brand-900 to-brand-700 py-20 md:py-28 overflow-hidden">
+        <div className="hero-pattern absolute inset-0" />
+        <div className="relative z-10 max-w-lg mx-auto px-6 text-center">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-gradient">
             Готовы начать?
           </h2>
           <p className="text-white/60 mt-3">
-            Регистрация бесплатна. Первый заказ — за 5 минут.
+            Регистрация бесплатна. Первый заказ за 5 минут.
           </p>
           <Link
             href="/auth/register"
-            className="mt-8 inline-flex items-center gap-2 bg-white text-brand-700 font-bold py-4 px-10 rounded-2xl text-lg shadow-xl shadow-white/10 hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300"
+            className="mt-8 inline-flex items-center gap-2 bg-white text-brand-700 font-bold py-4 px-10 rounded-2xl text-lg shadow-hero hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
           >
             Начать бесплатно
             <ArrowRight size={20} />
           </Link>
+          <p className="mt-4 text-sm text-white/40">
+            Уже более 100 исполнителей на платформе
+          </p>
         </div>
       </section>
 
-      {/* Секция 8: Footer */}
-      <footer className="bg-gray-900 dark:bg-gray-950 py-12 md:py-16">
-        <div className="max-w-3xl mx-auto px-6">
+      {/* ─── Section 10: FOOTER ─── */}
+      <footer className="bg-[#060810] py-16">
+        <div className="max-w-4xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+            {/* Column 1: Заказчикам */}
             <div>
               <p className="font-semibold text-white mb-3">Заказчикам</p>
-              <Link href="/app/order" className="block text-gray-400 hover:text-white transition-colors py-1">
+              <Link
+                href="/app/order"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
                 Оформить заказ
               </Link>
-              <Link href="/app/payments" className="block text-gray-400 hover:text-white transition-colors py-1">
-                Тарифы
+              <Link
+                href="#calculator"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
+                Калькулятор
               </Link>
-              <Link href="/equipment" className="block text-gray-400 hover:text-white transition-colors py-1">
+              <Link
+                href="/equipment"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
                 Аренда техники
               </Link>
             </div>
+
+            {/* Column 2: Исполнителям */}
             <div>
               <p className="font-semibold text-white mb-3">Исполнителям</p>
-              <Link href="/dashboard" className="block text-gray-400 hover:text-white transition-colors py-1">
+              <Link
+                href="/dashboard"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
                 Доска заказов
               </Link>
-              <Link href="/selfemployed" className="block text-gray-400 hover:text-white transition-colors py-1">
+              <Link
+                href="/selfemployed"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
                 Самозанятым
               </Link>
+              <Link
+                href="/vip"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
+                VIP-подписка
+              </Link>
             </div>
-            <div className="col-span-2 md:col-span-2">
-              <p className="font-semibold text-white mb-3">Контакты</p>
-              <p className="text-gray-400 py-1">Омск и Новосибирск</p>
-              <div className="flex gap-4 mt-2">
-                <a href={telegramUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Telegram
-                </a>
-                <a href={maxChannel} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  MAX
-                </a>
-              </div>
+
+            {/* Column 3: Компания */}
+            <div>
+              <p className="font-semibold text-white mb-3">Компания</p>
+              <Link
+                href="/about"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
+                О нас
+              </Link>
+              <p className="text-gray-400 py-1">
+                Омск и Новосибирск
+              </p>
+            </div>
+
+            {/* Column 4: Мессенджеры */}
+            <div>
+              <p className="font-semibold text-white mb-3">Мессенджеры</p>
+              <a
+                href={telegramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
+                Telegram
+              </a>
+              <a
+                href={maxChannel}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
+                MAX
+              </a>
             </div>
           </div>
 
           <div className="border-t border-gray-800 mt-10 pt-6 text-center">
             <p className="text-gray-500 text-xs">
-              © {new Date().getFullYear()} Подряд PRO · podryad.pro
+              &copy; {new Date().getFullYear()} Подряд PRO &middot; podryad.pro
             </p>
           </div>
         </div>

@@ -31,14 +31,14 @@ export default function CostCalculator() {
   const rateFormatted = result.client_rate.toLocaleString('ru-RU');
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-6 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+    <div className="card-premium p-6 space-y-6">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
-          <Calculator size={20} className="text-brand-500" />
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
+          <Calculator size={20} className="text-white" />
         </div>
         <div>
-          <h3 className="font-bold text-lg text-gray-900">Рассчитать стоимость</h3>
-          <p className="text-xs text-gray-500 mt-0.5">Двигайте ползунки — цена обновится сразу</p>
+          <h3 className="font-bold text-lg text-gray-900 dark:text-white">Рассчитать стоимость</h3>
+          <p className="text-xs text-gray-500 dark:text-dark-muted mt-0.5">Двигайте ползунки — цена обновится сразу</p>
         </div>
       </div>
 
@@ -52,7 +52,7 @@ export default function CostCalculator() {
               rounded-2xl px-3 py-2 text-sm font-medium transition-all duration-200
               ${workType === wt
                 ? 'bg-brand-500 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
+                : 'bg-gray-100 dark:bg-dark-border text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-border/80'}
             `}
           >
             {LABELS[wt]}
@@ -61,9 +61,9 @@ export default function CostCalculator() {
       </div>
 
       <div className="space-y-2">
-        <div className="flex justify-between text-sm text-gray-600">
+        <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
           <span>Людей</span>
-          <span className="font-semibold text-gray-900">{people}</span>
+          <span className="font-semibold text-gray-900 dark:text-white">{people}</span>
         </div>
         <input
           type="range"
@@ -71,14 +71,14 @@ export default function CostCalculator() {
           max={10}
           value={people}
           onChange={(e) => setPeople(Number(e.target.value))}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-500"
+          className="w-full h-2 bg-gray-200 dark:bg-dark-border rounded-lg appearance-none cursor-pointer accent-brand-500"
         />
       </div>
 
       <div className="space-y-2">
-        <div className="flex justify-between text-sm text-gray-600">
+        <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
           <span>Часов</span>
-          <span className="font-semibold text-gray-900">{hours}</span>
+          <span className="font-semibold text-gray-900 dark:text-white">{hours}</span>
         </div>
         <input
           type="range"
@@ -86,15 +86,15 @@ export default function CostCalculator() {
           max={12}
           value={hours}
           onChange={(e) => setHours(Number(e.target.value))}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-500"
+          className="w-full h-2 bg-gray-200 dark:bg-dark-border rounded-lg appearance-none cursor-pointer accent-brand-500"
         />
       </div>
 
-      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
-        <p className="text-gray-900 font-bold text-lg">
+      <div className="bg-gradient-to-r from-brand-50 to-blue-50 dark:from-brand-900/20 dark:to-blue-900/20 rounded-xl p-4 border border-brand-100 dark:border-brand-800/30">
+        <p className="text-gray-900 dark:text-white font-bold text-lg tabular-nums">
           Стоимость: {totalFormatted}₽
         </p>
-        <p className="text-gray-500 text-sm mt-1">
+        <p className="text-gray-500 dark:text-dark-muted text-sm mt-1">
           ({rateFormatted}₽/час × {result.people} чел × {result.effective_hours} ч)
         </p>
       </div>
@@ -103,9 +103,9 @@ export default function CostCalculator() {
         href="/auth/register"
         className="
           flex items-center justify-center gap-2 w-full
-          bg-brand-500 text-white font-bold py-3.5 px-4 rounded-2xl
-          hover:opacity-95 active:scale-[0.98]
-          transition-all duration-200 text-sm shadow-lg
+          bg-gradient-to-r from-brand-500 to-brand-600 text-white font-bold py-3.5 px-4 rounded-2xl
+          hover:from-brand-600 hover:to-brand-700 active:scale-[0.98]
+          transition-all duration-200 text-sm shadow-lg shadow-brand-500/20
         "
       >
         Заказать за {totalFormatted}₽ →

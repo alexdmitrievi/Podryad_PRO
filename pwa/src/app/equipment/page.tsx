@@ -11,7 +11,7 @@ import type { EquipmentItem, EquipmentCategory } from '@/lib/equipment';
 import { useAuth } from '@/hooks/useAuth';
 
 const FILTER_ALL = 'all' as const;
-const VALID_CATS = ['garden', 'construction', 'special'] as const;
+const VALID_CATS = ['garden', 'construction', 'special', 'heavy'] as const;
 
 function EquipmentPageContent() {
   const router = useRouter();
@@ -105,8 +105,8 @@ function EquipmentPageContent() {
     <div className="flex h-screen flex-col bg-gray-50 dark:bg-dark-bg pt-16">
       <div className="min-h-0 flex-1 overflow-y-auto">
         <PageHeader
-          title="🔧 Аренда техники"
-          subtitle="Строительный инструмент и садовая техника"
+          title="🔧 Аренда техники и спецтехники"
+          subtitle="От перфоратора до самосвала — всё для вашего проекта"
           backHref="/"
         />
 
@@ -131,7 +131,9 @@ function EquipmentPageContent() {
                     ? 'Сад'
                     : key === 'construction'
                       ? 'Стройка'
-                      : 'Спец';
+                      : key === 'special'
+                        ? 'Спец'
+                        : 'Тяжёлая';
                 return (
                   <button
                     key={key}

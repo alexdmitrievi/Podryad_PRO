@@ -2,15 +2,15 @@
 
 import Link from 'next/link';
 import { EQUIPMENT } from '@/lib/equipment';
-import type { EquipmentItem } from '@/lib/equipment';
+import type { EquipmentItem, EquipmentCategory } from '@/lib/equipment';
 import type { WorkType } from '@/lib/rates';
 
-const WORK_TYPE_TO_CATEGORIES: Record<WorkType, ('garden' | 'construction' | 'special')[]> = {
-  грузчики: [],
+const WORK_TYPE_TO_CATEGORIES: Record<WorkType, EquipmentCategory[]> = {
+  грузчики: ['heavy'],
   уборка: ['special'],
-  стройка: ['construction'],
+  стройка: ['construction', 'heavy'],
   разнорабочие: ['construction', 'garden'],
-  другое: ['garden', 'construction', 'special'],
+  другое: ['garden', 'construction', 'special', 'heavy'],
 };
 
 const POPULAR_IDS = ['hammer-drill-1', 'grinder-1', 'chainsaw-1', 'pressure-washer-1'];
