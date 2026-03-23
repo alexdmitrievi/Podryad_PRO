@@ -18,22 +18,21 @@ export default function HomePage() {
       <section className="relative bg-gradient-to-br from-[#0a0c14] via-brand-900 to-brand-700 text-white overflow-hidden">
         <div className="hero-pattern absolute inset-0" />
         <div className="noise-overlay relative">
-          <div className="relative z-10 max-w-3xl mx-auto px-6 pt-28 pb-24 md:pt-40 md:pb-32 text-center">
-            <span className="badge-brand-hero inline-block mb-6">
+          <div className="relative z-10 max-w-3xl mx-auto px-6 pt-32 pb-28 md:pt-44 md:pb-36 text-center">
+            <span className="badge-brand-hero inline-block mb-8">
               <Sparkles size={14} className="inline -mt-0.5 mr-1.5" />
-              Комплексное решение кадрового вопроса
+              Кадры + техника под ключ
             </span>
 
-            <h1 className="text-4xl md:text-6xl font-extrabold text-gradient tracking-tight leading-[1.1] text-balance">
-              Кадры и техника — под&nbsp;вашу&nbsp;задачу
+            <h1 className="text-[2.5rem] md:text-7xl font-extrabold text-gradient tracking-tight leading-[1.08] text-balance">
+              Люди и машины —<br className="hidden sm:inline" /> под&nbsp;вашу&nbsp;задачу
             </h1>
 
-            <p className="text-base md:text-xl text-white/60 mt-4 md:mt-6 max-w-xl mx-auto leading-relaxed">
-              Качественные исполнители + спецтехника в аренду со скидкой 15%.
-              Грузчики, строители, уборка — в Омске и Новосибирске
+            <p className="text-lg md:text-xl text-white/50 mt-6 md:mt-8 max-w-md mx-auto leading-relaxed">
+              Исполнители со скидкой на технику. Омск&nbsp;и&nbsp;Новосибирск
             </p>
 
-            <div className="mt-8 md:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <div className="mt-10 md:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Link
                 href="/app/order"
                 className="inline-flex items-center gap-2 bg-white text-brand-700 font-bold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg shadow-hero hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
@@ -49,16 +48,6 @@ export default function HomePage() {
                 Каталог техники
               </Link>
             </div>
-
-            <p className="mt-4 text-sm text-white/40">
-              Бесплатная регистрация &middot;{' '}
-              <Link
-                href="/auth/login"
-                className="text-white/60 underline underline-offset-2 hover:text-white/80 transition-colors"
-              >
-                Войти
-              </Link>
-            </p>
           </div>
         </div>
       </section>
