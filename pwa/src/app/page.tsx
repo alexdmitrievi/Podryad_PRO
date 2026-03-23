@@ -18,31 +18,35 @@ export default function HomePage() {
       <section className="relative bg-gradient-to-br from-[#0a0c14] via-brand-900 to-brand-700 text-white overflow-hidden">
         <div className="hero-pattern absolute inset-0" />
         <div className="noise-overlay relative">
-          <div className="relative z-10 max-w-3xl mx-auto px-6 pt-32 pb-28 md:pt-44 md:pb-36 text-center">
-            <span className="badge-brand-hero inline-block mb-8">
-              <Sparkles size={14} className="inline -mt-0.5 mr-1.5" />
+          <div className="relative z-10 max-w-2xl mx-auto px-5 pt-28 pb-24 md:pt-44 md:pb-36 text-center">
+            <span className="badge-brand-hero inline-flex items-center gap-1.5 mb-6 md:mb-8">
+              <Sparkles size={14} className="-mt-px" />
               Кадры + техника под ключ
             </span>
 
-            <h1 className="text-[2.5rem] md:text-7xl font-extrabold text-gradient tracking-tight leading-[1.08] text-balance">
-              Люди и машины —<br className="hidden sm:inline" /> под&nbsp;вашу&nbsp;задачу
+            <h1 className="text-[2rem] sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-gradient tracking-tight leading-[1.12] sm:leading-[1.08]">
+              Одна заявка —
+              <br />
+              вся команда на объекте
             </h1>
 
-            <p className="text-lg md:text-xl text-white/50 mt-6 md:mt-8 max-w-md mx-auto leading-relaxed">
-              Исполнители со скидкой на технику. Омск&nbsp;и&nbsp;Новосибирск
+            <p className="text-base sm:text-lg md:text-xl text-white/50 mt-5 md:mt-7 max-w-sm sm:max-w-md mx-auto leading-relaxed">
+              Рабочие, техника, инструмент.
+              <br className="sm:hidden" />
+              {' '}Омск и Новосибирск
             </p>
 
-            <div className="mt-10 md:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <div className="mt-8 md:mt-11 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 max-w-xs sm:max-w-none mx-auto">
               <Link
                 href="/app/order"
-                className="inline-flex items-center gap-2 bg-white text-brand-700 font-bold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg shadow-hero hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
+                className="inline-flex items-center justify-center gap-2 bg-white text-brand-700 font-bold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg shadow-hero hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
               >
                 Оформить заказ
                 <ArrowRight size={20} />
               </Link>
               <Link
                 href="/equipment"
-                className="inline-flex items-center gap-2 bg-white/10 text-white font-semibold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg border border-white/20 hover:bg-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
+                className="inline-flex items-center justify-center gap-2 bg-white/10 text-white font-semibold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg border border-white/20 hover:bg-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
               >
                 <Truck size={18} />
                 Каталог техники
