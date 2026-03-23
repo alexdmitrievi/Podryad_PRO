@@ -19,7 +19,7 @@ export default function HomePage() {
         <div className="hero-pattern absolute inset-0" />
         <div className="noise-overlay relative">
           <div className="relative z-10 max-w-3xl mx-auto px-6 pt-28 pb-24 md:pt-40 md:pb-32 text-center">
-            <span className="badge-brand inline-block mb-6">
+            <span className="badge-brand-hero inline-block mb-6">
               <Sparkles size={14} className="inline -mt-0.5 mr-1.5" />
               Комплексное решение кадрового вопроса
             </span>
@@ -153,7 +153,7 @@ export default function HomePage() {
                   Безопасная сделка
                 </h3>
                 <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
-                  Оплата онлайн, деньги в безопасности до завершения работы. Рейтинг и гарантия качества
+                  Оплата картой, СБП или безналичным переводом от организации. Деньги в безопасности до завершения работы
                 </p>
               </div>
             </ScrollReveal>
@@ -195,10 +195,10 @@ export default function HomePage() {
                   <span className="text-white text-lg font-bold">2</span>
                 </div>
                 <h3 className="mt-4 font-bold text-gray-900 dark:text-white">
-                  Оплатите онлайн
+                  Оплатите удобным способом
                 </h3>
                 <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
-                  Моментальный расчёт. Оплата картой или через СБП. Средства защищены до завершения
+                  Моментальный расчёт. Оплата картой, через СБП или по реквизитам для организаций. Средства защищены до завершения
                 </p>
               </div>
             </ScrollReveal>

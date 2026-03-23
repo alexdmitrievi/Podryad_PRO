@@ -1,12 +1,21 @@
 const SHOP_ID = process.env.YUKASSA_SHOP_ID!;
 const SECRET_KEY = process.env.YUKASSA_SECRET_KEY!;
 
+export type PaymentMethodType = 'bank_card' | 'sbp' | 'b2b_sberbank';
+
 export interface CreatePaymentParams {
   amount: number; // в рублях
   description: string;
   returnUrl: string;
   metadata: Record<string, string>;
   idempotenceKey: string;
+  /** Способ оплаты. Если не указан — YooKassa предложит выбор на своей странице */
+  paymentMethodType?: PaymentMethodType;
+  /** Данные для b2b_sberbank: ИНН и наименование плательщика */
+  payerBankDetails?: {
+    fullName: string;
+    inn: string;
+  };
 }
 
 export interface PaymentResult {
@@ -33,6 +42,19 @@ export async function createPayment(
       capture: true,
       description: params.description,
       metadata: params.metadata,
+      ...(params.paymentMethodType && {
+        payment_method_data: {
+          type: params.paymentMethodType,
+          ...(params.paymentMethodType === 'b2b_sberbank' && params.payerBankDetails && {
+            payment_purpose: params.description,
+            vat_data: { type: 'untaxed' },
+            payer_bank_details: {
+              full_name: params.payerBankDetails.fullName,
+              inn: params.payerBankDetails.inn,
+            },
+          }),
+        },
+      }),
     }),
   });
 

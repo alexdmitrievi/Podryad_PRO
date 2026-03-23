@@ -224,7 +224,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const yukassa = $('YooKassa VIP Payment').first().json;\nconst paymentUrl = yukassa.confirmation?.confirmation_url;\nconst userId = $('Build VIP Payment').first().json.user_id;\n\nif (!paymentUrl) {\n  throw new Error('No VIP payment URL from YooKassa');\n}\n\nconst text = '🌟 VIP-подписка — 1000₽/мес\\n\\nПреимущества:\\n• Ранний доступ к заказам (на 30 мин раньше)\\n• Приоритет при отклике\\n• Значок VIP в профиле\\n• Поддержка 24/7\\n\\n💳 Нажмите кнопку для оплаты:';\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [{ text: '💳 Оплатить VIP — 1000₽', url: paymentUrl }]\n  ]\n});\n\nreturn [{\n  json: {\n    chat_id: userId,\n    text: text,\n    reply_markup: keyboard\n  }\n}];"
+        "jsCode": "const yukassa = $('YooKassa VIP Payment').first().json;\nconst paymentUrl = yukassa.confirmation?.confirmation_url;\nconst userId = $('Build VIP Payment').first().json.user_id;\n\nif (!paymentUrl) {\n  throw new Error('No VIP payment URL from YooKassa');\n}\n\nconst text = '🌟 VIP-подписка — 1000₽/мес\\n\\nПреимущества:\\n• Ранний доступ к заказам (на 30 мин раньше)\\n• Приоритет при отклике\\n• Значок VIP в профиле\\n• Поддержка 24/7\\n\\n💳 Оплата картой, СБП или по реквизитам (для организаций и ИП):';\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [{ text: '💳 Оплатить VIP — 1000₽', url: paymentUrl }]\n  ]\n});\n\nreturn [{\n  json: {\n    chat_id: userId,\n    text: text,\n    reply_markup: keyboard\n  }\n}];"
       },
       "id": "build-vip-message",
       "name": "Build VIP Message",
@@ -633,7 +633,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const yukassa = $('YooKassa Pick Payment').first().json;\nconst paymentUrl = yukassa.confirmation?.confirmation_url;\nconst pickData = $('Build Pick Payment').first().json;\n\nif (!paymentUrl) {\n  throw new Error('No Pick payment URL from YooKassa');\n}\n\nconst text = '🏆 Подбор исполнителей — Подряд PRO\\n\\n' + pickData.recommendation + '\\n\\n💳 Для получения контактов оплатите 1000₽.\\nПосле оплаты мы отправим вам номера телефонов.';\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [{ text: '💳 Получить контакты — 1000₽', url: paymentUrl }]\n  ]\n});\n\nreturn [{\n  json: {\n    chat_id: pickData.user_id,\n    text: text,\n    reply_markup: keyboard\n  }\n}];"
+        "jsCode": "const yukassa = $('YooKassa Pick Payment').first().json;\nconst paymentUrl = yukassa.confirmation?.confirmation_url;\nconst pickData = $('Build Pick Payment').first().json;\n\nif (!paymentUrl) {\n  throw new Error('No Pick payment URL from YooKassa');\n}\n\nconst text = '🏆 Подбор исполнителей — Подряд PRO\\n\\n' + pickData.recommendation + '\\n\\n💳 Для получения контактов оплатите 1000₽.\\nОплата картой, СБП или по реквизитам для организаций.\\nПосле оплаты мы отправим вам номера телефонов.';\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [{ text: '💳 Получить контакты — 1000₽', url: paymentUrl }]\n  ]\n});\n\nreturn [{\n  json: {\n    chat_id: pickData.user_id,\n    text: text,\n    reply_markup: keyboard\n  }\n}];"
       },
       "id": "build-pick-message",
       "name": "Build Pick Message",

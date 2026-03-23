@@ -548,7 +548,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const payment = $('YooKassa Create Payment').first().json;\nconst rental = $('Build YooKassa Request').first().json.rental;\nconst confirmUrl = payment.confirmation?.confirmation_url || '';\n\nlet text = `🔧 *Бронирование техники*\\n\\n`;\ntext += `📦 ${rental.equipment_name}\\n`;\ntext += `⏱ ${rental.duration_label}\\n`;\ntext += `💰 К оплате: *${rental.price}₽*\\n`;\ntext += `🔒 Залог при получении: ${rental.deposit}₽\\n\\n`;\ntext += `💳 Оплатите по ссылке:`;\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [{ text: `💳 Оплатить ${rental.price}₽`, url: confirmUrl }],\n    [{ text: '❌ Отменить', callback_data: `cancel_rent_${rental.rental_id}` }]\n  ]\n});\n\nreturn [{ json: { chat_id: rental.chat_id, text, keyboard } }];"
+        "jsCode": "const payment = $('YooKassa Create Payment').first().json;\nconst rental = $('Build YooKassa Request').first().json.rental;\nconst confirmUrl = payment.confirmation?.confirmation_url || '';\n\nlet text = `🔧 *Бронирование техники*\\n\\n`;\ntext += `📦 ${rental.equipment_name}\\n`;\ntext += `⏱ ${rental.duration_label}\\n`;\ntext += `💰 К оплате: *${rental.price}₽*\\n`;\ntext += `🔒 Залог при получении: ${rental.deposit}₽\\n\\n`;\ntext += `💳 Оплатите по ссылке (карта, СБП или безналичный перевод для организаций):`;\n\nconst keyboard = JSON.stringify({\n  inline_keyboard: [\n    [{ text: `💳 Оплатить ${rental.price}₽`, url: confirmUrl }],\n    [{ text: '❌ Отменить', callback_data: `cancel_rent_${rental.rental_id}` }]\n  ]\n});\n\nreturn [{ json: { chat_id: rental.chat_id, text, keyboard } }];"
       },
       "id": "rent-build-pay-msg-021",
       "name": "Build Payment Message",
