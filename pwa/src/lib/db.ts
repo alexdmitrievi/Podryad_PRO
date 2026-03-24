@@ -129,15 +129,32 @@ export async function findUserByPhone(phone: string) {
   return data;
 }
 
+export async function findUserByEmail(email: string) {
+  const { data, error } = await db()
+    .from('users')
+    .select('*')
+    .eq('email', email.toLowerCase())
+    .single();
+  if (error) return null;
+  return data;
+}
+
 export async function createUser(user: {
-  phone: string;
+  phone?: string;
+  email?: string;
   name: string;
   password_hash: string;
   role: string;
+  entity_type?: string;
+  company_name?: string;
+  inn?: string;
 }) {
   const { data, error } = await db()
     .from('users')
-    .insert(user)
+    .insert({
+      ...user,
+      email: user.email?.toLowerCase(),
+    })
     .select()
     .single();
   if (error) throw error;
