@@ -7,7 +7,7 @@
   "orientation": "portrait",
   "theme_color": "#2F5BFF",
   "background_color": "#ffffff",
-  "permissions": ["notifications"],
+  "id": "/",
   "categories": ["business", "productivity"],
   "lang": "ru",
   "icons": [

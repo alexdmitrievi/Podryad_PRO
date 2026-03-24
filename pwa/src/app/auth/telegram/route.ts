@@ -28,7 +28,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/app/profile?error=invalid', req.url));
   }
 
-  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN || 'fallback';
+  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  if (!secret) {
+    return NextResponse.redirect(new URL('/app/profile?error=config', req.url));
+  }
   const crypto = await import('crypto');
   const payload = `${id}.${Date.now()}`;
   const sig = crypto.createHmac('sha256', secret).update(payload).digest('hex');

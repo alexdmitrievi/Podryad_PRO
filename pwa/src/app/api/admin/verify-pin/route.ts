@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 const pinAttempts = new Map<string, { count: number; resetAt: number }>();
 const MAX_ATTEMPTS = 5;
@@ -36,7 +37,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ valid: false }, { status: 400 });
   }
 
-  const valid = body.pin === adminPin;
+  const pin = body.pin ?? '';
+  const valid =
+    pin.length === adminPin.length &&
+    crypto.timingSafeEqual(Buffer.from(pin), Buffer.from(adminPin));
 
   // При успехе сбрасываем счётчик
   if (valid) {

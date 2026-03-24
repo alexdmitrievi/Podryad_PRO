@@ -30,6 +30,12 @@ export const metadata: Metadata = {
     url: 'https://podryad.pro',
     siteName: 'Подряд PRO',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Подряд PRO | Работа в Омске и Новосибирске',
+    description: 'Платформа для поиска работы и подработки в Омске и Новосибирске',
+  },
+  alternates: { canonical: 'https://podryad.pro' },
   robots: 'index, follow',
   icons: {
     icon: [
@@ -45,8 +51,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   themeColor: '#2F5BFF',
 };
 

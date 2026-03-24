@@ -149,7 +149,15 @@ export default function AuthLoginPage() {
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-dark-bg">
       {/* Header */}
-      <div className="bg-white dark:bg-dark-card border-b border-gray-100 dark:border-dark-border px-5 pt-14 pb-6">
+      <div className="bg-white dark:bg-dark-card border-b border-gray-100 dark:border-dark-border px-5 pt-10 pb-6">
+        <div className="max-w-md mx-auto">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 text-sm font-medium text-brand-500 hover:underline mb-4"
+          >
+            &larr; Главная
+          </Link>
+        </div>
         <div className="max-w-md mx-auto flex flex-col items-center">
           <Image src="/logo.png" alt="Подряд PRO" width={44} height={44} className="rounded-xl mb-3" />
           <h1 className="text-xl font-extrabold text-gray-900 dark:text-white">Вход в аккаунт</h1>
