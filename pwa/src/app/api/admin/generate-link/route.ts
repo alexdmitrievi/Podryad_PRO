@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSession } from '@/lib/auth';
+import { timingSafeEqual } from 'crypto';
 
 export async function POST(req: NextRequest) {
   const adminPin = process.env.ADMIN_PIN;
@@ -17,7 +18,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  if (body.pin !== adminPin) {
+  const pinBuf = Buffer.from(String(body.pin));
+  const expectedBuf = Buffer.from(adminPin);
+  if (pinBuf.length !== expectedBuf.length || !timingSafeEqual(pinBuf, expectedBuf)) {
     return NextResponse.json({ error: 'Неверный PIN' }, { status: 403 });
   }
 

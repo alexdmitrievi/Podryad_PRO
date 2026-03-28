@@ -63,7 +63,9 @@ export default function AuthRegisterPage() {
           invalid_email: 'Укажите корректный email',
           invalid_password: 'Пароль не короче 6 символов',
           invalid_name: 'Укажите имя или название',
-          invalid_contact: 'Укажите телефон или email',
+          invalid_contact: 'Укажите телефон',
+          invalid_role: 'Выберите роль',
+          server_config: 'Ошибка сервера. Попробуйте позже.',
           user_exists: 'Пользователь с таким контактом уже зарегистрирован',
         };
         setError(msgs[data.error || ''] || 'Не удалось зарегистрироваться');
@@ -239,13 +241,14 @@ export default function AuthRegisterPage() {
                 />
               </div>
 
-              {/* Phone */}
+              {/* Phone (required) */}
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
                   Телефон
                 </label>
                 <input
                   type="tel"
+                  required
                   autoComplete="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -254,10 +257,10 @@ export default function AuthRegisterPage() {
                 />
               </div>
 
-              {/* Email */}
+              {/* Email (optional) */}
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
-                  Email
+                  Email (необязательно)
                 </label>
                 <input
                   type="email"
@@ -268,7 +271,7 @@ export default function AuthRegisterPage() {
                   placeholder="mail@example.com"
                 />
                 <p className="mt-1 text-[11px] text-gray-400">
-                  Укажите телефон, email или оба
+                  Телефон обязателен, email — по желанию
                 </p>
               </div>
 

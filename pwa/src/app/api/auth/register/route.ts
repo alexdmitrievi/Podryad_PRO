@@ -28,7 +28,10 @@ export async function POST(req: NextRequest) {
   const emailRaw = typeof body.email === 'string' ? body.email.trim() : '';
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
-  const entityType = body.entity_type || 'person';
+  const VALID_ENTITY_TYPES = ['person', 'selfemployed', 'ip', 'company'];
+  const entityType = body.entity_type && VALID_ENTITY_TYPES.includes(body.entity_type)
+    ? body.entity_type
+    : 'person';
   const companyName = typeof body.company_name === 'string' ? body.company_name.trim() : '';
   const inn = typeof body.inn === 'string' ? body.inn.trim() : '';
 
@@ -36,13 +39,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_role' }, { status: 400 });
   }
 
-  // Must provide at least phone or email
+  // Phone is required (PK of users table), email is optional
   const hasPhone = phoneRaw.length >= 10;
   const hasEmail = EMAIL_RE.test(emailRaw);
-  if (!hasPhone && !hasEmail) {
-    return NextResponse.json({ error: 'invalid_contact' }, { status: 400 });
-  }
-  if (phoneRaw && !hasPhone) {
+  if (!hasPhone) {
     return NextResponse.json({ error: 'invalid_phone' }, { status: 400 });
   }
   if (emailRaw && !hasEmail) {
@@ -55,9 +55,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_password' }, { status: 400 });
   }
 
-  const normalized = hasPhone ? normalizePhone(phoneRaw) : '';
-  // Primary identifier: phone if provided, otherwise email
-  const userId = normalized ? `reg:${normalized}` : `reg:${emailRaw.toLowerCase()}`;
+  const normalized = normalizePhone(phoneRaw);
+  const userId = `reg:${normalized}`;
 
   try {
     // Check duplicates
@@ -76,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     const password_hash = hashPassword(password);
     await createUser({
-      phone: normalized || undefined,
+      phone: normalized,
       email: hasEmail ? emailRaw : undefined,
       name,
       password_hash,
@@ -89,12 +88,11 @@ export async function POST(req: NextRequest) {
     // Create worker profile for workers
     if (roleIn === 'worker') {
       try {
-        const workerIdentifier = normalized ? `pwa:${normalized}` : `pwa:${emailRaw.toLowerCase()}`;
         await createWorkerProfile({
-          telegram_id: workerIdentifier,
+          telegram_id: `pwa:${normalized}`,
           name,
-          phone: normalized || emailRaw.toLowerCase(),
-          user_phone: normalized || emailRaw.toLowerCase(),
+          phone: normalized,
+          user_phone: normalized,
         });
       } catch (e) {
         console.error('Worker profile creation (non-critical):', e);

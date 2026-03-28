@@ -7,16 +7,22 @@
 -- ── 1. USERS (регистрация через PWA: телефон + пароль) ──
 
 CREATE TABLE IF NOT EXISTS users (
-  phone       TEXT PRIMARY KEY,                     -- нормализованный: 79001234567
-  name        TEXT NOT NULL DEFAULT '',
+  phone         TEXT PRIMARY KEY,                     -- нормализованный: 79001234567
+  name          TEXT NOT NULL DEFAULT '',
   password_hash TEXT NOT NULL,
-  role        TEXT NOT NULL CHECK (role IN ('customer', 'worker')),
-  is_active   BOOLEAN NOT NULL DEFAULT true,
-  last_login  TIMESTAMPTZ,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  role          TEXT NOT NULL CHECK (role IN ('customer', 'worker')),
+  email         TEXT,
+  entity_type   TEXT NOT NULL DEFAULT 'person'
+                  CHECK (entity_type IN ('person', 'selfemployed', 'ip', 'company')),
+  company_name  TEXT NOT NULL DEFAULT '',
+  inn           TEXT NOT NULL DEFAULT '',
+  is_active     BOOLEAN NOT NULL DEFAULT true,
+  last_login    TIMESTAMPTZ,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique ON users(lower(email)) WHERE email IS NOT NULL;
 
 -- ── 2. WORKERS (исполнители — создаются через Telegram-бот или PWA) ──
 

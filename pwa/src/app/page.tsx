@@ -431,6 +431,12 @@ export default function HomePage() {
               >
                 Аренда техники
               </Link>
+              <Link
+                href="/materials"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
+                Заказать материалы
+              </Link>
             </div>
 
             {/* Column 2: Исполнителям */}
@@ -492,10 +498,16 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="border-t border-gray-800 mt-10 pt-6 text-center">
+          <div className="border-t border-gray-800 mt-10 pt-6 flex flex-col items-center gap-2">
             <p className="text-gray-500 text-xs">
               &copy; {new Date().getFullYear()} Подряд PRO &middot; podryad.pro
             </p>
+            <Link
+              href="/privacy"
+              className="text-gray-500 hover:text-gray-300 text-xs transition-colors"
+            >
+              Политика конфиденциальности
+            </Link>
           </div>
         </div>
       </footer>
