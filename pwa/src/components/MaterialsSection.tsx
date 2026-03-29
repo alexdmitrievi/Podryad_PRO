@@ -46,7 +46,7 @@ export default function MaterialsSection() {
   return (
     <section className="relative bg-gradient-to-br from-[#0a0c14] via-brand-900 to-brand-700 text-white overflow-hidden py-20 md:py-28">
       <div className="hero-pattern absolute inset-0" />
-      <div className="relative z-10 max-w-2xl mx-auto px-5">
+      <div className="relative z-10 w-full max-w-2xl mx-auto px-4 sm:px-6">
 
         {/* Heading */}
         <div className="text-center mb-10">

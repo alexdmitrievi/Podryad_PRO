@@ -32,7 +32,7 @@ export default function HomePage() {
             </h1>
 
             <p className="text-base sm:text-lg md:text-xl text-white/50 mt-5 md:mt-7 max-w-sm sm:max-w-md mx-auto leading-relaxed">
-              Рабочие, техника, инструмент.
+              Рабочие, техника, материалы, инструмент.
               <br className="sm:hidden" />
               {' '}Омск и Новосибирск
             </p>
