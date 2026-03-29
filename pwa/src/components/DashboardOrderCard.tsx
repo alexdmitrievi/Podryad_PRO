@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { MapPin, Clock, Users, Banknote, MessageCircle } from 'lucide-react';
+import { MapPin, Clock, Users, Banknote, MessageCircle, CheckCircle2, Briefcase } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import ConfirmModal from '@/components/ConfirmModal';
 import YandexButton from '@/components/YandexButton';
@@ -17,22 +17,18 @@ export function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)} дн назад`;
 }
 
-const workTypeEmoji: Record<string, string> = {
-  грузчики: '💪',
-  уборка: '🧹',
-  стройка: '🏗',
-  разнорабочие: '🔧',
-  другое: '📋',
-};
-
-function workTypeLine(workType: string): string {
+function workTypeLabel(workType: string): string {
   const key = workType.trim().toLowerCase();
-  const emoji = workTypeEmoji[key] ?? '📋';
-  const label =
-    workType.trim().length > 0
-      ? workType.trim().charAt(0).toUpperCase() + workType.trim().slice(1).toLowerCase()
-      : 'Заказ';
-  return `${emoji} ${label}`;
+  const labels: Record<string, string> = {
+    грузчики: 'Грузчики',
+    уборка: 'Уборка',
+    стройка: 'Стройка',
+    разнорабочие: 'Разнорабочие',
+    другое: 'Другое',
+  };
+  return labels[key] ?? (workType.trim().length > 0
+    ? workType.trim().charAt(0).toUpperCase() + workType.trim().slice(1).toLowerCase()
+    : 'Заказ');
 }
 
 const statusBorderClass: Record<string, string> = {
@@ -119,7 +115,10 @@ export default function DashboardOrderCard({
         style={{ animationDelay: `${(index || 0) * 80}ms` }}
       >
         <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-          <p className="text-sm font-bold text-gray-900">{workTypeLine(order.work_type)}</p>
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-900 dark:text-dark-text">
+            <Briefcase size={14} className="text-brand-500 shrink-0" />
+            {workTypeLabel(order.work_type)}
+          </p>
           <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-2 text-xs text-gray-500">
             <Badge variant={order.status}>{statusLabelMap[order.status] ?? order.status}</Badge>
             <span className="font-mono font-semibold text-gray-700">#{order.order_id}</span>
@@ -171,9 +170,10 @@ export default function DashboardOrderCard({
             <button
               type="button"
               disabled
-              className="flex flex-1 cursor-default items-center justify-center gap-2 rounded-2xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 sm:max-w-[11rem]"
+              className="flex flex-1 cursor-default items-center justify-center gap-2 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2.5 text-sm font-semibold text-emerald-800 dark:text-emerald-300 sm:max-w-[11rem]"
             >
-              ✅ Вы взяли этот заказ
+              <CheckCircle2 size={15} className="shrink-0" />
+              Вы взяли этот заказ
             </button>
           ) : null}
 
@@ -182,9 +182,10 @@ export default function DashboardOrderCard({
               type="button"
               disabled={isResponding || submitting}
               onClick={() => setConfirmOpen(true)}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-95 active:scale-[0.99] disabled:opacity-60 sm:max-w-[11rem]"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-brand-600 active:scale-[0.99] disabled:opacity-60 cursor-pointer sm:max-w-[11rem]"
             >
-              ✅ Откликнуться
+              <CheckCircle2 size={15} className="shrink-0" />
+              Откликнуться
             </button>
           ) : null}
         </div>

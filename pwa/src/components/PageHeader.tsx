@@ -20,7 +20,7 @@ export default function PageHeader({
       <div className="max-w-lg mx-auto">
         <Link
           href={backHref}
-          className="text-sm text-white/80 hover:text-white transition-colors"
+          className="inline-flex items-center text-sm text-white/80 hover:text-white transition-colors cursor-pointer"
         >
           {backLabel}
         </Link>

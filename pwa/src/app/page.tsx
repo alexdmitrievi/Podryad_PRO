@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { ArrowRight, Users, Wrench, Shield, Clock, Star, ChevronRight, Truck, HardHat, Sparkles } from 'lucide-react';
+import { ArrowRight, Users, Wrench, Shield, Clock, Star, ChevronRight, Truck, HardHat, Sparkles, Leaf, Hammer, Zap, Building2, Gift, ChevronDown } from 'lucide-react';
 import CostCalculator from '@/components/CostCalculator';
 import AnimatedCounter from '@/components/AnimatedCounter';
 import Testimonials from '@/components/Testimonials';
 import ScrollReveal from '@/components/ScrollReveal';
+import MaterialsSection from '@/components/MaterialsSection';
 
 const tgBot = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
 const maxChannel =
@@ -19,9 +20,9 @@ export default function HomePage() {
         <div className="hero-pattern absolute inset-0" />
         <div className="noise-overlay relative">
           <div className="relative z-10 max-w-2xl mx-auto px-5 pt-28 pb-24 md:pt-44 md:pb-36 text-center">
-            <span className="badge-brand-hero inline-flex items-center gap-1.5 mb-6 md:mb-8">
-              <Sparkles size={14} className="-mt-px" />
-              Кадры + техника под ключ
+            <span className="badge-brand-hero inline-flex items-center gap-2 mb-6 md:mb-8">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-[pulse-dot_1.5s_ease-in-out_infinite] shrink-0" aria-hidden="true" />
+              Принимаем заказы · Омск и Новосибирск
             </span>
 
             <h1 className="text-[2rem] sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-gradient tracking-tight leading-[1.12] sm:leading-[1.08]">
@@ -39,25 +40,33 @@ export default function HomePage() {
             <div className="mt-8 md:mt-11 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 max-w-xs sm:max-w-none mx-auto">
               <Link
                 href="/app/order"
-                className="inline-flex items-center justify-center gap-2 bg-white text-brand-700 font-bold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg shadow-hero hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
+                className="inline-flex items-center justify-center gap-2 btn-animated-gradient text-brand-700 font-bold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg shadow-hero hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
               >
                 Оформить заказ
                 <ArrowRight size={20} />
               </Link>
               <Link
                 href="/equipment"
-                className="inline-flex items-center justify-center gap-2 bg-white/10 text-white font-semibold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg border border-white/20 hover:bg-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
+                className="inline-flex items-center justify-center gap-2 bg-white/10 text-white font-semibold py-4 px-8 md:py-5 md:px-10 rounded-2xl text-base md:text-lg border border-white/20 hover:bg-white/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 cursor-pointer"
               >
                 <Truck size={18} />
                 Каталог техники
               </Link>
+            </div>
+
+            <div className="mt-12 md:mt-16 flex justify-center">
+              <ChevronDown
+                size={24}
+                className="text-white/40 animate-[bounce-soft_2s_ease-in-out_infinite]"
+                aria-hidden="true"
+              />
             </div>
           </div>
         </div>
       </section>
 
       {/* ─── Section 2: TRUST BAR ─── */}
-      <section className="bg-white dark:bg-dark-card py-8">
+      <section className="bg-white dark:bg-dark-card py-8 border-b border-gray-100 dark:border-dark-border">
         <div className="max-w-3xl mx-auto px-6 grid grid-cols-3 gap-4 text-center">
           <div className="flex flex-col items-center">
             <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mb-2">
@@ -227,10 +236,10 @@ export default function HomePage() {
             <ScrollReveal delay={0}>
               <Link
                 href="/customer"
-                className="group relative bg-white dark:bg-dark-card rounded-2xl p-6 border-2 border-transparent hover:border-brand-500 hover:shadow-lg transition-all duration-300 block"
+                className="group relative bg-white dark:bg-dark-card rounded-2xl p-6 border-2 border-transparent hover:border-brand-500 hover:shadow-lg transition-all duration-300 block cursor-pointer"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center group-hover:bg-brand-100 dark:group-hover:bg-brand-800/30 transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center group-hover:bg-brand-100 dark:group-hover:bg-brand-800/30 transition-colors duration-200">
                     <HardHat size={24} className="text-brand-500" />
                   </div>
                   <div className="flex-1">
@@ -243,7 +252,7 @@ export default function HomePage() {
                   </div>
                   <ChevronRight
                     size={20}
-                    className="text-gray-300 dark:text-dark-muted group-hover:text-brand-500 group-hover:translate-x-1 transition-all"
+                    className="text-gray-300 dark:text-dark-muted group-hover:text-brand-500 group-hover:translate-x-1 transition-all duration-200"
                   />
                 </div>
               </Link>
@@ -252,7 +261,7 @@ export default function HomePage() {
             <ScrollReveal delay={100}>
               <Link
                 href="/worker"
-                className="group relative bg-white dark:bg-dark-card rounded-2xl p-6 border-2 border-transparent hover:border-amber-400 hover:shadow-lg transition-all duration-300 block"
+                className="group relative bg-white dark:bg-dark-card rounded-2xl p-6 border-2 border-transparent hover:border-amber-400 hover:shadow-lg transition-all duration-300 block cursor-pointer"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-800/30 transition-colors">
@@ -299,7 +308,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── Section 8: EQUIPMENT PREVIEW ─── */}
+      {/* ─── Section 8: MATERIALS ─── */}
+      <MaterialsSection />
+
+      {/* ─── Section 9: EQUIPMENT PREVIEW ─── */}
       <section className="bg-gray-50 dark:bg-dark-bg py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center">
@@ -314,10 +326,10 @@ export default function HomePage() {
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link
               href="/equipment?cat=garden"
-              className="group bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent dark:border-dark-border"
+              className="group bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent hover:border-emerald-200 dark:border-dark-border cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <span className="text-lg">🌿</span>
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200">
+                <Leaf size={18} className="text-emerald-600 dark:text-emerald-400" />
               </div>
               <p className="font-bold text-gray-900 dark:text-white">Сад</p>
               <p className="text-xs text-gray-500 dark:text-dark-muted mt-1 leading-relaxed">
@@ -327,10 +339,10 @@ export default function HomePage() {
 
             <Link
               href="/equipment?cat=construction"
-              className="group bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent dark:border-dark-border"
+              className="group bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent hover:border-amber-200 dark:border-dark-border cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <span className="text-lg">🔨</span>
+              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200">
+                <Hammer size={18} className="text-amber-600 dark:text-amber-400" />
               </div>
               <p className="font-bold text-gray-900 dark:text-white">Стройка</p>
               <p className="text-xs text-gray-500 dark:text-dark-muted mt-1 leading-relaxed">
@@ -340,10 +352,10 @@ export default function HomePage() {
 
             <Link
               href="/equipment?cat=special"
-              className="group bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent dark:border-dark-border"
+              className="group bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent hover:border-blue-200 dark:border-dark-border cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <span className="text-lg">⚡</span>
+              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200">
+                <Zap size={18} className="text-blue-600 dark:text-blue-400" />
               </div>
               <p className="font-bold text-gray-900 dark:text-white">Спецтехника</p>
               <p className="text-xs text-gray-500 dark:text-dark-muted mt-1 leading-relaxed">
@@ -353,10 +365,10 @@ export default function HomePage() {
 
             <Link
               href="/equipment?cat=heavy"
-              className="group bg-violet-50 dark:bg-violet-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent dark:border-dark-border"
+              className="group bg-violet-50 dark:bg-violet-900/20 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-transparent hover:border-violet-200 dark:border-dark-border cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <span className="text-lg">🏗️</span>
+              <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-800/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200">
+                <Building2 size={18} className="text-violet-600 dark:text-violet-400" />
               </div>
               <p className="font-bold text-gray-900 dark:text-white">Тяжёлая техника</p>
               <p className="text-xs text-gray-500 dark:text-dark-muted mt-1 leading-relaxed">
@@ -365,9 +377,10 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 text-center border border-amber-100 dark:border-amber-800/30">
-            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-              🎁 Скидка 15% при заказе исполнителей + техники
+          <div className="mt-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl p-4 text-center border border-amber-100 dark:border-amber-800/30">
+            <p className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800 dark:text-amber-300">
+              <Gift size={16} className="shrink-0" />
+              Скидка 15% при заказе исполнителей + техники
             </p>
           </div>
 
@@ -409,6 +422,23 @@ export default function HomePage() {
       {/* ─── Section 10: FOOTER ─── */}
       <footer className="bg-[#060810] py-16">
         <div className="max-w-4xl mx-auto px-6">
+          <div className="mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-white font-extrabold text-lg">Подряд PRO</p>
+              <p className="text-gray-500 text-sm mt-1">Рабочие и техника под ключ</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <a href={telegramUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                Telegram
+              </a>
+              <span className="text-gray-700">·</span>
+              <a href={maxChannel} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                MAX
+              </a>
+            </div>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
             {/* Column 1: Заказчикам */}
             <div>
@@ -466,26 +496,26 @@ export default function HomePage() {
             <div>
               <p className="font-semibold text-white mb-3">Компания</p>
               <Link
-                href="/about"
+                href="/privacy"
                 className="block text-gray-400 hover:text-white transition-colors py-1"
               >
-                О нас
+                Политика
               </Link>
               <p className="text-gray-400 py-1">
                 Омск и Новосибирск
               </p>
             </div>
 
-            {/* Column 4: Мессенджеры */}
+            {/* Column 4: Поддержка */}
             <div>
-              <p className="font-semibold text-white mb-3">Мессенджеры</p>
+              <p className="font-semibold text-white mb-3">Поддержка</p>
               <a
                 href={telegramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block text-gray-400 hover:text-white transition-colors py-1"
               >
-                Telegram
+                Telegram-бот
               </a>
               <a
                 href={maxChannel}
@@ -493,7 +523,7 @@ export default function HomePage() {
                 rel="noopener noreferrer"
                 className="block text-gray-400 hover:text-white transition-colors py-1"
               >
-                MAX
+                Канал MAX
               </a>
             </div>
           </div>

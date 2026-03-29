@@ -40,9 +40,10 @@ export default function Button({
       type="button"
       disabled={disabled || loading}
       className={`
-        inline-flex items-center justify-center font-semibold
+        inline-flex items-center justify-center font-semibold cursor-pointer
         rounded-button active:scale-[0.98] transition-all duration-200
         disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2
         ${VARIANTS[variant]} ${SIZES[size]} ${className}
       `.trim()}
       {...props}

@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 interface ScrollRevealProps {
   children: React.ReactNode;
   delay?: number;
@@ -10,9 +15,11 @@ interface ScrollRevealProps {
 
 export default function ScrollReveal({ children, delay = 0, className = '' }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  // lazy init: if reduced-motion, start visible immediately (no animation)
+  const [visible, setVisible] = useState(() => prefersReducedMotion());
 
   useEffect(() => {
+    if (visible) return; // already visible (reduced-motion) — skip observer
     if (!ref.current) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -25,7 +32,11 @@ export default function ScrollReveal({ children, delay = 0, className = '' }: Sc
     );
     observer.observe(ref.current);
     return () => observer.disconnect();
-  }, []);
+  }, [visible]);
+
+  if (prefersReducedMotion()) {
+    return <div className={className}>{children}</div>;
+  }
 
   return (
     <div

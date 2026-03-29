@@ -2,6 +2,8 @@
 
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Users, Sparkles, Building, Wrench, List, Map as MapIcon, RefreshCw, CircleDot, Banknote, LayoutGrid } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import DashboardOrderCard from '@/components/DashboardOrderCard';
 import BottomNav from '@/components/BottomNav';
 import PageHeader from '@/components/PageHeader';
@@ -20,12 +22,14 @@ const MapView = dynamic(() => import('@/components/MapView'), {
   ),
 });
 
-const WORK_TYPE_FILTERS: { id: string | null; label: string }[] = [
-  { id: null, label: 'Все' },
-  { id: 'грузчики', label: '💪 Грузчики' },
-  { id: 'уборка', label: '🧹 Уборка' },
-  { id: 'стройка', label: '🏗 Стройка' },
-  { id: 'разнорабочие', label: '🔧 Разнорабочие' },
+type FilterChip = { id: string | null; label: string; Icon: LucideIcon };
+
+const WORK_TYPE_FILTERS: FilterChip[] = [
+  { id: null, label: 'Все', Icon: LayoutGrid },
+  { id: 'грузчики', label: 'Грузчики', Icon: Users },
+  { id: 'уборка', label: 'Уборка', Icon: Sparkles },
+  { id: 'стройка', label: 'Стройка', Icon: Building },
+  { id: 'разнорабочие', label: 'Разнорабочие', Icon: Wrench },
 ];
 
 type SortMode = 'new' | 'pay_desc' | 'pay_asc';
@@ -197,7 +201,7 @@ export default function DashboardPage() {
     <div className="flex h-screen flex-col bg-gray-50 dark:bg-dark-bg pt-16">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <PageHeader
-          title="📋 Доска заказов"
+          title="Доска заказов"
           subtitle="Активные предложения"
           backHref="/"
         />
@@ -209,20 +213,26 @@ export default function DashboardPage() {
             ) : (
               <div className="grid grid-cols-3 gap-2 text-center text-xs sm:text-sm">
                 <div className="rounded-2xl bg-white dark:bg-dark-card px-2 py-3 shadow-card">
-                  <div className="text-lg leading-none">🟢</div>
-                  <div className="mt-1 font-bold text-gray-900 dark:text-white">{filtered.length}</div>
+                  <div className="flex justify-center mb-1">
+                    <CircleDot size={16} className="text-emerald-500" />
+                  </div>
+                  <div className="font-bold text-gray-900 dark:text-white">{filtered.length}</div>
                   <div className="text-[10px] text-gray-500 dark:text-dark-muted sm:text-xs">активных</div>
                 </div>
                 <div className="rounded-2xl bg-white dark:bg-dark-card px-2 py-3 shadow-card">
-                  <div className="text-lg leading-none">💰</div>
-                  <div className="mt-1 font-bold text-gray-900 dark:text-white">
+                  <div className="flex justify-center mb-1">
+                    <Banknote size={16} className="text-brand-500" />
+                  </div>
+                  <div className="font-bold text-gray-900 dark:text-white">
                     от {minWorkerRate.toLocaleString('ru-RU')}₽/ч
                   </div>
                   <div className="text-[10px] text-gray-500 dark:text-dark-muted sm:text-xs">ставка</div>
                 </div>
                 <div className="rounded-2xl bg-white dark:bg-dark-card px-2 py-3 shadow-card">
-                  <div className="text-lg leading-none">👥</div>
-                  <div className="mt-1 font-bold text-gray-900 dark:text-white">{distinctTypes}</div>
+                  <div className="flex justify-center mb-1">
+                    <Users size={16} className="text-brand-500" />
+                  </div>
+                  <div className="font-bold text-gray-900 dark:text-white">{distinctTypes}</div>
                   <div className="text-[10px] text-gray-500 dark:text-dark-muted sm:text-xs">типов</div>
                 </div>
               </div>
@@ -232,24 +242,26 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setView('list')}
-                className={`flex-1 rounded-2xl py-2.5 text-sm font-semibold transition-colors ${
+                className={`flex-1 inline-flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
                   view === 'list'
                     ? 'bg-brand-500 text-white'
-                    : 'bg-white dark:bg-dark-card text-gray-600 dark:text-gray-300 shadow-card'
+                    : 'bg-white dark:bg-dark-card text-gray-600 dark:text-gray-300 shadow-card hover:bg-gray-50 dark:hover:bg-dark-border'
                 }`}
               >
-                📋 Список
+                <List size={15} className="shrink-0" />
+                Список
               </button>
               <button
                 type="button"
                 onClick={() => setView('map')}
-                className={`flex-1 rounded-2xl py-2.5 text-sm font-semibold transition-colors ${
+                className={`flex-1 inline-flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
                   view === 'map'
                     ? 'bg-brand-500 text-white'
-                    : 'bg-white dark:bg-dark-card text-gray-600 dark:text-gray-300 shadow-card'
+                    : 'bg-white dark:bg-dark-card text-gray-600 dark:text-gray-300 shadow-card hover:bg-gray-50 dark:hover:bg-dark-border'
                 }`}
               >
-                🗺 Карта
+                <MapIcon size={15} className="shrink-0" />
+                Карта
               </button>
             </div>
 
@@ -263,9 +275,10 @@ export default function DashboardPage() {
                 type="button"
                 disabled={manualRefresh}
                 onClick={() => void loadOrders(true)}
-                className="rounded-xl bg-white dark:bg-dark-card px-3 py-1.5 font-semibold text-gray-700 dark:text-gray-200 shadow-sm ring-1 ring-gray-200 dark:ring-dark-border disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white dark:bg-dark-card px-3 py-1.5 font-semibold text-gray-700 dark:text-gray-200 shadow-sm ring-1 ring-gray-200 dark:ring-dark-border disabled:opacity-50 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-border transition-colors"
               >
-                🔄 Обновить
+                <RefreshCw size={13} className={manualRefresh ? 'animate-spin' : ''} />
+                Обновить
               </button>
             </div>
 
@@ -283,17 +296,19 @@ export default function DashboardPage() {
             <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {WORK_TYPE_FILTERS.map((chip) => {
                 const active = workFilter === chip.id;
+                const { Icon } = chip;
                 return (
                   <button
                     key={chip.label}
                     type="button"
                     onClick={() => setWorkFilter(chip.id)}
-                    className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+                    className={`flex-shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                       active
                         ? 'bg-brand-500 text-white'
-                        : 'bg-white dark:bg-dark-card text-gray-600 dark:text-gray-300 shadow-sm ring-1 ring-gray-200 dark:ring-dark-border'
+                        : 'bg-white dark:bg-dark-card text-gray-600 dark:text-gray-300 shadow-sm ring-1 ring-gray-200 dark:ring-dark-border hover:bg-gray-50 dark:hover:bg-dark-border'
                     }`}
                   >
+                    <Icon size={12} className="shrink-0" />
                     {chip.label}
                   </button>
                 );

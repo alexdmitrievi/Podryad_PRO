@@ -390,3 +390,12 @@ export async function createPaymentRecord(payment: Record<string, unknown>) {
     .insert(payment);
   if (error) throw error;
 }
+
+// ── ЗАЯВКИ НА МАТЕРИАЛЫ ──
+
+export async function createMaterialRequest(phone: string) {
+  const { error } = await db()
+    .from('material_requests')
+    .insert({ phone });
+  if (error) throw error;
+}

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ClipboardList, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const NAV_ITEMS = [
@@ -87,23 +87,25 @@ export default function StickyHeader() {
               <>
                 <Link
                   href="/dashboard"
-                  className={`text-sm font-medium transition-colors duration-300 ${
+                  className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors duration-300 ${
                     scrolled ? 'text-gray-600 hover:text-gray-900 dark:text-dark-muted dark:hover:text-dark-text' : 'text-white/80 hover:text-white'
                   }`}
                 >
-                  📋 Мои заказы
+                  <ClipboardList size={15} className="shrink-0" />
+                  Мои заказы
                 </Link>
                 <Link
                   href="/app/profile"
                   className={`
-                  text-sm font-bold px-4 py-2 rounded-xl transition-all duration-300
+                  inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-xl transition-all duration-300
                   ${scrolled
                     ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     : 'bg-white/20 text-white hover:bg-white/30'
                   }
                 `}
                 >
-                  👤 Профиль
+                  <User size={15} className="shrink-0" />
+                  Профиль
                 </Link>
               </>
             ) : (
@@ -136,7 +138,7 @@ export default function StickyHeader() {
           <button
             type="button"
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden w-10 h-10 flex items-center justify-center"
+            className="md:hidden w-10 h-10 flex items-center justify-center cursor-pointer rounded-lg hover:bg-white/10 transition-colors"
             aria-label={menuOpen ? 'Закрыть меню' : 'Меню'}
           >
             {menuOpen ? (
@@ -149,34 +151,36 @@ export default function StickyHeader() {
       </header>
 
       {menuOpen && (
-        <div className="md:hidden fixed inset-0 top-16 z-40 bg-white/95 dark:bg-dark-bg/95 backdrop-blur-md overflow-y-auto">
+        <div className="md:hidden fixed inset-0 top-16 z-40 bg-white/95 dark:bg-dark-bg/95 backdrop-blur-md overflow-y-auto animate-[menu-open_0.2s_ease-out]">
           <nav className="flex flex-col p-6 space-y-1">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
-                className="px-4 py-3.5 rounded-xl text-gray-700 font-medium text-base hover:bg-gray-100"
+                className="px-4 py-3.5 rounded-xl text-gray-700 dark:text-dark-text font-medium text-base hover:bg-gray-100 dark:hover:bg-dark-border transition-colors"
               >
                 {item.label}
               </Link>
             ))}
-            <div className="border-t border-gray-100 my-3" />
+            <div className="border-t border-gray-100 dark:border-dark-border my-3" />
             {loggedIn ? (
               <>
                 <Link
                   href="/dashboard"
                   onClick={() => setMenuOpen(false)}
-                  className="px-4 py-3.5 rounded-xl text-gray-700 font-medium text-base hover:bg-gray-100"
+                  className="flex items-center gap-2 px-4 py-3.5 rounded-xl text-gray-700 dark:text-dark-text font-medium text-base hover:bg-gray-100 dark:hover:bg-dark-border transition-colors"
                 >
-                  📋 Мои заказы
+                  <ClipboardList size={18} className="text-brand-500" />
+                  Мои заказы
                 </Link>
                 <Link
                   href="/app/profile"
                   onClick={() => setMenuOpen(false)}
-                  className="px-4 py-3.5 rounded-xl text-gray-700 font-medium text-base hover:bg-gray-100"
+                  className="flex items-center gap-2 px-4 py-3.5 rounded-xl text-gray-700 dark:text-dark-text font-medium text-base hover:bg-gray-100 dark:hover:bg-dark-border transition-colors"
                 >
-                  👤 Профиль
+                  <User size={18} className="text-brand-500" />
+                  Профиль
                 </Link>
               </>
             ) : (
@@ -184,16 +188,16 @@ export default function StickyHeader() {
                 <Link
                   href="/auth/login"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 font-medium hover:bg-gray-100"
+                  className="flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 dark:text-dark-muted font-medium hover:bg-gray-100 dark:hover:bg-dark-border transition-colors"
                 >
                   Войти
                 </Link>
                 <Link
                   href="/auth/register"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center justify-center px-4 py-3.5 rounded-xl bg-brand-500 text-white font-bold hover:bg-brand-600"
+                  className="flex items-center justify-center px-4 py-3.5 rounded-xl bg-brand-500 text-white font-bold hover:bg-brand-600 transition-colors"
                 >
-                  Регистрация
+                  Зарегистрироваться
                 </Link>
               </>
             )}

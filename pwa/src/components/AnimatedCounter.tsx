@@ -17,11 +17,17 @@ export default function AnimatedCounter({
   duration = 1500,
   className = '',
 }: AnimatedCounterProps) {
-  const [value, setValue] = useState(0);
+  // lazy init: if reduced-motion, show final value immediately (no animation)
+  const [value, setValue] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? end
+      : 0
+  );
   const [started, setStarted] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     if (!ref.current) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -43,7 +49,6 @@ export default function AnimatedCounter({
     const animate = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setValue(eased * end);
       if (progress < 1) {
