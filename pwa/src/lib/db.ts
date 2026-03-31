@@ -399,3 +399,171 @@ export async function createMaterialRequest(phone: string) {
     .insert({ phone });
   if (error) throw error;
 }
+
+// ── МАРКЕТПЛЕЙС ──
+
+export async function getMarketplaceCategories() {
+  const { data, error } = await db()
+    .from('marketplace_categories')
+    .select('*')
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getListings(filters?: {
+  category?: string;
+  city?: string;
+  type?: 'material' | 'heavy_equipment';
+}) {
+  let query = db()
+    .from('listings')
+    .select(`
+      *,
+      supplier:suppliers(company_name, city, delivery_available, is_verified),
+      category:marketplace_categories(name, type, unit, icon)
+    `)
+    .eq('is_active', true)
+    .order('price', { ascending: true });
+
+  if (filters?.category) query = query.eq('category_slug', filters.category);
+  if (filters?.city && filters.city !== 'all') query = query.eq('city', filters.city);
+  if (filters?.type) {
+    query = query.eq('category.type' as never, filters.type);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getListingById(listingId: string) {
+  const { data, error } = await db()
+    .from('listings')
+    .select(`
+      *,
+      supplier:suppliers(company_name, city, delivery_available, is_verified, contact_name, user_phone),
+      category:marketplace_categories(name, type, unit, icon)
+    `)
+    .eq('listing_id', listingId)
+    .eq('is_active', true)
+    .single();
+  if (error) return null;
+  return data;
+}
+
+export async function getListingsBySupplier(supplierId: string) {
+  const { data, error } = await db()
+    .from('listings')
+    .select(`
+      *,
+      category:marketplace_categories(name, type, unit, icon)
+    `)
+    .eq('supplier_id', supplierId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createListing(data: Record<string, unknown>) {
+  const { data: row, error } = await db()
+    .from('listings')
+    .insert(data)
+    .select()
+    .single();
+  if (error) throw error;
+  return row;
+}
+
+export async function updateListing(listingId: string, updates: Record<string, unknown>) {
+  const { error } = await db()
+    .from('listings')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('listing_id', listingId);
+  if (error) throw error;
+}
+
+export async function deactivateListing(listingId: string) {
+  const { error } = await db()
+    .from('listings')
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq('listing_id', listingId);
+  if (error) throw error;
+}
+
+export async function getSupplierByPhone(phone: string) {
+  const { data, error } = await db()
+    .from('suppliers')
+    .select('*')
+    .eq('user_phone', phone)
+    .eq('is_active', true)
+    .single();
+  if (error) return null;
+  return data;
+}
+
+export async function createSupplier(data: {
+  user_phone: string;
+  company_name: string;
+  contact_name: string;
+  description?: string;
+  city?: string;
+  delivery_available?: boolean;
+}) {
+  const { data: row, error } = await db()
+    .from('suppliers')
+    .insert(data)
+    .select()
+    .single();
+  if (error) throw error;
+  return row;
+}
+
+export async function logContactRequest(listingId: string, phone: string, name?: string) {
+  const { data: listing } = await db()
+    .from('listings')
+    .select('id')
+    .eq('listing_id', listingId)
+    .single();
+  if (!listing) return;
+
+  await db().from('contact_requests').insert({
+    listing_id: listing.id,
+    requester_phone: phone,
+    requester_name: name || null,
+  });
+
+  await db().rpc('increment_listing_contacts', { p_listing_id: listingId });
+}
+
+export async function getBestPriceByCategory(slug: string, city?: string) {
+  let query = db()
+    .from('listings')
+    .select('price, city, supplier:suppliers(company_name)')
+    .eq('category_slug', slug)
+    .eq('is_active', true)
+    .order('price', { ascending: true })
+    .limit(1);
+
+  if (city && city !== 'all') query = query.eq('city', city);
+
+  const { data, error } = await query;
+  if (error) return null;
+  return data?.[0] ?? null;
+}
+
+export async function getSupplierStats(supplierId: string) {
+  const { data, error } = await db()
+    .from('listings')
+    .select('views_count, contacts_count, is_active')
+    .eq('supplier_id', supplierId);
+  if (error) return { total: 0, active: 0, views: 0, contacts: 0 };
+
+  const rows = data || [];
+  return {
+    total: rows.length,
+    active: rows.filter((r: Record<string, unknown>) => r.is_active).length,
+    views: rows.reduce((s: number, r: Record<string, unknown>) => s + (Number(r.views_count) || 0), 0),
+    contacts: rows.reduce((s: number, r: Record<string, unknown>) => s + (Number(r.contacts_count) || 0), 0),
+  };
+}

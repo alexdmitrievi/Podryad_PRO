@@ -311,6 +311,54 @@ export default function HomePage() {
       {/* ─── Section 8: MATERIALS ─── */}
       <MaterialsSection />
 
+      {/* ─── Section 8.5: MARKETPLACE PREVIEW ─── */}
+      <section className="bg-white dark:bg-dark-card py-14 md:py-20 border-t border-gray-100 dark:border-dark-border">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <span className="inline-block bg-brand-50 dark:bg-brand-900/30 text-brand-500 text-xs font-bold px-3 py-1.5 rounded-full mb-3 uppercase tracking-wider">
+              Новое
+            </span>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white">
+              Маркетплейс материалов и спецтехники
+            </h2>
+            <p className="text-gray-500 dark:text-dark-muted mt-2">
+              Сравните цены поставщиков и выберите лучшее предложение
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            {[
+              { icon: '🏗', label: 'Бетон', hint: 'М100–М500', slug: 'concrete' },
+              { icon: '🪨', label: 'Щебень', hint: '5–70 мм', slug: 'gravel' },
+              { icon: '🚛', label: 'Самосвал', hint: 'Аренда / час', slug: 'dump-truck' },
+              { icon: '🏗', label: 'Экскаватор', hint: 'Аренда / час', slug: 'excavator' },
+            ].map((item) => (
+              <Link
+                key={item.slug}
+                href={`/marketplace?cat=${item.slug}`}
+                className="group bg-gray-50 dark:bg-dark-bg rounded-2xl p-4 text-center hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 border border-transparent hover:border-brand-200 dark:border-dark-border cursor-pointer"
+              >
+                <div className="text-3xl mb-2">{item.icon}</div>
+                <div className="font-semibold text-sm text-gray-900 dark:text-white">{item.label}</div>
+                <div className="text-xs text-gray-400 dark:text-dark-muted mt-0.5">{item.hint}</div>
+              </Link>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <Link
+              href="/marketplace"
+              className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold px-8 py-3.5 rounded-2xl transition-all hover:shadow-md active:scale-95"
+            >
+              Все предложения →
+            </Link>
+            <p className="text-xs text-gray-400 dark:text-dark-muted mt-3">
+              Станьте поставщиком — размещение бесплатно
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ─── Section 9: EQUIPMENT PREVIEW ─── */}
       <section className="bg-gray-50 dark:bg-dark-bg py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-6">
@@ -467,6 +515,12 @@ export default function HomePage() {
               >
                 Заказать материалы
               </Link>
+              <Link
+                href="/marketplace"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
+                Маркетплейс
+              </Link>
             </div>
 
             {/* Column 2: Исполнителям */}
@@ -492,18 +546,33 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Column 3: Компания */}
+            {/* Column 3: Поставщикам */}
             <div>
-              <p className="font-semibold text-white mb-3">Компания</p>
+              <p className="font-semibold text-white mb-3">Поставщикам</p>
+              <Link
+                href="/marketplace"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
+                Маркетплейс
+              </Link>
+              <Link
+                href="/auth/register"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
+                Стать поставщиком
+              </Link>
+              <Link
+                href="/supplier"
+                className="block text-gray-400 hover:text-white transition-colors py-1"
+              >
+                Кабинет поставщика
+              </Link>
               <Link
                 href="/privacy"
                 className="block text-gray-400 hover:text-white transition-colors py-1"
               >
                 Политика
               </Link>
-              <p className="text-gray-400 py-1">
-                Омск и Новосибирск
-              </p>
             </div>
 
             {/* Column 4: Поддержка */}

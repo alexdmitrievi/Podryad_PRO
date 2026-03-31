@@ -100,7 +100,7 @@ export async function getTelegramIdFromSession(): Promise<string | null> {
 
 export type PodryadSession = {
   user_id: string;
-  role: 'worker' | 'customer';
+  role: 'worker' | 'customer' | 'supplier';
 };
 
 function base64UrlToBuffer(s: string): Buffer {
@@ -151,7 +151,7 @@ export function verifyPassword(password: string, stored: string): boolean {
 /** Подпись JWT для cookie `podryad_session` (совместимо с getSession). */
 export function signPodryadSession(params: {
   user_id: string;
-  role: 'worker' | 'customer';
+  role: 'worker' | 'customer' | 'supplier';
   maxAgeSec?: number;
 }): string {
   const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
@@ -222,7 +222,7 @@ export async function getSession(): Promise<PodryadSession | null> {
 /** JWT или Telegram-сессия: роль заказчика, если пользователя нет в таблице Workers. */
 export type ViewerSession = {
   user_id: string;
-  role: 'worker' | 'customer';
+  role: 'worker' | 'customer' | 'supplier';
 };
 
 export async function getViewerSession(): Promise<ViewerSession | null> {

@@ -43,6 +43,20 @@ export default function ProfilePage() {
             </div>
             <span className="text-gray-300 text-lg flex-shrink-0">→</span>
           </Link>
+
+          <Link
+            href="/supplier"
+            className="flex items-center gap-4 bg-white dark:bg-dark-card rounded-3xl p-5 shadow-card border border-gray-100 dark:border-dark-border transition-all hover:shadow-card-hover active:scale-[0.98]"
+          >
+            <span className="text-3xl flex-shrink-0">🏭</span>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-gray-900 dark:text-white">Кабинет поставщика</h3>
+              <p className="text-sm text-gray-500 dark:text-dark-muted mt-0.5">
+                Управление предложениями материалов и спецтехники
+              </p>
+            </div>
+            <span className="text-gray-300 text-lg flex-shrink-0">→</span>
+          </Link>
         </section>
 
         <NotificationSettings pushRole="customer" />

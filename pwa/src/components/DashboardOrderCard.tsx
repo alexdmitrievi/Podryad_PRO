@@ -51,7 +51,7 @@ const statusLabelMap: Record<string, string> = {
 
 export interface DashboardOrderCardProps {
   order: Order;
-  userRole: 'customer' | 'worker' | null;
+  userRole: 'customer' | 'worker' | 'supplier' | null;
   /** Должен резолвиться после завершения запроса (для модалки и спиннера). */
   onRespond: (orderId: string) => Promise<void>;
   isResponding: boolean;

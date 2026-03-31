@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, ClipboardList, PlusCircle, UserCircle } from 'lucide-react';
+import { Home, ClipboardList, PlusCircle, UserCircle, Store } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 const NAV_ITEMS: { href: string; icon: LucideIcon; label: string }[] = [
   { href: '/', icon: Home, label: 'Главная' },
   { href: '/dashboard', icon: ClipboardList, label: 'Заказы' },
+  { href: '/marketplace', icon: Store, label: 'Рынок' },
   { href: '/app/order', icon: PlusCircle, label: 'Заказ' },
   { href: '/app/profile', icon: UserCircle, label: 'Профиль' },
 ];

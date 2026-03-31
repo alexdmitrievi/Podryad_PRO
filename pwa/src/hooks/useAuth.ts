@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-export type AuthRole = 'customer' | 'worker' | null;
+export type AuthRole = 'customer' | 'worker' | 'supplier' | null;
 
 export function useAuth() {
   const [loading, setLoading] = useState(true);

@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 const NAV_ITEMS = [
   { href: '/app/map', label: 'Заказы' },
   { href: '/equipment', label: 'Аренда' },
+  { href: '/marketplace', label: 'Маркетплейс' },
   { href: '/app/payments', label: 'Тарифы' },
   { href: '/selfemployed', label: 'Самозанятым' },
 ];

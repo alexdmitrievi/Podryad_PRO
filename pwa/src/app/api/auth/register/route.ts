@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword, signPodryadSession, normalizePhone } from '@/lib/auth';
-import { createUser, findUserByPhone, findUserByEmail, createWorkerProfile } from '@/lib/db';
+import { createUser, findUserByPhone, findUserByEmail, createWorkerProfile, createSupplier } from '@/lib/db';
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
@@ -16,6 +16,11 @@ export async function POST(req: NextRequest) {
     entity_type?: string;
     company_name?: string;
     inn?: string;
+    // supplier fields
+    contact_name?: string;
+    city?: string;
+    delivery_available?: boolean;
+    description?: string;
   };
   try {
     body = await req.json();
@@ -35,11 +40,14 @@ export async function POST(req: NextRequest) {
   const companyName = typeof body.company_name === 'string' ? body.company_name.trim() : '';
   const inn = typeof body.inn === 'string' ? body.inn.trim() : '';
 
-  if (roleIn !== 'customer' && roleIn !== 'worker') {
+  if (roleIn !== 'customer' && roleIn !== 'worker' && roleIn !== 'supplier') {
     return NextResponse.json({ error: 'invalid_role' }, { status: 400 });
   }
 
-  // Phone is required (PK of users table), email is optional
+  if (roleIn === 'supplier' && !companyName) {
+    return NextResponse.json({ error: 'invalid_company' }, { status: 400 });
+  }
+
   const hasPhone = phoneRaw.length >= 10;
   const hasEmail = EMAIL_RE.test(emailRaw);
   if (!hasPhone) {
@@ -59,7 +67,6 @@ export async function POST(req: NextRequest) {
   const userId = `reg:${normalized}`;
 
   try {
-    // Check duplicates
     if (normalized) {
       const existing = await findUserByPhone(normalized);
       if (existing) {
@@ -85,7 +92,6 @@ export async function POST(req: NextRequest) {
       inn: inn || undefined,
     });
 
-    // Create worker profile for workers
     if (roleIn === 'worker') {
       try {
         await createWorkerProfile({
@@ -99,9 +105,24 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (roleIn === 'supplier') {
+      try {
+        await createSupplier({
+          user_phone: normalized,
+          company_name: companyName,
+          contact_name: typeof body.contact_name === 'string' ? body.contact_name.trim() : name,
+          description: typeof body.description === 'string' ? body.description.trim() : undefined,
+          city: typeof body.city === 'string' ? body.city.trim() : 'Омск',
+          delivery_available: body.delivery_available !== false,
+        });
+      } catch (e) {
+        console.error('Supplier profile creation (non-critical):', e);
+      }
+    }
+
     const token = signPodryadSession({
       user_id: userId,
-      role: roleIn,
+      role: roleIn as 'worker' | 'customer' | 'supplier',
       maxAgeSec: COOKIE_MAX_AGE,
     });
 

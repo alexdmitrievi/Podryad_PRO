@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, Building2, Briefcase, FileCheck, ChevronRight } from 'lucide-react';
+import { User, Building2, Briefcase, FileCheck, ChevronRight, Truck } from 'lucide-react';
 
 const ENTITY_TYPES = [
   { value: 'person', label: 'Физическое лицо', icon: User, hint: 'Частный заказчик или работник' },
@@ -14,20 +14,26 @@ const ENTITY_TYPES = [
 ] as const;
 
 type EntityType = (typeof ENTITY_TYPES)[number]['value'];
+type UserRole = 'customer' | 'worker' | 'supplier';
+
+const CITIES = ['Омск', 'Новосибирск', 'Тюмень', 'Екатеринбург', 'Другой'];
 
 export default function AuthRegisterPage() {
   const router = useRouter();
 
-  // Step 1: entity type, Step 2: form
   const [step, setStep] = useState<1 | 2>(1);
   const [entityType, setEntityType] = useState<EntityType>('person');
-  const [role, setRole] = useState<'customer' | 'worker'>('customer');
+  const [role, setRole] = useState<UserRole>('customer');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [contactName, setContactName] = useState('');
   const [inn, setInn] = useState('');
   const [password, setPassword] = useState('');
+  const [city, setCity] = useState('Омск');
+  const [deliveryAvailable, setDeliveryAvailable] = useState(true);
+  const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -41,20 +47,29 @@ export default function AuthRegisterPage() {
     setError(null);
     setPending(true);
     try {
+      const body: Record<string, unknown> = {
+        role,
+        phone: phone || undefined,
+        email: email || undefined,
+        name,
+        password,
+        entity_type: entityType,
+        company_name: companyName || undefined,
+        inn: inn || undefined,
+      };
+
+      if (role === 'supplier') {
+        body.contact_name = contactName || name;
+        body.city = city;
+        body.delivery_available = deliveryAvailable;
+        body.description = description || undefined;
+      }
+
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          role,
-          phone: phone || undefined,
-          email: email || undefined,
-          name,
-          password,
-          entity_type: entityType,
-          company_name: companyName || undefined,
-          inn: inn || undefined,
-        }),
+        body: JSON.stringify(body),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok) {
@@ -63,6 +78,7 @@ export default function AuthRegisterPage() {
           invalid_email: 'Укажите корректный email',
           invalid_password: 'Пароль не короче 6 символов',
           invalid_name: 'Укажите имя или название',
+          invalid_company: 'Укажите название компании',
           invalid_contact: 'Укажите телефон',
           invalid_role: 'Выберите роль',
           server_config: 'Ошибка сервера. Попробуйте позже.',
@@ -71,7 +87,9 @@ export default function AuthRegisterPage() {
         setError(msgs[data.error || ''] || 'Не удалось зарегистрироваться');
         return;
       }
-      router.push(role === 'worker' ? '/auth/onboarding' : '/customer');
+      if (role === 'worker') router.push('/auth/onboarding');
+      else if (role === 'supplier') router.push('/supplier');
+      else router.push('/customer');
       router.refresh();
     } catch {
       setError('Сеть недоступна');
@@ -122,9 +140,9 @@ export default function AuthRegisterPage() {
                     key={type.value}
                     type="button"
                     onClick={() => selectEntity(type.value)}
-                    className="group w-full flex items-center gap-4 bg-white dark:bg-dark-card rounded-2xl p-4 border border-gray-100 dark:border-dark-border hover:border-brand-300 dark:hover:border-brand-600 hover:shadow-md transition-all duration-200 text-left"
+                    className="group w-full flex items-center gap-4 bg-white dark:bg-dark-card rounded-2xl p-4 border border-gray-100 dark:border-dark-border hover:border-brand-300 dark:hover:border-brand-600 hover:shadow-md transition-all duration-200 text-left cursor-pointer"
                   >
-                    <div className="w-11 h-11 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center shrink-0 group-hover:bg-brand-100 dark:group-hover:bg-brand-800/30 transition-colors">
+                    <div className="w-11 h-11 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center shrink-0 group-hover:bg-brand-100 transition-colors">
                       <Icon size={20} className="text-brand-500" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -135,19 +153,13 @@ export default function AuthRegisterPage() {
                         {type.hint}
                       </p>
                     </div>
-                    <ChevronRight
-                      size={18}
-                      className="text-gray-300 dark:text-dark-muted group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all shrink-0"
-                    />
+                    <ChevronRight size={18} className="text-gray-300 group-hover:text-brand-500 transition-colors shrink-0" />
                   </button>
                 );
               })}
 
               <div className="pt-4 text-center">
-                <Link
-                  href="/auth/login"
-                  className="text-sm font-medium text-brand-500 hover:underline"
-                >
+                <Link href="/auth/login" className="text-sm font-medium text-brand-500 hover:underline">
                   Уже есть аккаунт? Войти
                 </Link>
               </div>
@@ -157,11 +169,10 @@ export default function AuthRegisterPage() {
           {/* ── Step 2: Registration form ── */}
           {step === 2 && (
             <form onSubmit={onSubmit} className="space-y-4">
-              {/* Back to step 1 */}
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="text-sm text-brand-500 hover:underline font-medium mb-2"
+                className="text-sm text-brand-500 hover:underline font-medium mb-2 cursor-pointer"
               >
                 &larr; Изменить тип аккаунта
               </button>
@@ -173,14 +184,15 @@ export default function AuthRegisterPage() {
                 </label>
                 <div className="flex gap-2">
                   {([
-                    { value: 'customer', label: 'Заказчик' },
-                    { value: 'worker', label: 'Исполнитель' },
-                  ] as const).map((r) => (
+                    { value: 'customer' as UserRole, label: '🧾 Заказчик' },
+                    { value: 'worker' as UserRole, label: '💼 Исполнитель' },
+                    { value: 'supplier' as UserRole, label: '🏭 Поставщик' },
+                  ]).map((r) => (
                     <button
                       key={r.value}
                       type="button"
                       onClick={() => setRole(r.value)}
-                      className={`flex-1 rounded-2xl py-3 text-sm font-semibold transition-all duration-200 ${
+                      className={`flex-1 rounded-2xl py-3 text-xs font-semibold transition-all duration-200 cursor-pointer ${
                         role === r.value
                           ? 'bg-brand-500 text-white shadow-sm'
                           : 'bg-white dark:bg-dark-card text-gray-600 dark:text-gray-300 ring-1 ring-gray-200 dark:ring-dark-border hover:ring-brand-300'
@@ -209,9 +221,7 @@ export default function AuthRegisterPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
-                      ИНН
-                    </label>
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">ИНН</label>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -225,10 +235,27 @@ export default function AuthRegisterPage() {
                 </>
               )}
 
+              {/* Supplier: company name (always required for supplier) */}
+              {role === 'supplier' && !needsCompanyFields && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
+                    Название компании / ИП
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    className={inputCls}
+                    placeholder="ООО «Стройснаб» или ИП Иванов"
+                  />
+                </div>
+              )}
+
               {/* Contact person name */}
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
-                  {needsCompanyFields ? 'Контактное лицо' : 'Имя'}
+                  {needsCompanyFields || role === 'supplier' ? 'Контактное лицо' : 'Имя'}
                 </label>
                 <input
                   type="text"
@@ -241,11 +268,25 @@ export default function AuthRegisterPage() {
                 />
               </div>
 
-              {/* Phone (required) */}
+              {/* Supplier-specific contact name */}
+              {role === 'supplier' && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
+                    Имя для отображения покупателям
+                  </label>
+                  <input
+                    type="text"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    className={inputCls}
+                    placeholder="Менеджер Иван (оставьте пустым = ваше имя)"
+                  />
+                </div>
+              )}
+
+              {/* Phone */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
-                  Телефон
-                </label>
+                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Телефон</label>
                 <input
                   type="tel"
                   required
@@ -257,7 +298,7 @@ export default function AuthRegisterPage() {
                 />
               </div>
 
-              {/* Email (optional) */}
+              {/* Email */}
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
                   Email (необязательно)
@@ -270,16 +311,53 @@ export default function AuthRegisterPage() {
                   className={inputCls}
                   placeholder="mail@example.com"
                 />
-                <p className="mt-1 text-[11px] text-gray-400">
-                  Телефон обязателен, email — по желанию
-                </p>
               </div>
+
+              {/* Supplier: city + delivery */}
+              {role === 'supplier' && (
+                <>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Город</label>
+                    <select
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className={inputCls}
+                    >
+                      {CITIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
+                      Описание (необязательно)
+                    </label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className={`${inputCls} resize-none`}
+                      rows={2}
+                      placeholder="Кратко о компании, опыте, преимуществах"
+                    />
+                  </div>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deliveryAvailable}
+                      onChange={(e) => setDeliveryAvailable(e.target.checked)}
+                      className="w-4 h-4 accent-brand-500"
+                    />
+                    <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <Truck size={16} className="text-brand-500" />
+                      Осуществляю доставку
+                    </span>
+                  </label>
+                </>
+              )}
 
               {/* Password */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
-                  Пароль
-                </label>
+                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Пароль</label>
                 <input
                   type="password"
                   required
@@ -301,7 +379,7 @@ export default function AuthRegisterPage() {
               <button
                 type="submit"
                 disabled={pending}
-                className="w-full rounded-2xl bg-brand-500 py-4 text-sm font-bold text-white transition-all hover:bg-brand-600 active:scale-[0.98] disabled:opacity-60 shadow-sm"
+                className="w-full rounded-2xl bg-brand-500 py-4 text-sm font-bold text-white transition-all hover:bg-brand-600 active:scale-[0.98] disabled:opacity-60 shadow-sm cursor-pointer"
               >
                 {pending ? 'Регистрация...' : 'Создать аккаунт'}
               </button>
