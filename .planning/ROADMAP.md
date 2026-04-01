@@ -3,9 +3,18 @@
 ## Phase 1: Escrow Core
 **Goal:** Реализовать безопасную сделку через YooKassa: двухстадийный платёж (hold + capture), подтверждение обеими сторонами, автовыплата исполнителю, эскроу-леджер, споры.
 
+**Plans:** 5 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — DB migration (006_escrow.sql) + TypeScript types + db.ts mapper
+- [ ] 01-02-PLAN.md — YooKassa escrow functions (create/capture/cancel/payout) + confirmation JWT
+- [ ] 01-03-PLAN.md — Payment API routes (create-escrow + webhook extension)
+- [ ] 01-04-PLAN.md — Order API routes (confirm + dispute) + cron auto-capture
+- [ ] 01-05-PLAN.md — UI pages (pay, status, confirm) + env vars
+
 **Scope:**
-- Supabase migrations: обновить orders (subtotal/service_fee/combo_discount/total/payout), добавить order_items, escrow_ledger, disputes, ENUM типы
-- API: POST /api/payments/create (capture:false), POST /api/webhooks/yookassa, POST /api/orders/[id]/confirm, POST /api/orders/[id]/dispute
+- Supabase migrations: обновить orders (subtotal/service_fee/combo_discount/total/payout), добавить escrow_ledger, disputes
+- API: POST /api/payments/create-escrow (capture:false), extend /api/payments/callback, POST /api/orders/[id]/confirm, POST /api/orders/[id]/dispute
 - Cron: авто-capture для заказов > 6 дней
 - UI: страницы /order/[id]/pay, /order/[id]/status, /order/[id]/confirm (виджет двойного подтверждения)
 
