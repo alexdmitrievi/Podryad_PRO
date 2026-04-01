@@ -2,7 +2,7 @@
 phase: "01"
 status: "active"
 last_activity: "2026-04-01"
-last_session_stopped_at: "Completed 01-02-PLAN.md (YooKassa escrow functions + confirmation JWT)"
+last_session_stopped_at: "Completed 01-04-PLAN.md (Order confirm + dispute + cron auto-capture routes)"
 ---
 
 # Project State
@@ -11,13 +11,13 @@ last_session_stopped_at: "Completed 01-02-PLAN.md (YooKassa escrow functions + c
 Phase 01: escrow-core
 
 ## Current Position
-Wave 1 — 01-02 complete, proceeding to 01-03
+Wave 2 — 01-04 complete, proceeding to 01-05
 
 ## Plan Progress
 - [x] 01-01 DB migration + TypeScript types + db.ts mapper
 - [x] 01-02 YooKassa escrow functions + confirmation JWT
 - [ ] 01-03 Payment API routes (create-escrow + webhook extension)
-- [ ] 01-04 Order API routes (confirm + dispute) + cron auto-capture
+- [x] 01-04 Order API routes (confirm + dispute) + cron auto-capture
 - [ ] 01-05 UI pages (pay, status, confirm) + env vars
 
 ## Decisions
@@ -25,3 +25,6 @@ Wave 1 — 01-02 complete, proceeding to 01-03
 - Confirm UX: Both parties via PWA with JWT tokens
 - Cron: Supabase pg_cron → /api/cron/capture-expired → YooKassa
 - Payout identity: Add payout_card_synonym to workers table
+- Idempotent confirm: double-confirm returns 200 already_confirmed (not 4xx)
+- Non-blocking capture: capturePayment errors don't block confirm response (webhook reconciles)
+- Cron auth: supports both x-cron-secret (pg_net) and Authorization Bearer headers
