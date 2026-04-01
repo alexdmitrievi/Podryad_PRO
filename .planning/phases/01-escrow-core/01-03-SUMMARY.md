@@ -119,6 +119,19 @@ None — all routes wire real YooKassa API calls and DB updates.
 - Webhook is production-ready: IP-verified, handles all 3 escrow lifecycle events
 - No blockers for 01-04
 
+## Self-Check: PASSED
+
+- FOUND: `pwa/src/app/api/payments/create-escrow/route.ts`
+- FOUND: `pwa/src/app/api/payments/callback/route.ts`
+- FOUND: `pwa/src/app/api/payments/__tests__/webhook.test.ts`
+- FOUND: `pwa/src/lib/yookassa-ip.ts`
+- FOUND: `.planning/phases/01-escrow-core/01-03-SUMMARY.md`
+- Commit `db740aa` exists (Task 1: create-escrow route)
+- Commit `823efd7` exists (Task 2: webhook + tests)
+- Commit `0dbdedd` exists (auto-fix: yookassa-ip.ts)
+- Commit `c3160d5` exists (docs: SUMMARY + STATE)
+- All 12 tests passing
+
 ---
 *Phase: 01-escrow-core*
 *Completed: 2026-04-01*
