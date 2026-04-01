@@ -1,8 +1,8 @@
 ---
 phase: "01"
 status: "active"
-last_activity: "2026-04-01"
-last_session_stopped_at: "Completed 01-03-PLAN.md (Payment API routes: create-escrow + webhook extension)"
+last_activity: "2026-04-01T15:35:00Z"
+last_session_stopped_at: "Completed 01-05-PLAN.md (UI pages: pay, status, confirm + worker profile + env vars)"
 ---
 
 # Project State
@@ -11,14 +11,14 @@ last_session_stopped_at: "Completed 01-03-PLAN.md (Payment API routes: create-es
 Phase 01: escrow-core
 
 ## Current Position
-Wave 2 — 01-03 and 01-04 complete, proceeding to 01-05
+Phase 01 complete — all 5 plans executed (01-01 through 01-05)
 
 ## Plan Progress
 - [x] 01-01 DB migration + TypeScript types + db.ts mapper
 - [x] 01-02 YooKassa escrow functions + confirmation JWT
 - [x] 01-03 Payment API routes (create-escrow + webhook extension)
 - [x] 01-04 Order API routes (confirm + dispute) + cron auto-capture
-- [ ] 01-05 UI pages (pay, status, confirm) + env vars
+- [x] 01-05 UI pages (pay, status, confirm) + env vars
 
 ## Decisions
 - DB: Add escrow columns to existing orders table (non-breaking)
@@ -31,3 +31,5 @@ Wave 2 — 01-03 and 01-04 complete, proceeding to 01-05
 - isYooKassaIP in lib/yookassa-ip.ts (not route.ts): Next.js route files must only export HTTP handlers
 - Webhook returns 200 on IP rejection: prevents YooKassa retry storms
 - Escrow routing via metadata.type='escrow': distinguishes escrow from non-escrow in payment.succeeded
+- .env.example placed in pwa/ (not project root): project root has permission restrictions; pwa/ is Next.js app root anyway
+- Worker profile page stub: payout_card not returned by existing /api/workers/profile route; card defaults to unbound on load; future plan should extend that route

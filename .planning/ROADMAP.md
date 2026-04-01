@@ -10,7 +10,7 @@ Plans:
 - [x] 01-02-PLAN.md — YooKassa escrow functions (create/capture/cancel/payout) + confirmation JWT
 - [x] 01-03-PLAN.md — Payment API routes (create-escrow + webhook extension)
 - [x] 01-04-PLAN.md — Order API routes (confirm + dispute) + cron auto-capture
-- [ ] 01-05-PLAN.md — UI pages (pay, status, confirm) + env vars
+- [x] 01-05-PLAN.md — UI pages (pay, status, confirm) + env vars
 
 **Scope:**
 - Supabase migrations: обновить orders (subtotal/service_fee/combo_discount/total/payout), добавить escrow_ledger, disputes
