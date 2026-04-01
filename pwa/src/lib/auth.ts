@@ -252,3 +252,91 @@ export async function getWorkerActor(): Promise<{ user_id: string } | null> {
   if (!worker) return null;
   return { user_id: tg };
 }
+
+// ── ESCROW CONFIRMATION TOKENS ──
+
+export interface ConfirmationTokenPayload {
+  purpose: 'escrow_confirm';
+  orderId: string;
+  role: 'customer' | 'supplier';
+  sub: string;  // phone number
+  exp: number;  // unix timestamp
+}
+
+/**
+ * Signs a short-lived JWT (24h) for escrow confirmation links.
+ * Reuses the same HS256/SESSION_SECRET as signPodryadSession.
+ * The purpose:'escrow_confirm' field prevents cross-use with session tokens.
+ */
+export function signConfirmationToken(params: {
+  orderId: string;
+  role: 'customer' | 'supplier';
+  phone: string;
+}): string {
+  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  if (!secret) {
+    throw new Error('SESSION_SECRET or TELEGRAM_BOT_TOKEN required');
+  }
+
+  const exp = Math.floor(Date.now() / 1000) + 86400; // 24 hours
+  const header = base64UrlEncodeJson({ alg: 'HS256', typ: 'JWT' });
+  const payload = base64UrlEncodeJson({
+    purpose: 'escrow_confirm',
+    orderId: params.orderId,
+    role: params.role,
+    sub: params.phone,
+    exp,
+  });
+  const signingInput = `${header}.${payload}`;
+  const sig = createHmac('sha256', secret).update(signingInput).digest();
+  return `${header}.${payload}.${base64UrlEncodeBuffer(sig)}`;
+}
+
+/**
+ * Verifies an escrow confirmation JWT.
+ * Returns the payload if valid, null otherwise.
+ * Checks: signature, expiry, purpose='escrow_confirm', required fields.
+ */
+export function verifyConfirmationToken(token: string): ConfirmationTokenPayload | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  const [h64, p64, sig64] = parts;
+  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  if (!secret) return null;
+
+  const signingInput = `${h64}.${p64}`;
+  const expectedSig = createHmac('sha256', secret).update(signingInput).digest();
+
+  let actualSig: Buffer;
+  try {
+    actualSig = base64UrlToBuffer(sig64);
+  } catch {
+    return null;
+  }
+  if (expectedSig.length !== actualSig.length) return null;
+  try {
+    if (!timingSafeEqual(expectedSig, actualSig)) return null;
+  } catch {
+    return null;
+  }
+
+  let payload: ConfirmationTokenPayload;
+  try {
+    payload = JSON.parse(base64UrlToBuffer(p64).toString('utf8')) as ConfirmationTokenPayload;
+  } catch {
+    return null;
+  }
+
+  // Verify purpose — prevents cross-use with session tokens
+  if (payload.purpose !== 'escrow_confirm') return null;
+
+  // Verify expiry
+  if (typeof payload.exp !== 'number' || payload.exp * 1000 < Date.now()) return null;
+
+  // Verify required fields
+  if (!payload.orderId || !payload.role || !payload.sub) return null;
+  if (payload.role !== 'customer' && payload.role !== 'supplier') return null;
+
+  return payload;
+}
