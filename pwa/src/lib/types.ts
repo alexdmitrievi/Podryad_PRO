@@ -1,3 +1,6 @@
+export type EscrowStatus = '' | 'payment_held' | 'in_progress' | 'pending_confirm' | 'completed' | 'disputed' | 'cancelled';
+export type PayoutStatusEscrow = 'pending' | 'processing' | 'succeeded' | 'failed';
+
 export interface Order {
   /** Совпадает с TEXT в Supabase (в т.ч. префикс n8n-…). */
   order_id: string;
@@ -25,6 +28,26 @@ export interface Order {
   payout_at?: string;
   max_posted?: boolean;
   max_message_id?: string;
+  // Escrow fields (Phase 1)
+  subtotal?: number;
+  service_fee_rate?: number;
+  service_fee?: number;
+  combo_discount?: number;
+  total?: number;
+  payout_amount?: number;
+  escrow_status?: EscrowStatus;
+  yookassa_payment_id?: string;
+  payment_captured?: boolean;
+  payment_held_at?: string;
+  payment_captured_at?: string;
+  customer_confirmed?: boolean;
+  customer_confirmed_at?: string;
+  supplier_confirmed?: boolean;
+  supplier_confirmed_at?: string;
+  payout_status_escrow?: PayoutStatusEscrow;
+  payout_id?: string;
+  customer_phone?: string;
+  customer_email?: string;
 }
 
 export interface Worker {
@@ -45,4 +68,33 @@ export interface Worker {
   card_last4?: string;
   accepted_offer?: boolean;
   user_phone?: string;
+  // Escrow payout fields (Phase 1)
+  payout_card?: string;
+  payout_card_synonym?: string;
+  is_selfemployed_verified?: boolean;
+}
+
+export type EscrowLedgerType = 'hold' | 'capture' | 'release' | 'refund' | 'payout';
+
+export interface EscrowLedgerEntry {
+  id: string;
+  order_id: string;
+  type: EscrowLedgerType;
+  amount: number;
+  yookassa_operation_id?: string;
+  note?: string;
+  created_at: string;
+}
+
+export type DisputeResolution = 'refund_full' | 'refund_partial' | 'release_payment' | 'pending';
+
+export interface Dispute {
+  id: string;
+  order_id: string;
+  initiated_by: 'customer' | 'supplier';
+  reason: string;
+  description?: string;
+  resolution?: DisputeResolution;
+  resolved_at?: string;
+  created_at: string;
 }

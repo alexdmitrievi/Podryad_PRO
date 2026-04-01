@@ -1,4 +1,4 @@
-import type { Order } from './types';
+import type { Order, EscrowLedgerEntry, Dispute, EscrowStatus, PayoutStatusEscrow } from './types';
 import { getServiceClient } from './supabase';
 
 const db = () => getServiceClient();
@@ -33,6 +33,26 @@ export function orderFromDb(row: Record<string, unknown>): Order {
     payout_at: row.payout_at != null ? String(row.payout_at) : undefined,
     max_posted: Boolean(row.max_posted),
     max_message_id: row.max_message_id != null ? String(row.max_message_id) : undefined,
+    // Escrow fields
+    subtotal: row.subtotal != null ? Number(row.subtotal) : undefined,
+    service_fee_rate: row.service_fee_rate != null ? Number(row.service_fee_rate) : undefined,
+    service_fee: row.service_fee != null ? Number(row.service_fee) : undefined,
+    combo_discount: row.combo_discount != null ? Number(row.combo_discount) : undefined,
+    total: row.total != null ? Number(row.total) : undefined,
+    payout_amount: row.payout_amount != null ? Number(row.payout_amount) : undefined,
+    escrow_status: (row.escrow_status as EscrowStatus) || undefined,
+    yookassa_payment_id: row.yookassa_payment_id != null ? String(row.yookassa_payment_id) : undefined,
+    payment_captured: row.payment_captured != null ? Boolean(row.payment_captured) : undefined,
+    payment_held_at: row.payment_held_at != null ? String(row.payment_held_at) : undefined,
+    payment_captured_at: row.payment_captured_at != null ? String(row.payment_captured_at) : undefined,
+    customer_confirmed: row.customer_confirmed != null ? Boolean(row.customer_confirmed) : undefined,
+    customer_confirmed_at: row.customer_confirmed_at != null ? String(row.customer_confirmed_at) : undefined,
+    supplier_confirmed: row.supplier_confirmed != null ? Boolean(row.supplier_confirmed) : undefined,
+    supplier_confirmed_at: row.supplier_confirmed_at != null ? String(row.supplier_confirmed_at) : undefined,
+    payout_status_escrow: row.payout_status_escrow != null ? (row.payout_status_escrow as PayoutStatusEscrow) : undefined,
+    payout_id: row.payout_id != null ? String(row.payout_id) : undefined,
+    customer_phone: row.customer_phone != null ? String(row.customer_phone) : undefined,
+    customer_email: row.customer_email != null ? String(row.customer_email) : undefined,
   };
 }
 
@@ -566,4 +586,63 @@ export async function getSupplierStats(supplierId: string) {
     views: rows.reduce((s: number, r: Record<string, unknown>) => s + (Number(r.views_count) || 0), 0),
     contacts: rows.reduce((s: number, r: Record<string, unknown>) => s + (Number(r.contacts_count) || 0), 0),
   };
+}
+
+// ── ESCROW ──
+
+export async function insertEscrowLedger(entry: {
+  order_id: string;
+  type: string;
+  amount: number;
+  yookassa_operation_id?: string;
+  note?: string;
+}) {
+  const { error } = await db().from('escrow_ledger').insert(entry);
+  if (error) throw error;
+}
+
+export async function getEscrowLedger(orderId: string): Promise<EscrowLedgerEntry[]> {
+  const { data, error } = await db()
+    .from('escrow_ledger')
+    .select('*')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data || []) as EscrowLedgerEntry[];
+}
+
+export async function getOrdersWithExpiringHolds(): Promise<Record<string, unknown>[]> {
+  const { data, error } = await db()
+    .from('orders')
+    .select('*')
+    .eq('escrow_status', 'payment_held')
+    .eq('payment_captured', false)
+    .lt('payment_held_at', new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString());
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createDispute(dispute: {
+  order_id: string;
+  initiated_by: string;
+  reason: string;
+  description?: string;
+}) {
+  const { data, error } = await db()
+    .from('disputes')
+    .insert({ ...dispute, resolution: 'pending' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getDisputesByOrder(orderId: string): Promise<Dispute[]> {
+  const { data, error } = await db()
+    .from('disputes')
+    .select('*')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as Dispute[];
 }
