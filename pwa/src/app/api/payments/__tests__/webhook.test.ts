@@ -28,7 +28,8 @@ vi.mock('@/lib/supabase', () => ({
 }));
 
 // Import after mocks are set up
-import { POST, isYooKassaIP } from '../callback/route';
+import { POST } from '../callback/route';
+import { isYooKassaIP } from '@/lib/yookassa-ip';
 import { updateOrder, insertEscrowLedger } from '@/lib/db';
 
 // ── Helpers ──
