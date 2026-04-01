@@ -6,7 +6,7 @@
 **Plans:** 5 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — DB migration (006_escrow.sql) + TypeScript types + db.ts mapper
+- [x] 01-01-PLAN.md — DB migration (006_escrow.sql) + TypeScript types + db.ts mapper
 - [ ] 01-02-PLAN.md — YooKassa escrow functions (create/capture/cancel/payout) + confirmation JWT
 - [ ] 01-03-PLAN.md — Payment API routes (create-escrow + webhook extension)
 - [ ] 01-04-PLAN.md — Order API routes (confirm + dispute) + cron auto-capture
