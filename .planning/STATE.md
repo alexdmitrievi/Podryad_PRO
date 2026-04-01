@@ -1,14 +1,14 @@
 ---
-phase: "01"
-status: "active"
-last_activity: "2026-04-01T15:35:00Z"
-last_session_stopped_at: "Completed 01-05-PLAN.md (UI pages: pay, status, confirm + worker profile + env vars)"
+phase: "02"
+status: "planning"
+last_activity: "2026-04-01T19:30:00Z"
+last_session_stopped_at: "Completed discuss-phase 2 — 02-CONTEXT.md written, ready for /gsd:plan-phase 2"
 ---
 
 # Project State
 
 ## Current Focus
-Phase 01: escrow-core
+Phase 02: landing-page
 
 ## Current Position
 Phase 01 complete — all 5 plans executed (01-01 through 01-05)
