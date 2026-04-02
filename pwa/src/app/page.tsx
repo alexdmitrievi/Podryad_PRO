@@ -10,6 +10,7 @@ import ComboOfferBanner from '@/components/landing/ComboOfferBanner';
 import CrewsTeaser from '@/components/landing/CrewsTeaser';
 import StatsSection from '@/components/landing/StatsSection';
 import SuppliersSection from '@/components/landing/SuppliersSection';
+import LeadForm from '@/components/landing/LeadForm';
 
 const tgBot = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
 const maxChannel =
@@ -477,6 +478,21 @@ export default function HomePage() {
 
       {/* ─── Section 9.5: SUPPLIERS / FOR EXECUTORS ─── */}
       <SuppliersSection />
+
+      {/* ─── Section 9.8: LEAD FORM ─── */}
+      <section id="lead-form" className="bg-white dark:bg-dark-card py-16 md:py-24 border-t border-gray-100 dark:border-dark-border">
+        <div className="max-w-lg mx-auto px-6">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white">
+              Получите предложение за 15 минут
+            </h2>
+            <p className="text-gray-500 dark:text-dark-muted mt-2 text-sm md:text-base">
+              Оставьте заявку — перезвоним, уточним детали и подберём исполнителя
+            </p>
+          </div>
+          <LeadForm />
+        </div>
+      </section>
 
       {/* ─── Section 10: FINAL CTA ─── */}
       <section className="relative bg-gradient-to-br from-[#0a0c14] via-brand-900 to-brand-700 py-20 md:py-28 overflow-hidden">
