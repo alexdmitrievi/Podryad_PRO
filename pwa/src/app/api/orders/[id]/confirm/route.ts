@@ -114,50 +114,85 @@ export async function POST(
         // Don't block — webhook will confirm capture when YooKassa processes it
       }
 
-      // Payout to executor (if payout credentials are configured)
-      const payoutAgentId = process.env.YUKASSA_PAYOUT_AGENT_ID;
-      if (payoutAgentId && updated.executor_id) {
-        try {
-          // Find worker to get card synonym (payout_card_synonym)
-          const worker =
-            (await getWorkerByTelegramId(String(updated.executor_id))) ||
-            (await getWorkerByPhone(String(updated.executor_id)));
+      // Payout routing based on payout_method
+      const payoutMethod = (updated.payout_method as string) || 'manual_transfer';
 
-          if (worker?.payout_card_synonym) {
-            const payoutResult = await createPayout({
-              amount: Number(updated.supplier_payout) || 0,
-              cardSynonym: String(worker.payout_card_synonym),
-              orderId: id,
-              workerPhone: String(worker.phone || ''),
-              description: `Выплата за заказ ${id}`,
-              idempotenceKey: `payout-${id}-${Date.now()}`,
-            });
+      if (payoutMethod === 'yookassa_payout') {
+        // ---- YooKassa auto-payout (existing logic, unchanged) ----
+        const payoutAgentId = process.env.YUKASSA_PAYOUT_AGENT_ID;
+        if (payoutAgentId && updated.executor_id) {
+          try {
+            const worker =
+              (await getWorkerByTelegramId(String(updated.executor_id))) ||
+              (await getWorkerByPhone(String(updated.executor_id)));
 
-            await updateOrder(id, {
-              payout_status_escrow: 'processing',
-              payout_id: payoutResult.id,
-            });
+            if (worker?.payout_card_synonym) {
+              const payoutResult = await createPayout({
+                amount: Number(updated.supplier_payout) || 0,
+                cardSynonym: String(worker.payout_card_synonym),
+                orderId: id,
+                workerPhone: String(worker.phone || ''),
+                description: `Выплата за заказ ${id}`,
+                idempotenceKey: `payout-${id}-${Date.now()}`,
+              });
 
-            await insertEscrowLedger({
-              order_id: id,
-              type: 'payout',
-              amount: Number(updated.supplier_payout) || 0,
-              yookassa_operation_id: payoutResult.id,
-              note: 'Payout initiated to executor',
-            });
-          } else {
-            console.warn(
-              `No payout card synonym for executor ${String(updated.executor_id)}, payout deferred`
-            );
-            await updateOrder(id, { payout_status_escrow: 'pending' });
+              await updateOrder(id, {
+                payout_status_escrow: 'processing',
+                payout_id: payoutResult.id,
+              });
+
+              await insertEscrowLedger({
+                order_id: id,
+                type: 'payout',
+                amount: Number(updated.supplier_payout) || 0,
+                yookassa_operation_id: payoutResult.id,
+                note: 'Payout initiated to executor',
+              });
+            } else {
+              console.warn(
+                `No payout card synonym for executor ${String(updated.executor_id)}, payout deferred`
+              );
+              await updateOrder(id, { payout_status_escrow: 'pending' });
+            }
+          } catch (err) {
+            console.error(`Payout failed for order ${id}:`, err);
+            await updateOrder(id, { payout_status_escrow: 'failed' });
           }
-        } catch (err) {
-          console.error(`Payout failed for order ${id}:`, err);
-          await updateOrder(id, { payout_status_escrow: 'failed' });
+        } else if (!payoutAgentId) {
+          console.warn('YUKASSA_PAYOUT_AGENT_ID not configured, payout deferred');
+          await updateOrder(id, { payout_status_escrow: 'pending' });
         }
-      } else if (!payoutAgentId) {
-        console.warn('YUKASSA_PAYOUT_AGENT_ID not configured, payout deferred');
-        await updateOrder(id, { payout_status_escrow: 'pending' });
+      } else {
+        // ---- manual_transfer or cash: n8n webhook + pending_manual ----
+        const methodLabel = payoutMethod === 'cash' ? 'Наличные' : 'Перевод вручную';
+        const worker =
+          (await getWorkerByTelegramId(String(updated.executor_id || ''))) ||
+          (await getWorkerByPhone(String(updated.executor_id || '')));
+
+        // Fire-and-forget n8n webhook for MAX notification
+        const webhookUrl = process.env.N8N_PAYOUT_WEBHOOK_URL;
+        if (webhookUrl) {
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              order_id: id,
+              payout_method: payoutMethod,
+              payout_amount: updated.supplier_payout,
+              worker_name: worker?.name || 'Неизвестно',
+              worker_phone: worker?.phone || 'Неизвестно',
+              method_label: methodLabel,
+            }),
+          }).catch((err) => console.error('n8n payout webhook failed:', err));
+        }
+
+        await updateOrder(id, { payout_status_escrow: 'pending_manual' });
+        await insertEscrowLedger({
+          order_id: id,
+          type: 'payout',
+          amount: Number(updated.supplier_payout) || 0,
+          note: `Manual payout scheduled: ${payoutMethod}`,
+        });
       }
     } else {
       // Only one side confirmed so far — update status to pending_confirm
