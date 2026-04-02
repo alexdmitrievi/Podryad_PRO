@@ -2,7 +2,7 @@
 phase: "06"
 status: "in-progress"
 last_activity: "2026-04-02"
-last_session_stopped_at: "Phase 6 (Orders + Dashboards) complete. Catalog (Phase 4) also done. Apply migrations 007_catalog.sql + 008_orders_markup.sql in Supabase before testing."
+last_session_stopped_at: "Completed quick task 260402-iuf: MVP лендинг — статичный page.tsx с navbar + 7 секций"
 ---
 
 # Project State
@@ -87,3 +87,9 @@ Platform is FREE for suppliers/crews. Forever. No commissions, no subscriptions.
 ## Migrations to Apply in Supabase
 - 007_catalog.sql — listing_type, display_price, images, rating, orders_count
 - 008_orders_markup.sql — markup_rates table, orders: customer_total/supplier_payout/supplier_id/order_items/order_number trigger
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260402-iuf | MVP лендинг: статичный page.tsx с navbar, Hero, Рабочая сила, Аренда техники, Стройматериалы, Безопасная сделка, Для исполнителей, форма-заглушка | 2026-04-02 | b70a446 | [260402-iuf-mvp-page-tsx-navbar-hero](./quick/260402-iuf-mvp-page-tsx-navbar-hero/) |
