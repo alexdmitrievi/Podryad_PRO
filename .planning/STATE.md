@@ -2,7 +2,7 @@
 phase: "06"
 status: "in-progress"
 last_activity: "2026-04-02"
-last_session_stopped_at: "Completed quick task 260402-njk: Rewrite pwa/src/app/page.tsx — full landing page replacement"
+last_session_stopped_at: "Completed quick task 260402-u99: Privacy policy page /privacy per 152-FZ"
 ---
 
 # Project State
@@ -96,3 +96,4 @@ Platform is FREE for suppliers/crews. Forever. No commissions, no subscriptions.
 | 260402-jon | Форма заявки: leads migration + POST /api/leads + LeadForm компонент в лендинге + n8n webhook | 2026-04-02 | a907edc | [260402-jon-leads-migration-post-api-leads-leadform-](./quick/260402-jon-leads-migration-post-api-leads-leadform-/) |
 | 260402-mtc | Гибкие выплаты: payout_method в orders + ветка confirm/route.ts для manual_transfer и cash + n8n уведомление | 2026-04-02 | 47ce840 | [260402-mtc-payout-method-orders-confirm-route-ts-ma](./quick/260402-mtc-payout-method-orders-confirm-route-ts-ma/) |
 | 260402-njk | Rewrite pwa/src/app/page.tsx — full landing page replacement | 2026-04-02 | bb91ce2 | [260402-njk-rewrite-pwa-src-app-page-tsx-full-landin](./quick/260402-njk-rewrite-pwa-src-app-page-tsx-full-landin/) |
+| 260402-u99 | Политика конфиденциальности /privacy — статичная страница по 152-ФЗ, 10 разделов, оператор ИП Жбанков А.Д. | 2026-04-02 | c96fd0d | [260402-u99-privacy-policy-page-152-fz-single-file](./quick/260402-u99-privacy-policy-page-152-fz-single-file/) |
