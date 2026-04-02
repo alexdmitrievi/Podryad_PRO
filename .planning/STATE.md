@@ -2,7 +2,7 @@
 phase: "06"
 status: "in-progress"
 last_activity: "2026-04-02"
-last_session_stopped_at: "Completed quick task 260402-ssl: Admin panel — listings + leads tabs + 2 API routes"
+last_session_stopped_at: "Completed quick task 260402-vfx: Landing visual polish — hero noise/blur, counters, card hover, sticky CTA"
 ---
 
 # Project State
@@ -97,4 +97,4 @@ Platform is FREE for suppliers/crews. Forever. No commissions, no subscriptions.
 | 260402-mtc | Гибкие выплаты: payout_method в orders + ветка confirm/route.ts для manual_transfer и cash + n8n уведомление | 2026-04-02 | 47ce840 | [260402-mtc-payout-method-orders-confirm-route-ts-ma](./quick/260402-mtc-payout-method-orders-confirm-route-ts-ma/) |
 | 260402-njk | Rewrite pwa/src/app/page.tsx — full landing page replacement | 2026-04-02 | bb91ce2 | [260402-njk-rewrite-pwa-src-app-page-tsx-full-landin](./quick/260402-njk-rewrite-pwa-src-app-page-tsx-full-landin/) |
 | 260402-ssl | Admin panel: listings + leads tabs, 2 API routes | 2026-04-02 | eaf8147 | [260402-ssl-admin-panel-3-files-page-tsx-2-api-route](./quick/260402-ssl-admin-panel-3-files-page-tsx-2-api-route/) |
-| 260402-vfx | Landing visual polish: noise/blur hero, count-up counters, card hover, form shadow-2xl, sticky CTA | 2026-04-02 | pending | [260402-vfx-landing-visual-polish](./quick/260402-vfx-landing-visual-polish/) |
+| 260402-vfx | Landing visual polish: noise/blur hero, count-up counters, card hover, form shadow-2xl, sticky CTA | 2026-04-02 | 6b97028 | [260402-vfx-landing-visual-polish](./quick/260402-vfx-landing-visual-polish/) |
