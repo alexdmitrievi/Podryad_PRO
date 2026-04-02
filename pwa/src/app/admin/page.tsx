@@ -3,7 +3,8 @@
 import { useState, useCallback } from 'react';
 import {
   Lock, Users, ShoppingBag, Tag, AlertTriangle, BarChart3,
-  Copy, Check, ExternalLink, UserPlus, RefreshCw, Save
+  Copy, Check, ExternalLink, UserPlus, RefreshCw, Save,
+  Package, FileText, Plus, X
 } from 'lucide-react';
 
 interface Order {
@@ -40,9 +41,62 @@ interface SessionEntry {
   link: string;
 }
 
-type TabId = 'users' | 'orders' | 'markups' | 'disputes' | 'stats';
+interface AdminListing {
+  listing_id: string;
+  title: string;
+  category_slug: string;
+  listing_type: string;
+  price: number;
+  display_price: number;
+  markup_percent: number;
+  price_unit: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface Lead {
+  id: number;
+  phone: string;
+  work_type: string;
+  city: string;
+  comment: string | null;
+  source: string;
+  created_at: string;
+}
+
+const LISTING_CATEGORIES: Record<string, { label: string; slug: string }[]> = {
+  material: [
+    { label: 'Бетон', slug: 'concrete' },
+    { label: 'Щебень', slug: 'gravel' },
+    { label: 'Песок', slug: 'sand' },
+    { label: 'Битум', slug: 'bitumen' },
+    { label: 'Печное топливо', slug: 'heating-fuel' },
+  ],
+  equipment_rental: [
+    { label: 'Экскаватор', slug: 'excavator' },
+    { label: 'Бульдозер', slug: 'bulldozer' },
+    { label: 'Самосвал', slug: 'dump-truck' },
+    { label: 'Автокран', slug: 'crane' },
+    { label: 'Погрузчик', slug: 'loader' },
+    { label: 'Автобетоносмеситель', slug: 'concrete-mixer' },
+    { label: 'Трал / негабарит', slug: 'flatbed' },
+  ],
+};
+
+const PRICE_UNITS = ['₽/м³', '₽/тонна', '₽/час', '₽/рейс', '₽/штука'];
+
+const WORK_TYPE_LABELS: Record<string, string> = {
+  labor: 'Рабочая сила',
+  equipment: 'Техника',
+  materials: 'Материалы',
+  complex: 'Комплекс',
+};
+
+type TabId = 'listings' | 'leads' | 'users' | 'orders' | 'markups' | 'disputes' | 'stats';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
+  { id: "listings", label: "Позиции", icon: Package },
+  { id: "leads", label: "Заявки", icon: FileText },
   { id: "users", label: "Пользователи", icon: Users },
   { id: "orders", label: "Заказы", icon: ShoppingBag },
   { id: "markups", label: "Наценки", icon: Tag },
@@ -500,6 +554,226 @@ function DisputesTab({ pin }: { pin: string }) {
   );
 }
 
+function ListingsTab({ pin }: { pin: string }) {
+  const [listings, setListings] = useState<AdminListing[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    listing_type: 'material',
+    category_slug: 'concrete',
+    title: '',
+    price: '',
+    price_unit: '₽/м³',
+  });
+
+  const loadListings = async () => {
+    setError(''); setLoading(true);
+    try {
+      const res = await fetch('/api/admin/listings', { headers: { 'x-admin-pin': pin } });
+      const data = await res.json();
+      if (res.ok) { setListings(data.listings || []); } else { setError(data.error || 'Ошибка'); }
+    } catch { setError('Ошибка соединения'); }
+    finally { setLoading(false); }
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(''); setSaving(true);
+    try {
+      const res = await fetch('/api/admin/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, ...form, price: Number(form.price) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowModal(false);
+        setForm({ listing_type: 'material', category_slug: 'concrete', title: '', price: '', price_unit: '₽/м³' });
+        loadListings();
+      } else { setError(data.error || 'Ошибка создания'); }
+    } catch { setError('Ошибка соединения'); }
+    finally { setSaving(false); }
+  };
+
+  const cats = LISTING_CATEGORIES[form.listing_type] || [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <button onClick={loadListings} disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
+          <RefreshCw className={loading ? "w-4 h-4 animate-spin" : "w-4 h-4"} />
+          Загрузить
+        </button>
+        <button onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium cursor-pointer transition-colors duration-150">
+          <Plus className="w-4 h-4" />
+          Добавить
+        </button>
+        {listings.length > 0 && <span className="text-sm text-gray-500 dark:text-gray-400">Всего: {listings.length}</span>}
+      </div>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      {listings.length > 0 && (
+        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 dark:border-dark-border">
+                {['Название', 'Категория', 'Тип', 'База', 'Витрина', 'Наценка', 'Ед.', 'Статус', 'Дата'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {listings.map(l => (
+                <tr key={l.listing_id} className="border-b border-gray-50 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border">
+                  <td className="px-4 py-3 max-w-[200px] truncate">{l.title}</td>
+                  <td className="px-4 py-3">{l.category_slug}</td>
+                  <td className="px-4 py-3">{l.listing_type === 'material' ? 'Мат.' : 'Техн.'}</td>
+                  <td className="px-4 py-3 tabular-nums">{fmtMoney(l.price)}</td>
+                  <td className="px-4 py-3 tabular-nums font-medium">{fmtMoney(l.display_price)}</td>
+                  <td className="px-4 py-3 tabular-nums text-brand-500">{l.markup_percent}%</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{l.price_unit}</td>
+                  <td className="px-4 py-3">
+                    <span className={"px-2 py-0.5 rounded-full text-xs " + (l.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>
+                      {l.is_active ? 'Актив' : 'Скрыта'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(l.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card w-full max-w-md p-6 relative">
+            <button onClick={() => setShowModal(false)}
+              className="absolute top-4 right-4 cursor-pointer text-gray-400 hover:text-gray-600 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Новая позиция</h3>
+            <form onSubmit={handleCreate} className="flex flex-col gap-3">
+              <div>
+                <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Тип</label>
+                <select value={form.listing_type}
+                  onChange={e => {
+                    const lt = e.target.value;
+                    const firstCat = LISTING_CATEGORIES[lt]?.[0]?.slug || '';
+                    setForm(f => ({ ...f, listing_type: lt, category_slug: firstCat }));
+                  }}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white">
+                  <option value="material">Стройматериалы</option>
+                  <option value="equipment_rental">Аренда техники</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Категория</label>
+                <select value={form.category_slug}
+                  onChange={e => setForm(f => ({ ...f, category_slug: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white">
+                  {cats.map(c => <option key={c.slug} value={c.slug}>{c.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Название</label>
+                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                  placeholder="Бетон М300 В22.5"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white"
+                  required />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Базовая цена</label>
+                  <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                    placeholder="5000" min="1" step="1"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white"
+                    required />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Единица</label>
+                  <select value={form.price_unit} onChange={e => setForm(f => ({ ...f, price_unit: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white">
+                    {PRICE_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </div>
+              </div>
+              <button type="submit" disabled={saving}
+                className="mt-2 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
+                {saving ? 'Создание...' : 'Создать'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LeadsTab({ pin }: { pin: string }) {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const loadLeads = async () => {
+    setError(''); setLoading(true);
+    try {
+      const res = await fetch('/api/admin/leads', { headers: { 'x-admin-pin': pin } });
+      const data = await res.json();
+      if (res.ok) { setLeads(data.leads || []); } else { setError(data.error || 'Ошибка'); }
+    } catch { setError('Ошибка соединения'); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <button onClick={loadLeads} disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
+          <RefreshCw className={loading ? "w-4 h-4 animate-spin" : "w-4 h-4"} />
+          Загрузить
+        </button>
+        {leads.length > 0 && <span className="text-sm text-gray-500 dark:text-gray-400">Всего: {leads.length}</span>}
+      </div>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      {leads.length > 0 && (
+        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 dark:border-dark-border">
+                {['Дата', 'Телефон', 'Категория', 'Город', 'Комментарий', 'Источник'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {leads.map(l => (
+                <tr key={l.id} className="border-b border-gray-50 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border">
+                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(l.created_at)}</td>
+                  <td className="px-4 py-3 font-mono">{l.phone}</td>
+                  <td className="px-4 py-3">
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-border">
+                      {WORK_TYPE_LABELS[l.work_type] || l.work_type}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">{l.city}</td>
+                  <td className="px-4 py-3 max-w-[200px] truncate text-gray-600 dark:text-gray-300">{l.comment || '—'}</td>
+                  <td className="px-4 py-3 text-gray-500">{l.source}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StatsTab({ pin }: { pin: string }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -556,7 +830,7 @@ function StatsTab({ pin }: { pin: string }) {
 
 export default function AdminPage() {
   const [pin, setPin] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>('users');
+  const [activeTab, setActiveTab] = useState<TabId>('listings');
 
   if (!pin) {
     return <PinGate onAuth={setPin} />;
@@ -602,6 +876,8 @@ export default function AdminPage() {
         </div>
 
         <div>
+          {activeTab === 'listings' && <ListingsTab pin={pin} />}
+          {activeTab === 'leads' && <LeadsTab pin={pin} />}
           {activeTab === 'users' && <UsersTab pin={pin} />}
           {activeTab === 'orders' && <OrdersTab pin={pin} />}
           {activeTab === 'markups' && <MarkupsTab pin={pin} />}
