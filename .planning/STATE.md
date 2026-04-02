@@ -2,7 +2,7 @@
 phase: "06"
 status: "in-progress"
 last_activity: "2026-04-02"
-last_session_stopped_at: "Completed quick task 260402-iuf: MVP лендинг — статичный page.tsx с navbar + 7 секций"
+last_session_stopped_at: "Completed quick task 260402-jon: форма заявки + POST /api/leads + LeadForm + 009_leads.sql"
 ---
 
 # Project State
@@ -93,3 +93,4 @@ Platform is FREE for suppliers/crews. Forever. No commissions, no subscriptions.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260402-iuf | MVP лендинг: статичный page.tsx с navbar, Hero, Рабочая сила, Аренда техники, Стройматериалы, Безопасная сделка, Для исполнителей, форма-заглушка | 2026-04-02 | b70a446 | [260402-iuf-mvp-page-tsx-navbar-hero](./quick/260402-iuf-mvp-page-tsx-navbar-hero/) |
+| 260402-jon | Форма заявки: leads migration + POST /api/leads + LeadForm компонент в лендинге + n8n webhook | 2026-04-02 | a907edc | [260402-jon-leads-migration-post-api-leads-leadform-](./quick/260402-jon-leads-migration-post-api-leads-leadform-/) |
