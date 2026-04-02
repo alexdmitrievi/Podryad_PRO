@@ -51,6 +51,7 @@ export function orderFromDb(row: Record<string, unknown>): Order {
     supplier_confirmed_at: row.supplier_confirmed_at != null ? String(row.supplier_confirmed_at) : undefined,
     payout_status_escrow: row.payout_status_escrow != null ? (row.payout_status_escrow as PayoutStatusEscrow) : undefined,
     payout_id: row.payout_id != null ? String(row.payout_id) : undefined,
+    payout_method: row.payout_method != null ? String(row.payout_method) : undefined,
     customer_phone: row.customer_phone != null ? String(row.customer_phone) : undefined,
     customer_email: row.customer_email != null ? String(row.customer_email) : undefined,
     // Markup model fields (Phase 2)
