@@ -2,7 +2,7 @@
 phase: "06"
 status: "in-progress"
 last_activity: "2026-04-02"
-last_session_stopped_at: "Completed quick task 260402-mtc: гибкие выплаты — payout_method column + confirm route branching + 010_payout_method.sql"
+last_session_stopped_at: "Completed quick task 260402-njk: Rewrite pwa/src/app/page.tsx — full landing page replacement"
 ---
 
 # Project State
@@ -95,3 +95,4 @@ Platform is FREE for suppliers/crews. Forever. No commissions, no subscriptions.
 | 260402-iuf | MVP лендинг: статичный page.tsx с navbar, Hero, Рабочая сила, Аренда техники, Стройматериалы, Безопасная сделка, Для исполнителей, форма-заглушка | 2026-04-02 | b70a446 | [260402-iuf-mvp-page-tsx-navbar-hero](./quick/260402-iuf-mvp-page-tsx-navbar-hero/) |
 | 260402-jon | Форма заявки: leads migration + POST /api/leads + LeadForm компонент в лендинге + n8n webhook | 2026-04-02 | a907edc | [260402-jon-leads-migration-post-api-leads-leadform-](./quick/260402-jon-leads-migration-post-api-leads-leadform-/) |
 | 260402-mtc | Гибкие выплаты: payout_method в orders + ветка confirm/route.ts для manual_transfer и cash + n8n уведомление | 2026-04-02 | 47ce840 | [260402-mtc-payout-method-orders-confirm-route-ts-ma](./quick/260402-mtc-payout-method-orders-confirm-route-ts-ma/) |
+| 260402-njk | Rewrite pwa/src/app/page.tsx — full landing page replacement | 2026-04-02 | bb91ce2 | [260402-njk-rewrite-pwa-src-app-page-tsx-full-landin](./quick/260402-njk-rewrite-pwa-src-app-page-tsx-full-landin/) |
