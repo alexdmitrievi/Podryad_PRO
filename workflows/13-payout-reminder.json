@@ -1,0 +1,107 @@
+{
+  "name": "Подряд PRO — 13 Payout Reminder",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "payout-notification",
+        "options": { "responseMode": "onReceived" }
+      },
+      "id": "payout-wh-001",
+      "name": "Webhook Payout",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "podryad-payout-notification"
+    },
+    {
+      "parameters": {
+        "jsCode": "const root = $('Webhook Payout').first().json;\nconst b = root.body || root;\nconst orderNumber = String(b.order_number || 'N/A');\nconst amount = String(b.amount || '0');\nconst payoutMethod = String(b.payout_method || 'manual_transfer');\nconst supplierName = String(b.supplier_name || 'не указан');\nconst supplierPhone = String(b.supplier_phone || 'не указан');\n\nconst methodLabel = { yookassa_payout: 'YooKassa Payout', manual_transfer: 'Ручной перевод', cash: 'Наличные' }[payoutMethod] || payoutMethod;\n\nconst maxText = `\\u26A0\\uFE0F *Выплатить вручную!*\\n\\n\\uD83D\\uDCE6 Заказ: ${orderNumber}\\n\\uD83D\\uDCB5 Сумма: ${amount}\\u20BD\\n\\uD83D\\uDCB3 Метод: ${methodLabel}\\n\\uD83D\\uDC77 Исполнитель: ${supplierName}\\n\\uD83D\\uDCDE Тел: ${supplierPhone}`;\n\nconst tgText = `\\u26A0\\uFE0F *Выплатить вручную!*\\n\\n\\uD83D\\uDCE6 Заказ: ${orderNumber}\\n\\uD83D\\uDCB5 Сумма: ${amount}\\u20BD\\n\\uD83D\\uDCB3 Метод: ${methodLabel}\\n\\uD83D\\uDC77 Исполнитель: ${supplierName}\\n\\uD83D\\uDCDE Тел: ${supplierPhone}`;\n\nreturn [{ json: { maxText, tgText, orderNumber, amount } }];"
+      },
+      "id": "payout-parse-002",
+      "name": "Build Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.MAX_API_BASE }}/messages?chat_id={{ $env.MAX_CHANNEL_ID }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=access_token=\"{{ $env.MAX_BOT_TOKEN }}\"" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.maxText, format: 'markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "payout-max-003",
+      "name": "Send to MAX",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_ID), text: $json.tgText, parse_mode: 'Markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "payout-tg-004",
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {},
+      "id": "payout-error-005",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 600]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "text": "=\uD83D\uDEA8 *ОШИБКА в Payout Reminder*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "payout-error-notify-006",
+      "name": "Notify Admin Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [260, 600],
+      "credentials": { "telegramApi": { "id": "1", "name": "Telegram Bot" } }
+    }
+  ],
+  "connections": {
+    "Webhook Payout": {
+      "main": [[{ "node": "Build Messages", "type": "main", "index": 0 }]]
+    },
+    "Build Messages": {
+      "main": [
+        [
+          { "node": "Send to MAX", "type": "main", "index": 0 },
+          { "node": "Send to Telegram", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [[{ "node": "Notify Admin Error", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "versionId": "podryad-13-payout-reminder-v1",
+  "meta": { "instanceId": "podryad-pro" },
+  "tags": [{ "name": "podryad-pro" }, { "name": "payouts" }, { "name": "notification" }]
+}
