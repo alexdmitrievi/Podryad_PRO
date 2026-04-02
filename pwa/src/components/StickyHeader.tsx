@@ -28,6 +28,7 @@ export default function StickyHeader() {
   }, []);
 
   if (pathname?.startsWith('/auth')) return null;
+  if (pathname === '/') return null;
 
   const loggedIn = Boolean(userId) && !loading;
 

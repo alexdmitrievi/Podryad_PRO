@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Manrope } from 'next/font/google';
+import { Inter, Manrope, Space_Grotesk } from 'next/font/google';
 import DevUnregisterSW from '@/components/DevUnregisterSW';
 import StickyHeader from '@/components/StickyHeader';
 import './globals.css';
@@ -13,6 +13,12 @@ const inter = Inter({
 const manrope = Manrope({
   subsets: ['latin', 'cyrillic'],
   variable: '--font-manrope',
+  display: 'swap',
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-space-grotesk',
   display: 'swap',
 });
 
@@ -71,7 +77,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ru" className={`${inter.variable} ${manrope.variable}`} suppressHydrationWarning>
+    <html lang="ru" className={`${inter.variable} ${manrope.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
