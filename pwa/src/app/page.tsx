@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import LeadForm from '@/components/landing/LeadForm';
 
 const tgBot = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
 const maxChannel = process.env.NEXT_PUBLIC_MAX_CHANNEL_LINK || 'https://max.ru/podryad_pro';
@@ -307,55 +308,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── LEAD FORM STUB ── */}
+      {/* ── LEAD FORM ── */}
       <section id="lead-form" className="bg-white py-16 md:py-24 scroll-mt-14">
         <div className="max-w-lg mx-auto px-5">
           <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">
-              Оставить заявку
+              Получите расчёт за 15 минут
             </h2>
             <p className="text-gray-500 mt-2 text-sm">
-              Омск и Новосибирск · Ответим в течение 15 минут
+              Омск и Новосибирск · Ответим в рабочее время 9:00–20:00
             </p>
           </div>
-
-          <div
-            className="rounded-3xl p-8 border-2 border-dashed text-center"
-            style={{ borderColor: '#2d35a8', background: '#f8f9ff' }}
-          >
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4"
-              style={{ background: '#2d35a8', color: '#f5a623' }}
-              aria-hidden="true"
-            >
-              📋
-            </div>
-            <p className="font-bold text-gray-800 text-lg mb-1">Форма заявки — скоро</p>
-            <p className="text-sm text-gray-500 mb-6">
-              Пока вы можете написать нам напрямую через мессенджер
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a
-                href={telegramUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 font-bold py-3 px-7 rounded-xl text-white transition-all duration-200 cursor-pointer hover:opacity-90 active:scale-95"
-                style={{ background: '#2AABEE' }}
-              >
-                <span aria-hidden="true">✈</span>
-                Telegram
-              </a>
-              <a
-                href={maxChannel}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 font-bold py-3 px-7 rounded-xl text-white transition-all duration-200 cursor-pointer hover:opacity-90 active:scale-95"
-                style={{ background: '#2787F5' }}
-              >
-                MAX
-              </a>
-            </div>
-          </div>
+          <LeadForm />
         </div>
       </section>
 
