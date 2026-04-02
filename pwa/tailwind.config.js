@@ -48,6 +48,15 @@ module.exports = {
           text:   '#e4e4e7',
           muted:  '#71717a',
         },
+        podryad: {
+          primary:     '#2d35a8',
+          dark:        '#1a1f5c',
+          light:       '#4a52c9',
+          gold:        '#f5a623',
+          goldLight:   '#ffd666',
+          surface:     '#f8f9fc',
+          surfaceDark: '#0f1129',
+        },
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', '-apple-system', 'sans-serif'],

@@ -1,0 +1,38 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+
+/**
+ * Public listings API — returns only customer-safe fields.
+ * NEVER exposes: price (base_price), markup_percent.
+ *
+ * Query params:
+ *   type — 'material' | 'equipment_rental'
+ *   category — category_slug filter (e.g. 'concrete', 'excavator')
+ */
+export async function GET(req: NextRequest) {
+  const { searchParams } = req.nextUrl;
+  const type = searchParams.get('type');
+  const category = searchParams.get('category');
+
+  let query = supabase
+    .from('listings')
+    .select('listing_id, title, description, display_price, price_unit, images, category_slug, listing_type, city')
+    .eq('is_active', true)
+    .order('display_price', { ascending: true })
+    .limit(100);
+
+  if (type) {
+    query = query.eq('listing_type', type);
+  }
+  if (category) {
+    query = query.eq('category_slug', category);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('GET /api/listings/public:', error);
+    return NextResponse.json({ error: 'server_error' }, { status: 500 });
+  }
+
+  return NextResponse.json({ listings: data || [] });
+}

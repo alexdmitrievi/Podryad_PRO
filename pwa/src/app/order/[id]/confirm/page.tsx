@@ -139,17 +139,16 @@ export default function ConfirmPage() {
   const role = searchParams.get('role') as 'customer' | 'supplier' | null;
   const token = searchParams.get('token');
 
-  const [order, setOrder] = useState<OrderData | null>(null);
-  const [orderLoading, setOrderLoading] = useState(true);
-  const [confirming, setConfirming] = useState(false);
-  const [result, setResult] = useState<ConfirmResult | null>(null);
-
   // Validate URL params early
   const invalidLink = !role || !token || (role !== 'customer' && role !== 'supplier');
 
+  const [order, setOrder] = useState<OrderData | null>(null);
+  const [orderLoading, setOrderLoading] = useState(!invalidLink);
+  const [confirming, setConfirming] = useState(false);
+  const [result, setResult] = useState<ConfirmResult | null>(null);
+
   useEffect(() => {
     if (invalidLink) {
-      setOrderLoading(false);
       return;
     }
     fetch(`/api/orders/${id}`)
