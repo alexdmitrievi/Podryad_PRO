@@ -26,3 +26,4 @@ public/workbox-*.js
 public/sw.js.map
 public/workbox-*.js.map
 pwa/pwa.rar
+.claude/worktrees/
