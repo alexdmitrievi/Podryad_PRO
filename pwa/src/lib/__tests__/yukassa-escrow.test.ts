@@ -33,9 +33,8 @@ describe('createEscrowPayment', () => {
 
   it('Test 1: sends request body with capture:false', async () => {
     await createEscrowPayment({
-      amount: 1650,
-      subtotal: 1500,
-      serviceFee: 150,
+      customerTotal: 1650,
+      orderNumber: 'ПРО-0042',
       description: 'Заказ #42',
       returnUrl: 'https://example.com/return',
       orderId: '42',
@@ -49,11 +48,10 @@ describe('createEscrowPayment', () => {
     expect(body.capture).toBe(false);
   });
 
-  it('Test 2: receipt has exactly 2 items summing to total amount', async () => {
+  it('Test 2: receipt has exactly 1 item matching customerTotal', async () => {
     await createEscrowPayment({
-      amount: 1650,
-      subtotal: 1500,
-      serviceFee: 150,
+      customerTotal: 1650,
+      orderNumber: 'ПРО-0042',
       description: 'Заказ #42',
       returnUrl: 'https://example.com/return',
       orderId: '42',
@@ -64,19 +62,14 @@ describe('createEscrowPayment', () => {
     const [, options] = mockFetch.mock.calls[0];
     const body = JSON.parse(options.body as string);
     expect(body.receipt).toBeDefined();
-    expect(body.receipt.items).toHaveLength(2);
-
-    const totalItems =
-      parseFloat(body.receipt.items[0].amount.value) +
-      parseFloat(body.receipt.items[1].amount.value);
-    expect(totalItems).toBeCloseTo(1650, 2);
+    expect(body.receipt.items).toHaveLength(1);
+    expect(parseFloat(body.receipt.items[0].amount.value)).toBeCloseTo(1650, 2);
   });
 
   it('Test 3: receipt uses tax_system_code:2 and vat_code:1', async () => {
     await createEscrowPayment({
-      amount: 1650,
-      subtotal: 1500,
-      serviceFee: 150,
+      customerTotal: 1650,
+      orderNumber: 'ПРО-0042',
       description: 'Заказ #42',
       returnUrl: 'https://example.com/return',
       orderId: '42',

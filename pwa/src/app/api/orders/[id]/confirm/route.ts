@@ -105,7 +105,7 @@ export async function POST(
         await insertEscrowLedger({
           order_id: id,
           type: 'capture',
-          amount: Number(updated.total) || 0,
+          amount: Number(updated.customer_total) || 0,
           yookassa_operation_id: paymentId,
           note: 'Captured after both-party confirmation',
         });
@@ -125,7 +125,7 @@ export async function POST(
 
           if (worker?.payout_card_synonym) {
             const payoutResult = await createPayout({
-              amount: Number(updated.payout_amount) || Number(updated.subtotal) || 0,
+              amount: Number(updated.supplier_payout) || 0,
               cardSynonym: String(worker.payout_card_synonym),
               orderId: id,
               workerPhone: String(worker.phone || ''),
@@ -141,7 +141,7 @@ export async function POST(
             await insertEscrowLedger({
               order_id: id,
               type: 'payout',
-              amount: Number(updated.payout_amount) || 0,
+              amount: Number(updated.supplier_payout) || 0,
               yookassa_operation_id: payoutResult.id,
               note: 'Payout initiated to executor',
             });

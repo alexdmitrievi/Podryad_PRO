@@ -4,14 +4,16 @@ import { getOrderById, updateOrder } from '@/lib/db';
 
 interface CreateEscrowRequest {
   orderId: string;
-  subtotal: number;
+  customerTotal: number;
+  supplierPayout: number;
+  platformMargin: number;
   comboDiscount?: number;
+  orderNumber?: string;
   customerPhone: string;
   customerEmail?: string;
   returnUrl?: string;
 }
 
-const SERVICE_FEE_RATE = 10; // 10%
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro';
 
 export async function POST(req: Request) {
@@ -27,8 +29,11 @@ export async function POST(req: Request) {
     if (!body.orderId) {
       return NextResponse.json({ error: 'orderId is required' }, { status: 400 });
     }
-    if (!body.subtotal || body.subtotal <= 0) {
-      return NextResponse.json({ error: 'subtotal must be greater than 0' }, { status: 400 });
+    if (!body.customerTotal || body.customerTotal <= 0) {
+      return NextResponse.json({ error: 'customerTotal must be greater than 0' }, { status: 400 });
+    }
+    if (!body.supplierPayout || body.supplierPayout <= 0) {
+      return NextResponse.json({ error: 'supplierPayout must be greater than 0' }, { status: 400 });
     }
     if (!body.customerPhone) {
       return NextResponse.json({ error: 'customerPhone is required' }, { status: 400 });
@@ -51,12 +56,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Calculate fees
-    const subtotal = body.subtotal;
-    const serviceFee = Math.round(subtotal * SERVICE_FEE_RATE / 100 * 100) / 100;
-    const comboDiscount = body.comboDiscount ?? 0;
-    const total = subtotal + serviceFee - comboDiscount;
-    const payoutAmount = subtotal; // executor gets 100% of subtotal
+    const orderNumber = body.orderNumber || String((order as Record<string, unknown>).order_number ?? orderId);
 
     // Generate idempotence key
     const idempotenceKey = `escrow-${orderId}-${Date.now()}`;
@@ -66,10 +66,9 @@ export async function POST(req: Request) {
 
     // Create YooKassa escrow payment (capture:false — 2-stage hold)
     const payment = await createEscrowPayment({
-      amount: total,
-      subtotal,
-      serviceFee,
-      description: `Заказ ${orderId}`,
+      customerTotal: body.customerTotal,
+      orderNumber,
+      description: `Заказ ${orderNumber}`,
       returnUrl,
       orderId,
       customerPhone: body.customerPhone,
@@ -78,12 +77,10 @@ export async function POST(req: Request) {
 
     // Update order with escrow financial fields
     await updateOrder(orderId, {
-      subtotal,
-      service_fee_rate: SERVICE_FEE_RATE,
-      service_fee: serviceFee,
-      combo_discount: comboDiscount,
-      total,
-      payout_amount: payoutAmount,
+      customer_total: body.customerTotal,
+      supplier_payout: body.supplierPayout,
+      platform_margin: body.platformMargin,
+      combo_discount: body.comboDiscount ?? 0,
       yookassa_payment_id: payment.id,
       customer_phone: body.customerPhone,
       customer_email: body.customerEmail || null,

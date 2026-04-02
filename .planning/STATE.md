@@ -1,17 +1,18 @@
 ---
-phase: "02"
-status: "planning"
-last_activity: "2026-04-01T19:30:00Z"
-last_session_stopped_at: "Completed discuss-phase 2 — 02-CONTEXT.md written, ready for /gsd:plan-phase 2"
+phase: "06"
+status: "in-progress"
+last_activity: "2026-04-02"
+last_session_stopped_at: "Phase 6 (Orders + Dashboards) complete. Catalog (Phase 4) also done. Apply migrations 007_catalog.sql + 008_orders_markup.sql in Supabase before testing."
 ---
 
 # Project State
 
 ## Current Focus
-Phase 02: landing-page
+Phase 02: markup pricing engine + landing page completion
 
 ## Current Position
-Phase 01 complete — all 5 plans executed (01-01 through 01-05)
+Phase 01 complete — all 5 escrow plans executed.
+Phase 02 started — migration 007_markup.sql DONE, 6 tasks remaining.
 
 ## Plan Progress
 - [x] 01-01 DB migration + TypeScript types + db.ts mapper
@@ -19,6 +20,43 @@ Phase 01 complete — all 5 plans executed (01-01 through 01-05)
 - [x] 01-03 Payment API routes (create-escrow + webhook extension)
 - [x] 01-04 Order API routes (confirm + dispute) + cron auto-capture
 - [x] 01-05 UI pages (pay, status, confirm) + env vars
+- [x] 02-00 supabase/migrations/007_markup.sql — markup_rates table, listings base_price/display_price, orders customer_total/supplier_payout/platform_margin
+- [x] 02-01 lib/pricing.ts — getMarkupRate, applyMarkup, calculateOrderTotals
+- [x] 02-02 lib/types.ts — add customer_total, supplier_payout, platform_margin, order_number to Order; add Listing type
+- [x] 02-03 lib/yukassa.ts — single-line receipt (full_prepayment), use customerTotal
+- [x] 02-04 lib/db.ts — map new Order fields in orderFromDb
+- [x] 02-05 api/payments/create-escrow/route.ts — use customer_total, remove SERVICE_FEE_RATE
+- [x] 02-06 api/orders/[id]/confirm/route.ts — use supplier_payout for payout + ledger
+
+## Critical Business Decision: Monetization Model (Variant B — Hidden Markup)
+
+**DECIDED: No visible "service fee". Margin is baked into price.**
+
+How it works:
+- Supplier sets base_price (e.g. 500 ₽/hr)
+- Platform adds markup (e.g. +15%) → display_price (575 ₽/hr)
+- Customer sees ONLY display_price — no "service fee" line
+- Customer pays customer_total (sum of display prices)
+- Supplier receives supplier_payout (sum of base prices = 100% of their rate)
+- Platform keeps platform_margin (difference)
+
+Default markups by category:
+- labor: 15%, crews: 18%
+- material: 7%, concrete: 5%
+- equipment_rental: 12%
+- heavy_machinery: 10%
+
+Visibility rules:
+- Customer sees: display_price, customer_total. NEVER base_price, markup_percent, platform_margin.
+- Supplier sees: base_price, supplier_payout. NEVER customer_total, display_price of own listings, markup.
+- Admin sees: everything.
+
+YooKassa receipt: ONE line item with customer_total. No "service fee" line.
+Payout to supplier: supplier_payout (not customer_total).
+
+Combo discount 15%: applies when ≥2 different listing_types in order. Capped so platform_margin stays ≥3% of supplier_payout.
+
+Platform is FREE for suppliers/crews. Forever. No commissions, no subscriptions.
 
 ## Decisions
 - DB: Add escrow columns to existing orders table (non-breaking)
@@ -33,3 +71,19 @@ Phase 01 complete — all 5 plans executed (01-01 through 01-05)
 - Escrow routing via metadata.type='escrow': distinguishes escrow from non-escrow in payment.succeeded
 - .env.example placed in pwa/ (not project root): project root has permission restrictions; pwa/ is Next.js app root anyway
 - Worker profile page stub: payout_card not returned by existing /api/workers/profile route; card defaults to unbound on load; future plan should extend that route
+- MONETIZATION: Hidden markup (Variant B) — no visible service fee, margin baked into display_price. Decided 2026-04-02.
+
+## Completed Phases
+- Phase 01: Escrow Core ✅
+- Phase 02: Pricing Engine (lib/pricing.ts, types, yukassa, db, routes) ✅
+- Phase 04 (Catalog): /catalog/*, /api/listings, 007_catalog.sql ✅
+- Phase 06 (Orders + Dashboards): /order/new, /api/orders/place, /dashboard/customer, /dashboard/supplier, 008_orders_markup.sql ✅
+
+## Remaining Phases
+- Phase 02b: Landing Page (/page.tsx — 10 sections)
+- Phase 04b: Supplier profiles + crews (/crews, /join, /join/crew)
+- Phase 06b: Static pages (/pricing, /self-employed) + admin
+
+## Migrations to Apply in Supabase
+- 007_catalog.sql — listing_type, display_price, images, rating, orders_count
+- 008_orders_markup.sql — markup_rates table, orders: customer_total/supplier_payout/supplier_id/order_items/order_number trigger

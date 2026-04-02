@@ -29,6 +29,7 @@ export async function GET() {
       city: worker.city ?? '',
       is_selfemployed: Boolean(worker.is_selfemployed),
       about: worker.about ?? '',
+      payout_card: worker.payout_card ?? null,
     },
   });
 }

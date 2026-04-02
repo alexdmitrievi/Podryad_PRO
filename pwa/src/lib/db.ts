@@ -53,6 +53,11 @@ export function orderFromDb(row: Record<string, unknown>): Order {
     payout_id: row.payout_id != null ? String(row.payout_id) : undefined,
     customer_phone: row.customer_phone != null ? String(row.customer_phone) : undefined,
     customer_email: row.customer_email != null ? String(row.customer_email) : undefined,
+    // Markup model fields (Phase 2)
+    customer_total: row.customer_total != null ? Number(row.customer_total) : undefined,
+    supplier_payout: row.supplier_payout != null ? Number(row.supplier_payout) : undefined,
+    platform_margin: row.platform_margin != null ? Number(row.platform_margin) : undefined,
+    order_number: row.order_number != null ? String(row.order_number) : undefined,
   };
 }
 
@@ -511,6 +516,28 @@ export async function deactivateListing(listingId: string) {
   if (error) throw error;
 }
 
+export async function getSupplierById(supplierId: string) {
+  const { data, error } = await db()
+    .from('suppliers')
+    .select('*')
+    .eq('id', supplierId)
+    .eq('is_active', true)
+    .single();
+  if (error) return null;
+  return data;
+}
+
+export async function getPublicListingsBySupplier(supplierId: string) {
+  const { data, error } = await db()
+    .from('listings')
+    .select('listing_id, title, description, display_price, price_unit, city, listing_type, category_slug, images, rating, orders_count, is_active, is_priority')
+    .eq('supplier_id', supplierId)
+    .eq('is_active', true)
+    .order('is_priority', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
 export async function getSupplierByPhone(phone: string) {
   const { data, error } = await db()
     .from('suppliers')
@@ -642,6 +669,26 @@ export async function getDisputesByOrder(orderId: string): Promise<Dispute[]> {
     .from('disputes')
     .select('*')
     .eq('order_id', orderId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as Dispute[];
+}
+
+export async function updateDispute(
+  disputeId: string,
+  updates: { resolution?: string; resolved_at?: string }
+) {
+  const { error } = await db()
+    .from('disputes')
+    .update(updates)
+    .eq('id', disputeId);
+  if (error) throw error;
+}
+
+export async function getAllDisputes(): Promise<Dispute[]> {
+  const { data, error } = await db()
+    .from('disputes')
+    .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data || []) as Dispute[];

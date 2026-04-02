@@ -1,10 +1,15 @@
 import Link from 'next/link';
-import { ArrowRight, Users, Wrench, Shield, Clock, Star, ChevronRight, Truck, HardHat, Sparkles, Leaf, Hammer, Zap, Building2, Gift, ChevronDown } from 'lucide-react';
+import { ArrowRight, Users, Wrench, Shield, Clock, Star, ChevronRight, Truck, HardHat, Leaf, Hammer, Zap, Building2, Gift, ChevronDown, CheckCircle2 } from 'lucide-react';
 import CostCalculator from '@/components/CostCalculator';
 import AnimatedCounter from '@/components/AnimatedCounter';
 import Testimonials from '@/components/Testimonials';
 import ScrollReveal from '@/components/ScrollReveal';
 import MaterialsSection from '@/components/MaterialsSection';
+import SafeDealSection from '@/components/landing/SafeDealSection';
+import ComboOfferBanner from '@/components/landing/ComboOfferBanner';
+import CrewsTeaser from '@/components/landing/CrewsTeaser';
+import StatsSection from '@/components/landing/StatsSection';
+import SuppliersSection from '@/components/landing/SuppliersSection';
 
 const tgBot = process.env.NEXT_PUBLIC_BOT_NAME || 'Podryad_PRO_bot';
 const maxChannel =
@@ -104,6 +109,9 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ─── Section 2.5: SAFE DEAL ─── */}
+      <SafeDealSection />
+
       {/* ─── Section 3: UTP / WHY US ─── */}
       <section className="bg-gray-50 dark:bg-dark-bg py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-6">
@@ -170,12 +178,12 @@ export default function HomePage() {
       <section className="bg-white dark:bg-dark-card py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-2xl md:text-3xl font-extrabold text-center text-gray-900 dark:text-white">
-            Три шага к результату
+            Четыре шага к результату
           </h2>
 
-          <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 relative">
+          <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-6 relative">
             {/* Decorative connector line (hidden on mobile) */}
-            <div className="hidden md:block absolute top-7 left-[calc(16.67%+28px)] right-[calc(16.67%+28px)] divider-gradient" />
+            <div className="hidden md:block absolute top-7 left-[calc(12.5%+28px)] right-[calc(12.5%+28px)] divider-gradient" />
 
             <ScrollReveal delay={0}>
               <div className="text-center relative">
@@ -183,24 +191,38 @@ export default function HomePage() {
                   <span className="text-white text-lg font-bold">1</span>
                 </div>
                 <h3 className="mt-4 font-bold text-gray-900 dark:text-white">
-                  Опишите задачу
+                  Оставьте заявку
                 </h3>
                 <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
-                  Заполните форму — адрес, тип работы, количество людей и часов. Добавьте технику при необходимости
+                  Адрес, тип работ, количество людей. Добавьте технику при необходимости
                 </p>
               </div>
             </ScrollReveal>
 
-            <ScrollReveal delay={150}>
+            <ScrollReveal delay={100}>
               <div className="text-center relative">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mx-auto shadow-glow">
                   <span className="text-white text-lg font-bold">2</span>
                 </div>
                 <h3 className="mt-4 font-bold text-gray-900 dark:text-white">
-                  Оплатите удобным способом
+                  Получите предложения
                 </h3>
                 <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
-                  Моментальный расчёт. Оплата картой, через СБП или по реквизитам для организаций. Средства защищены до завершения
+                  Исполнители откликаются в течение 15 минут. Выберите лучшего по рейтингу и цене
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={200}>
+              <div className="text-center relative">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mx-auto shadow-glow">
+                  <span className="text-white text-lg font-bold">3</span>
+                </div>
+                <h3 className="mt-4 font-bold text-gray-900 dark:text-white">
+                  Оплатите безопасно
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
+                  Картой, СБП или по реквизитам. Деньги заморожены до завершения работы
                 </p>
               </div>
             </ScrollReveal>
@@ -208,13 +230,13 @@ export default function HomePage() {
             <ScrollReveal delay={300}>
               <div className="text-center relative">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mx-auto shadow-glow">
-                  <span className="text-white text-lg font-bold">3</span>
+                  <CheckCircle2 size={20} className="text-white" />
                 </div>
                 <h3 className="mt-4 font-bold text-gray-900 dark:text-white">
-                  Получите результат
+                  Работа выполнена
                 </h3>
                 <p className="mt-2 text-sm text-gray-500 dark:text-dark-muted leading-relaxed">
-                  Проверенный исполнитель с техникой приедет в срок. Оцените работу — рейтинг влияет на будущие заказы
+                  Подтвердите приёмку — выплата исполнителю автоматически. Оставьте оценку
                 </p>
               </div>
             </ScrollReveal>
@@ -307,6 +329,12 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ─── Section 7.5: COMBO OFFER ─── */}
+      <ComboOfferBanner />
+
+      {/* ─── Section 7.6: CREWS TEASER ─── */}
+      <CrewsTeaser />
 
       {/* ─── Section 8: MATERIALS ─── */}
       <MaterialsSection />
@@ -444,7 +472,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── Section 9: FINAL CTA ─── */}
+      {/* ─── Section 9: STATS ─── */}
+      <StatsSection />
+
+      {/* ─── Section 9.5: SUPPLIERS / FOR EXECUTORS ─── */}
+      <SuppliersSection />
+
+      {/* ─── Section 10: FINAL CTA ─── */}
       <section className="relative bg-gradient-to-br from-[#0a0c14] via-brand-900 to-brand-700 py-20 md:py-28 overflow-hidden">
         <div className="hero-pattern absolute inset-0" />
         <div className="relative z-10 max-w-lg mx-auto px-6 text-center">

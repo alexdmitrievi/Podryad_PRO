@@ -48,6 +48,11 @@ export interface Order {
   payout_id?: string;
   customer_phone?: string;
   customer_email?: string;
+  // Markup model fields (Phase 2)
+  customer_total?: number;
+  supplier_payout?: number;
+  platform_margin?: number;
+  order_number?: string;
 }
 
 export interface Worker {
@@ -84,6 +89,21 @@ export interface EscrowLedgerEntry {
   yookassa_operation_id?: string;
   note?: string;
   created_at: string;
+}
+
+export interface Listing {
+  id: string;
+  listing_type: string;
+  category?: string;
+  subcategory?: string;
+  title: string;
+  base_price: number;
+  display_price: number;
+  markup_percent: number;
+  unit?: string;
+  description?: string;
+  is_active?: boolean;
+  created_at?: string;
 }
 
 export type DisputeResolution = 'refund_full' | 'refund_partial' | 'release_payment' | 'pending';

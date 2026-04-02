@@ -4,13 +4,12 @@ const SECRET_KEY = process.env.YUKASSA_SECRET_KEY!;
 // ── ESCROW TYPES ──
 
 export interface CreateEscrowPaymentParams {
-  amount: number;       // total amount (subtotal + service_fee)
-  subtotal: number;     // base cost (goes to executor)
-  serviceFee: number;   // platform fee
+  customerTotal: number;  // amount customer pays (with markup, minus combo discount)
+  orderNumber: string;    // human-readable order number for receipt
   description: string;
   returnUrl: string;
   orderId: string;
-  customerPhone: string; // for receipt SMS
+  customerPhone: string;  // for receipt SMS
   idempotenceKey: string;
 }
 
@@ -117,7 +116,7 @@ export async function createEscrowPayment(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      amount: { value: params.amount.toFixed(2), currency: 'RUB' },
+      amount: { value: params.customerTotal.toFixed(2), currency: 'RUB' },
       confirmation: { type: 'redirect', return_url: params.returnUrl },
       capture: false,
       description: params.description,
@@ -127,20 +126,12 @@ export async function createEscrowPayment(
         customer: { phone: params.customerPhone },
         items: [
           {
-            description: `Выполнение работ по заказу ${params.orderId}`,
-            amount: { value: params.subtotal.toFixed(2), currency: 'RUB' },
+            description: `Услуги по заказу ${params.orderNumber} — Подряд PRO`,
             quantity: '1.00',
-            payment_subject: 'service',
-            payment_mode: 'full_payment',
+            amount: { value: params.customerTotal.toFixed(2), currency: 'RUB' },
             vat_code: 1, // Без НДС
-          },
-          {
-            description: 'Сервисный сбор Подряд PRO',
-            amount: { value: params.serviceFee.toFixed(2), currency: 'RUB' },
-            quantity: '1.00',
             payment_subject: 'service',
-            payment_mode: 'full_payment',
-            vat_code: 1, // Без НДС
+            payment_mode: 'full_prepayment',
           },
         ],
       },
@@ -219,6 +210,36 @@ export async function cancelPayment(
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`YooKassa cancelPayment error: ${res.status} ${err}`);
+  }
+}
+
+/**
+ * Creates a full refund for a captured payment.
+ * Calls POST /refunds with the payment_id and original amount.
+ */
+export async function createRefund(
+  paymentId: string,
+  amount: number,
+  idempotenceKey: string
+): Promise<void> {
+  const auth = Buffer.from(`${SHOP_ID}:${SECRET_KEY}`).toString('base64');
+
+  const res = await fetch('https://api.yookassa.ru/v3/refunds', {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${auth}`,
+      'Idempotence-Key': idempotenceKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      payment_id: paymentId,
+      amount: { value: amount.toFixed(2), currency: 'RUB' },
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`YooKassa createRefund error: ${res.status} ${err}`);
   }
 }
 
