@@ -1,5 +1,5 @@
 export type EscrowStatus = '' | 'payment_held' | 'in_progress' | 'pending_confirm' | 'completed' | 'disputed' | 'cancelled';
-export type PayoutStatusEscrow = 'pending' | 'processing' | 'succeeded' | 'failed';
+export type PayoutStatusEscrow = 'pending' | 'processing' | 'succeeded' | 'failed' | 'pending_manual';
 
 export interface Order {
   /** Совпадает с TEXT в Supabase (в т.ч. префикс n8n-…). */
@@ -46,6 +46,7 @@ export interface Order {
   supplier_confirmed_at?: string;
   payout_status_escrow?: PayoutStatusEscrow;
   payout_id?: string;
+  payout_method?: string;
   customer_phone?: string;
   customer_email?: string;
   // Markup model fields (Phase 2)
