@@ -25,6 +25,21 @@ const CITY_LABELS: Record<City, string> = {
   novosibirsk: 'Новосибирск',
 };
 
+const FALLBACK_EQUIPMENT: Listing[] = [
+  { listing_id: 'f-1', title: 'Экскаватор-погрузчик', display_price: 2500, price_unit: 'час' },
+  { listing_id: 'f-2', title: 'Мини-погрузчик', display_price: 1800, price_unit: 'час' },
+  { listing_id: 'f-3', title: 'Виброплита', display_price: 800, price_unit: 'сутки' },
+  { listing_id: 'f-4', title: 'Бензопила / кусторез', display_price: 500, price_unit: 'сутки' },
+  { listing_id: 'f-5', title: 'Газонокосилка', display_price: 400, price_unit: 'сутки' },
+];
+
+const FALLBACK_MATERIALS: Listing[] = [
+  { listing_id: 'f-m1', title: 'Бетон М300 В22.5', display_price: 5200, price_unit: 'м³' },
+  { listing_id: 'f-m2', title: 'Щебень фр. 5-20', display_price: 1800, price_unit: 'тонна' },
+  { listing_id: 'f-m3', title: 'Песок мытый', display_price: 900, price_unit: 'тонна' },
+  { listing_id: 'f-m4', title: 'Битум БНД 60/90', display_price: 32000, price_unit: 'тонна' },
+];
+
 /* ── helpers ─────────────────────────────────────────────────── */
 
 function useFetchListings(type: string) {
@@ -201,10 +216,12 @@ export default function HomePage() {
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-[1.1] mb-8 font-heading animate-fade-in tracking-tight">
             Рабочие&nbsp;&middot; Техника&nbsp;&middot; Стройматериалы
             <br />
-            <span className="text-gradient">— всё для стройки в&nbsp;Омске и&nbsp;Новосибирске</span>
+            <span className="text-gradient">— для стройки и&nbsp;благоустройства</span>
           </h1>
           <p className="text-white/70 text-lg sm:text-xl mb-12 max-w-2xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.15s' }}>
-            Безопасная оплата через эскроу &middot; Оставьте заявку — перезвоним за 15 минут
+            Стройка, ремонт, частные участки &middot; Омск и&nbsp;Новосибирск
+            <br className="hidden sm:block" />
+            Безопасная оплата через эскроу &middot; Оставьте заявку — перезвоним
           </p>
 
           {/* Stats card */}
@@ -263,16 +280,16 @@ export default function HomePage() {
                   <span className="font-semibold text-gray-900">от 300 &#8381;/ч</span>
                 </li>
                 <li className="flex justify-between">
-                  <span>Уборка территории</span>
+                  <span>Благоустройство участков</span>
                   <span className="font-semibold text-gray-900">от 250 &#8381;/ч</span>
                 </li>
                 <li className="flex justify-between">
-                  <span>Строители</span>
+                  <span>Строители / ремонт</span>
                   <span className="font-semibold text-gray-900">от 500 &#8381;/ч</span>
                 </li>
               </ul>
               <p className="mt-4 text-brand-500 font-semibold text-sm">
-                Бригады от 2 до 15 человек
+                Бригады от 2 до 15 человек &middot; Частные участки
               </p>
             </div>
 
@@ -282,22 +299,18 @@ export default function HomePage() {
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" /></svg>
               </div>
               <h3 className="text-xl font-bold text-[#2B2B2B] mb-4 font-heading">Аренда техники</h3>
-              {equipment.length > 0 ? (
-                <ul className="space-y-2 text-gray-600 text-sm">
-                  {equipment.slice(0, 5).map((l) => (
-                    <li key={l.listing_id} className="flex justify-between">
-                      <span className="truncate mr-2">{l.title}</span>
-                      <span className="font-semibold text-gray-900 whitespace-nowrap">
-                        {l.display_price.toLocaleString('ru-RU')} &#8381;/{l.price_unit}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-400 text-sm">Загрузка каталога...</p>
-              )}
+              <ul className="space-y-2 text-gray-600 text-sm">
+                {(equipment.length > 0 ? equipment : FALLBACK_EQUIPMENT).slice(0, 5).map((l) => (
+                  <li key={l.listing_id} className="flex justify-between">
+                    <span className="truncate mr-2">{l.title}</span>
+                    <span className="font-semibold text-gray-900 whitespace-nowrap">
+                      {l.display_price.toLocaleString('ru-RU')} &#8381;/{l.price_unit}
+                    </span>
+                  </li>
+                ))}
+              </ul>
               <p className="mt-4 text-brand-500 font-semibold text-sm">
-                Любое количество, любой срок
+                От тяжёлой до садовой техники
               </p>
             </div>
 
@@ -307,20 +320,16 @@ export default function HomePage() {
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-violet transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
               </div>
               <h3 className="text-xl font-bold text-[#2B2B2B] mb-4 font-heading">Стройматериалы</h3>
-              {materials.length > 0 ? (
-                <ul className="space-y-2 text-gray-600 text-sm">
-                  {materials.slice(0, 5).map((l) => (
-                    <li key={l.listing_id} className="flex justify-between">
-                      <span className="truncate mr-2">{l.title}</span>
-                      <span className="font-semibold text-gray-900 whitespace-nowrap">
-                        {l.display_price.toLocaleString('ru-RU')} &#8381;/{l.price_unit}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-400 text-sm">Загрузка каталога...</p>
-              )}
+              <ul className="space-y-2 text-gray-600 text-sm">
+                {(materials.length > 0 ? materials : FALLBACK_MATERIALS).slice(0, 5).map((l) => (
+                  <li key={l.listing_id} className="flex justify-between">
+                    <span className="truncate mr-2">{l.title}</span>
+                    <span className="font-semibold text-gray-900 whitespace-nowrap">
+                      {l.display_price.toLocaleString('ru-RU')} &#8381;/{l.price_unit}
+                    </span>
+                  </li>
+                ))}
+              </ul>
               <p className="mt-4 text-violet font-semibold text-sm">
                 Доставка по городу
               </p>
@@ -348,7 +357,7 @@ export default function HomePage() {
               { n: '3', title: 'Оплата', desc: 'Деньги замораживаются на эскроу-счёте' },
               { n: '4', title: 'Подтверждение', desc: 'Выплата после вашего ОК — 100% защита' },
             ].map((step, i) => (
-              <div key={step.n} className="relative text-center reveal" style={{ transitionDelay: `${i * 0.15}s` }}>
+              <div key={step.n} className="relative text-center" style={{ transitionDelay: `${i * 0.15}s` }}>
                 <div className="relative z-10 w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-violet flex items-center justify-center text-white font-extrabold text-lg mx-auto mb-5 shadow-[0_4px_24px_rgba(47,91,255,0.35)] ring-4 ring-brand-900">
                   {step.n}
                 </div>

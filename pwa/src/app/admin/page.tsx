@@ -80,10 +80,17 @@ const LISTING_CATEGORIES: Record<string, { label: string; slug: string }[]> = {
     { label: 'Погрузчик', slug: 'loader' },
     { label: 'Автобетоносмеситель', slug: 'concrete-mixer' },
     { label: 'Трал / негабарит', slug: 'flatbed' },
+    { label: 'Мини-погрузчик', slug: 'mini-loader' },
+    { label: 'Виброплита / вибротрамбовка', slug: 'compactor' },
+    { label: 'Бензопила / кусторез', slug: 'chainsaw' },
+    { label: 'Газонокосилка / триммер', slug: 'mower' },
+    { label: 'Генератор', slug: 'generator' },
+    { label: 'Мотобур', slug: 'auger' },
+    { label: 'Бетономешалка (ручная)', slug: 'mixer-manual' },
   ],
 };
 
-const PRICE_UNITS = ['₽/м³', '₽/тонна', '₽/час', '₽/рейс', '₽/штука'];
+const PRICE_UNITS = ['₽/м³', '₽/тонна', '₽/час', '₽/сутки', '₽/рейс', '₽/штука'];
 
 const WORK_TYPE_LABELS: Record<string, string> = {
   labor: 'Рабочая сила',
