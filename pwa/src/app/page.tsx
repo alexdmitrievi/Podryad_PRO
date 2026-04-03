@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type WorkType = 'labor' | 'equipment' | 'materials';
 type City = 'omsk' | 'novosibirsk';
@@ -265,7 +266,7 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Рабочая сила */}
-            <div className="group bg-white rounded-2xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer">
+            <Link href="/catalog/labor" className="group bg-white rounded-2xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer block">
               <div className="w-14 h-14 rounded-2xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </div>
@@ -288,13 +289,14 @@ export default function HomePage() {
                   <span className="font-semibold text-gray-900">от 500 &#8381;/ч</span>
                 </li>
               </ul>
-              <p className="mt-4 text-brand-500 font-semibold text-sm">
+              <p className="mt-4 text-brand-500 font-semibold text-sm flex items-center gap-1">
                 Бригады от 2 до 15 человек &middot; Частные участки
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="ml-auto flex-shrink-0"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </p>
-            </div>
+            </Link>
 
             {/* Аренда техники */}
-            <div className="group bg-white rounded-2xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer">
+            <Link href="/catalog/equipment" className="group bg-white rounded-2xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer block">
               <div className="w-14 h-14 rounded-2xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </div>
@@ -309,13 +311,14 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 text-brand-500 font-semibold text-sm">
+              <p className="mt-4 text-brand-500 font-semibold text-sm flex items-center gap-1">
                 От тяжёлой до садовой техники
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="ml-auto flex-shrink-0"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </p>
-            </div>
+            </Link>
 
             {/* Стройматериалы */}
-            <div className="group bg-white rounded-2xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer">
+            <Link href="/catalog/materials" className="group bg-white rounded-2xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer block">
               <div className="w-14 h-14 rounded-2xl bg-violet/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-violet group-hover:shadow-[0_0_30px_rgba(108,92,231,0.2)]">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-violet transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
               </div>
@@ -330,10 +333,11 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 text-violet font-semibold text-sm">
+              <p className="mt-4 text-violet font-semibold text-sm flex items-center gap-1">
                 Доставка по городу
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="ml-auto flex-shrink-0"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </p>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -382,13 +386,13 @@ export default function HomePage() {
             Платформа бесплатна для исполнителей. Получайте заказы, выставляйте свои услуги — без комиссий и подписок.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="#"
+            <Link
+              href="/dashboard"
               className="group inline-flex items-center justify-center gap-2 bg-white text-brand-500 hover:text-brand-600 font-bold px-8 py-4 rounded-[10px] transition-all duration-300 hover:shadow-[0_8px_32px_rgba(255,255,255,0.2)] cursor-pointer"
             >
-              Написать в MAX
+              Смотреть заказы
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform duration-300 group-hover:translate-x-0.5"><path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </a>
+            </Link>
             <a
               href="#"
               className="inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm border border-white/25 text-white hover:bg-white/25 font-bold px-8 py-4 rounded-[10px] transition-all duration-300 cursor-pointer"
@@ -550,7 +554,7 @@ export default function HomePage() {
       </section>
 
       {/* ── FOOTER ──────────────────────────────────────────────── */}
-      <footer className="py-10 px-4 pb-28 md:pb-10" style={{ background: 'linear-gradient(160deg, #1E2A5A 0%, #162050 100%)' }}>
+      <footer className="py-10 px-4" style={{ background: 'linear-gradient(160deg, #1E2A5A 0%, #162050 100%)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="divider-gradient mb-8" />
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -579,15 +583,6 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {/* ── STICKY CTA (mobile only) ────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-3 safe-area-pb">
-        <a
-          href="#lead-form"
-          className="block bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-base text-center py-3.5 rounded-[10px] transition-colors cursor-pointer shadow-elevated"
-        >
-          Оставить заявку
-        </a>
-      </div>
     </div>
   );
 }

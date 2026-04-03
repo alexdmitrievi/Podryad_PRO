@@ -1,0 +1,83 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServiceClient } from '@/lib/supabase';
+
+interface CatalogOrderBody {
+  item_id: string;
+  item_title: string;
+  contact_method: 'phone' | 'telegram' | 'email';
+  contact_value: string;
+}
+
+export async function POST(req: NextRequest) {
+  let body: CatalogOrderBody;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+  }
+
+  const { item_id, item_title, contact_method, contact_value } = body;
+
+  if (!item_id || !item_title || !contact_method || !contact_value?.trim()) {
+    return NextResponse.json({ error: 'missing_fields' }, { status: 422 });
+  }
+
+  const validMethods = ['phone', 'telegram', 'email'];
+  if (!validMethods.includes(contact_method)) {
+    return NextResponse.json({ error: 'invalid_contact_method' }, { status: 422 });
+  }
+
+  const db = getServiceClient();
+
+  // Store as a lead with enriched comment
+  const contactLabel =
+    contact_method === 'phone' ? 'Телефон' :
+    contact_method === 'telegram' ? 'Telegram' : 'Email';
+
+  const comment = `Каталог: ${item_title} (${item_id}) | ${contactLabel}: ${contact_value.trim()}`;
+
+  // Determine work_type from item_id prefix
+  let work_type = 'complex';
+  if (item_id.startsWith('l-')) work_type = 'labor';
+  else if (item_id.startsWith('f-m')) work_type = 'materials';
+  else work_type = 'equipment';
+
+  // For phone contacts, store the phone; for others, use a placeholder
+  const phone = contact_method === 'phone' ? contact_value.trim().replace(/\D/g, '') : '0000000000';
+
+  const { error } = await db.from('leads').insert({
+    phone,
+    work_type,
+    city: 'omsk',
+    comment,
+    source: 'catalog',
+  });
+
+  if (error) {
+    console.error('POST /api/catalog-orders:', error);
+    return NextResponse.json({ error: 'db_error' }, { status: 500 });
+  }
+
+  // Fire-and-forget webhook to n8n
+  const webhookUrl = process.env.N8N_LEADS_WEBHOOK_URL;
+  if (webhookUrl) {
+    fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone,
+        work_type,
+        city: 'omsk',
+        comment,
+        source: 'catalog',
+        contact_method,
+        contact_value: contact_value.trim(),
+        item_title,
+      }),
+    }).catch((err) => {
+      console.error('n8n catalog-order webhook error (non-blocking):', err);
+    });
+  }
+
+  return NextResponse.json({ ok: true }, { status: 201 });
+}

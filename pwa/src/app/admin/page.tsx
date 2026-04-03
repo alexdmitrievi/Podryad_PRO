@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import {
   Lock, Users, ShoppingBag, Tag, AlertTriangle, BarChart3,
   Copy, Check, ExternalLink, UserPlus, RefreshCw, Save,
-  Package, FileText, Plus, X, Camera, Upload
+  Package, FileText, Plus, X, Camera, Upload, MessageSquare
 } from 'lucide-react';
 
 interface Order {
@@ -99,11 +99,23 @@ const WORK_TYPE_LABELS: Record<string, string> = {
   complex: 'Комплекс',
 };
 
-type TabId = 'listings' | 'leads' | 'users' | 'orders' | 'markups' | 'disputes' | 'stats';
+interface ExecutorResponse {
+  id: number;
+  order_id: string;
+  name: string;
+  phone: string;
+  comment: string | null;
+  price: number | null;
+  status: string;
+  created_at: string;
+}
+
+type TabId = 'listings' | 'leads' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'stats';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "listings", label: "Позиции", icon: Package },
   { id: "leads", label: "Заявки", icon: FileText },
+  { id: "responses", label: "Отклики", icon: MessageSquare },
   { id: "users", label: "Пользователи", icon: Users },
   { id: "orders", label: "Заказы", icon: ShoppingBag },
   { id: "markups", label: "Наценки", icon: Tag },
@@ -883,6 +895,115 @@ function StatsTab({ pin }: { pin: string }) {
   );
 }
 
+function ResponsesTab({ pin }: { pin: string }) {
+  const [responses, setResponses] = useState<ExecutorResponse[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+
+  const loadResponses = async () => {
+    setError(''); setLoading(true);
+    try {
+      const res = await fetch('/api/admin/responses', { headers: { 'x-admin-pin': pin } });
+      const data = await res.json();
+      if (res.ok) { setResponses(data.responses || []); } else { setError(data.error || 'Ошибка'); }
+    } catch { setError('Ошибка соединения'); }
+    finally { setLoading(false); }
+  };
+
+  const updateStatus = async (id: number, status: string) => {
+    setUpdatingId(id);
+    try {
+      const res = await fetch('/api/admin/responses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, id, status }),
+      });
+      if (res.ok) {
+        setResponses(r => r.map(x => x.id === id ? { ...x, status } : x));
+      }
+    } catch { /* ignore */ }
+    finally { setUpdatingId(null); }
+  };
+
+  const STATUS_COLORS: Record<string, string> = {
+    pending: 'bg-yellow-100 text-yellow-700',
+    accepted: 'bg-green-100 text-green-700',
+    rejected: 'bg-red-100 text-red-700',
+  };
+
+  const STATUS_LABELS: Record<string, string> = {
+    pending: 'Ожидает',
+    accepted: 'Принят',
+    rejected: 'Отклонён',
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <button onClick={loadResponses} disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
+          <RefreshCw className={loading ? "w-4 h-4 animate-spin" : "w-4 h-4"} />
+          Загрузить
+        </button>
+        {responses.length > 0 && (
+          <span className="text-sm text-gray-500">Всего: {responses.length}</span>
+        )}
+      </div>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {responses.length > 0 && (
+        <div className="space-y-3">
+          {responses.map(r => (
+            <div key={r.id} className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card border border-gray-100">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className="font-bold text-gray-900 dark:text-white">{r.name}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[r.status] || 'bg-gray-100 text-gray-700'}`}>
+                      {STATUS_LABELS[r.status] || r.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Заказ: <span className="font-mono">{truncId(r.order_id)}</span>
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Тел: <span className="font-mono">{r.phone}</span>
+                  </p>
+                  {r.price != null && (
+                    <p className="text-sm text-brand-500 font-semibold mt-1">Цена: {fmtMoney(r.price)}</p>
+                  )}
+                  {r.comment && (
+                    <p className="text-sm text-gray-500 mt-1">{r.comment}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">{fmtDate(r.created_at)}</p>
+                </div>
+                {r.status === 'pending' && (
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => updateStatus(r.id, 'accepted')}
+                      disabled={updatingId === r.id}
+                      className="px-3 py-1.5 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-medium cursor-pointer transition-colors disabled:opacity-50"
+                    >
+                      {updatingId === r.id ? '...' : 'Принять'}
+                    </button>
+                    <button
+                      onClick={() => updateStatus(r.id, 'rejected')}
+                      disabled={updatingId === r.id}
+                      className="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium cursor-pointer transition-colors disabled:opacity-50"
+                    >
+                      {updatingId === r.id ? '...' : 'Отклонить'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const [pin, setPin] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('listings');
@@ -933,6 +1054,7 @@ export default function AdminPage() {
         <div>
           {activeTab === 'listings' && <ListingsTab pin={pin} />}
           {activeTab === 'leads' && <LeadsTab pin={pin} />}
+          {activeTab === 'responses' && <ResponsesTab pin={pin} />}
           {activeTab === 'users' && <UsersTab pin={pin} />}
           {activeTab === 'orders' && <OrdersTab pin={pin} />}
           {activeTab === 'markups' && <MarkupsTab pin={pin} />}
