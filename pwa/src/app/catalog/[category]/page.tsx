@@ -185,28 +185,30 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    params.then((p) => setCategory(p.category));
-  }, [params]);
+    let cancelled = false;
 
-  useEffect(() => {
-    if (!category) return;
+    async function load() {
+      const { category: cat } = await params;
+      if (cancelled) return;
+      setCategory(cat);
 
-    const meta = CATEGORY_META[category];
-    if (!meta) {
-      setLoading(false);
-      return;
-    }
+      const meta = CATEGORY_META[cat];
+      if (!meta) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
 
-    if (category === 'labor') {
-      setItems(LABOR_SERVICES);
-      setLoading(false);
-      return;
-    }
+      if (cat === 'labor') {
+        setItems(LABOR_SERVICES);
+        setLoading(false);
+        return;
+      }
 
-    // Fetch from API for equipment/materials
-    fetch(`/api/listings/public?type=${meta.apiType}`)
-      .then((r) => r.json())
-      .then((d) => {
+      try {
+        const res = await fetch(`/api/listings/public?type=${meta.apiType}`);
+        const d = await res.json();
+        if (cancelled) return;
         const listings: Listing[] = d.listings ?? [];
         setItems(
           listings.map((l) => ({
@@ -218,10 +220,9 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
             image: l.images?.[0],
           }))
         );
-      })
-      .catch(() => {
-        // Use fallback data
-        if (category === 'equipment') {
+      } catch {
+        if (cancelled) return;
+        if (cat === 'equipment') {
           setItems([
             { id: 'f-1', title: 'Экскаватор-погрузчик', description: 'JCB 3CX, Cat 428. Копка, планировка, погрузка.', price: 2500, unit: 'час' },
             { id: 'f-2', title: 'Мини-погрузчик', description: 'Bobcat S175, МКСМ-800. Работа в стеснённых условиях.', price: 1800, unit: 'час' },
@@ -237,9 +238,14 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
             { id: 'f-m4', title: 'Битум БНД 60/90', description: 'Дорожный битум для асфальтирования и гидроизоляции.', price: 32000, unit: 'тонна' },
           ]);
         }
-      })
-      .finally(() => setLoading(false));
-  }, [category]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [params]);
 
   const meta = CATEGORY_META[category];
 
@@ -313,8 +319,8 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
                   className="group bg-white rounded-2xl p-6 sm:p-8 shadow-card border border-gray-100 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 flex flex-col"
                 >
                   {item.image && (
-                    <div className="w-full h-40 rounded-xl overflow-hidden mb-4 bg-gray-100">
-                      <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                    <div className="relative w-full h-40 rounded-xl overflow-hidden mb-4 bg-gray-100">
+                      <Image src={item.image} alt={item.title} fill className="object-cover" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                     </div>
                   )}
                   <h3 className="text-lg font-bold text-gray-900 mb-2 font-heading">{item.title}</h3>
