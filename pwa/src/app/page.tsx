@@ -214,14 +214,14 @@ export default function HomePage() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-[1.1] mb-8 font-heading animate-fade-in tracking-tight">
-            Рабочие&nbsp;&middot; Техника&nbsp;&middot; Стройматериалы
+            Персонал &middot; Техника &middot; Материалы
             <br />
-            <span className="text-gradient">— для стройки и&nbsp;благоустройства</span>
+            <span className="text-gradient">в&nbsp;Омске и&nbsp;Новосибирске</span>
           </h1>
-          <p className="text-white/70 text-lg sm:text-xl mb-12 max-w-2xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.15s' }}>
-            Стройка, ремонт, частные участки &middot; Омск и&nbsp;Новосибирск
-            <br className="hidden sm:block" />
-            Безопасная оплата через эскроу &middot; Оставьте заявку — перезвоним
+          <p className="text-white/70 text-lg sm:text-xl mb-12 max-w-xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.15s' }}>
+            Стройка, благоустройство, частные участки.
+            <br />
+            Эскроу-оплата &middot; Перезвоним за 15 минут
           </p>
 
           {/* Stats card */}
@@ -296,7 +296,7 @@ export default function HomePage() {
             {/* Аренда техники */}
             <div className="group bg-white rounded-2xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer">
               <div className="w-14 h-14 rounded-2xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
-                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" /></svg>
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </div>
               <h3 className="text-xl font-bold text-[#2B2B2B] mb-4 font-heading">Аренда техники</h3>
               <ul className="space-y-2 text-gray-600 text-sm">
@@ -561,12 +561,20 @@ export default function HomePage() {
             <p className="text-white/30 text-sm">
               ИП Жбанков А.Д. &middot; ИНН 550516401202
             </p>
-            <a
-              href="/privacy"
-              className="text-white/40 hover:text-white/70 text-sm underline transition-colors duration-200"
-            >
-              Политика конфиденциальности
-            </a>
+            <div className="flex items-center gap-4">
+              <a
+                href="/privacy"
+                className="text-white/40 hover:text-white/70 text-sm underline transition-colors duration-200"
+              >
+                Политика конфиденциальности
+              </a>
+              <a
+                href="/admin"
+                className="text-white/20 hover:text-white/50 text-xs transition-colors duration-200"
+              >
+                Управление
+              </a>
+            </div>
           </div>
         </div>
       </footer>

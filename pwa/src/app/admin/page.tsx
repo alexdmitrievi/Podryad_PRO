@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import {
   Lock, Users, ShoppingBag, Tag, AlertTriangle, BarChart3,
   Copy, Check, ExternalLink, UserPlus, RefreshCw, Save,
-  Package, FileText, Plus, X
+  Package, FileText, Plus, X, Camera, Upload
 } from 'lucide-react';
 
 interface Order {
@@ -567,6 +567,33 @@ function ListingsTab({ pin }: { pin: string }) {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState('');
+
+  const handleUploadPhoto = async (listingId: string, file: File) => {
+    setUploadingId(listingId);
+    setUploadSuccess('');
+    setError('');
+    try {
+      const fd = new FormData();
+      fd.append('pin', pin);
+      fd.append('listing_id', listingId);
+      fd.append('file', file);
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (res.ok) {
+        setUploadSuccess(`Фото загружено: ${listingId}`);
+        setTimeout(() => setUploadSuccess(''), 3000);
+      } else {
+        setError(data.error || 'Ошибка загрузки фото');
+      }
+    } catch {
+      setError('Ошибка загрузки фото');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
   const [form, setForm] = useState({
     listing_type: 'material',
     category_slug: 'concrete',
@@ -622,13 +649,14 @@ function ListingsTab({ pin }: { pin: string }) {
         {listings.length > 0 && <span className="text-sm text-gray-500 dark:text-gray-400">Всего: {listings.length}</span>}
       </div>
       {error && <p className="text-red-500 text-sm">{error}</p>}
+      {uploadSuccess && <p className="text-green-600 text-sm">{uploadSuccess}</p>}
 
       {listings.length > 0 && (
         <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 dark:border-dark-border">
-                {['Название', 'Категория', 'Тип', 'База', 'Витрина', 'Наценка', 'Ед.', 'Статус', 'Дата'].map(h => (
+                {['Название', 'Категория', 'Тип', 'База', 'Витрина', 'Наценка', 'Ед.', 'Фото', 'Статус', 'Дата'].map(h => (
                   <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -643,6 +671,26 @@ function ListingsTab({ pin }: { pin: string }) {
                   <td className="px-4 py-3 tabular-nums font-medium">{fmtMoney(l.display_price)}</td>
                   <td className="px-4 py-3 tabular-nums text-brand-500">{l.markup_percent}%</td>
                   <td className="px-4 py-3 whitespace-nowrap">{l.price_unit}</td>
+                  <td className="px-4 py-3">
+                    <label className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-brand-500/10 text-brand-500 hover:bg-brand-500/20 cursor-pointer transition-colors text-xs font-medium">
+                      {uploadingId === l.listing_id ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Camera className="w-3.5 h-3.5" />
+                      )}
+                      <span>{uploadingId === l.listing_id ? '...' : 'Фото'}</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) handleUploadPhoto(l.listing_id, f);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  </td>
                   <td className="px-4 py-3">
                     <span className={"px-2 py-0.5 rounded-full text-xs " + (l.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>
                       {l.is_active ? 'Актив' : 'Скрыта'}
