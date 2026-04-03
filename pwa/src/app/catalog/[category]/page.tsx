@@ -1,0 +1,352 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+
+type ContactMethod = 'phone' | 'telegram' | 'email';
+
+interface CatalogItem {
+  id: string;
+  title: string;
+  description?: string;
+  price: number;
+  unit: string;
+  image?: string;
+}
+
+interface Listing {
+  listing_id: string;
+  title: string;
+  description?: string;
+  display_price: number;
+  price_unit: string;
+  images?: string[];
+  category_slug?: string;
+}
+
+/* ── Static labor services ────────────────────────────────────── */
+
+const LABOR_SERVICES: CatalogItem[] = [
+  { id: 'l-1', title: 'Грузчики', description: 'Погрузка, разгрузка, перенос мебели и стройматериалов. Бригады от 2 человек.', price: 350, unit: 'ч' },
+  { id: 'l-2', title: 'Разнорабочие', description: 'Подсобные работы на стройке, уборка территории, демонтаж.', price: 300, unit: 'ч' },
+  { id: 'l-3', title: 'Благоустройство участков', description: 'Покос травы, уборка мусора, планировка территории, мощение.', price: 250, unit: 'ч' },
+  { id: 'l-4', title: 'Строители / ремонт', description: 'Кладка, штукатурка, плитка, электрика, сантехника. Бригады с опытом от 5 лет.', price: 500, unit: 'ч' },
+  { id: 'l-5', title: 'Землекопы', description: 'Копка траншей, ям, котлованов вручную. Работа в стеснённых условиях.', price: 350, unit: 'ч' },
+  { id: 'l-6', title: 'Дворники / уборщики', description: 'Уборка подъездов, территории, мытьё окон и фасадов.', price: 250, unit: 'ч' },
+];
+
+const CATEGORY_META: Record<string, { title: string; subtitle: string; icon: string; apiType?: string }> = {
+  labor: { title: 'Рабочая сила', subtitle: 'Бригады от 2 до 15 человек', icon: '👷' },
+  equipment: { title: 'Аренда техники', subtitle: 'От тяжёлой до садовой техники', icon: '🚜', apiType: 'equipment_rental' },
+  materials: { title: 'Стройматериалы', subtitle: 'Доставка по городу', icon: '📦', apiType: 'material' },
+};
+
+/* ── Order modal ──────────────────────────────────────────────── */
+
+function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void }) {
+  const [method, setMethod] = useState<ContactMethod>('phone');
+  const [contact, setContact] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [consent, setConsent] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!consent || !contact.trim()) return;
+    setLoading(true);
+    try {
+      await fetch('/api/catalog-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          item_id: item.id,
+          item_title: item.title,
+          contact_method: method,
+          contact_value: contact.trim(),
+        }),
+      });
+      setSubmitted(true);
+    } catch {
+      setSubmitted(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-xl relative animate-fade-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-gray-500"
+        >
+          ✕
+        </button>
+
+        {submitted ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-green-600"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Заявка отправлена!</h3>
+            <p className="text-gray-500 text-sm">Мы свяжемся с вами в течение 15 минут с предложением и ссылкой на оплату.</p>
+          </div>
+        ) : (
+          <>
+            <h3 className="text-xl font-bold text-gray-900 mb-1">Заказать</h3>
+            <p className="text-gray-500 text-sm mb-6">{item.title} — от {item.price.toLocaleString('ru-RU')} ₽/{item.unit}</p>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Contact method selector */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Куда отправить предложение и ссылку на оплату?
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { key: 'phone' as ContactMethod, label: 'Телефон' },
+                    { key: 'telegram' as ContactMethod, label: 'Telegram' },
+                    { key: 'email' as ContactMethod, label: 'Почта' },
+                  ]).map((m) => (
+                    <button
+                      key={m.key}
+                      type="button"
+                      onClick={() => { setMethod(m.key); setContact(''); }}
+                      className={`py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
+                        method === m.key
+                          ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-brand-500'
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contact input */}
+              <div>
+                <input
+                  type={method === 'email' ? 'email' : 'text'}
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  placeholder={
+                    method === 'phone' ? '+7 (___) ___-__-__' :
+                    method === 'telegram' ? '@username' :
+                    'email@example.com'
+                  }
+                  required
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
+                />
+              </div>
+
+              {/* 152-ФЗ consent */}
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-0.5 w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                />
+                <span className="text-xs text-gray-500 leading-relaxed">
+                  Я даю согласие на обработку персональных данных в соответствии
+                  с&nbsp;
+                  <a href="/privacy" className="text-brand-500 underline" target="_blank">
+                    Федеральным законом №152-ФЗ
+                  </a>
+                </span>
+              </label>
+
+              <button
+                type="submit"
+                disabled={loading || !consent || !contact.trim()}
+                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer"
+              >
+                {loading ? 'Отправляем...' : 'Получить предложение'}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Page ──────────────────────────────────────────────────────── */
+
+export default function CatalogCategoryPage({ params }: { params: Promise<{ category: string }> }) {
+  const [category, setCategory] = useState<string>('');
+  const [items, setItems] = useState<CatalogItem[]>([]);
+  const [orderItem, setOrderItem] = useState<CatalogItem | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    params.then((p) => setCategory(p.category));
+  }, [params]);
+
+  useEffect(() => {
+    if (!category) return;
+
+    const meta = CATEGORY_META[category];
+    if (!meta) {
+      setLoading(false);
+      return;
+    }
+
+    if (category === 'labor') {
+      setItems(LABOR_SERVICES);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch from API for equipment/materials
+    fetch(`/api/listings/public?type=${meta.apiType}`)
+      .then((r) => r.json())
+      .then((d) => {
+        const listings: Listing[] = d.listings ?? [];
+        setItems(
+          listings.map((l) => ({
+            id: l.listing_id,
+            title: l.title,
+            description: l.description || undefined,
+            price: l.display_price,
+            unit: l.price_unit,
+            image: l.images?.[0],
+          }))
+        );
+      })
+      .catch(() => {
+        // Use fallback data
+        if (category === 'equipment') {
+          setItems([
+            { id: 'f-1', title: 'Экскаватор-погрузчик', description: 'JCB 3CX, Cat 428. Копка, планировка, погрузка.', price: 2500, unit: 'час' },
+            { id: 'f-2', title: 'Мини-погрузчик', description: 'Bobcat S175, МКСМ-800. Работа в стеснённых условиях.', price: 1800, unit: 'час' },
+            { id: 'f-3', title: 'Виброплита', description: 'Трамбовка грунта, песка, щебня. Вес от 60 до 300 кг.', price: 800, unit: 'сутки' },
+            { id: 'f-4', title: 'Бензопила / кусторез', description: 'Stihl, Husqvarna. Валка деревьев, обрезка кустов.', price: 500, unit: 'сутки' },
+            { id: 'f-5', title: 'Газонокосилка', description: 'Бензиновая и электрическая. Покос от 1 сотки.', price: 400, unit: 'сутки' },
+          ]);
+        } else {
+          setItems([
+            { id: 'f-m1', title: 'Бетон М300 В22.5', description: 'Готовая бетонная смесь с доставкой миксером.', price: 5200, unit: 'м³' },
+            { id: 'f-m2', title: 'Щебень фр. 5-20', description: 'Гранитный щебень для фундаментов и дорожек.', price: 1800, unit: 'тонна' },
+            { id: 'f-m3', title: 'Песок мытый', description: 'Речной мытый песок для кладки и стяжки.', price: 900, unit: 'тонна' },
+            { id: 'f-m4', title: 'Битум БНД 60/90', description: 'Дорожный битум для асфальтирования и гидроизоляции.', price: 32000, unit: 'тонна' },
+          ]);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [category]);
+
+  const meta = CATEGORY_META[category];
+
+  if (!category) return null;
+
+  if (!meta) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Категория не найдена</h1>
+          <Link href="/" className="text-brand-500 hover:underline">Вернуться на главную</Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-surface font-sans">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/logo.png" alt="Подряд PRO" width={36} height={36} className="rounded-lg" />
+              <span className="text-lg font-extrabold text-brand-900 font-heading">Подряд PRO</span>
+            </Link>
+          </div>
+          <Link
+            href="/"
+            className="text-brand-500 hover:text-brand-600 font-semibold text-sm flex items-center gap-1 transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            На главную
+          </Link>
+        </div>
+      </nav>
+
+      {/* Header */}
+      <section
+        className="py-16 sm:py-20 px-4"
+        style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 60%, #6C5CE7 100%)' }}
+      >
+        <div className="max-w-6xl mx-auto text-center">
+          <span className="text-4xl mb-4 block">{meta.icon}</span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading mb-3">
+            {meta.title}
+          </h1>
+          <p className="text-white/60 text-lg">{meta.subtitle}</p>
+        </div>
+      </section>
+
+      {/* Items grid */}
+      <section className="py-12 px-4">
+        <div className="max-w-6xl mx-auto">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 animate-pulse">
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-4" />
+                  <div className="h-4 bg-gray-100 rounded w-full mb-2" />
+                  <div className="h-4 bg-gray-100 rounded w-2/3 mb-6" />
+                  <div className="h-10 bg-gray-200 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="group bg-white rounded-2xl p-6 sm:p-8 shadow-card border border-gray-100 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 flex flex-col"
+                >
+                  {item.image && (
+                    <div className="w-full h-40 rounded-xl overflow-hidden mb-4 bg-gray-100">
+                      <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 font-heading">{item.title}</h3>
+                  {item.description && (
+                    <p className="text-gray-500 text-sm mb-4 leading-relaxed flex-1">{item.description}</p>
+                  )}
+                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
+                    <span className="text-lg font-extrabold text-brand-500">
+                      от {item.price.toLocaleString('ru-RU')} ₽/{item.unit}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setOrderItem(item)}
+                    className="mt-4 w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-3 rounded-xl transition-all duration-200 hover:shadow-[0_8px_30px_rgba(47,91,255,0.25)] cursor-pointer"
+                  >
+                    Заказать
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loading && items.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-gray-400 text-lg">Товары пока не добавлены</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Order modal */}
+      {orderItem && <OrderModal item={orderItem} onClose={() => setOrderItem(null)} />}
+    </div>
+  );
+}
