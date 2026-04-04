@@ -119,3 +119,45 @@ export interface Dispute {
   resolved_at?: string;
   created_at: string;
 }
+
+// ── Platform Upgrade Types (2026-04-05) ───────────────────────
+
+export type ContractorStatus = 'new' | 'verified' | 'active' | 'blocked';
+export type PreferredContact = 'max' | 'telegram' | 'phone' | 'email';
+export type ContractorSource = 'pwa' | 'telegram' | 'max';
+export type OrderLifecycleStatus =
+  | 'pending'
+  | 'priced'
+  | 'payment_sent'
+  | 'paid'
+  | 'in_progress'
+  | 'confirming'
+  | 'completed'
+  | 'disputed';
+
+export interface Contractor {
+  id: string;
+  name: string;
+  phone: string;
+  city: string;
+  specialties: string[];
+  experience?: string;
+  preferred_contact: PreferredContact;
+  about?: string;
+  source: ContractorSource;
+  telegram_id?: string;
+  max_id?: string;
+  email?: string;
+  status: ContractorStatus;
+  admin_notes?: string;
+  created_at: string;
+}
+
+export interface CustomerToken {
+  id: string;
+  phone: string;
+  access_token: string;
+  preferred_contact: PreferredContact;
+  messenger_id?: string;
+  created_at: string;
+}
