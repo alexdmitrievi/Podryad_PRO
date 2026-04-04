@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import PhoneInput, { isValidPhone } from '@/components/ui/PhoneInput';
+import Spinner from '@/components/ui/Spinner';
 
 const InteractiveMap = dynamic(() => import('@/components/YandexMap'), { ssr: false });
 
@@ -55,10 +57,19 @@ function ResponseModal({ order, onClose }: { order: PublicOrder; onClose: () => 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!consent || !name.trim() || !phone.trim()) return;
+    if (!isValidPhone(phone)) { setPhoneError('Введите корректный номер'); return; }
+    setPhoneError('');
+    if (!consent || !name.trim()) return;
     setLoading(true);
     try {
       await fetch('/api/orders/respond', {
@@ -81,9 +92,9 @@ function ResponseModal({ order, onClose }: { order: PublicOrder; onClose: () => 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true" aria-label="Откликнуться на заказ">
       <div className="bg-white rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-xl relative animate-fade-in max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-gray-500">
+        <button onClick={onClose} aria-label="Закрыть" className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-gray-500">
           ✕
         </button>
 
@@ -109,9 +120,8 @@ function ResponseModal({ order, onClose }: { order: PublicOrder; onClose: () => 
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Телефон</label>
-                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 (___) ___-__-__" required
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow" />
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Телефон <span className="text-red-400">*</span></label>
+                <PhoneInput value={phone} onChange={setPhone} required error={phoneError} />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ваша цена (необязательно)</label>
@@ -132,8 +142,8 @@ function ResponseModal({ order, onClose }: { order: PublicOrder; onClose: () => 
                 </span>
               </label>
               <button type="submit" disabled={loading || !consent || !name.trim() || !phone.trim()}
-                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer">
-                {loading ? 'Отправляем...' : 'Отправить отклик'}
+                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2">
+                {loading ? <><Spinner className="w-5 h-5 text-white" /> Отправляем...</> : 'Отправить отклик'}
               </button>
             </form>
           </>

@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import PhoneInput, { isValidPhone } from '@/components/ui/PhoneInput';
+import Spinner from '@/components/ui/Spinner';
 
 const MapPicker = dynamic(() => import('@/components/YandexMap'), { ssr: false });
 
@@ -100,7 +102,7 @@ export default function NewOrderPage() {
   /* Submit */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!consent || !phone.trim() || !lat || !lon) return;
+    if (!consent || !isValidPhone(phone) || !lat || !lon) return;
     setLoading(true);
     try {
       await fetch('/api/orders/create', {
@@ -342,15 +344,8 @@ export default function NewOrderPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ваш телефон</label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+7 (___) ___-__-__"
-                      required
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
-                    />
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ваш телефон <span className="text-red-400">*</span></label>
+                    <PhoneInput value={phone} onChange={setPhone} required />
                   </div>
 
                   <label className="flex items-start gap-3 cursor-pointer">
@@ -367,10 +362,10 @@ export default function NewOrderPage() {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={loading || !consent || !phone.trim() || !lat || !lon}
-                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-4 rounded-xl text-lg transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer"
+                disabled={loading || !consent || !isValidPhone(phone) || !lat || !lon}
+                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-4 rounded-xl text-lg transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
-                {loading ? 'Отправляем...' : 'Разместить заказ'}
+                {loading ? <><Spinner className="w-5 h-5 text-white" /> Отправляем...</> : 'Разместить заказ'}
               </button>
             </form>
           )}

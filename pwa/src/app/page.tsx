@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import PhoneInput, { isValidPhone } from '@/components/ui/PhoneInput';
+import Spinner from '@/components/ui/Spinner';
 
 type WorkType = 'labor' | 'equipment' | 'materials';
 type City = 'omsk' | 'novosibirsk';
@@ -133,6 +135,8 @@ export default function HomePage() {
   const [consent, setConsent] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState(false);
 
   /* scroll-reveal refs */
   const revServices = useReveal();
@@ -146,10 +150,18 @@ export default function HomePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!consent) return;
+    const newErrors: Record<string, string> = {};
+    if (!phone || !isValidPhone(phone)) newErrors.phone = 'Введите корректный номер телефона';
+    if (!consent) newErrors.consent = 'Необходимо дать согласие';
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
+    setSubmitError(false);
     setLoading(true);
     try {
-      await fetch('/api/leads', {
+      const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -167,9 +179,10 @@ export default function HomePage() {
           source: 'landing',
         }),
       });
+      if (!res.ok) throw new Error('Failed');
       setSubmitted(true);
     } catch {
-      setSubmitted(true);
+      setSubmitError(true);
     } finally {
       setLoading(false);
     }
@@ -434,9 +447,12 @@ export default function HomePage() {
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform duration-300 group-hover:translate-x-0.5"><path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </Link>
             <a
-              href="#"
+              href="https://t.me/podryad_pro"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm border border-white/25 text-white hover:bg-white/25 font-bold px-8 py-4 rounded-[10px] transition-all duration-300 cursor-pointer"
             >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
               Telegram
             </a>
           </div>
@@ -536,15 +552,13 @@ export default function HomePage() {
               {/* Телефон */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Телефон
+                  Телефон <span className="text-red-400">*</span>
                 </label>
-                <input
-                  type="tel"
+                <PhoneInput
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+7 (___) ___-__-__"
+                  onChange={setPhone}
                   required
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
+                  error={errors.phone}
                 />
               </div>
 
@@ -611,12 +625,18 @@ export default function HomePage() {
                 </span>
               </label>
 
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
+                  Не удалось отправить заявку. Проверьте соединение и попробуйте ещё раз.
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={loading || !consent}
-                className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold min-h-[56px] py-4 rounded-[10px] w-full text-base transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer"
+                className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold min-h-[56px] py-4 rounded-[10px] w-full text-base transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
-                {loading ? 'Отправляем...' : 'Отправить заявку'}
+                {loading ? <><Spinner className="w-5 h-5 text-white" /> Отправляем...</> : 'Отправить заявку'}
               </button>
             </form>
           )}
@@ -636,18 +656,18 @@ export default function HomePage() {
               ИП Жбанков А.Д. &middot; ИНН 550516401202
             </p>
             <div className="flex items-center gap-4">
-              <a
+              <Link
                 href="/privacy"
                 className="text-white/40 hover:text-white/70 text-sm underline transition-colors duration-200"
               >
                 Политика конфиденциальности
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/admin?tab=contacts"
                 className="text-white/50 hover:text-white/80 text-sm underline transition-colors duration-200"
               >
                 Админ-панель
-              </a>
+              </Link>
             </div>
           </div>
         </div>

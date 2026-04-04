@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import Spinner from '@/components/ui/Spinner';
 
 type ContactMethod = 'phone' | 'telegram' | 'email';
 
@@ -51,6 +52,13 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
   const [loading, setLoading] = useState(false);
   const [consent, setConsent] = useState(false);
 
+  const stableOnClose = useCallback(onClose, [onClose]);
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') stableOnClose(); };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [stableOnClose]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!consent || !contact.trim()) return;
@@ -75,13 +83,14 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true" aria-label={`Заказать ${item.title}`}>
       <div
-        className="bg-white rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-xl relative animate-fade-in"
+        className="bg-white rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-xl relative animate-fade-in max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
+          aria-label="Закрыть"
           className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-gray-500"
         >
           ✕
@@ -164,9 +173,9 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
               <button
                 type="submit"
                 disabled={loading || !consent || !contact.trim()}
-                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer"
+                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
-                {loading ? 'Отправляем...' : 'Получить предложение'}
+                {loading ? <><Spinner className="w-5 h-5 text-white" /> Отправляем...</> : 'Получить предложение'}
               </button>
             </form>
           </>
@@ -318,11 +327,15 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
                   key={item.id}
                   className="group bg-white rounded-2xl p-6 sm:p-8 shadow-card border border-gray-100 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 flex flex-col"
                 >
-                  {item.image && (
-                    <div className="relative w-full h-40 rounded-xl overflow-hidden mb-4 bg-gray-100">
+                  <div className="relative w-full h-40 rounded-xl overflow-hidden mb-4 bg-gray-100">
+                    {item.image ? (
                       <Image src={item.image} alt={item.title} fill className="object-cover" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
-                    </div>
-                  )}
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-500/5 to-violet/5">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-gray-300" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                      </div>
+                    )}
+                  </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2 font-heading">{item.title}</h3>
                   {item.description && (
                     <p className="text-gray-500 text-sm mb-4 leading-relaxed flex-1">{item.description}</p>
