@@ -174,8 +174,10 @@ export default function DashboardPage() {
     });
   }
 
+  const [now] = useState(() => Date.now());
+
   function formatTimeAgo(iso: string) {
-    const diff = Date.now() - new Date(iso).getTime();
+    const diff = now - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 60) return `${mins} мин. назад`;
     const hours = Math.floor(mins / 60);

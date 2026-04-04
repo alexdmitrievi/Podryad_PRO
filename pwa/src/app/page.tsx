@@ -125,6 +125,7 @@ export default function HomePage() {
   /* form state */
   const [category, setCategory] = useState<WorkType>('labor');
   const [description, setDescription] = useState('');
+  const [equipmentName, setEquipmentName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState<City>('omsk');
@@ -157,9 +158,12 @@ export default function HomePage() {
           city,
           address: address || undefined,
           messenger,
-          comment: description
-            ? `${description} | Мессенджер: ${messenger}${address ? ` | Адрес: ${address}` : ''}`
-            : `Мессенджер: ${messenger}${address ? ` | Адрес: ${address}` : ''}`,
+          comment: [
+            description,
+            equipmentName ? `Техника: ${equipmentName}` : '',
+            `Мессенджер: ${messenger}`,
+            address ? `Адрес: ${address}` : '',
+          ].filter(Boolean).join(' | '),
           source: 'landing',
         }),
       });
@@ -485,6 +489,22 @@ export default function HomePage() {
                 </div>
               </div>
 
+              {/* Наименование техники (только для категории Техника) */}
+              {category === 'equipment' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Какая техника нужна?
+                  </label>
+                  <input
+                    type="text"
+                    value={equipmentName}
+                    onChange={(e) => setEquipmentName(e.target.value)}
+                    placeholder="Экскаватор, бульдозер, автокран..."
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
+                  />
+                </div>
+              )}
+
               {/* Описание */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -494,7 +514,7 @@ export default function HomePage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
-                  placeholder="Что нужно сделать..."
+                  placeholder={category === 'equipment' ? 'На какой срок, с оператором или без...' : 'Что нужно сделать...'}
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-shadow"
                 />
               </div>
@@ -623,10 +643,10 @@ export default function HomePage() {
                 Политика конфиденциальности
               </a>
               <a
-                href="/admin"
-                className="text-white/20 hover:text-white/50 text-xs transition-colors duration-200"
+                href="/admin?tab=contacts"
+                className="text-white/50 hover:text-white/80 text-sm underline transition-colors duration-200"
               >
-                Управление
+                Админ-панель
               </a>
             </div>
           </div>

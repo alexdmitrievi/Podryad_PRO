@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -8,12 +10,12 @@ export default function PrivacyPage() {
           <span className="text-lg font-extrabold text-[#2d35a8]">
             Подряд PRO
           </span>
-          <a
+          <Link
             href="/"
             className="bg-[#2d35a8] text-white text-sm font-bold px-5 py-2 rounded-xl hover:bg-[#252ca0] transition-colors cursor-pointer"
           >
             На главную
-          </a>
+          </Link>
         </div>
       </nav>
 

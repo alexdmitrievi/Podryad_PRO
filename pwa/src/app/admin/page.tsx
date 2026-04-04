@@ -1167,9 +1167,18 @@ function ResponsesTab({ pin }: { pin: string }) {
   );
 }
 
+function getInitialTab(): TabId {
+  if (typeof window === 'undefined') return 'listings';
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab');
+  const validTabs: TabId[] = ['listings', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'stats'];
+  if (tab && validTabs.includes(tab as TabId)) return tab as TabId;
+  return 'listings';
+}
+
 export default function AdminPage() {
   const [pin, setPin] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>('listings');
+  const [activeTab, setActiveTab] = useState<TabId>(getInitialTab);
 
   if (!pin) {
     return <PinGate onAuth={setPin} />;
