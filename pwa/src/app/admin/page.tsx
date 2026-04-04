@@ -10,6 +10,7 @@ import {
 
 interface Order {
   id: string;
+  order_id: string;
   order_number: string | null;
   status: string;
   escrow_status: string | null;
@@ -17,6 +18,18 @@ interface Order {
   supplier_payout: number | null;
   platform_margin: number | null;
   created_at: string;
+  customer_phone: string | null;
+  customer_name: string | null;
+  address: string | null;
+  work_date: string | null;
+  people_count: number | null;
+  hours: number | null;
+  work_type: string | null;
+  subcategory: string | null;
+  customer_comment: string | null;
+  preferred_contact: string | null;
+  contractor_id: string | null;
+  display_price: number | null;
 }
 
 interface MarkupRate {
@@ -126,10 +139,11 @@ interface ContactEntry {
   source: string;
 }
 
-type TabId = 'listings' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'stats';
+type TabId = 'listings' | 'contractors' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'stats';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "listings", label: "Позиции", icon: Package },
+  { id: "contractors", label: "Исполнители", icon: UserPlus },
   { id: "leads", label: "Заявки", icon: FileText },
   { id: "contacts", label: "Контакты", icon: Contact },
   { id: "responses", label: "Отклики", icon: MessageSquare },
@@ -324,22 +338,173 @@ function UsersTab({ pin }: { pin: string }) {
   );
 }
 
+interface AdminContractor {
+  id: string;
+  name: string;
+  phone: string;
+  city: string;
+  specialties: string[];
+  preferred_contact: string;
+  about: string | null;
+  source: string;
+  telegram_id: string | null;
+  max_id: string | null;
+  email: string | null;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  new: 'bg-gray-100 text-gray-600',
+  verified: 'bg-blue-100 text-blue-700',
+  active: 'bg-green-100 text-green-700',
+  blocked: 'bg-red-100 text-red-700',
+};
+
+const CONTACT_BTNS = [
+  { key: 'max', label: 'MAX', bg: 'bg-[#2787F5]', getHref: (c: AdminContractor) => `https://max.im/search?q=${c.phone}` },
+  { key: 'telegram', label: 'TG', bg: 'bg-[#229ED9]', getHref: (c: AdminContractor) => c.telegram_id ? `https://t.me/${c.telegram_id}` : `https://t.me/+7${c.phone}` },
+  { key: 'phone', label: 'Тел', bg: 'bg-green-500', getHref: (c: AdminContractor) => `tel:+7${c.phone}` },
+  { key: 'email', label: 'Email', bg: 'bg-gray-200 !text-gray-700', getHref: (c: AdminContractor) => c.email ? `mailto:${c.email}` : '' },
+];
+
+function ContractorsTab({ pin }: { pin: string }) {
+  const [contractors, setContractors] = useState<AdminContractor[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/contractors', { headers: { 'x-admin-pin': pin } });
+      const data = await res.json();
+      if (res.ok) setContractors(data.contractors || []);
+    } catch { /* */ }
+    finally { setLoading(false); }
+  }, [pin]);
+
+  const updateStatus = async (id: string, status: string) => {
+    await fetch('/api/admin/contractors', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+      body: JSON.stringify({ id, status }),
+    });
+    setContractors(cs => cs.map(c => c.id === id ? { ...c, status } : c));
+  };
+
+  const saveNotes = async (id: string, notes: string) => {
+    await fetch('/api/admin/contractors', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+      body: JSON.stringify({ id, admin_notes: notes }),
+    });
+  };
+
+  const filtered = contractors.filter(c => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return c.name.toLowerCase().includes(q) || c.phone.includes(q) || c.specialties.some(s => s.toLowerCase().includes(q));
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <button onClick={load} disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
+          <RefreshCw className={loading ? "w-4 h-4 animate-spin" : "w-4 h-4"} /> Загрузить
+        </button>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск..."
+          className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+        {contractors.length > 0 && <span className="text-sm text-gray-500">Всего: {contractors.length}</span>}
+      </div>
+      <div className="grid gap-4">
+        {filtered.map(c => (
+          <div key={c.id} className="bg-white rounded-2xl p-5 shadow-card border border-gray-100">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-[#6C5CE7] flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                {c.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-gray-900">{c.name}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[c.status] || 'bg-gray-100'}`}>{c.status}</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-gray-50 text-gray-500">{c.source}</span>
+                </div>
+                <div className="text-sm text-gray-500 mt-1">{c.phone} &middot; {c.city === 'novosibirsk' ? 'Новосибирск' : 'Омск'} &middot; {fmtDate(c.created_at)}</div>
+                {c.specialties.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {c.specialties.map(s => <span key={s} className="px-2 py-0.5 rounded-full text-xs bg-brand-500/10 text-brand-500 font-medium">{s}</span>)}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {CONTACT_BTNS.map(btn => {
+                    const href = btn.getHref(c);
+                    if (!href) return null;
+                    return (
+                      <a key={btn.key} href={href} target="_blank" rel="noopener noreferrer"
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white cursor-pointer transition-opacity hover:opacity-80 ${btn.bg} ${c.preferred_contact === btn.key ? 'ring-2 ring-offset-1 ring-brand-500' : ''}`}>
+                        {btn.label}
+                      </a>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2 mt-3">
+                  <select value={c.status} onChange={e => updateStatus(c.id, e.target.value)}
+                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 cursor-pointer">
+                    <option value="new">new</option>
+                    <option value="verified">verified</option>
+                    <option value="active">active</option>
+                    <option value="blocked">blocked</option>
+                  </select>
+                  <input defaultValue={c.admin_notes || ''} placeholder="Заметка..."
+                    onBlur={e => saveNotes(c.id, e.target.value)}
+                    className="flex-1 text-xs px-2 py-1 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-brand-500/30" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const ORDER_STATUS_COLORS: Record<string, string> = {
+  pending: 'bg-gray-100 text-gray-600',
+  priced: 'bg-amber-100 text-amber-700',
+  payment_sent: 'bg-amber-100 text-amber-700',
+  paid: 'bg-blue-100 text-blue-700',
+  published: 'bg-blue-100 text-blue-700',
+  in_progress: 'bg-blue-100 text-blue-700',
+  confirming: 'bg-violet-100 text-violet-700',
+  completed: 'bg-green-100 text-green-700',
+  closed: 'bg-green-100 text-green-700',
+  done: 'bg-green-100 text-green-700',
+  disputed: 'bg-red-100 text-red-700',
+  cancelled: 'bg-red-100 text-red-700',
+};
+
 function OrdersTab({ pin }: { pin: string }) {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [contractors, setContractors] = useState<AdminContractor[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [assignState, setAssignState] = useState<Record<string, { price: string; cid: string }>>({});
 
   const loadOrders = async () => {
     setError('');
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/orders', { headers: { 'x-admin-pin': pin } });
-      const data = await res.json();
-      if (res.ok) {
-        setOrders(data.orders || data || []);
-      } else {
-        setError(data.error || 'Ошибка загрузки');
-      }
+      const [ordersRes, contractorsRes] = await Promise.all([
+        fetch('/api/admin/orders', { headers: { 'x-admin-pin': pin } }),
+        fetch('/api/admin/contractors', { headers: { 'x-admin-pin': pin } }),
+      ]);
+      const od = await ordersRes.json();
+      const cd = await contractorsRes.json();
+      if (ordersRes.ok) setOrders(od.orders || []);
+      if (contractorsRes.ok) setContractors(cd.contractors || []);
+      if (!ordersRes.ok) setError(od.error || 'Ошибка');
     } catch {
       setError('Ошибка соединения');
     } finally {
@@ -347,48 +512,108 @@ function OrdersTab({ pin }: { pin: string }) {
     }
   };
 
+  const assignOrder = async (orderId: string) => {
+    const st = assignState[orderId];
+    if (!st?.price || !st?.cid) return;
+    try {
+      await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ display_price: Number(st.price), contractor_id: st.cid }),
+      });
+      setOrders(os => os.map(o => o.order_id === orderId ? { ...o, status: 'priced', display_price: Number(st.price), contractor_id: st.cid } : o));
+    } catch { /* */ }
+  };
+
+  const sendLink = async (orderId: string) => {
+    try {
+      await fetch(`/api/admin/orders/${orderId}/send-link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({}),
+      });
+      setOrders(os => os.map(o => o.order_id === orderId ? { ...o, status: 'payment_sent' } : o));
+    } catch { /* */ }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <button
-          onClick={loadOrders}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50"
-        >
-          <RefreshCw className={loading ? "w-4 h-4 animate-spin" : "w-4 h-4"} />
-          Загрузить
+        <button onClick={loadOrders} disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
+          <RefreshCw className={loading ? "w-4 h-4 animate-spin" : "w-4 h-4"} /> Загрузить
         </button>
-        {orders.length > 0 && (
-          <span className="text-sm text-gray-500 dark:text-gray-400">Всего: {orders.length}</span>
-        )}
+        {orders.length > 0 && <span className="text-sm text-gray-500">Всего: {orders.length}</span>}
       </div>
       {error && <p className="text-red-500 text-sm">{error}</p>}
-      {orders.length > 0 && (
-        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-dark-border">
-                {['№','Статус','Ескро','Покупатель','Исполнитель','Маржа','Дата'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map(o => (
-                <tr key={o.id} className="border-b border-gray-50 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border">
-                  <td className="px-4 py-3 font-mono text-xs">{o.order_number || truncId(o.id)}</td>
-                  <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-border">{o.status}</span></td>
-                  <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-border">{o.escrow_status || '—'}</span></td>
-                  <td className="px-4 py-3 tabular-nums">{fmtMoney(o.customer_total)}</td>
-                  <td className="px-4 py-3 tabular-nums">{fmtMoney(o.supplier_payout)}</td>
-                  <td className="px-4 py-3 tabular-nums font-medium text-brand-500">{fmtMoney(o.platform_margin)}</td>
-                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(o.created_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div className="grid gap-4">
+        {orders.map(o => {
+          const oid = o.order_id || o.id;
+          return (
+            <div key={oid} className="bg-white rounded-2xl p-5 shadow-card border border-gray-100">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-gray-900">{o.order_number || truncId(oid)}</span>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${ORDER_STATUS_COLORS[o.status] || 'bg-gray-100'}`}>{o.status}</span>
+              </div>
+              <div className="text-sm text-gray-500 space-y-1">
+                {o.work_type && <div>{WORK_TYPE_LABELS[o.work_type] || o.work_type}{o.subcategory ? ` / ${o.subcategory}` : ''}</div>}
+                {o.customer_name && <div>{o.customer_name} &middot; {o.customer_phone}</div>}
+                {!o.customer_name && o.customer_phone && <div>{o.customer_phone}</div>}
+                {o.address && <div>{o.address}</div>}
+                <div className="flex flex-wrap gap-3">
+                  {o.work_date && <span>{o.work_date}</span>}
+                  {o.people_count && <span>{o.people_count} чел.</span>}
+                  {o.hours && <span>{o.hours} ч.</span>}
+                </div>
+                {o.customer_comment && <div className="italic text-gray-400">{o.customer_comment}</div>}
+                {(o.display_price || o.customer_total) && (
+                  <div className="text-base font-bold text-gray-900">{fmtMoney(o.display_price || o.customer_total)}</div>
+                )}
+              </div>
+              {/* Contact buttons */}
+              {o.customer_phone && (
+                <div className="flex gap-2 mt-3">
+                  <a href={`https://max.im/search?q=${o.customer_phone}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#2787F5] cursor-pointer hover:opacity-80">MAX</a>
+                  <a href={`https://t.me/+7${o.customer_phone}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#229ED9] cursor-pointer hover:opacity-80">TG</a>
+                  <a href={`tel:+7${o.customer_phone}`} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-green-500 cursor-pointer hover:opacity-80">Тел</a>
+                </div>
+              )}
+              {/* Assign price + contractor for pending orders */}
+              {(o.status === 'pending') && (
+                <div className="mt-3 p-3 rounded-xl bg-gray-50 border border-gray-200 space-y-2">
+                  <div className="flex gap-2">
+                    <input type="number" placeholder="Цена клиенту"
+                      value={assignState[oid]?.price || ''}
+                      onChange={e => setAssignState(s => ({ ...s, [oid]: { ...s[oid], price: e.target.value, cid: s[oid]?.cid || '' } }))}
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500/30" />
+                    <select
+                      value={assignState[oid]?.cid || ''}
+                      onChange={e => setAssignState(s => ({ ...s, [oid]: { ...s[oid], cid: e.target.value, price: s[oid]?.price || '' } }))}
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 text-sm cursor-pointer">
+                      <option value="">Исполнитель...</option>
+                      {contractors.filter(c => c.status === 'active' || c.status === 'verified').map(c => (
+                        <option key={c.id} value={c.id}>{c.name} ({c.specialties.join(', ')})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button onClick={() => assignOrder(oid)}
+                    disabled={!assignState[oid]?.price || !assignState[oid]?.cid}
+                    className="w-full py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium cursor-pointer disabled:opacity-50 transition-colors">
+                    Назначить
+                  </button>
+                </div>
+              )}
+              {/* Send payment link for priced orders */}
+              {o.status === 'priced' && (
+                <button onClick={() => sendLink(oid)}
+                  className="mt-3 w-full py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium cursor-pointer transition-colors">
+                  Отправить ссылку на оплату
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1225,6 +1450,7 @@ export default function AdminPage() {
 
         <div>
           {activeTab === 'listings' && <ListingsTab pin={pin} />}
+          {activeTab === 'contractors' && <ContractorsTab pin={pin} />}
           {activeTab === 'leads' && <LeadsTab pin={pin} />}
           {activeTab === 'contacts' && <ContactsTab pin={pin} />}
           {activeTab === 'responses' && <ResponsesTab pin={pin} />}
