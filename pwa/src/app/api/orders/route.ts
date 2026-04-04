@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
     phone,
     customer_name,
     preferred_contact,
+    combo_components,
   } = body as Record<string, unknown>;
 
   // Validate phone: require 10+ digits after stripping
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Validate work_type
-  const validWorkTypes = ['labor', 'equipment', 'materials', 'complex'];
+  const validWorkTypes = ['labor', 'equipment', 'materials', 'complex', 'combo'];
   if (!work_type || !validWorkTypes.includes(String(work_type))) {
     return NextResponse.json({ error: 'invalid_work_type' }, { status: 422 });
   }
@@ -49,7 +50,12 @@ export async function POST(req: NextRequest) {
       status: 'pending',
       work_type: String(work_type),
       subcategory: subcategory != null ? String(subcategory) : null,
-      customer_comment: description != null ? String(description) : null,
+      customer_comment: [
+        description != null ? String(description) : '',
+        Array.isArray(combo_components) && combo_components.length > 0
+          ? `Комбо: ${(combo_components as string[]).join(', ')}`
+          : '',
+      ].filter(Boolean).join(' | ') || null,
       address: address != null ? String(address) : null,
       address_lat: address_lat != null ? Number(address_lat) : null,
       address_lng: address_lng != null ? Number(address_lng) : null,

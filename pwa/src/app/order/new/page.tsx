@@ -4,11 +4,11 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Users, Wrench, Package, Layers } from 'lucide-react';
+import { Users, Wrench, Package, Layers, Zap } from 'lucide-react';
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
 
-type WorkType = 'labor' | 'equipment' | 'materials' | 'complex' | '';
+type WorkType = 'labor' | 'equipment' | 'materials' | 'combo' | '';
 type City = 'omsk' | 'novosibirsk';
 type Messenger = 'MAX' | 'Telegram' | 'Позвонить' | 'Email';
 
@@ -16,18 +16,34 @@ const SUBCATEGORIES: Record<string, string[]> = {
   labor: ['Грузчики', 'Разнорабочие', 'Строители', 'Уборка территории', 'Благоустройство'],
   equipment: ['Экскаватор', 'Бульдозер', 'Самосвал', 'Погрузчик', 'Виброплита'],
   materials: ['Бетон', 'Щебень', 'Песок', 'Битум'],
-  complex: [],
+  combo: [],
 };
+
+const COMBO_COMPONENTS = [
+  { key: 'labor', label: 'Рабочие / Бригада', icon: <Users size={16} /> },
+  { key: 'equipment', label: 'Техника / Спецтехника', icon: <Wrench size={16} /> },
+  { key: 'materials', label: 'Материалы', icon: <Package size={16} /> },
+];
+
+function getComboDiscountLabel(components: string[]): string | null {
+  const has = (k: string) => components.includes(k);
+  if (has('labor') && has('equipment') && has('materials')) return '−20%';
+  if (has('labor') && has('equipment')) return '−15%';
+  if (has('labor') && has('materials')) return '−10%';
+  if (has('equipment') && has('materials')) return '−10%';
+  return null;
+}
 
 const CATEGORY_OPTIONS: {
   value: WorkType;
   label: string;
   icon: React.ReactNode;
+  badge?: string;
 }[] = [
   { value: 'labor', label: 'Рабочие', icon: <Users size={22} /> },
   { value: 'equipment', label: 'Техника', icon: <Wrench size={22} /> },
   { value: 'materials', label: 'Материалы', icon: <Package size={22} /> },
-  { value: 'complex', label: 'Комплекс', icon: <Layers size={22} /> },
+  { value: 'combo', label: 'Комбо', icon: <Zap size={22} />, badge: 'до −20%' },
 ];
 
 const CITY_OPTIONS: { value: City; label: string }[] = [
@@ -71,6 +87,13 @@ export default function OrderNewPage() {
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [comboComponents, setComboComponents] = useState<string[]>([]);
+
+  function toggleComboComponent(key: string) {
+    setComboComponents(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  }
 
   function handleMapSelect(lat: number, lng: number) {
     setAddressLat(lat);
@@ -103,6 +126,7 @@ export default function OrderNewPage() {
           phone,
           customer_name,
           messenger,
+          combo_components: work_type === 'combo' ? comboComponents : undefined,
         }),
       });
       setSubmitted(true);
@@ -196,18 +220,24 @@ export default function OrderNewPage() {
               Категория
             </label>
             <div className="grid grid-cols-2 gap-3">
-              {CATEGORY_OPTIONS.map(({ value, label, icon }) => (
+              {CATEGORY_OPTIONS.map(({ value, label, icon, badge }) => (
                 <button
                   key={value}
                   type="button"
                   onClick={() => {
                     setWorkType(value);
                     setSubcategory('');
+                    if (value !== 'combo') setComboComponents([]);
                   }}
-                  className={`flex flex-col items-center justify-center gap-2 min-h-[80px] rounded-[10px] border transition-all duration-200 cursor-pointer font-semibold text-sm ${
+                  className={`flex flex-col items-center justify-center gap-2 min-h-[80px] rounded-[10px] border transition-all duration-200 cursor-pointer font-semibold text-sm relative ${
                     work_type === value ? chipActive : chipInactive
                   }`}
                 >
+                  {badge && (
+                    <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                      {badge}
+                    </span>
+                  )}
                   <span className={work_type === value ? 'text-white' : 'text-brand-500'}>
                     {icon}
                   </span>
@@ -217,8 +247,54 @@ export default function OrderNewPage() {
             </div>
           </div>
 
-          {/* 2. Subcategory */}
-          {work_type && work_type !== 'complex' && SUBCATEGORIES[work_type]?.length > 0 && (
+          {/* 2. Subcategory / Combo components */}
+          {work_type === 'combo' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Что включить в комбо?
+                </label>
+                <div className="grid gap-2">
+                  {COMBO_COMPONENTS.map(({ key, label, icon }) => (
+                    <button key={key} type="button"
+                      onClick={() => toggleComboComponent(key)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-[10px] border transition-all duration-200 cursor-pointer text-left ${
+                        comboComponents.includes(key) ? chipActive : chipInactive
+                      }`}>
+                      <span className={comboComponents.includes(key) ? 'text-white' : 'text-brand-500'}>{icon}</span>
+                      <span className="font-semibold text-sm">{label}</span>
+                    </button>
+                  ))}
+                </div>
+                {getComboDiscountLabel(comboComponents) && (
+                  <div className="mt-3 inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 font-bold text-sm px-4 py-2 rounded-xl">
+                    <Zap size={16} />
+                    Комбо-скидка {getComboDiscountLabel(comboComponents)}
+                  </div>
+                )}
+              </div>
+              {/* Show subcategories for each selected combo component */}
+              {comboComponents.map(comp => (
+                SUBCATEGORIES[comp]?.length > 0 && (
+                  <div key={comp}>
+                    <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">
+                      {COMBO_COMPONENTS.find(c => c.key === comp)?.label}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {SUBCATEGORIES[comp].map(sub => (
+                        <button key={sub} type="button"
+                          onClick={() => setSubcategory(prev => prev === sub ? '' : sub)}
+                          className={`${chipBase} text-xs ${subcategory === sub ? chipActive : chipInactive}`}>
+                          {sub}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              ))}
+            </div>
+          )}
+          {work_type && work_type !== 'combo' && SUBCATEGORIES[work_type]?.length > 0 && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Подкатегория
@@ -235,11 +311,6 @@ export default function OrderNewPage() {
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-          {work_type === 'complex' && (
-            <div className="rounded-xl bg-brand-50 border border-brand-100 px-4 py-3 text-sm text-brand-600">
-              Опишите в описании
             </div>
           )}
 

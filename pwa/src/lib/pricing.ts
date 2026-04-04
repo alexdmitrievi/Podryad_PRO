@@ -82,8 +82,27 @@ export interface OrderTotals {
 }
 
 /**
+ * Returns combo discount rate based on which service types are combined.
+ * - labor + equipment = 15%
+ * - labor + materials = 10%
+ * - equipment + materials = 10%
+ * - labor + equipment + materials = 20%
+ */
+export function getComboDiscountRate(listingTypes: Set<string>): number {
+  const hasLabor = listingTypes.has('labor');
+  const hasEquipment = listingTypes.has('equipment') || listingTypes.has('equipment_rental');
+  const hasMaterials = listingTypes.has('materials') || listingTypes.has('material');
+
+  if (hasLabor && hasEquipment && hasMaterials) return 0.20;
+  if (hasLabor && hasEquipment) return 0.15;
+  if (hasLabor && hasMaterials) return 0.10;
+  if (hasEquipment && hasMaterials) return 0.10;
+  return 0;
+}
+
+/**
  * Calculates order totals from line items.
- * - comboDiscount = 15% of customerTotal if ≥2 different listingTypes present.
+ * - comboDiscount uses tiered rates based on which listingTypes are combined.
  * - Protection: combo discount is capped so platform always earns ≥3% of supplierPayout.
  */
 export function calculateOrderTotals(items: OrderItem[]): OrderTotals {
@@ -97,11 +116,11 @@ export function calculateOrderTotals(items: OrderItem[]): OrderTotals {
   const rawSupplierPayout = enriched.reduce((sum, i) => sum + i.supplierLine, 0);
 
   const uniqueListingTypes = new Set(items.map((i) => i.listingType));
-  const hasCombo = uniqueListingTypes.size >= 2;
+  const comboRate = getComboDiscountRate(uniqueListingTypes);
 
   let comboDiscount = 0;
-  if (hasCombo) {
-    const raw = Math.round(rawCustomerTotal * 0.15 * 100) / 100;
+  if (comboRate > 0) {
+    const raw = Math.round(rawCustomerTotal * comboRate * 100) / 100;
     const grossMargin = rawCustomerTotal - rawSupplierPayout;
     // Ensure platform keeps at least 3% of supplierPayout after discount
     const maxDiscount = Math.max(grossMargin - rawSupplierPayout * 0.03, 0);

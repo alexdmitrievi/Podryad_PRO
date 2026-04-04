@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import ComboOfferBanner from '@/components/landing/ComboOfferBanner';
 import PhoneInput, { isValidPhone } from '@/components/ui/PhoneInput';
 import Spinner from '@/components/ui/Spinner';
 
@@ -425,6 +426,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── 3.5. КОМБО-СКИДКА ─────────────────────────────────── */}
+      <ComboOfferBanner />
 
       {/* ── 4. ДЛЯ ИСПОЛНИТЕЛЕЙ ────────────────────────────────── */}
       <section className="relative py-24 px-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #2F5BFF 0%, #6C5CE7 100%)' }}>
