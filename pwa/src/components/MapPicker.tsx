@@ -3,13 +3,17 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix default marker icon (Leaflet issue with webpack)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+// Custom red marker icon (no default blue-yellow Leaflet marker)
+const redIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml,' + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41">
+      <path d="M12.5 0C5.6 0 0 5.6 0 12.5C0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0Z" fill="#2F5BFF"/>
+      <circle cx="12.5" cy="12.5" r="5" fill="white"/>
+    </svg>
+  `),
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
 });
 
 function ClickHandler({ onSelect }: { onSelect: (lat: number, lng: number) => void }) {
@@ -40,7 +44,7 @@ export default function MapPicker({ lat, lng, onSelect, city }: Props) {
         attribution="&copy; OpenStreetMap"
       />
       <ClickHandler onSelect={onSelect} />
-      {lat && lng && <Marker position={[lat, lng]} />}
+      {lat && lng && <Marker position={[lat, lng]} icon={redIcon} />}
     </MapContainer>
   );
 }
