@@ -62,13 +62,12 @@ function getTodayString() {
 }
 
 const chipBase =
-  'py-2 px-4 text-sm font-semibold rounded-[10px] border transition-all duration-200 cursor-pointer';
+  'py-2.5 px-4 text-sm font-semibold rounded-xl border-[1.5px] transition-all duration-200 cursor-pointer';
 const chipActive = 'bg-brand-500 text-white border-brand-500 shadow-glow';
 const chipInactive =
-  'bg-white text-gray-700 border-gray-200 hover:border-brand-500 hover:shadow-sm';
+  'bg-white text-gray-700 border-gray-200 hover:border-brand-400 hover:shadow-sm';
 
-const inputClass =
-  'w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow';
+const inputClass = 'input-field';
 
 export default function OrderNewPage() {
   const [work_type, setWorkType] = useState<WorkType>('');
@@ -167,7 +166,7 @@ export default function OrderNewPage() {
             </p>
             <Link
               href="/"
-              className="mt-8 inline-flex items-center gap-2 bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-sm px-6 py-3 rounded-[10px] transition-colors cursor-pointer"
+              className="mt-8 inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm px-6 py-3 rounded-xl transition-colors cursor-pointer"
             >
               На главную
             </Link>
@@ -229,7 +228,7 @@ export default function OrderNewPage() {
                     setSubcategory('');
                     if (value !== 'combo') setComboComponents([]);
                   }}
-                  className={`flex flex-col items-center justify-center gap-2 min-h-[80px] rounded-[10px] border transition-all duration-200 cursor-pointer font-semibold text-sm relative ${
+                  className={`flex flex-col items-center justify-center gap-2 min-h-[80px] rounded-xl border transition-all duration-200 cursor-pointer font-semibold text-sm relative ${
                     work_type === value ? chipActive : chipInactive
                   }`}
                 >
@@ -258,7 +257,7 @@ export default function OrderNewPage() {
                   {COMBO_COMPONENTS.map(({ key, label, icon }) => (
                     <button key={key} type="button"
                       onClick={() => toggleComboComponent(key)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-[10px] border transition-all duration-200 cursor-pointer text-left ${
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 cursor-pointer text-left ${
                         comboComponents.includes(key) ? chipActive : chipInactive
                       }`}>
                       <span className={comboComponents.includes(key) ? 'text-white' : 'text-brand-500'}>{icon}</span>
@@ -419,7 +418,7 @@ export default function OrderNewPage() {
                   key={value}
                   type="button"
                   onClick={() => setCity(value)}
-                  className={`min-h-[48px] rounded-[10px] border text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  className={`min-h-[48px] rounded-xl border text-sm font-semibold transition-all duration-200 cursor-pointer ${
                     city === value ? chipActive : chipInactive
                   }`}
                 >
@@ -498,7 +497,7 @@ export default function OrderNewPage() {
           <button
             type="submit"
             disabled={loading || !consent || !phone}
-            className="hidden md:block bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold min-h-[56px] py-4 rounded-[10px] w-full text-base transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer"
+            className="hidden md:block bg-brand-500 hover:bg-brand-600 text-white font-bold min-h-[56px] py-4 rounded-xl w-full text-base transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer"
           >
             {loading ? 'Отправляем...' : 'Разместить заказ'}
           </button>
@@ -511,7 +510,7 @@ export default function OrderNewPage() {
           type="submit"
           form="order-form"
           disabled={loading || !consent || !phone}
-          className="block w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-base text-center py-3.5 rounded-[10px] transition-colors cursor-pointer shadow-elevated disabled:opacity-50"
+          className="block w-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-base text-center py-3.5 rounded-xl transition-colors cursor-pointer shadow-elevated disabled:opacity-50"
         >
           {loading ? 'Отправляем...' : 'Разместить заказ'}
         </button>

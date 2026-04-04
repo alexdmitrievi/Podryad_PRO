@@ -67,6 +67,7 @@ module.exports = {
         'card-hover': '0 20px 40px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.04)',
         'elevated': '0 24px 48px rgba(0,0,0,0.12), 0 12px 24px rgba(0,0,0,0.06)',
         'glow': '0 0 30px rgba(47,91,255,0.2)',
+        'glow-hover': '0 8px 30px rgba(47,91,255,0.35)',
         'glow-lg': '0 0 60px rgba(47,91,255,0.25)',
         'glow-accent': '0 0 30px rgba(255,107,53,0.2)',
         'inner-soft': 'inset 0 2px 4px rgba(0,0,0,0.04)',

@@ -7,12 +7,12 @@ export default function PrivacyPage() {
       {/* NAVBAR */}
       <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <span className="text-lg font-extrabold text-[#2d35a8]">
+          <span className="text-lg font-extrabold text-brand-900">
             Подряд PRO
           </span>
           <Link
             href="/"
-            className="bg-[#2d35a8] text-white text-sm font-bold px-5 py-2 rounded-xl hover:bg-[#252ca0] transition-colors cursor-pointer"
+            className="bg-brand-500 text-white text-sm font-bold px-5 py-2 rounded-xl hover:bg-brand-600 transition-colors cursor-pointer"
           >
             На главную
           </Link>
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
           <p className="text-gray-700 leading-relaxed mb-3">
             Настоящая Политика конфиденциальности (далее — «Политика») определяет порядок обработки
             и защиты персональных данных пользователей сервиса Подряд PRO, расположенного по адресу{' '}
-            <a href="https://podryadpro.ru" className="text-[#2d35a8] underline hover:no-underline">
+            <a href="https://podryadpro.ru" className="text-brand-900 underline hover:no-underline">
               podryadpro.ru
             </a>{' '}
             (далее — «Сервис», «Платформа»).
@@ -50,13 +50,13 @@ export default function PrivacyPage() {
             <p>Адрес: г. Омск</p>
             <p>
               Телефон:{' '}
-              <a href="tel:+79136691665" className="text-[#2d35a8] hover:underline">
+              <a href="tel:+79136691665" className="text-brand-900 hover:underline">
                 +7-913-669-16-65
               </a>
             </p>
             <p>
               Сайт:{' '}
-              <a href="https://podryadpro.ru" className="text-[#2d35a8] hover:underline">
+              <a href="https://podryadpro.ru" className="text-brand-900 hover:underline">
                 podryadpro.ru
               </a>
             </p>
@@ -301,13 +301,13 @@ export default function PrivacyPage() {
             <p>г. Омск</p>
             <p>
               Телефон:{' '}
-              <a href="tel:+79136691665" className="text-[#2d35a8] hover:underline">
+              <a href="tel:+79136691665" className="text-brand-900 hover:underline">
                 +7-913-669-16-65
               </a>
             </p>
             <p>
               Сайт:{' '}
-              <a href="https://podryadpro.ru" className="text-[#2d35a8] hover:underline">
+              <a href="https://podryadpro.ru" className="text-brand-900 hover:underline">
                 podryadpro.ru
               </a>
             </p>
@@ -319,7 +319,7 @@ export default function PrivacyPage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-[#0f1129] py-8 px-4 text-center">
+      <footer className="bg-brand-900 py-8 px-4 text-center">
         <p className="text-gray-400 text-sm mb-1">
           &copy; {new Date().getFullYear()} ИП Жбанков Алексей Дмитриевич. ИНН 550516401202. г. Омск.
         </p>

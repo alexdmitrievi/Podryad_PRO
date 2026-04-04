@@ -163,7 +163,7 @@ export default function NewRentalPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-2">Заявка отправлена!</h2>
               <p className="text-gray-500 mb-6">Мы подберём технику и свяжемся с вами в течение 15 минут.</p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link href="/dashboard" className="inline-flex items-center justify-center bg-brand-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-[#4DA3FF] transition-colors">
+                <Link href="/dashboard" className="inline-flex items-center justify-center bg-brand-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-brand-600 transition-colors">
                   Смотреть заказы на карте
                 </Link>
                 <Link href="/" className="inline-flex items-center justify-center bg-gray-100 text-gray-700 font-semibold px-6 py-3 rounded-xl hover:bg-gray-200 transition-colors">
@@ -275,7 +275,7 @@ export default function NewRentalPage() {
                     className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
                   />
                   <button type="button" onClick={searchAddress} disabled={searching}
-                    className="px-4 py-3 bg-brand-500 hover:bg-[#4DA3FF] text-white font-semibold text-sm rounded-xl transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap">
+                    className="px-4 py-3 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm rounded-xl transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap">
                     {searching ? '...' : 'Найти'}
                   </button>
                 </div>
@@ -322,7 +322,7 @@ export default function NewRentalPage() {
               </div>
 
               <button type="submit" disabled={loading || !consent || !isValidPhone(phone) || !lat || !lon}
-                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-4 rounded-xl text-lg transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2">
+                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-4 rounded-xl text-lg transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2">
                 {loading ? <><Spinner className="w-5 h-5 text-white" /> Отправляем...</> : 'Разместить заявку на технику'}
               </button>
             </form>

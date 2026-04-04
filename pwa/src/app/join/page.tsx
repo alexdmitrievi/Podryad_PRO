@@ -20,10 +20,10 @@ const SPECIALTY_OPTIONS = [
 ];
 
 const CONTACT_METHODS: { id: ContactMethod; label: string; activeClass: string }[] = [
-  { id: 'MAX', label: 'MAX', activeClass: 'bg-[#2787F5] text-white border-[#2787F5]' },
-  { id: 'Telegram', label: 'Telegram', activeClass: 'bg-[#229ED9] text-white border-[#229ED9]' },
-  { id: 'Позвонить', label: 'Позвонить', activeClass: 'bg-green-500 text-white border-green-500' },
-  { id: 'Email', label: 'Email', activeClass: 'bg-brand-500 text-white border-brand-500' },
+  { id: 'MAX', label: 'MAX', activeClass: 'bg-max text-white border-max' },
+  { id: 'Telegram', label: 'Telegram', activeClass: 'bg-brand-500 text-white border-brand-500' },
+  { id: 'Позвонить', label: 'Позвонить', activeClass: 'bg-success-500 text-white border-success-500' },
+  { id: 'Email', label: 'Email', activeClass: 'bg-violet text-white border-violet' },
 ];
 
 export default function JoinPage() {
@@ -73,10 +73,7 @@ export default function JoinPage() {
   return (
     <div className="min-h-screen bg-surface font-sans">
       {/* Header */}
-      <div
-        className="py-14 px-4 text-center"
-        style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 100%)' }}
-      >
+      <div className="section-gradient py-14 px-4 text-center">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading mb-3">
           Стать исполнителем
         </h1>
@@ -151,7 +148,7 @@ export default function JoinPage() {
                     key={c}
                     type="button"
                     onClick={() => setCity(c)}
-                    className={`min-h-[48px] py-2.5 rounded-[10px] text-sm font-semibold border transition-all duration-200 cursor-pointer ${
+                    className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
                       city === c
                         ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
                         : 'bg-white text-gray-700 border-gray-200 hover:border-brand-500 hover:shadow-sm'
@@ -176,7 +173,7 @@ export default function JoinPage() {
                       key={spec}
                       type="button"
                       onClick={() => toggleSpecialty(spec)}
-                      className={`px-4 py-2.5 rounded-[10px] text-sm font-semibold border transition-all duration-200 cursor-pointer min-h-[48px] ${
+                      className={`px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer min-h-[48px] ${
                         active
                           ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
                           : 'bg-white text-gray-700 border-gray-200 hover:border-brand-500 hover:shadow-sm'
@@ -216,7 +213,7 @@ export default function JoinPage() {
                       key={m.id}
                       type="button"
                       onClick={() => setPreferredContact(m.id)}
-                      className={`min-h-[48px] py-2.5 rounded-[10px] text-sm font-semibold border transition-all duration-200 cursor-pointer ${
+                      className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
                         active
                           ? m.activeClass
                           : 'bg-white text-gray-700 border-gray-200 hover:shadow-sm'
@@ -261,7 +258,7 @@ export default function JoinPage() {
             <button
               type="submit"
               disabled={loading || !consent}
-              className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold min-h-[56px] py-4 rounded-[10px] w-full text-base transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer"
+              className="bg-brand-500 hover:bg-brand-600 text-white font-bold min-h-[56px] py-4 rounded-xl w-full text-base transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer"
             >
               {loading ? 'Отправляем...' : 'Отправить анкету'}
             </button>

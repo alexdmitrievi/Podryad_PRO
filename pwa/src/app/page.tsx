@@ -208,7 +208,7 @@ export default function HomePage() {
           </div>
           <a
             href="/order/new"
-            className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-sm px-5 py-2.5 rounded-[10px] transition-colors cursor-pointer"
+            className="bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors cursor-pointer"
           >
             Разместить заказ
           </a>
@@ -217,8 +217,7 @@ export default function HomePage() {
 
       {/* ── 1. HERO ─────────────────────────────────────────────── */}
       <section
-        className="relative py-28 sm:py-32 px-4 overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 60%, #6C5CE7 100%)' }}
+        className="section-gradient relative py-28 sm:py-32 px-4 overflow-hidden"
       >
         {/* Noise texture */}
         <div className="absolute inset-0 noise-overlay pointer-events-none" />
@@ -261,7 +260,7 @@ export default function HomePage() {
           <div className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
             <a
               href="/order/new"
-              className="group inline-flex items-center gap-2 bg-white text-brand-500 hover:text-brand-600 font-bold text-lg px-10 py-4 rounded-[10px] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(47,91,255,0.3)] cursor-pointer"
+              className="group inline-flex items-center gap-2 bg-white text-brand-500 hover:text-brand-600 font-bold text-lg px-10 py-4 rounded-xl transition-all duration-300 hover:shadow-glow-hover cursor-pointer"
             >
               Разместить заказ
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -370,7 +369,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/order/new"
-              className="group inline-flex items-center justify-center gap-2 bg-brand-500 text-white font-bold px-8 py-4 rounded-[10px] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] cursor-pointer min-w-[220px]"
+              className="group inline-flex items-center justify-center gap-2 bg-brand-500 text-white font-bold px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-glow-hover cursor-pointer min-w-[220px]"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
               Заказать рабочих
@@ -378,7 +377,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/order/new?type=equipment"
-              className="group inline-flex items-center justify-center gap-2 bg-white text-brand-500 border-2 border-brand-500 font-bold px-8 py-4 rounded-[10px] transition-all duration-300 hover:bg-brand-500/5 cursor-pointer min-w-[220px]"
+              className="group inline-flex items-center justify-center gap-2 bg-white text-brand-500 border-2 border-brand-500 font-bold px-8 py-4 rounded-xl transition-all duration-300 hover:bg-brand-500/5 cursor-pointer min-w-[220px]"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
               Арендовать технику
@@ -392,7 +391,7 @@ export default function HomePage() {
       </section>
 
       {/* ── 3. БЕЗОПАСНАЯ СДЕЛКА — 4 шага ───────────────────────── */}
-      <section className="relative py-24 px-4 overflow-hidden" style={{ background: 'linear-gradient(160deg, #1E2A5A 0%, #2F5BFF 100%)' }}>
+      <section className="section-gradient relative py-24 px-4 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-brand-500/10 blur-[120px] pointer-events-none" />
         <div ref={revSteps} className="relative z-10 max-w-5xl mx-auto reveal">
           <div className="text-center mb-16">
@@ -426,7 +425,7 @@ export default function HomePage() {
       <ComboOfferBanner />
 
       {/* ── 4. ДЛЯ ИСПОЛНИТЕЛЕЙ ────────────────────────────────── */}
-      <section className="relative py-24 px-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #2F5BFF 0%, #6C5CE7 100%)' }}>
+      <section className="section-gradient relative py-24 px-4 overflow-hidden">
         <div ref={revExecutors} className="relative z-10 max-w-3xl mx-auto text-center reveal">
           <span className="inline-block text-white/70 font-semibold text-sm tracking-wider uppercase mb-3">Партнёрам</span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-6 font-heading">
@@ -438,14 +437,14 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="/join"
-              className="group inline-flex items-center justify-center gap-2 bg-white text-brand-500 hover:text-brand-600 font-bold px-8 py-4 rounded-[10px] transition-all duration-300 hover:shadow-[0_8px_32px_rgba(255,255,255,0.2)] cursor-pointer"
+              className="group inline-flex items-center justify-center gap-2 bg-white text-brand-500 hover:text-brand-600 font-bold px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-glow-hover cursor-pointer"
             >
               Заполнить анкету
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform duration-300 group-hover:translate-x-0.5"><path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </a>
             <a
               href="/join"
-              className="inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm border border-white/25 text-white hover:bg-white/25 font-bold px-8 py-4 rounded-[10px] transition-all duration-300 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm border border-white/25 text-white hover:bg-white/25 font-bold px-8 py-4 rounded-xl transition-all duration-300 cursor-pointer"
             >
               Стать исполнителем
             </a>
@@ -487,7 +486,7 @@ export default function HomePage() {
                       key={wt}
                       type="button"
                       onClick={() => setCategory(wt)}
-                      className={`min-h-[48px] py-2.5 rounded-[10px] text-sm font-semibold border transition-all duration-200 cursor-pointer ${
+                      className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
                         category === wt
                           ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
                           : 'bg-white text-gray-700 border-gray-200 hover:border-brand-500 hover:shadow-sm'
@@ -567,7 +566,7 @@ export default function HomePage() {
                       key={c}
                       type="button"
                       onClick={() => setCity(c)}
-                      className={`min-h-[48px] py-2.5 rounded-[10px] text-sm font-semibold border transition-all duration-200 cursor-pointer ${
+                      className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
                         city === c
                           ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
                           : 'bg-white text-gray-700 border-gray-200 hover:border-brand-500 hover:shadow-sm'
@@ -590,7 +589,7 @@ export default function HomePage() {
                       key={m}
                       type="button"
                       onClick={() => setMessenger(m)}
-                      className={`min-h-[48px] py-2.5 rounded-[10px] text-sm font-semibold border transition-all duration-200 cursor-pointer ${
+                      className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
                         messenger === m
                           ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
                           : 'bg-white text-gray-700 border-gray-200 hover:border-brand-500 hover:shadow-sm'
@@ -628,7 +627,7 @@ export default function HomePage() {
               <button
                 type="submit"
                 disabled={loading || !consent}
-                className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold min-h-[56px] py-4 rounded-[10px] w-full text-base transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                className="bg-brand-500 hover:bg-brand-600 text-white font-bold min-h-[56px] py-4 rounded-xl w-full text-base transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? <><Spinner className="w-5 h-5 text-white" /> Отправляем...</> : 'Отправить заявку'}
               </button>
@@ -638,7 +637,7 @@ export default function HomePage() {
       </section>
 
       {/* ── FOOTER ──────────────────────────────────────────────── */}
-      <footer className="py-10 px-4" style={{ background: '#1E2A5A' }}>
+      <footer className="py-10 px-4 bg-brand-900">
         <div className="max-w-6xl mx-auto">
           <div className="divider-gradient mb-8" />
           <div className="flex flex-col items-center gap-4 md:flex-row md:justify-between">

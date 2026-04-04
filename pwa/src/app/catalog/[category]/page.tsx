@@ -173,7 +173,7 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
               <button
                 type="submit"
                 disabled={loading || !consent || !contact.trim()}
-                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? <><Spinner className="w-5 h-5 text-white" /> Отправляем...</> : 'Получить предложение'}
               </button>
@@ -294,8 +294,7 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
 
       {/* Header */}
       <section
-        className="py-16 sm:py-20 px-4"
-        style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 60%, #6C5CE7 100%)' }}
+        className="section-gradient py-16 sm:py-20 px-4"
       >
         <div className="max-w-6xl mx-auto text-center">
           <span className="text-4xl mb-4 block">{meta.icon}</span>
@@ -347,7 +346,7 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
                   </div>
                   <button
                     onClick={() => setOrderItem(item)}
-                    className="mt-4 w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-3 rounded-xl transition-all duration-200 hover:shadow-[0_8px_30px_rgba(47,91,255,0.25)] cursor-pointer"
+                    className="mt-4 w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 rounded-xl transition-all duration-200 hover:shadow-glow-hover cursor-pointer"
                   >
                     Заказать
                   </button>

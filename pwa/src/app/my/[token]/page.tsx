@@ -245,8 +245,7 @@ export default function CustomerDashboard() {
     <div className="min-h-screen bg-surface">
       {/* Header */}
       <div
-        className="px-4 pt-10 pb-6 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 100%)' }}
+        className="section-gradient px-4 pt-10 pb-6 relative overflow-hidden"
       >
         <div className="max-w-lg mx-auto">
           <div className="flex items-start justify-between gap-4">
@@ -260,8 +259,7 @@ export default function CustomerDashboard() {
             </div>
             <Link
               href="/order/new"
-              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-sm font-semibold cursor-pointer transition-colors duration-150"
-              style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-sm font-semibold cursor-pointer transition-colors duration-150 bg-white/15 backdrop-blur-sm hover:bg-white/25"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

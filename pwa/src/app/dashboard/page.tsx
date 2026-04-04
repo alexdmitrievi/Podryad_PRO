@@ -142,7 +142,7 @@ function ResponseModal({ order, onClose }: { order: PublicOrder; onClose: () => 
                 </span>
               </label>
               <button type="submit" disabled={loading || !consent || !name.trim() || !phone.trim()}
-                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2">
+                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2">
                 {loading ? <><Spinner className="w-5 h-5 text-white" /> Отправляем...</> : 'Отправить отклик'}
               </button>
             </form>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
             <span className="text-lg font-extrabold text-brand-900 font-heading">Подряд PRO</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/orders/new" className="hidden sm:inline-flex bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-sm px-4 py-2 rounded-lg transition-colors">
+            <Link href="/orders/new" className="hidden sm:inline-flex bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm px-4 py-2 rounded-lg transition-colors">
               + Заказать рабочих
             </Link>
             <Link href="/" className="text-brand-500 hover:text-brand-600 font-semibold text-sm flex items-center gap-1 transition-colors">
@@ -298,7 +298,7 @@ export default function DashboardPage() {
               <h3 className="text-xl font-bold text-gray-900 mb-2">Пока нет активных заказов</h3>
               <p className="text-gray-500 mb-6">Создайте первый заказ или подождите, пока заказчики разместят свои</p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link href="/orders/new" className="inline-flex items-center justify-center bg-brand-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-[#4DA3FF] transition-colors">
+                <Link href="/orders/new" className="inline-flex items-center justify-center bg-brand-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-brand-600 transition-colors">
                   Заказать рабочих
                 </Link>
                 <Link href="/orders/new-rental" className="inline-flex items-center justify-center bg-amber-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-amber-600 transition-colors">
@@ -367,7 +367,7 @@ export default function DashboardPage() {
                         <span className="text-lg font-extrabold text-brand-500">{selectedOrder.customer_total.toLocaleString('ru-RU')} ₽</span>
                       )}
                       <button onClick={() => setRespondOrder(selectedOrder)}
-                        className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all hover:shadow-[0_4px_20px_rgba(47,91,255,0.3)] cursor-pointer whitespace-nowrap">
+                        className="bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all hover:shadow-[0_4px_20px_rgba(47,91,255,0.3)] cursor-pointer whitespace-nowrap">
                         Откликнуться
                       </button>
                     </div>
@@ -420,7 +420,7 @@ export default function DashboardPage() {
                             <span className="text-lg font-extrabold text-brand-500">{order.customer_total.toLocaleString('ru-RU')} ₽</span>
                           )}
                           <button onClick={() => setRespondOrder(order)}
-                            className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all hover:shadow-[0_4px_20px_rgba(47,91,255,0.3)] cursor-pointer whitespace-nowrap">
+                            className="bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all hover:shadow-[0_4px_20px_rgba(47,91,255,0.3)] cursor-pointer whitespace-nowrap">
                             Откликнуться
                           </button>
                         </div>

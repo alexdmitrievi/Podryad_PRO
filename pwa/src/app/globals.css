@@ -216,6 +216,197 @@
   box-shadow: 0 24px 48px rgba(0,0,0,0.3), 0 0 30px rgba(47,91,255,0.08);
 }
 
+/* ─── Reusable button styles ─── */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #2F5BFF;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: #2548d9;
+  box-shadow: 0 8px 30px rgba(47,91,255,0.35);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(47,91,255,0.08);
+  color: #2F5BFF;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(47,91,255,0.15);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: rgba(47,91,255,0.14);
+  border-color: rgba(47,91,255,0.3);
+}
+
+/* ─── Chip / toggle button ─── */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.chip:hover {
+  border-color: rgba(47,91,255,0.4);
+  box-shadow: 0 2px 8px rgba(47,91,255,0.08);
+}
+
+.chip-active {
+  background: #2F5BFF;
+  color: #fff;
+  border-color: #2F5BFF;
+  box-shadow: 0 0 20px rgba(47,91,255,0.2);
+}
+
+.chip-active:hover {
+  background: #2548d9;
+  border-color: #2548d9;
+}
+
+/* ─── Form input ─── */
+
+.input-field {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #111827;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 0.75rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input-field::placeholder {
+  color: #9ca3af;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #2F5BFF;
+  box-shadow: 0 0 0 3px rgba(47,91,255,0.12);
+}
+
+.input-field:focus-within {
+  border-color: #2F5BFF;
+}
+
+/* ─── Form section card ─── */
+
+.form-card {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+}
+
+@media (min-width: 640px) {
+  .form-card {
+    padding: 2rem;
+  }
+}
+
+/* ─── Section header gradient ─── */
+
+.section-gradient {
+  background: linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 60%, #6C5CE7 100%);
+}
+
+/* ─── Success card ─── */
+
+.success-card {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 1rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.06);
+}
+
+/* ─── Modal overlay ─── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 1.25rem;
+  width: 100%;
+  max-width: 28rem;
+  padding: 1.5rem;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.12), 0 12px 24px rgba(0,0,0,0.06);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (min-width: 640px) {
+  .modal-card {
+    padding: 2rem;
+  }
+}
+
+/* ─── Navbar shared ─── */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-bottom: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
 /* ─── Badge / chip styles ─── */
 
 .badge-brand {
