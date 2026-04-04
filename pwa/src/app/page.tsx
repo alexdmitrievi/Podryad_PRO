@@ -206,10 +206,10 @@ export default function HomePage() {
             </span>
           </div>
           <a
-            href="#lead-form"
+            href="/order/new"
             className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-sm px-5 py-2.5 rounded-[10px] transition-colors cursor-pointer"
           >
-            Оставить заявку
+            Разместить заказ
           </a>
         </div>
       </nav>
@@ -264,10 +264,10 @@ export default function HomePage() {
 
           <div className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
             <a
-              href="#lead-form"
+              href="/order/new"
               className="group inline-flex items-center gap-2 bg-white text-brand-500 hover:text-brand-600 font-bold text-lg px-10 py-4 rounded-[10px] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(47,91,255,0.3)] cursor-pointer"
             >
-              Оставить заявку
+              Разместить заказ
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </a>
           </div>
@@ -439,21 +439,18 @@ export default function HomePage() {
             Платформа бесплатна для исполнителей. Получайте заказы, выставляйте свои услуги — без комиссий и подписок.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/dashboard"
+            <a
+              href="/join"
               className="group inline-flex items-center justify-center gap-2 bg-white text-brand-500 hover:text-brand-600 font-bold px-8 py-4 rounded-[10px] transition-all duration-300 hover:shadow-[0_8px_32px_rgba(255,255,255,0.2)] cursor-pointer"
             >
-              Смотреть заказы
+              Заполнить анкету
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform duration-300 group-hover:translate-x-0.5"><path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </Link>
+            </a>
             <a
-              href="https://t.me/podryad_pro"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/join"
               className="inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm border border-white/25 text-white hover:bg-white/25 font-bold px-8 py-4 rounded-[10px] transition-all duration-300 cursor-pointer"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-              Telegram
+              Стать исполнителем
             </a>
           </div>
         </div>
@@ -673,6 +670,15 @@ export default function HomePage() {
         </div>
       </footer>
 
+      {/* ── STICKY CTA (mobile only) ────────────────────────────── */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-3 safe-area-pb">
+        <a
+          href="/order/new"
+          className="block bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-base text-center py-3.5 rounded-[10px] transition-colors cursor-pointer shadow-elevated"
+        >
+          Разместить заказ
+        </a>
+      </div>
     </div>
   );
 }
