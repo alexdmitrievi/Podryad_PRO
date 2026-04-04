@@ -694,3 +694,109 @@ export async function getAllDisputes(): Promise<Dispute[]> {
   if (error) throw error;
   return (data || []) as Dispute[];
 }
+
+// ── ИСПОЛНИТЕЛИ (contractors) ──────────────────────────────────
+
+export async function createContractor(contractor: {
+  name: string;
+  phone: string;
+  city?: string;
+  specialties: string[];
+  experience?: string;
+  preferred_contact?: string;
+  about?: string;
+  source?: string;
+  telegram_id?: string;
+  max_id?: string;
+  email?: string;
+}) {
+  const { data, error } = await db()
+    .from('contractors')
+    .insert({
+      name: contractor.name,
+      phone: contractor.phone,
+      city: contractor.city ?? 'omsk',
+      specialties: contractor.specialties,
+      experience: contractor.experience ?? null,
+      preferred_contact: contractor.preferred_contact ?? 'phone',
+      about: contractor.about ?? null,
+      source: contractor.source ?? 'pwa',
+      telegram_id: contractor.telegram_id ?? null,
+      max_id: contractor.max_id ?? null,
+      email: contractor.email ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getContractors() {
+  const { data, error } = await db()
+    .from('contractors')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getContractorById(id: string) {
+  const { data, error } = await db()
+    .from('contractors')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) return null;
+  return data;
+}
+
+export async function updateContractor(id: string, updates: Record<string, unknown>) {
+  const { error } = await db()
+    .from('contractors')
+    .update(updates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// ── CUSTOMER TOKENS ────────────────────────────────────────────
+
+export async function getOrCreateCustomerToken(phone: string, preferredContact?: string) {
+  const { data: existing } = await db()
+    .from('customer_tokens')
+    .select('*')
+    .eq('phone', phone)
+    .single();
+
+  if (existing) return existing;
+
+  const { data, error } = await db()
+    .from('customer_tokens')
+    .insert({
+      phone,
+      preferred_contact: preferredContact ?? 'phone',
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getCustomerByToken(token: string) {
+  const { data, error } = await db()
+    .from('customer_tokens')
+    .select('*')
+    .eq('access_token', token)
+    .single();
+  if (error) return null;
+  return data;
+}
+
+export async function getOrdersByCustomerPhone(phone: string) {
+  const { data, error } = await db()
+    .from('orders')
+    .select('*')
+    .eq('customer_phone', phone)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
