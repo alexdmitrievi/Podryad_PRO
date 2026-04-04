@@ -342,6 +342,39 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── 2.5. СОЗДАТЬ ЗАКАЗ — CTA ────────────────────────────── */}
+      <section className="py-16 px-4 bg-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-[#2B2B2B] font-heading mb-4">
+            Разместите заказ прямо сейчас
+          </h2>
+          <p className="text-gray-500 mb-8 max-w-xl mx-auto">
+            Укажите адрес на карте, параметры работы — исполнители увидят ваш заказ и откликнутся
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/orders/new"
+              className="group inline-flex items-center justify-center gap-2 bg-brand-500 text-white font-bold px-8 py-4 rounded-[10px] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] cursor-pointer"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+              Заказать рабочих
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </Link>
+            <Link
+              href="/orders/new-rental"
+              className="group inline-flex items-center justify-center gap-2 bg-amber-500 text-white font-bold px-8 py-4 rounded-[10px] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(245,158,11,0.35)] cursor-pointer"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+              Арендовать технику
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </Link>
+          </div>
+          <p className="text-gray-400 text-sm mt-4">
+            <Link href="/dashboard" className="text-brand-500 hover:underline">Смотреть все заказы на карте</Link>
+          </p>
+        </div>
+      </section>
+
       {/* ── 3. БЕЗОПАСНАЯ СДЕЛКА — 4 шага ───────────────────────── */}
       <section className="relative py-24 px-4 overflow-hidden" style={{ background: 'linear-gradient(160deg, #1E2A5A 0%, #162050 100%)' }}>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-brand-500/10 blur-[120px] pointer-events-none" />

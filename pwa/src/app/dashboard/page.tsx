@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
-const MapWithOrders = dynamic(() => import('@/components/DashboardMap'), { ssr: false });
+const InteractiveMap = dynamic(() => import('@/components/YandexMap'), { ssr: false });
 
 interface PublicOrder {
   order_id: string;
@@ -29,6 +29,8 @@ const WORK_TYPE_LABELS: Record<string, string> = {
   loading: 'Грузчики',
   landscaping: 'Благоустройство',
   construction: 'Строительство',
+  demolition: 'Демонтаж',
+  cleaning: 'Уборка',
 };
 
 const WORK_TYPE_COLORS: Record<string, string> = {
@@ -36,6 +38,11 @@ const WORK_TYPE_COLORS: Record<string, string> = {
   equipment: 'bg-amber-100 text-amber-700',
   materials: 'bg-emerald-100 text-emerald-700',
   complex: 'bg-purple-100 text-purple-700',
+  loading: 'bg-blue-100 text-blue-700',
+  landscaping: 'bg-emerald-100 text-emerald-700',
+  construction: 'bg-orange-100 text-orange-700',
+  demolition: 'bg-red-100 text-red-700',
+  cleaning: 'bg-teal-100 text-teal-700',
 };
 
 /* ── Response modal ─────────────────────────────────────────── */
@@ -98,69 +105,34 @@ function ResponseModal({ order, onClose }: { order: PublicOrder; onClose: () => 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ваше имя</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Иван Петров"
-                  required
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
-                />
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Иван Петров" required
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow" />
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Телефон</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+7 (___) ___-__-__"
-                  required
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
-                />
+                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 (___) ___-__-__" required
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow" />
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ваша цена (необязательно)</label>
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="Сумма в рублях"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
-                />
+                <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Сумма в рублях"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow" />
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Комментарий</label>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Опыт, сроки, особенности..."
-                  rows={3}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-shadow"
-                />
+                <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Опыт, сроки, особенности..." rows={3}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-shadow" />
               </div>
-
               <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  onChange={(e) => setConsent(e.target.checked)}
-                  className="mt-0.5 w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
-                />
+                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-0.5 w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer" />
                 <span className="text-xs text-gray-500 leading-relaxed">
-                  Я даю согласие на обработку персональных данных в соответствии
-                  с&nbsp;
+                  Я даю согласие на обработку персональных данных в соответствии с&nbsp;
                   <a href="/privacy" className="text-brand-500 underline" target="_blank">ФЗ №152</a>
                 </span>
               </label>
-
-              <button
-                type="submit"
-                disabled={loading || !consent || !name.trim() || !phone.trim()}
-                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer"
-              >
+              <button type="submit" disabled={loading || !consent || !name.trim() || !phone.trim()}
+                className="w-full bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] disabled:opacity-50 cursor-pointer">
                 {loading ? 'Отправляем...' : 'Отправить отклик'}
               </button>
             </form>
@@ -178,7 +150,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<PublicOrder | null>(null);
   const [respondOrder, setRespondOrder] = useState<PublicOrder | null>(null);
-  const [view, setView] = useState<'list' | 'map'>('list');
+  const [view, setView] = useState<'list' | 'map'>('map');
+  const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
     fetch('/api/orders/public')
@@ -187,6 +160,10 @@ export default function DashboardPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const filteredOrders = filter === 'all'
+    ? orders
+    : orders.filter((o) => o.work_type === filter || (filter === 'equipment' && o.work_type === 'equipment'));
 
   function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString('ru-RU', {
@@ -197,59 +174,99 @@ export default function DashboardPage() {
     });
   }
 
+  function formatTimeAgo(iso: string) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins} мин. назад`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} ч. назад`;
+    return `${Math.floor(hours / 24)} дн. назад`;
+  }
+
   return (
     <div className="min-h-screen bg-surface font-sans">
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/logo.png" alt="Подряд PRO" width={36} height={36} className="rounded-lg" />
+            <span className="text-lg font-extrabold text-brand-900 font-heading">Подряд PRO</span>
+          </Link>
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <Image src="/logo.png" alt="Подряд PRO" width={36} height={36} className="rounded-lg" />
-              <span className="text-lg font-extrabold text-brand-900 font-heading">Подряд PRO</span>
+            <Link href="/orders/new" className="hidden sm:inline-flex bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-sm px-4 py-2 rounded-lg transition-colors">
+              + Заказать рабочих
+            </Link>
+            <Link href="/" className="text-brand-500 hover:text-brand-600 font-semibold text-sm flex items-center gap-1 transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <span className="hidden sm:inline">На главную</span>
             </Link>
           </div>
-          <Link
-            href="/"
-            className="text-brand-500 hover:text-brand-600 font-semibold text-sm flex items-center gap-1 transition-colors"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            На главную
-          </Link>
         </div>
       </nav>
 
       {/* Header */}
-      <section className="py-10 px-4 bg-white border-b border-gray-100">
+      <section className="py-8 px-4 bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-heading mb-2">
-            Активные заказы
-          </h1>
-          <p className="text-gray-500 mb-6">Откликнитесь на подходящий заказ — администратор выберет лучшего исполнителя</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-heading mb-1">
+                Активные заказы
+              </h1>
+              <p className="text-gray-500 text-sm">
+                {orders.length > 0
+                  ? `${filteredOrders.length} заказ${filteredOrders.length === 1 ? '' : filteredOrders.length < 5 ? 'а' : 'ов'} на карте`
+                  : 'Откликнитесь на подходящий заказ — админ выберет лучшего исполнителя'}
+              </p>
+            </div>
+            {/* CTA buttons for mobile */}
+            <div className="flex gap-2 sm:hidden">
+              <Link href="/orders/new" className="flex-1 bg-brand-500 text-white font-bold text-sm text-center py-2.5 rounded-lg">
+                + Рабочие
+              </Link>
+              <Link href="/orders/new-rental" className="flex-1 bg-amber-500 text-white font-bold text-sm text-center py-2.5 rounded-lg">
+                + Техника
+              </Link>
+            </div>
+          </div>
 
-          {/* View toggle */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setView('list')}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
-                view === 'list' ? 'bg-brand-500 text-white shadow-glow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Список
-            </button>
-            <button
-              onClick={() => setView('map')}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
-                view === 'map' ? 'bg-brand-500 text-white shadow-glow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Карта
-            </button>
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            {/* View toggle */}
+            <div className="flex gap-2">
+              <button onClick={() => setView('map')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${view === 'map' ? 'bg-brand-500 text-white shadow-glow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                Карта
+              </button>
+              <button onClick={() => setView('list')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${view === 'list' ? 'bg-brand-500 text-white shadow-glow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                Список
+              </button>
+            </div>
+
+            {/* Filter */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              {[
+                { key: 'all', label: 'Все' },
+                { key: 'labor', label: 'Рабочие' },
+                { key: 'equipment', label: 'Техника' },
+                { key: 'materials', label: 'Материалы' },
+              ].map((f) => (
+                <button key={f.key} onClick={() => setFilter(f.key)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer whitespace-nowrap ${
+                    filter === f.key
+                      ? 'bg-brand-500 text-white border-brand-500'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-brand-500'
+                  }`}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Content */}
-      <section className="py-8 px-4">
+      <section className="py-6 px-4">
         <div className="max-w-6xl mx-auto">
           {loading ? (
             <div className="space-y-4">
@@ -267,92 +284,140 @@ export default function DashboardPage() {
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-gray-400" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Пока нет активных заказов</h3>
-              <p className="text-gray-500">Новые заказы появятся здесь, как только заказчики оплатят услуги</p>
-            </div>
-          ) : view === 'map' ? (
-            <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-card" style={{ height: '500px' }}>
-              <MapWithOrders
-                orders={orders}
-                onSelectOrder={(o) => setSelectedOrder(o)}
-              />
+              <p className="text-gray-500 mb-6">Создайте первый заказ или подождите, пока заказчики разместят свои</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link href="/orders/new" className="inline-flex items-center justify-center bg-brand-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-[#4DA3FF] transition-colors">
+                  Заказать рабочих
+                </Link>
+                <Link href="/orders/new-rental" className="inline-flex items-center justify-center bg-amber-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-amber-600 transition-colors">
+                  Арендовать технику
+                </Link>
+              </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {orders.map((order) => (
-                <div
-                  key={order.order_id}
-                  className="bg-white rounded-2xl p-6 shadow-card border border-gray-100 transition-all duration-200 hover:shadow-card-hover"
-                >
+            <>
+              {/* Map view */}
+              {view === 'map' && (
+                <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-card" style={{ height: '500px' }}>
+                  <InteractiveMap
+                    mode="display"
+                    orders={filteredOrders.map((o) => ({
+                      order_id: o.order_id,
+                      order_number: o.order_number,
+                      address: o.address,
+                      lat: o.lat,
+                      lon: o.lon,
+                      work_type: o.work_type,
+                    }))}
+                    onOrderClick={(mapOrder) => {
+                      const full = orders.find((o) => o.order_id === mapOrder.order_id);
+                      if (full) setSelectedOrder(full);
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Selected order card (from map click) */}
+              {selectedOrder && view === 'map' && (
+                <div className="mt-4 bg-white rounded-2xl p-6 shadow-card border border-gray-100 animate-fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <span className="text-sm font-bold text-gray-900">
-                          #{order.order_number || order.order_id.slice(0, 8)}
+                        <span className="font-bold text-gray-900">#{selectedOrder.order_number || selectedOrder.order_id.slice(0, 8)}</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${WORK_TYPE_COLORS[selectedOrder.work_type] || 'bg-gray-100 text-gray-700'}`}>
+                          {WORK_TYPE_LABELS[selectedOrder.work_type] || selectedOrder.work_type}
                         </span>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                          WORK_TYPE_COLORS[order.work_type] || 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {WORK_TYPE_LABELS[order.work_type] || order.work_type}
-                        </span>
-                        <span className="text-xs text-gray-400">{formatDate(order.created_at)}</span>
+                        <span className="text-xs text-gray-400">{formatTimeAgo(selectedOrder.created_at)}</span>
                       </div>
-
-                      <p className="text-gray-700 text-sm mb-1 flex items-start gap-1.5">
+                      <p className="text-gray-600 text-sm flex items-start gap-1.5">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-gray-400 mt-0.5 flex-shrink-0" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        {order.address || 'Адрес не указан'}
+                        {selectedOrder.address}
                       </p>
-
-                      {order.comment && (
-                        <p className="text-gray-500 text-sm mt-1 line-clamp-2">{order.comment}</p>
-                      )}
-
-                      <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
-                        {order.people > 0 && <span>{order.people} чел.</span>}
-                        {order.hours > 0 && <span>{order.hours} ч.</span>}
+                      {selectedOrder.comment && <p className="text-gray-500 text-sm mt-1">{selectedOrder.comment}</p>}
+                      <div className="flex items-center gap-3 mt-2">
+                        {selectedOrder.lat && selectedOrder.lon && (
+                          <a href={`https://yandex.ru/maps/?pt=${selectedOrder.lon},${selectedOrder.lat}&z=16&l=map`}
+                            target="_blank" rel="noopener noreferrer"
+                            className="text-brand-500 text-xs font-semibold hover:underline">
+                            Яндекс.Карты
+                          </a>
+                        )}
+                        {selectedOrder.lat && selectedOrder.lon && (
+                          <a href={`yandexnavi://build_route_on_map?lat_to=${selectedOrder.lat}&lon_to=${selectedOrder.lon}`}
+                            className="text-brand-500 text-xs font-semibold hover:underline">
+                            Навигатор
+                          </a>
+                        )}
                       </div>
                     </div>
-
-                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      {order.customer_total != null && order.customer_total > 0 && (
-                        <span className="text-lg font-extrabold text-brand-500">
-                          {order.customer_total.toLocaleString('ru-RU')} ₽
-                        </span>
+                    <div className="flex flex-col items-end gap-2">
+                      {selectedOrder.customer_total != null && selectedOrder.customer_total > 0 && (
+                        <span className="text-lg font-extrabold text-brand-500">{selectedOrder.customer_total.toLocaleString('ru-RU')} ₽</span>
                       )}
-                      <button
-                        onClick={() => setRespondOrder(order)}
-                        className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all hover:shadow-[0_4px_20px_rgba(47,91,255,0.3)] cursor-pointer whitespace-nowrap"
-                      >
+                      <button onClick={() => setRespondOrder(selectedOrder)}
+                        className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all hover:shadow-[0_4px_20px_rgba(47,91,255,0.3)] cursor-pointer whitespace-nowrap">
                         Откликнуться
                       </button>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {/* Selected order from map */}
-          {selectedOrder && view === 'map' && (
-            <div className="mt-4 bg-white rounded-2xl p-6 shadow-card border border-gray-100">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-bold text-gray-900">#{selectedOrder.order_number || selectedOrder.order_id.slice(0, 8)}</span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${WORK_TYPE_COLORS[selectedOrder.work_type] || 'bg-gray-100 text-gray-700'}`}>
-                      {WORK_TYPE_LABELS[selectedOrder.work_type] || selectedOrder.work_type}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 text-sm">{selectedOrder.address}</p>
-                  {selectedOrder.comment && <p className="text-gray-500 text-sm mt-1">{selectedOrder.comment}</p>}
+              {/* List view */}
+              {view === 'list' && (
+                <div className="space-y-4">
+                  {filteredOrders.map((order) => (
+                    <div key={order.order_id}
+                      className="bg-white rounded-2xl p-6 shadow-card border border-gray-100 transition-all duration-200 hover:shadow-card-hover">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-2">
+                            <span className="text-sm font-bold text-gray-900">
+                              #{order.order_number || order.order_id.slice(0, 8)}
+                            </span>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${WORK_TYPE_COLORS[order.work_type] || 'bg-gray-100 text-gray-700'}`}>
+                              {WORK_TYPE_LABELS[order.work_type] || order.work_type}
+                            </span>
+                            <span className="text-xs text-gray-400">{formatTimeAgo(order.created_at)}</span>
+                          </div>
+                          <p className="text-gray-700 text-sm mb-1 flex items-start gap-1.5">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-gray-400 mt-0.5 flex-shrink-0" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            {order.address || 'Адрес не указан'}
+                          </p>
+                          {order.comment && <p className="text-gray-500 text-sm mt-1 line-clamp-2">{order.comment}</p>}
+                          <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                            {order.people > 0 && <span>{order.people} чел.</span>}
+                            {order.hours > 0 && <span>{order.hours} ч.</span>}
+                            <span>{formatDate(order.created_at)}</span>
+                            {order.lat && order.lon && (
+                              <>
+                                <a href={`https://yandex.ru/maps/?pt=${order.lon},${order.lat}&z=16&l=map`}
+                                  target="_blank" rel="noopener noreferrer" className="text-brand-500 font-semibold hover:underline">
+                                  Яндекс.Карты
+                                </a>
+                                <a href={`yandexnavi://build_route_on_map?lat_to=${order.lat}&lon_to=${order.lon}`}
+                                  className="text-brand-500 font-semibold hover:underline">
+                                  Навигатор
+                                </a>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                          {order.customer_total != null && order.customer_total > 0 && (
+                            <span className="text-lg font-extrabold text-brand-500">{order.customer_total.toLocaleString('ru-RU')} ₽</span>
+                          )}
+                          <button onClick={() => setRespondOrder(order)}
+                            className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all hover:shadow-[0_4px_20px_rgba(47,91,255,0.3)] cursor-pointer whitespace-nowrap">
+                            Откликнуться
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <button
-                  onClick={() => setRespondOrder(selectedOrder)}
-                  className="bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all hover:shadow-[0_4px_20px_rgba(47,91,255,0.3)] cursor-pointer whitespace-nowrap"
-                >
-                  Откликнуться
-                </button>
-              </div>
-            </div>
+              )}
+            </>
           )}
         </div>
       </section>
