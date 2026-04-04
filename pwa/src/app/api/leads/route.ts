@@ -5,8 +5,13 @@ interface LeadBody {
   phone: string;
   work_type: string;
   city?: string;
+  address?: string;
+  messenger?: string;
   comment?: string;
   source?: string;
+  name?: string;
+  email?: string;
+  telegram?: string;
 }
 
 /** Strip all non-digit characters from a phone string and return only digits. */
@@ -22,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  const { phone, work_type, city, comment, source } = body;
+  const { phone, work_type, city, address, messenger, comment, source, name, email, telegram } = body;
 
   // Validate phone: require 10+ digits after stripping
   const digits = stripPhone(phone ?? '');
@@ -38,12 +43,38 @@ export async function POST(req: NextRequest) {
 
   const db = getServiceClient();
 
+  // Geocode address if provided (non-blocking, best-effort)
+  let lat: number | null = null;
+  let lon: number | null = null;
+  if (address?.trim()) {
+    try {
+      const cityPrefix = city === 'novosibirsk' ? 'Новосибирск' : 'Омск';
+      const q = address.includes(cityPrefix) ? address : `${cityPrefix}, ${address}`;
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&accept-language=ru&countrycodes=ru`,
+        { headers: { 'User-Agent': 'PodraydPRO/1.0' } }
+      );
+      const geoData = await geoRes.json();
+      if (geoData[0]) {
+        lat = parseFloat(geoData[0].lat);
+        lon = parseFloat(geoData[0].lon);
+      }
+    } catch { /* geocoding is best-effort */ }
+  }
+
   const { error } = await db.from('leads').insert({
     phone: digits,
     work_type,
     city: city ?? 'omsk',
+    address: address?.trim() || null,
+    lat,
+    lon,
+    messenger: messenger || null,
     comment: comment ?? null,
     source: source ?? 'landing',
+    name: name?.trim() || null,
+    email: email?.trim() || null,
+    telegram: telegram?.trim() || null,
   });
 
   if (error) {
@@ -57,7 +88,12 @@ export async function POST(req: NextRequest) {
     fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: digits, work_type, city: city ?? 'omsk', comment, source: source ?? 'landing' }),
+      body: JSON.stringify({
+        phone: digits, work_type, city: city ?? 'omsk',
+        address, messenger, comment,
+        source: source ?? 'landing',
+        lat, lon,
+      }),
     }).catch((err) => {
       console.error('n8n lead webhook error (non-blocking):', err);
     });

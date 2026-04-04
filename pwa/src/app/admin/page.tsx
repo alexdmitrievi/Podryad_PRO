@@ -4,7 +4,8 @@ import { useState, useCallback } from 'react';
 import {
   Lock, Users, ShoppingBag, Tag, AlertTriangle, BarChart3,
   Copy, Check, ExternalLink, UserPlus, RefreshCw, Save,
-  Package, FileText, Plus, X, Camera, Upload, MessageSquare
+  Package, FileText, Plus, X, Camera, Upload, MessageSquare,
+  Phone, Mail, Send, Contact
 } from 'lucide-react';
 
 interface Order {
@@ -110,11 +111,27 @@ interface ExecutorResponse {
   created_at: string;
 }
 
-type TabId = 'listings' | 'leads' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'stats';
+interface ContactEntry {
+  id: string;
+  name: string;
+  phone: string;
+  role: 'customer' | 'executor';
+  messenger: string | null;
+  email: string | null;
+  telegram: string | null;
+  city: string | null;
+  work_type: string | null;
+  comment: string | null;
+  created_at: string;
+  source: string;
+}
+
+type TabId = 'listings' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'stats';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "listings", label: "Позиции", icon: Package },
   { id: "leads", label: "Заявки", icon: FileText },
+  { id: "contacts", label: "Контакты", icon: Contact },
   { id: "responses", label: "Отклики", icon: MessageSquare },
   { id: "users", label: "Пользователи", icon: Users },
   { id: "orders", label: "Заказы", icon: ShoppingBag },
@@ -895,6 +912,152 @@ function StatsTab({ pin }: { pin: string }) {
   );
 }
 
+function ContactsTab({ pin }: { pin: string }) {
+  const [contacts, setContacts] = useState<ContactEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'customer' | 'executor'>('all');
+  const [search, setSearch] = useState('');
+
+  const loadContacts = async () => {
+    setError(''); setLoading(true);
+    try {
+      const res = await fetch('/api/admin/contacts', { headers: { 'x-admin-pin': pin } });
+      const data = await res.json();
+      if (res.ok) { setContacts(data.contacts || []); } else { setError(data.error || 'Ошибка'); }
+    } catch { setError('Ошибка соединения'); }
+    finally { setLoading(false); }
+  };
+
+  const filtered = contacts.filter((c) => {
+    if (roleFilter !== 'all' && c.role !== roleFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return (
+        c.name?.toLowerCase().includes(q) ||
+        c.phone.includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.telegram?.toLowerCase().includes(q) ||
+        c.city?.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  const ROLE_LABELS: Record<string, string> = { customer: 'Заказчик', executor: 'Исполнитель' };
+  const ROLE_COLORS: Record<string, string> = {
+    customer: 'bg-blue-100 text-blue-700',
+    executor: 'bg-emerald-100 text-emerald-700',
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <button onClick={loadContacts} disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
+          <RefreshCw className={loading ? "w-4 h-4 animate-spin" : "w-4 h-4"} />
+          Загрузить
+        </button>
+        {contacts.length > 0 && (
+          <span className="text-sm text-gray-500">Всего: {filtered.length} из {contacts.length}</span>
+        )}
+      </div>
+
+      {contacts.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Поиск по имени, телефону, email..."
+            className="flex-1 px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+          <div className="flex gap-1.5">
+            {([['all', 'Все'], ['customer', 'Заказчики'], ['executor', 'Исполнители']] as const).map(([key, label]) => (
+              <button key={key} onClick={() => setRoleFilter(key)}
+                className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                  roleFilter === key
+                    ? 'bg-brand-500 text-white border-brand-500'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-brand-500'
+                }`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      {filtered.length > 0 && (
+        <div className="space-y-3">
+          {filtered.map((c) => (
+            <div key={c.id} className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card border border-gray-100">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {c.name || 'Без имени'}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${ROLE_COLORS[c.role] || 'bg-gray-100 text-gray-700'}`}>
+                      {ROLE_LABELS[c.role] || c.role}
+                    </span>
+                    {c.work_type && (
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+                        {WORK_TYPE_LABELS[c.work_type] || c.work_type}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 flex-wrap">
+                    <span className="font-mono">{c.phone}</span>
+                    {c.city && <span>{c.city === 'omsk' ? 'Омск' : c.city === 'novosibirsk' ? 'Новосибирск' : c.city}</span>}
+                    {c.email && <span>{c.email}</span>}
+                    {c.telegram && <span>@{c.telegram.replace('@', '')}</span>}
+                  </div>
+                  {c.comment && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{c.comment}</p>}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {c.source} &middot; {fmtDate(c.created_at)}
+                  </p>
+                </div>
+
+                {/* Contact action buttons */}
+                <div className="flex gap-1.5 flex-shrink-0 flex-wrap">
+                  <a href={`tel:+${c.phone}`} title="Позвонить"
+                    className="w-9 h-9 rounded-lg bg-green-100 hover:bg-green-200 flex items-center justify-center transition-colors">
+                    <Phone className="w-4 h-4 text-green-700" />
+                  </a>
+                  {c.telegram ? (
+                    <a href={`https://t.me/${c.telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" title="Telegram"
+                      className="w-9 h-9 rounded-lg bg-blue-100 hover:bg-blue-200 flex items-center justify-center transition-colors">
+                      <Send className="w-4 h-4 text-blue-700" />
+                    </a>
+                  ) : (
+                    <a href={`https://t.me/+${c.phone}`} target="_blank" rel="noopener noreferrer" title="Telegram (по номеру)"
+                      className="w-9 h-9 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center transition-colors">
+                      <Send className="w-4 h-4 text-blue-400" />
+                    </a>
+                  )}
+                  {(c.messenger === 'MAX' || !c.messenger) && (
+                    <a href={`https://max.ru/`} target="_blank" rel="noopener noreferrer" title="MAX"
+                      className="w-9 h-9 rounded-lg bg-indigo-100 hover:bg-indigo-200 flex items-center justify-center transition-colors">
+                      <MessageSquare className="w-4 h-4 text-indigo-700" />
+                    </a>
+                  )}
+                  {c.email && (
+                    <a href={`mailto:${c.email}`} title="Email"
+                      className="w-9 h-9 rounded-lg bg-amber-100 hover:bg-amber-200 flex items-center justify-center transition-colors">
+                      <Mail className="w-4 h-4 text-amber-700" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ResponsesTab({ pin }: { pin: string }) {
   const [responses, setResponses] = useState<ExecutorResponse[]>([]);
   const [loading, setLoading] = useState(false);
@@ -1054,6 +1217,7 @@ export default function AdminPage() {
         <div>
           {activeTab === 'listings' && <ListingsTab pin={pin} />}
           {activeTab === 'leads' && <LeadsTab pin={pin} />}
+          {activeTab === 'contacts' && <ContactsTab pin={pin} />}
           {activeTab === 'responses' && <ResponsesTab pin={pin} />}
           {activeTab === 'users' && <UsersTab pin={pin} />}
           {activeTab === 'orders' && <OrdersTab pin={pin} />}

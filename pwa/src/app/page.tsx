@@ -126,6 +126,7 @@ export default function HomePage() {
   const [category, setCategory] = useState<WorkType>('labor');
   const [description, setDescription] = useState('');
   const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [city, setCity] = useState<City>('omsk');
   const [messenger, setMessenger] = useState<Messenger>('MAX');
   const [consent, setConsent] = useState(false);
@@ -154,9 +155,11 @@ export default function HomePage() {
           phone,
           work_type: category,
           city,
+          address: address || undefined,
+          messenger,
           comment: description
-            ? `${description} | Мессенджер: ${messenger}`
-            : `Мессенджер: ${messenger}`,
+            ? `${description} | Мессенджер: ${messenger}${address ? ` | Адрес: ${address}` : ''}`
+            : `Мессенджер: ${messenger}${address ? ` | Адрес: ${address}` : ''}`,
           source: 'landing',
         }),
       });
@@ -493,6 +496,20 @@ export default function HomePage() {
                   rows={3}
                   placeholder="Что нужно сделать..."
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-shadow"
+                />
+              </div>
+
+              {/* Адрес */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Адрес объекта
+                </label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="ул. Ленина, 1 (необязательно)"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
                 />
               </div>
 
