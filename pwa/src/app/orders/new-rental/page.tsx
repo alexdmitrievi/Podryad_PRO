@@ -156,9 +156,12 @@ export default function NewRentalPage() {
       <section className="py-8 px-4">
         <div className="max-w-3xl mx-auto">
           {submitted ? (
-            <div className="bg-white rounded-2xl p-10 shadow-card border border-gray-100 text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-green-600"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            <div className="bg-white rounded-2xl p-10 shadow-card border border-gray-100 text-center relative overflow-hidden">
+              <div className="confetti-container">
+                {[...Array(8)].map((_, i) => <span key={i} className="confetti-dot" />)}
+              </div>
+              <div className="success-icon mx-auto mb-4">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-green-600 success-check"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Заявка отправлена!</h2>
               <p className="text-gray-500 mb-6">Мы подберём технику и свяжемся с вами в течение 15 минут.</p>
@@ -322,7 +325,7 @@ export default function NewRentalPage() {
               </div>
 
               <button type="submit" disabled={loading || !consent || !isValidPhone(phone) || !lat || !lon}
-                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-4 rounded-xl text-lg transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2">
+                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-4 rounded-xl text-lg transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 btn-press">
                 {loading ? <><Spinner className="w-5 h-5 text-white" /> Отправляем...</> : 'Разместить заявку на технику'}
               </button>
             </form>

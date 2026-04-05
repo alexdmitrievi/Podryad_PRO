@@ -85,22 +85,27 @@ export default function JoinPage() {
       {/* Form card */}
       <div className="max-w-lg mx-auto px-4 py-12">
         {submitted ? (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-10 text-center shadow-elevated">
-            <svg
-              className="mx-auto mb-4 text-green-500"
-              width="48"
-              height="48"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+          <div className="bg-green-50 border border-green-200 rounded-xl p-10 text-center shadow-elevated relative overflow-hidden">
+            <div className="confetti-container">
+              {[...Array(8)].map((_, i) => <span key={i} className="confetti-dot" />)}
+            </div>
+            <div className="success-icon mx-auto mb-4">
+              <svg
+                className="text-green-600 success-check"
+                width="48"
+                height="48"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
             <p className="text-green-700 font-bold text-xl mb-1">Анкета отправлена!</p>
             <p className="text-green-600 text-sm">Мы свяжемся с вами.</p>
           </div>
@@ -258,7 +263,7 @@ export default function JoinPage() {
             <button
               type="submit"
               disabled={loading || !consent}
-              className="bg-brand-500 hover:bg-brand-600 text-white font-bold min-h-[56px] py-4 rounded-xl w-full text-base transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer"
+              className="bg-brand-500 hover:bg-brand-600 text-white font-bold min-h-[56px] py-4 rounded-xl w-full text-base transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer btn-press"
             >
               {loading ? 'Отправляем...' : 'Отправить анкету'}
             </button>

@@ -100,8 +100,11 @@ function ResponseModal({ order, onClose }: { order: PublicOrder; onClose: () => 
 
         {submitted ? (
           <div className="text-center py-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-green-600"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            <div className="confetti-container">
+              {[...Array(8)].map((_, i) => <span key={i} className="confetti-dot" />)}
+            </div>
+            <div className="success-icon mx-auto mb-4">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-green-600 success-check"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Отклик отправлен!</h3>
             <p className="text-gray-500 text-sm">Администратор рассмотрит вашу заявку и свяжется с вами.</p>
@@ -205,7 +208,7 @@ export default function DashboardPage() {
             <span className="text-lg font-extrabold text-brand-900 font-heading">Подряд PRO</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/orders/new" className="hidden sm:inline-flex bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm px-4 py-2 rounded-lg transition-colors">
+            <Link href="/orders/new" className="hidden sm:inline-flex bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm px-4 py-2 rounded-lg transition-colors btn-press">
               + Заказать рабочих
             </Link>
             <Link href="/" className="text-brand-500 hover:text-brand-600 font-semibold text-sm flex items-center gap-1 transition-colors">
@@ -377,10 +380,10 @@ export default function DashboardPage() {
 
               {/* List view */}
               {view === 'list' && (
-                <div className="space-y-4">
+                <div className="space-y-4 list-stagger">
                   {filteredOrders.map((order) => (
                     <div key={order.order_id}
-                      className="bg-white rounded-2xl p-6 shadow-card border border-gray-100 transition-all duration-200 hover:shadow-card-hover">
+                      className="bg-white rounded-2xl p-6 shadow-card border border-gray-100 card-lift">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-2">

@@ -98,8 +98,11 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
 
         {submitted ? (
           <div className="text-center py-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-green-600"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            <div className="confetti-container">
+              {[...Array(8)].map((_, i) => <span key={i} className="confetti-dot" />)}
+            </div>
+            <div className="success-icon mx-auto mb-4">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-green-600 success-check"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Заявка отправлена!</h3>
             <p className="text-gray-500 text-sm">Мы свяжемся с вами в течение 15 минут с предложением и ссылкой на оплату.</p>
@@ -320,11 +323,11 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger-grid">
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="group bg-white rounded-2xl p-6 sm:p-8 shadow-card border border-gray-100 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 flex flex-col"
+                  className="group bg-white rounded-2xl p-6 sm:p-8 shadow-card border border-gray-100 card-lift flex flex-col"
                 >
                   <div className="relative w-full h-40 rounded-xl overflow-hidden mb-4 bg-gray-100">
                     {item.image ? (
@@ -346,7 +349,7 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
                   </div>
                   <button
                     onClick={() => setOrderItem(item)}
-                    className="mt-4 w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 rounded-xl transition-all duration-200 hover:shadow-glow-hover cursor-pointer"
+                    className="mt-4 w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 rounded-xl transition-all duration-200 hover:shadow-glow-hover cursor-pointer btn-press"
                   >
                     Заказать
                   </button>

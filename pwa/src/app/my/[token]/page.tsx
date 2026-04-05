@@ -293,7 +293,7 @@ export default function CustomerDashboard() {
             <h2 className="font-heading font-bold text-base text-[var(--color-text)] mb-3">
               Активные заказы
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-3 list-stagger">
               {active.map((order) => (
                 <OrderCard key={order.id} order={order} />
               ))}
@@ -307,7 +307,7 @@ export default function CustomerDashboard() {
             <h2 className="font-heading font-bold text-base text-[var(--color-muted)] mb-3">
               Завершённые
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-3 list-stagger">
               {completed.map((order) => (
                 <OrderCard key={order.id} order={order} />
               ))}

@@ -154,9 +154,12 @@ export default function OrderNewPage() {
           </div>
         </nav>
         <div className="max-w-lg mx-auto px-4 py-16">
-          <div className="bg-success-50 border border-green-200 rounded-xl p-10 text-center shadow-elevated">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-green-600">
+          <div className="bg-success-50 border border-green-200 rounded-xl p-10 text-center shadow-elevated relative overflow-hidden">
+            <div className="confetti-container">
+              {[...Array(8)].map((_, i) => <span key={i} className="confetti-dot" />)}
+            </div>
+            <div className="success-icon mx-auto mb-6">
+              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-green-600 success-check">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -497,7 +500,7 @@ export default function OrderNewPage() {
           <button
             type="submit"
             disabled={loading || !consent || !phone}
-            className="hidden md:block bg-brand-500 hover:bg-brand-600 text-white font-bold min-h-[56px] py-4 rounded-xl w-full text-base transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer"
+            className="hidden md:block bg-brand-500 hover:bg-brand-600 text-white font-bold min-h-[56px] py-4 rounded-xl w-full text-base transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer btn-press"
           >
             {loading ? 'Отправляем...' : 'Разместить заказ'}
           </button>
