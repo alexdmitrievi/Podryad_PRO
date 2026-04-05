@@ -638,7 +638,7 @@ export default function HomePage() {
       </section>
 
       {/* ── FOOTER ──────────────────────────────────────────────── */}
-      <footer className="py-10 px-4 pb-28 md:pb-10" style={{ background: '#1E2A5A' }}>
+      <footer className="py-10 px-4" style={{ background: '#1E2A5A' }}>
         <div className="max-w-6xl mx-auto">
           <div className="divider-gradient mb-8" />
           <div className="flex flex-col items-center gap-4 md:flex-row md:justify-between">
@@ -667,15 +667,7 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {/* ── STICKY CTA (mobile only) ────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-3 safe-area-pb">
-        <a
-          href="/order/new"
-          className="block bg-brand-500 hover:bg-[#4DA3FF] text-white font-bold text-base text-center py-3.5 rounded-[10px] transition-colors cursor-pointer shadow-elevated"
-        >
-          Разместить заказ
-        </a>
-      </div>
+
     </div>
   );
 }
