@@ -17,6 +17,7 @@ const SPECIALTY_OPTIONS = [
   'Уборка территории',
   'Водитель техники',
   'Благоустройство',
+  'Другое',
 ];
 
 const CONTACT_METHODS: { id: ContactMethod; label: string; activeClass: string }[] = [

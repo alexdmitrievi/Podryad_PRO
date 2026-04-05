@@ -38,10 +38,11 @@ export default function MapPicker({ lat, lng, onSelect, city }: Props) {
       center={lat && lng ? [lat, lng] : center}
       zoom={13}
       style={{ height: '200px', borderRadius: '12px', zIndex: 0 }}
+      attributionControl={false}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       />
       <ClickHandler onSelect={onSelect} />
       {lat && lng && <Marker position={[lat, lng]} icon={redIcon} />}
