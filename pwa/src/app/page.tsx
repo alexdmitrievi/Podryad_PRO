@@ -369,16 +369,16 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/orders/new"
-              className="group inline-flex items-center justify-center gap-2 bg-brand-500 text-white font-bold px-8 py-4 rounded-[10px] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] cursor-pointer"
+              href="/order/new"
+              className="group inline-flex items-center justify-center gap-2 bg-brand-500 text-white font-bold px-8 py-4 rounded-[10px] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(47,91,255,0.35)] cursor-pointer min-w-[220px]"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
               Заказать рабочих
               <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </Link>
             <Link
-              href="/orders/new-rental"
-              className="group inline-flex items-center justify-center gap-2 bg-amber-500 text-white font-bold px-8 py-4 rounded-[10px] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(245,158,11,0.35)] cursor-pointer"
+              href="/order/new?type=equipment"
+              className="group inline-flex items-center justify-center gap-2 bg-white text-brand-500 border-2 border-brand-500 font-bold px-8 py-4 rounded-[10px] transition-all duration-300 hover:bg-brand-500/5 cursor-pointer min-w-[220px]"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
               Арендовать технику
@@ -638,10 +638,10 @@ export default function HomePage() {
       </section>
 
       {/* ── FOOTER ──────────────────────────────────────────────── */}
-      <footer className="py-10 px-4" style={{ background: '#1E2A5A' }}>
+      <footer className="py-10 px-4 pb-28 md:pb-10" style={{ background: '#1E2A5A' }}>
         <div className="max-w-6xl mx-auto">
           <div className="divider-gradient mb-8" />
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col items-center gap-4 md:flex-row md:justify-between">
             <div className="flex items-center gap-2">
               <Image src="/logo.png" alt="Подряд PRO" width={24} height={24} className="rounded opacity-60" />
               <span className="text-white/40 text-sm font-heading font-semibold">Подряд PRO</span>
@@ -657,10 +657,10 @@ export default function HomePage() {
                 Политика конфиденциальности
               </Link>
               <Link
-                href="/admin?tab=contacts"
-                className="text-white/50 hover:text-white/80 text-sm underline transition-colors duration-200"
+                href="/admin"
+                className="text-white/20 hover:text-white/50 text-xs transition-colors duration-200"
               >
-                Админ-панель
+                Управление
               </Link>
             </div>
           </div>

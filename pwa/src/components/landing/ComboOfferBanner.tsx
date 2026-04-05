@@ -40,11 +40,11 @@ export default function ComboOfferBanner() {
               Чем больше услуг в одном заказе — тем выше скидка
             </p>
 
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <div className="mt-6 grid gap-3">
               {combos.map((combo, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 bg-white/20 rounded-xl px-4 py-3 flex-1"
+                  className="flex items-center gap-3 bg-white/20 rounded-xl px-4 py-3"
                 >
                   <div className="flex items-center gap-1.5 text-white font-semibold text-sm">
                     <combo.left.icon size={15} />
