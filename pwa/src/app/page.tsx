@@ -218,13 +218,8 @@ export default function HomePage() {
       {/* ── 1. HERO ─────────────────────────────────────────────── */}
       <section
         className="relative py-28 sm:py-32 px-4 overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 60%, #6C5CE7 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #2F5BFF 0%, #4DA3FF 100%)' }}
       >
-        {/* Decorative floating orbs */}
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#6C5CE7]/20 blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-[#2F5BFF]/25 blur-[100px] pointer-events-none" />
-        <div className="absolute top-[40%] right-[20%] w-[200px] h-[200px] rounded-full bg-white/5 blur-[80px] pointer-events-none animate-float" />
-
         {/* Noise texture */}
         <div className="absolute inset-0 noise-overlay pointer-events-none" />
 
@@ -247,7 +242,7 @@ export default function HomePage() {
           </p>
 
           {/* Stats card */}
-          <div className="inline-flex gap-8 sm:gap-14 bg-white/[0.08] backdrop-blur-2xl border border-white/[0.12] rounded-2xl px-10 py-6 mb-12 animate-fade-in shadow-hero" style={{ animationDelay: '0.3s' }}>
+          <div className="inline-flex gap-8 sm:gap-14 bg-white/[0.08] backdrop-blur-2xl border border-white/10 rounded-xl px-10 py-6 mb-12 animate-fade-in shadow-hero" style={{ animationDelay: '0.3s' }}>
             <div className="text-center">
               <span ref={orders.ref} className="block text-4xl sm:text-5xl font-extrabold text-white tabular-nums font-heading">
                 {orders.value}+
@@ -287,8 +282,8 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Рабочая сила */}
-            <Link href="/catalog/labor" className="group bg-white rounded-2xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer block">
-              <div className="w-14 h-14 rounded-2xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
+            <Link href="/catalog/labor" className="group bg-white rounded-xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer block">
+              <div className="w-14 h-14 rounded-xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </div>
               <h3 className="text-xl font-bold text-[#2B2B2B] mb-4 font-heading">Рабочая сила</h3>
@@ -317,8 +312,8 @@ export default function HomePage() {
             </Link>
 
             {/* Аренда техники */}
-            <Link href="/catalog/equipment" className="group bg-white rounded-2xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer block">
-              <div className="w-14 h-14 rounded-2xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
+            <Link href="/catalog/equipment" className="group bg-white rounded-xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer block">
+              <div className="w-14 h-14 rounded-xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </div>
               <h3 className="text-xl font-bold text-[#2B2B2B] mb-4 font-heading">Аренда техники</h3>
@@ -339,9 +334,9 @@ export default function HomePage() {
             </Link>
 
             {/* Стройматериалы */}
-            <Link href="/catalog/materials" className="group bg-white rounded-2xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer block">
-              <div className="w-14 h-14 rounded-2xl bg-violet/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-violet group-hover:shadow-[0_0_30px_rgba(108,92,231,0.2)]">
-                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-violet transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+            <Link href="/catalog/materials" className="group bg-white rounded-xl p-8 shadow-card border border-gray-100 transition-all duration-500 hover:shadow-card-hover hover:-translate-y-2 cursor-pointer block">
+              <div className="w-14 h-14 rounded-xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
               </div>
               <h3 className="text-xl font-bold text-[#2B2B2B] mb-4 font-heading">Стройматериалы</h3>
               <ul className="space-y-2 text-gray-600 text-sm">
@@ -354,7 +349,7 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 text-violet font-semibold text-sm flex items-center gap-1">
+              <p className="mt-4 text-brand-500 font-semibold text-sm flex items-center gap-1">
                 Доставка по городу
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="ml-auto flex-shrink-0"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </p>
@@ -397,7 +392,7 @@ export default function HomePage() {
       </section>
 
       {/* ── 3. БЕЗОПАСНАЯ СДЕЛКА — 4 шага ───────────────────────── */}
-      <section className="relative py-24 px-4 overflow-hidden" style={{ background: 'linear-gradient(160deg, #1E2A5A 0%, #162050 100%)' }}>
+      <section className="relative py-24 px-4 overflow-hidden" style={{ background: '#2F5BFF' }}>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-brand-500/10 blur-[120px] pointer-events-none" />
         <div ref={revSteps} className="relative z-10 max-w-5xl mx-auto reveal">
           <div className="text-center mb-16">
@@ -408,7 +403,7 @@ export default function HomePage() {
           </div>
           <div className="relative grid grid-cols-2 md:grid-cols-4 gap-8">
             {/* Connecting line (desktop) */}
-            <div className="hidden md:block absolute top-7 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-brand-500/40 via-violet/40 to-brand-500/40" />
+            <div className="hidden md:block absolute top-7 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-brand-500/40 via-white/40 to-brand-500/40" />
             {[
               { n: '1', title: 'Заявка', desc: 'Опишите задачу — объём, сроки, контакт' },
               { n: '2', title: 'Подбор', desc: 'Находим подходящего исполнителя из базы' },
@@ -416,7 +411,7 @@ export default function HomePage() {
               { n: '4', title: 'Подтверждение', desc: 'Выплата после вашего ОК — 100% защита' },
             ].map((step, i) => (
               <div key={step.n} className="relative text-center" style={{ transitionDelay: `${i * 0.15}s` }}>
-                <div className="relative z-10 w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-violet flex items-center justify-center text-white font-extrabold text-lg mx-auto mb-5 shadow-[0_4px_24px_rgba(47,91,255,0.35)] ring-4 ring-brand-900">
+                <div className="relative z-10 w-14 h-14 rounded-full bg-brand-500 flex items-center justify-center text-white font-extrabold text-lg mx-auto mb-5 shadow-[0_4px_24px_rgba(47,91,255,0.35)] ring-4 ring-white/20">
                   {step.n}
                 </div>
                 <h3 className="font-bold text-white text-base mb-2 font-heading">{step.title}</h3>
@@ -431,9 +426,7 @@ export default function HomePage() {
       <ComboOfferBanner />
 
       {/* ── 4. ДЛЯ ИСПОЛНИТЕЛЕЙ ────────────────────────────────── */}
-      <section className="relative py-24 px-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #2F5BFF 0%, #6C5CE7 100%)' }}>
-        <div className="absolute top-[-30%] right-[-10%] w-[400px] h-[400px] rounded-full bg-white/10 blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-[-20%] left-[-5%] w-[300px] h-[300px] rounded-full bg-[#1E2A5A]/30 blur-[80px] pointer-events-none" />
+      <section className="relative py-24 px-4 overflow-hidden" style={{ background: '#2F5BFF' }}>
         <div ref={revExecutors} className="relative z-10 max-w-3xl mx-auto text-center reveal">
           <span className="inline-block text-white/70 font-semibold text-sm tracking-wider uppercase mb-3">Партнёрам</span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-6 font-heading">
@@ -481,7 +474,7 @@ export default function HomePage() {
           ) : (
             <form
               onSubmit={handleSubmit}
-              className="bg-white rounded-2xl p-8 sm:p-10 shadow-elevated border border-gray-100/80 space-y-6"
+              className="bg-white rounded-xl p-8 sm:p-10 shadow-elevated border border-gray-100/80 space-y-6"
             >
               {/* Категория */}
               <div>
@@ -645,7 +638,7 @@ export default function HomePage() {
       </section>
 
       {/* ── FOOTER ──────────────────────────────────────────────── */}
-      <footer className="py-10 px-4" style={{ background: 'linear-gradient(160deg, #1E2A5A 0%, #162050 100%)' }}>
+      <footer className="py-10 px-4" style={{ background: '#1E2A5A' }}>
         <div className="max-w-6xl mx-auto">
           <div className="divider-gradient mb-8" />
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">

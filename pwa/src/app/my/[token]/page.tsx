@@ -45,7 +45,7 @@ const STATUS_CONFIG: Record<
   payment_sent: { label: 'Ожидает оплату',  badge: 'bg-amber-100 text-amber-700' },
   paid:         { label: 'Оплачен',          badge: 'bg-blue-100 text-blue-700' },
   in_progress:  { label: 'В работе',         badge: 'bg-blue-100 text-blue-700' },
-  confirming:   { label: 'Подтверждение',    badge: 'bg-violet-100 text-violet-700' },
+  confirming:   { label: 'Подтверждение',    badge: 'bg-blue-100 text-blue-700' },
   completed:    { label: 'Завершён',          badge: 'bg-green-100 text-green-700' },
   disputed:     { label: 'Спор',             badge: 'bg-red-100 text-red-700' },
 };
@@ -83,7 +83,7 @@ function OrderCard({ order }: { order: Order }) {
 
   return (
     <div
-      className={`rounded-2xl border p-4 shadow-card transition-all duration-200 hover:shadow-card-hover ${
+      className={`rounded-xl border p-4 shadow-card transition-all duration-200 hover:shadow-card-hover ${
         isPayment
           ? 'bg-amber-50 border-amber-200'
           : 'bg-white border-[var(--color-border)]'
@@ -210,7 +210,7 @@ export default function CustomerDashboard() {
   if (notFound || !data) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl shadow-elevated p-8 max-w-sm w-full text-center">
+        <div className="bg-white rounded-xl shadow-elevated p-8 max-w-sm w-full text-center">
           <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
             <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -224,7 +224,7 @@ export default function CustomerDashboard() {
           </p>
           <Link
             href="/my"
-            className="inline-flex items-center justify-center w-full px-4 py-3 rounded-2xl bg-brand-500 text-white font-semibold text-sm cursor-pointer hover:bg-brand-600 transition-colors duration-150"
+            className="inline-flex items-center justify-center w-full px-4 py-3 rounded-xl bg-brand-500 text-white font-semibold text-sm cursor-pointer hover:bg-brand-600 transition-colors duration-150"
           >
             Получить новую ссылку
           </Link>
@@ -246,7 +246,7 @@ export default function CustomerDashboard() {
       {/* Header */}
       <div
         className="px-4 pt-10 pb-6 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 100%)' }}
+        style={{ background: '#2F5BFF' }}
       >
         <div className="max-w-lg mx-auto">
           <div className="flex items-start justify-between gap-4">
@@ -274,7 +274,7 @@ export default function CustomerDashboard() {
 
       <div className="max-w-lg mx-auto px-4 -mt-1 pb-10">
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3 bg-white rounded-2xl shadow-card p-4 mb-6 -mt-3">
+        <div className="grid grid-cols-3 gap-3 bg-white rounded-xl shadow-card p-4 mb-6 -mt-3">
           <div className="text-center">
             <p className="font-heading font-extrabold text-2xl text-brand-500">{countActive}</p>
             <p className="text-xs text-[var(--color-muted)] mt-0.5 leading-tight">Активных</p>
@@ -333,7 +333,7 @@ export default function CustomerDashboard() {
             </p>
             <Link
               href="/order/new"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-brand-500 text-white font-semibold text-sm cursor-pointer hover:bg-brand-600 transition-colors duration-150"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand-500 text-white font-semibold text-sm cursor-pointer hover:bg-brand-600 transition-colors duration-150"
             >
               Оформить заказ
             </Link>

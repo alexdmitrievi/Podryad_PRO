@@ -23,7 +23,7 @@ const CONTACT_METHODS: { id: ContactMethod; label: string; activeClass: string }
   { id: 'MAX', label: 'MAX', activeClass: 'bg-[#2787F5] text-white border-[#2787F5]' },
   { id: 'Telegram', label: 'Telegram', activeClass: 'bg-[#229ED9] text-white border-[#229ED9]' },
   { id: 'Позвонить', label: 'Позвонить', activeClass: 'bg-green-500 text-white border-green-500' },
-  { id: 'Email', label: 'Email', activeClass: 'bg-gray-500 text-white border-gray-500' },
+  { id: 'Email', label: 'Email', activeClass: 'bg-brand-500 text-white border-brand-500' },
 ];
 
 export default function JoinPage() {
@@ -75,7 +75,7 @@ export default function JoinPage() {
       {/* Header */}
       <div
         className="py-14 px-4 text-center"
-        style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 100%)' }}
+        style={{ background: '#2F5BFF' }}
       >
         <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading mb-3">
           Стать исполнителем
@@ -88,7 +88,7 @@ export default function JoinPage() {
       {/* Form card */}
       <div className="max-w-lg mx-auto px-4 py-12">
         {submitted ? (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-10 text-center shadow-elevated">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-10 text-center shadow-elevated">
             <svg
               className="mx-auto mb-4 text-green-500"
               width="48"
@@ -110,7 +110,7 @@ export default function JoinPage() {
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="bg-white rounded-2xl p-8 sm:p-10 shadow-elevated border border-gray-100/80 space-y-6"
+            className="bg-white rounded-xl p-8 sm:p-10 shadow-elevated border border-gray-100/80 space-y-6"
           >
             {/* Name */}
             <div>

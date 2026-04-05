@@ -23,7 +23,7 @@ export default function ComboOfferBanner() {
   return (
     <section className="py-16 md:py-20 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="relative bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-8 md:p-10 overflow-hidden">
+        <div className="relative bg-brand-500 rounded-xl p-8 md:p-10 overflow-hidden">
           {/* Decorative circles */}
           <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-white/10" />
           <div className="absolute -right-4 -bottom-12 w-40 h-40 rounded-full bg-white/10" />
@@ -59,7 +59,7 @@ export default function ComboOfferBanner() {
                       </div>
                     </>
                   )}
-                  <span className="ml-auto bg-white text-orange-600 text-xs font-extrabold px-2 py-0.5 rounded-lg flex-shrink-0">
+                  <span className="ml-auto bg-white text-brand-500 text-xs font-extrabold px-2 py-0.5 rounded-lg flex-shrink-0">
                     {combo.discount}
                   </span>
                 </div>
@@ -76,7 +76,7 @@ export default function ComboOfferBanner() {
             <div className="mt-6">
               <Link
                 href="/order/new?type=combo"
-                className="inline-flex items-center gap-2 bg-white text-orange-600 font-bold py-3 px-7 rounded-xl text-sm hover:bg-orange-50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-md cursor-pointer"
+                className="inline-flex items-center gap-2 bg-white text-brand-500 font-bold py-3 px-7 rounded-xl text-sm hover:bg-blue-50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-md cursor-pointer"
               >
                 Заказать со скидкой
                 <ArrowRight size={16} />

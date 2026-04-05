@@ -155,7 +155,7 @@ export default function OrderNewPage() {
           </div>
         </nav>
         <div className="max-w-lg mx-auto px-4 py-16">
-          <div className="bg-success-50 border border-green-200 rounded-2xl p-10 text-center shadow-elevated">
+          <div className="bg-success-50 border border-green-200 rounded-xl p-10 text-center shadow-elevated">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
               <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-green-600">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -212,7 +212,7 @@ export default function OrderNewPage() {
         <form
           id="order-form"
           onSubmit={handleSubmit}
-          className="bg-white rounded-2xl p-8 shadow-elevated border border-gray-100 space-y-7"
+          className="bg-white rounded-xl p-8 shadow-elevated border border-gray-100 space-y-7"
         >
           {/* 1. Category */}
           <div>
@@ -234,7 +234,7 @@ export default function OrderNewPage() {
                   }`}
                 >
                   {badge && (
-                    <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                    <span className="absolute -top-2 -right-2 bg-brand-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
                       {badge}
                     </span>
                   )}
@@ -267,7 +267,7 @@ export default function OrderNewPage() {
                   ))}
                 </div>
                 {getComboDiscountLabel(comboComponents) && (
-                  <div className="mt-3 inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 font-bold text-sm px-4 py-2 rounded-xl">
+                  <div className="mt-3 inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 font-bold text-sm px-4 py-2 rounded-xl">
                     <Zap size={16} />
                     Комбо-скидка {getComboDiscountLabel(comboComponents)}
                   </div>
