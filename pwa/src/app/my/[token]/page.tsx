@@ -246,7 +246,7 @@ export default function CustomerDashboard() {
       {/* Header */}
       <div
         className="px-4 pt-10 pb-6 relative overflow-hidden"
-        style={{ background: '#2F5BFF' }}
+        style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 100%)' }}
       >
         <div className="max-w-lg mx-auto">
           <div className="flex items-start justify-between gap-4">

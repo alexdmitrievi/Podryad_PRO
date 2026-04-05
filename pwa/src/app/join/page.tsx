@@ -75,7 +75,7 @@ export default function JoinPage() {
       {/* Header */}
       <div
         className="py-14 px-4 text-center"
-        style={{ background: '#2F5BFF' }}
+        style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 100%)' }}
       >
         <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading mb-3">
           Стать исполнителем

@@ -218,7 +218,7 @@ export default function HomePage() {
       {/* ── 1. HERO ─────────────────────────────────────────────── */}
       <section
         className="relative py-28 sm:py-32 px-4 overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #2F5BFF 0%, #4DA3FF 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 60%, #6C5CE7 100%)' }}
       >
         {/* Noise texture */}
         <div className="absolute inset-0 noise-overlay pointer-events-none" />
@@ -392,7 +392,7 @@ export default function HomePage() {
       </section>
 
       {/* ── 3. БЕЗОПАСНАЯ СДЕЛКА — 4 шага ───────────────────────── */}
-      <section className="relative py-24 px-4 overflow-hidden" style={{ background: '#2F5BFF' }}>
+      <section className="relative py-24 px-4 overflow-hidden" style={{ background: 'linear-gradient(160deg, #1E2A5A 0%, #2F5BFF 100%)' }}>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-brand-500/10 blur-[120px] pointer-events-none" />
         <div ref={revSteps} className="relative z-10 max-w-5xl mx-auto reveal">
           <div className="text-center mb-16">
@@ -411,7 +411,7 @@ export default function HomePage() {
               { n: '4', title: 'Подтверждение', desc: 'Выплата после вашего ОК — 100% защита' },
             ].map((step, i) => (
               <div key={step.n} className="relative text-center" style={{ transitionDelay: `${i * 0.15}s` }}>
-                <div className="relative z-10 w-14 h-14 rounded-full bg-brand-500 flex items-center justify-center text-white font-extrabold text-lg mx-auto mb-5 shadow-[0_4px_24px_rgba(47,91,255,0.35)] ring-4 ring-white/20">
+                <div className="relative z-10 w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-[#6C5CE7] flex items-center justify-center text-white font-extrabold text-lg mx-auto mb-5 shadow-[0_4px_24px_rgba(47,91,255,0.35)] ring-4 ring-white/20">
                   {step.n}
                 </div>
                 <h3 className="font-bold text-white text-base mb-2 font-heading">{step.title}</h3>
@@ -426,7 +426,7 @@ export default function HomePage() {
       <ComboOfferBanner />
 
       {/* ── 4. ДЛЯ ИСПОЛНИТЕЛЕЙ ────────────────────────────────── */}
-      <section className="relative py-24 px-4 overflow-hidden" style={{ background: '#2F5BFF' }}>
+      <section className="relative py-24 px-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #2F5BFF 0%, #6C5CE7 100%)' }}>
         <div ref={revExecutors} className="relative z-10 max-w-3xl mx-auto text-center reveal">
           <span className="inline-block text-white/70 font-semibold text-sm tracking-wider uppercase mb-3">Партнёрам</span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-6 font-heading">
