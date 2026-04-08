@@ -217,7 +217,7 @@ export default function HomePage() {
 
       {/* ── 1. HERO ─────────────────────────────────────────────── */}
       <section
-        className="section-gradient relative py-28 sm:py-32 px-4 overflow-hidden"
+        className="section-gradient relative py-16 sm:py-20 px-4 overflow-hidden"
       >
         {/* Animated floating orbs */}
         <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-violet/20 blur-[120px] pointer-events-none orb-1" />
@@ -229,36 +229,36 @@ export default function HomePage() {
 
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 badge-brand-hero mb-8 animate-fade-in">
+          <div className="inline-flex items-center gap-2 badge-brand-hero mb-5 animate-fade-in">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse-dot" />
             Платформа для строительного бизнеса
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-[1.1] mb-8 font-heading animate-fade-in tracking-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white leading-[1.1] mb-5 font-heading animate-fade-in tracking-tight">
             Персонал &middot; Техника &middot; Материалы
             <br />
             <span className="text-gradient">в&nbsp;Омске и&nbsp;Новосибирске</span>
           </h1>
-          <p className="text-white/70 text-lg sm:text-xl mb-12 max-w-xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.15s' }}>
+          <p className="text-white/70 text-base sm:text-lg mb-8 max-w-xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.15s' }}>
             Стройка, благоустройство, частные участки.
             <br />
             Эскроу-оплата &middot; Перезвоним за 15 минут
           </p>
 
           {/* Stats card */}
-          <div className="inline-flex gap-8 sm:gap-14 bg-white/[0.08] backdrop-blur-2xl border border-white/10 rounded-xl px-10 py-6 mb-12 animate-fade-in shadow-hero" style={{ animationDelay: '0.3s' }}>
+          <div className="inline-flex gap-8 sm:gap-14 bg-white/[0.08] backdrop-blur-2xl border border-white/10 rounded-xl px-8 py-4 mb-8 animate-fade-in shadow-hero" style={{ animationDelay: '0.3s' }}>
             <div className="text-center">
-              <span ref={orders.ref} className="block text-4xl sm:text-5xl font-extrabold text-white tabular-nums font-heading">
+              <span ref={orders.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading">
                 {orders.value}+
               </span>
-              <span className="text-white/50 text-sm mt-1 block">заказов выполнено</span>
+              <span className="text-white/50 text-sm block">заказов выполнено</span>
             </div>
             <div className="w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
             <div className="text-center">
-              <span ref={contractors.ref} className="block text-4xl sm:text-5xl font-extrabold text-white tabular-nums font-heading">
+              <span ref={contractors.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading">
                 {contractors.value}+
               </span>
-              <span className="text-white/50 text-sm mt-1 block">исполнителей в базе</span>
+              <span className="text-white/50 text-sm block">исполнителей в базе</span>
             </div>
           </div>
 
