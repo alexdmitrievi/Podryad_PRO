@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 
-function verifyPin(req: NextRequest): boolean {
-  const pin = req.headers.get('x-admin-pin');
-  return pin === process.env.ADMIN_PIN;
+function verifyPin(pin: string): boolean {
+  const adminPin = process.env.ADMIN_PIN;
+  if (!adminPin) return false;
+  const pinBuf = Buffer.from(pin);
+  const expectedBuf = Buffer.from(adminPin);
+  return pinBuf.length === expectedBuf.length && timingSafeEqual(pinBuf, expectedBuf);
 }
 
 /** GET — list all executor responses (admin only) */
 export async function GET(req: NextRequest) {
-  if (!verifyPin(req)) {
+  const pin = req.headers.get('x-admin-pin') ?? '';
+  if (!verifyPin(pin)) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
@@ -29,20 +34,25 @@ export async function GET(req: NextRequest) {
 
 /** PUT — update response status (accept/reject) */
 export async function PUT(req: NextRequest) {
-  let body: { pin: string; id: number; status: string };
+  const pin = req.headers.get('x-admin-pin') ?? '';
+  if (!verifyPin(pin)) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  let body: { id: number; status: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  if (body.pin !== process.env.ADMIN_PIN) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
-
   const validStatuses = ['pending', 'accepted', 'rejected'];
   if (!validStatuses.includes(body.status)) {
     return NextResponse.json({ error: 'invalid_status' }, { status: 422 });
+  }
+
+  if (!body.id || typeof body.id !== 'number') {
+    return NextResponse.json({ error: 'invalid_id' }, { status: 422 });
   }
 
   const db = getServiceClient();

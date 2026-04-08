@@ -872,8 +872,8 @@ function ListingsTab({ pin }: { pin: string }) {
     try {
       const res = await fetch('/api/admin/listings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, ...form, price: Number(form.price) }),
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ ...form, price: Number(form.price) }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -1304,8 +1304,8 @@ function ResponsesTab({ pin }: { pin: string }) {
     try {
       const res = await fetch('/api/admin/responses', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, id, status }),
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ id, status }),
       });
       if (res.ok) {
         setResponses(r => r.map(x => x.id === id ? { ...x, status } : x));

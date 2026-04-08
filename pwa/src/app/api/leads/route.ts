@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       const q = address.includes(cityPrefix) ? address : `${cityPrefix}, ${address}`;
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&accept-language=ru&countrycodes=ru`,
-        { headers: { 'User-Agent': 'PodraydPRO/1.0' } }
+        { headers: { 'User-Agent': 'PodraydPRO/1.0' }, signal: AbortSignal.timeout(5000) }
       );
       const geoData = await geoRes.json();
       if (geoData[0]) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 
 interface LaborOrderBody {
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     const yandexLink = `https://yandex.ru/maps/?pt=${lon},${lat}&z=16`;
 
     const orderData = {
-      order_id: `web-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      order_id: `web-${randomUUID().replace(/-/g, '').slice(0, 16)}`,
       customer_id: digits,
       customer_phone: digits,
       address,
@@ -136,7 +137,7 @@ export async function POST(req: NextRequest) {
     const yandexLink = `https://yandex.ru/maps/?pt=${lon},${lat}&z=16`;
 
     const orderData = {
-      order_id: `rental-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      order_id: `rental-${randomUUID().replace(/-/g, '').slice(0, 16)}`,
       customer_id: digits,
       customer_phone: digits,
       address,

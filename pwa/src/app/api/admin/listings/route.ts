@@ -33,16 +33,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const pin = req.headers.get('x-admin-pin') ?? '';
+  if (!verifyPin(pin)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
-  }
-
-  const pin = String(body.pin || '');
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const { listing_type, category_slug, title, price, price_unit } = body;

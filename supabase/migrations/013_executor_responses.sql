@@ -1,4 +1,4 @@
--- Migration 011: executor_responses table for dashboard order responses
+-- Migration 013: executor_responses table for dashboard order responses
 -- Responses from executors go to admin for review, not to customers
 
 CREATE TABLE IF NOT EXISTS executor_responses (
