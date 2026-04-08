@@ -1,48 +1,47 @@
-# n8n workflows и Supabase (PostgreSQL)
+# n8n Workflows — Подряд PRO
 
-JSON-файлы в этой папке изначально настроены на **Google Sheets** (ноды `n8n-nodes-base.googleSheets`).  
-Проект переведён на **Supabase** — данные заказов, исполнителей, тарифов и т.д. хранятся в PostgreSQL.
+9 рабочих воркфлоу для автоматизации платформы. Все используют Supabase (PostgreSQL) + Telegram + MAX.
 
-## Какие сценарии остаются обязательными
+## Активные воркфлоу
 
-Ниже — **не** кандидаты на удаление; их нужно **сохранить и мигрировать с Sheets на Supabase**:
+| # | Файл | Триггер | Что делает |
+|---|------|---------|------------|
+| 06 | `06-daily-analytics.json` | Cron 20:00 МСК | Дневная аналитика → отчёт админу в Telegram |
+| 07 | `07-max-crosspost.json` | Cron каждые 2 мин | Кросс-пост оплаченных заказов в MAX-канал |
+| 11 | `11-lead-notification.json` | Webhook `/lead-notification` | Уведомление о новой заявке с лендинга |
+| 12 | `12-payment-held.json` | Webhook `/payment-held` | Уведомление об эскроу-холде (YooKassa) |
+| 13 | `13-payout-reminder.json` | Webhook `/payout-notification` | Напоминание о ручной выплате |
+| 14 | `14-order-created.json` | Webhook `/order-created` | Уведомление о новом заказе из PWA |
+| 15 | `15-contractor-registered.json` | Webhook `/contractor-registered` | Уведомление о новом исполнителе |
+| 16 | `16-send-dashboard-link.json` | Webhook `/send-dashboard-link` | Отправка ссылки на дашборд заказчику |
+| 17 | `17-send-payment-link.json` | Webhook `/send-payment-link` | Отправка ссылки на оплату заказчику |
 
-| Файл | Сценарий |
-|------|----------|
-| `02-publish-order.json` | Оплата (ЮKassa) и публикация заказа в канал |
-| `05-monetization.json` | VIP, `/pick`, платежи монетизации |
-| `07-max-crosspost.json` | Кросс-пост в **MAX** (MAX остаётся в продукте) |
-| `09-equipment-rental.json` | **Аренда техники** и колбэки оплаты аренды |
+## ENV-переменные (n8n)
 
-Остальные workflow (`01`, `03`, `04`, `06`, `08` и т.д.) — по вашей логике бота и PWA; их тоже переводите на SQL, если сценарии используются.
+```
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+TELEGRAM_BOT_TOKEN=123:ABC...
+TELEGRAM_ADMIN_CHAT_ID=12345
+MAX_BOT_TOKEN=xxx
+MAX_API_BASE=https://api.max.im
+MAX_CHANNEL_ID=xxx
+MAX_ADMIN_USER_ID=xxx
+```
 
-## Что сделать при развёртывании n8n
+## ENV-переменные (PWA .env.local)
 
-1. **Установите креды Supabase** (не Google):
-   - **HTTP Header Auth** или переменные: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (для записи с сервера) либо **Supabase** community node, если используете его.
-   - Для чтения «опубликованных» заказов с клиента — `anon` + RLS; для сценариев бота обычно нужен **service role** (храните только на сервере n8n).
+```
+N8N_LEADS_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/lead-notification
+N8N_ORDER_CREATED_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/order-created
+N8N_CONTRACTOR_REGISTERED_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/contractor-registered
+N8N_SEND_DASHBOARD_LINK_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/send-dashboard-link
+N8N_SEND_PAYMENT_LINK_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/send-payment-link
+```
 
-2. **Замените ноды Google Sheets** на один из вариантов:
-   - **HTTP Request** к [PostgREST](https://postgrest.org/):  
-     `{{ $env.SUPABASE_URL }}/rest/v1/<table>`  
-     Заголовки: `apikey: <anon или service>`, `Authorization: Bearer <тот же ключ>`, `Content-Type: application/json`, `Prefer: return=representation`.
-   - Или нода **Postgres** с connection string из Supabase (**Settings → Database**).
-   - Или официальная/сообщества **Supabase** node для n8n.
+## Импорт в n8n
 
-3. **Соответствие листов и таблиц** (ориентир):
-
-   | Было (Sheets) | Стало (SQL) |
-   |---|---|
-   | Orders | `orders` |
-   | Workers | `workers` |
-   | Rates | `rates` |
-   | Payments | `payments` |
-   | Equipment | `equipment` |
-   | Rentals | `rentals` |
-   | PushSubs | `push_subscriptions` (см. `supabase/schema.sql`) |
-
-4. **Идентификаторы**: в БД `orders.order_id` — **TEXT** (например `"123"`); в старых сценариях мог быть числом — приведите тип в Code node при необходимости.
-
-5. Импорт JSON в n8n по-прежнему: **Import from File** — затем пройдитесь по workflow и замените удалённые Google-ноды.
-
-Схема таблиц для ручного SQL: см. репозиторий `supabase/` (в т.ч. `schema.sql` и основной скрипт схемы проекта в Supabase SQL Editor).
+1. Откройте n8n → Import from File → выберите JSON
+2. Настройте credentials (Telegram Bot)
+3. Проверьте ENV-переменные
+4. Активируйте воркфлоу

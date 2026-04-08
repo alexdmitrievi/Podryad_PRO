@@ -1,22 +1,30 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getServiceClient } from '@/lib/supabase';
 
 /**
- * Public orders API — returns only safe fields for the dashboard.
- * Shows published orders that executors can respond to.
+ * Public orders API — returns only customer-safe fields.
+ * NEVER exposes: base_price, markup_percent, customer_phone, customer_name.
+ *
+ * Returns active orders with geo coordinates for map display.
  */
 export async function GET() {
+  const supabase = getServiceClient();
+
   const { data, error } = await supabase
     .from('orders')
-    .select('order_id, order_number, address, lat, lon, work_type, people, hours, comment, created_at, customer_total')
-    .in('status', ['published', 'paid'])
+    .select(
+      'order_id, order_number, work_type, subcategory, address, address_lat, address_lng, status, people_count, hours, work_date, created_at'
+    )
+    .not('address_lat', 'is', null)
+    .not('address_lng', 'is', null)
+    .in('status', ['pending', 'priced', 'payment_sent', 'paid', 'in_progress', 'published'])
     .order('created_at', { ascending: false })
-    .limit(50);
+    .limit(100);
 
   if (error) {
     console.error('GET /api/orders/public:', error);
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
 
-  return NextResponse.json({ orders: data || [] });
+  return NextResponse.json({ ok: true, orders: data || [] });
 }
