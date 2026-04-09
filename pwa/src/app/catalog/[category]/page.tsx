@@ -297,11 +297,11 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
 
       {/* Header */}
       <section
-        className="section-gradient py-16 sm:py-20 px-4"
+        className="section-gradient py-14 sm:py-16 px-4"
       >
         <div className="max-w-6xl mx-auto text-center">
           <span className="text-4xl mb-4 block">{meta.icon}</span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading mb-3">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading mb-3">
             {meta.title}
           </h1>
           <p className="text-white/60 text-lg">{meta.subtitle}</p>
@@ -309,7 +309,7 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
       </section>
 
       {/* Items grid */}
-      <section className="py-12 px-4">
+      <section className="py-16 sm:py-20 px-4">
         <div className="max-w-6xl mx-auto">
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

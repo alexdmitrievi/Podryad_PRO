@@ -245,7 +245,7 @@ export default function CustomerDashboard() {
     <div className="min-h-screen bg-surface">
       {/* Header */}
       <div
-        className="section-gradient px-4 pt-10 pb-6 relative overflow-hidden"
+        className="section-gradient px-4 py-12 sm:py-14 relative overflow-hidden"
       >
         <div className="max-w-lg mx-auto">
           <div className="flex items-start justify-between gap-4">

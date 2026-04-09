@@ -74,8 +74,8 @@ export default function JoinPage() {
   return (
     <div className="min-h-screen bg-surface font-sans">
       {/* Header */}
-      <div className="section-gradient py-14 px-4 text-center">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading mb-3">
+      <div className="section-gradient py-14 sm:py-16 px-4 text-center">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading mb-3">
           Стать исполнителем
         </h1>
         <p className="text-white/75 text-base sm:text-lg">
@@ -113,7 +113,7 @@ export default function JoinPage() {
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="bg-white rounded-xl p-8 sm:p-10 shadow-elevated border border-gray-100/80 space-y-6"
+            className="bg-white rounded-xl p-6 sm:p-8 shadow-elevated border border-gray-100/80 space-y-6"
           >
             {/* Name */}
             <div>

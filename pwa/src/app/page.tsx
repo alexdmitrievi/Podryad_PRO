@@ -275,18 +275,18 @@ export default function HomePage() {
       </section>
 
       {/* ── 2. УСЛУГИ — 3 карточки ──────────────────────────────── */}
-      <section className="py-24 px-4 bg-surface">
+      <section className="py-16 sm:py-20 px-4 bg-surface">
         <div ref={revServices} className="max-w-6xl mx-auto reveal">
-          <div className="text-center mb-14">
+          <div className="text-center mb-12">
             <span className="inline-block text-brand-500 font-semibold text-sm tracking-wider uppercase mb-3">Услуги</span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-[#2B2B2B] font-heading">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#2B2B2B] font-heading">
               Что мы предлагаем
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 stagger-grid">
             {/* Рабочая сила */}
-            <Link href="/catalog/labor" className="group bg-white rounded-xl p-8 shadow-card border border-gray-100 card-lift cursor-pointer block">
+            <Link href="/catalog/labor" className="group bg-white rounded-xl p-6 sm:p-8 shadow-card border border-gray-100 card-lift cursor-pointer block">
               <div className="w-14 h-14 rounded-xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </div>
@@ -316,7 +316,7 @@ export default function HomePage() {
             </Link>
 
             {/* Аренда техники */}
-            <Link href="/catalog/equipment" className="group bg-white rounded-xl p-8 shadow-card border border-gray-100 card-lift cursor-pointer block">
+            <Link href="/catalog/equipment" className="group bg-white rounded-xl p-6 sm:p-8 shadow-card border border-gray-100 card-lift cursor-pointer block">
               <div className="w-14 h-14 rounded-xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </div>
@@ -338,7 +338,7 @@ export default function HomePage() {
             </Link>
 
             {/* Стройматериалы */}
-            <Link href="/catalog/materials" className="group bg-white rounded-xl p-8 shadow-card border border-gray-100 card-lift cursor-pointer block">
+            <Link href="/catalog/materials" className="group bg-white rounded-xl p-6 sm:p-8 shadow-card border border-gray-100 card-lift cursor-pointer block">
               <div className="w-14 h-14 rounded-xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
               </div>
@@ -363,9 +363,9 @@ export default function HomePage() {
       </section>
 
       {/* ── 2.5. СОЗДАТЬ ЗАКАЗ — CTA ────────────────────────────── */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 sm:py-20 px-4 bg-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-[#2B2B2B] font-heading mb-4">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#2B2B2B] font-heading mb-4">
             Разместите заказ прямо сейчас
           </h2>
           <p className="text-gray-500 mb-8 max-w-xl mx-auto">
@@ -396,12 +396,12 @@ export default function HomePage() {
       </section>
 
       {/* ── 3. БЕЗОПАСНАЯ СДЕЛКА — 4 шага ───────────────────────── */}
-      <section className="section-gradient relative py-24 px-4 overflow-hidden">
+      <section className="section-gradient relative py-16 sm:py-20 px-4 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-brand-500/10 blur-[120px] pointer-events-none" />
         <div ref={revSteps} className="relative z-10 max-w-5xl mx-auto reveal">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <span className="inline-block text-brand-400 font-semibold text-sm tracking-wider uppercase mb-3">Как это работает</span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white font-heading">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading">
               Безопасная сделка
             </h2>
           </div>
@@ -430,13 +430,13 @@ export default function HomePage() {
       <ComboOfferBanner />
 
       {/* ── 4. ДЛЯ ИСПОЛНИТЕЛЕЙ ────────────────────────────────── */}
-      <section className="section-gradient relative py-24 px-4 overflow-hidden">
+      <section className="section-gradient relative py-16 sm:py-20 px-4 overflow-hidden">
         <div ref={revExecutors} className="relative z-10 max-w-3xl mx-auto text-center reveal">
           <span className="inline-block text-white/70 font-semibold text-sm tracking-wider uppercase mb-3">Партнёрам</span>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-6 font-heading">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-6 font-heading">
             Для исполнителей
           </h2>
-          <p className="text-white/80 text-lg mb-12 leading-relaxed max-w-xl mx-auto">
+          <p className="text-white/80 text-base sm:text-lg mb-8 leading-relaxed max-w-xl mx-auto">
             Платформа бесплатна для исполнителей. Получайте заказы, выставляйте свои услуги — без комиссий и подписок.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -458,11 +458,11 @@ export default function HomePage() {
       </section>
 
       {/* ── 5. ФОРМА ЗАЯВКИ ─────────────────────────────────────── */}
-      <section id="lead-form" className="py-24 px-4 bg-surface">
+      <section id="lead-form" className="py-16 sm:py-20 px-4 bg-surface">
         <div ref={revForm} className="max-w-lg mx-auto reveal">
           <div className="text-center mb-10">
             <span className="inline-block text-brand-500 font-semibold text-sm tracking-wider uppercase mb-3">Связаться</span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-[#2B2B2B] font-heading mb-3">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#2B2B2B] font-heading mb-3">
               Оставить заявку
             </h2>
             <p className="text-gray-500">
@@ -493,7 +493,7 @@ export default function HomePage() {
           ) : (
             <form
               onSubmit={handleSubmit}
-              className="bg-white rounded-xl p-8 sm:p-10 shadow-elevated border border-gray-100/80 space-y-6"
+              className="bg-white rounded-xl p-6 sm:p-8 shadow-elevated border border-gray-100/80 space-y-6"
             >
               {/* Категория */}
               <div>

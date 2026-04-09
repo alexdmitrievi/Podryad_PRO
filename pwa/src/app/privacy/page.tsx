@@ -6,7 +6,7 @@ export default function PrivacyPage() {
 
       {/* NAVBAR */}
       <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <span className="text-lg font-extrabold text-brand-900">
             Подряд PRO
           </span>

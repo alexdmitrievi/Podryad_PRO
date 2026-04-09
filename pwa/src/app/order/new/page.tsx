@@ -203,7 +203,7 @@ export default function OrderNewPage() {
           <span className="inline-block text-brand-500 font-semibold text-sm tracking-wider uppercase mb-3">
             Новый заказ
           </span>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 font-heading">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-heading">
             Разместить заказ
           </h1>
           <p className="text-gray-500 mt-2 text-sm">
@@ -214,7 +214,7 @@ export default function OrderNewPage() {
         <form
           id="order-form"
           onSubmit={handleSubmit}
-          className="bg-white rounded-xl p-8 shadow-elevated border border-gray-100 space-y-7"
+          className="bg-white rounded-xl p-6 sm:p-8 shadow-elevated border border-gray-100 space-y-6"
         >
           {/* 1. Category */}
           <div>

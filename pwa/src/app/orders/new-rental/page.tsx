@@ -144,7 +144,7 @@ export default function NewRentalPage() {
       </nav>
 
       {/* Header */}
-      <section className="py-10 px-4 bg-white border-b border-gray-100">
+      <section className="py-12 sm:py-14 px-4 bg-white border-b border-gray-100">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-heading mb-2">
             Аренда спецтехники
