@@ -320,13 +320,47 @@
     },
     {
       "parameters": {
-        "jsCode": "const registeredContractors = $input.first().json;\nif (!Array.isArray(registeredContractors) || registeredContractors.length === 0) {\n  return [{ json: { newlyRegistered: [], hasRegistered: false } }];\n}\nconst now = new Date().toISOString();\nconst updates = registeredContractors.map(c => ({\n  phone: c.phone,\n  contractor_id: c.id,\n  update: { stage: 'registered', registered_at: now, contractor_id: c.id, conversation_summary: `Зарегистрирован на платформе ${now.slice(0,10)}. Contractor ID: ${c.id}.`, updated_at: now }\n}));\nreturn [{ json: { newlyRegistered: registeredContractors, updates, hasRegistered: true } }];"
+        "jsCode": "const registeredContractors = $input.first().json;\nif (!Array.isArray(registeredContractors) || registeredContractors.length === 0) {\n  return [{ json: { newlyRegistered: [], hasRegistered: false } }];\n}\nconst now = new Date().toISOString();\n// Return individual items for batch PATCH\nreturn registeredContractors.map(c => ({ json: {\n  phone: c.phone,\n  contractor_id: c.id,\n  stage: 'registered',\n  registered_at: now,\n  conversation_summary: `Зарегистрирован на платформе ${now.slice(0,10)}. Contractor ID: ${c.id}.`,\n  updated_at: now\n} }));"
       },
       "id": "erag-mark-registered-023",
       "name": "Mark as Registered",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [3600, 440]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_executor_prospects?phone=eq.{{ $json.phone }}",
+        "method": "PATCH",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: $json.stage, registered_at: $json.registered_at, contractor_id: $json.contractor_id, conversation_summary: $json.conversation_summary, updated_at: $json.updated_at }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "erag-patch-registered-023b",
+      "name": "PATCH Registered Prospects",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3840, 440]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate patched results and check if any were processed\nconst items = $input.all();\nconst phones = items.map(i => i.json.phone).filter(Boolean);\nif (phones.length === 0) return [{ json: { hasRegistered: false, newlyRegistered: [] } }];\nreturn [{ json: { hasRegistered: true, newlyRegistered: items.map(i => ({ phone: i.json.phone, id: i.json.contractor_id })) } }];"
+      },
+      "id": "erag-aggregate-reg-023c",
+      "name": "Aggregate Registered",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4080, 440]
     },
     {
       "parameters": {
@@ -340,7 +374,7 @@
       "name": "Has Newly Registered?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [3840, 440]
+      "position": [4320, 440]
     },
     {
       "parameters": {
@@ -421,7 +455,9 @@
       []
     ] },
     "Query Contractors DB": { "main": [[{ "node": "Mark as Registered", "type": "main", "index": 0 }]] },
-    "Mark as Registered": { "main": [[{ "node": "Has Newly Registered?", "type": "main", "index": 0 }]] },
+    "Mark as Registered": { "main": [[{ "node": "PATCH Registered Prospects", "type": "main", "index": 0 }]] },
+    "PATCH Registered Prospects": { "main": [[{ "node": "Aggregate Registered", "type": "main", "index": 0 }]] },
+    "Aggregate Registered": { "main": [[{ "node": "Has Newly Registered?", "type": "main", "index": 0 }]] },
     "Has Newly Registered?": { "main": [
       [{ "node": "Notify New Registrations", "type": "main", "index": 0 }],
       []

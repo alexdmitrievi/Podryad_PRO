@@ -39,7 +39,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ lead_id: $json.leadId, phone: $json.phone, name: $json.name, work_type: $json.workType, city: $json.city, messenger: $json.messenger, email: $json.email || null, telegram: $json.telegram || null, stage: 'new', contact_attempts: 0, next_followup_at: new Date(Date.now() + 7200000).toISOString() }) }}",
+        "jsonBody": "={{ JSON.stringify({ lead_id: $json.leadId, phone: $json.phone, name: $json.name, work_type: $json.workType, city: $json.city, messenger: $json.messenger, email: $json.email || null, telegram: $json.telegram || null }) }}",
         "options": { "timeout": 10000 }
       },
       "id": "rag-upsert-003",
@@ -50,7 +50,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_messages?entity_type=eq.lead&entity_id=eq.{{ $('Parse Lead Data').first().json.leadId || 0 }}&order=sent_at.desc&limit=15",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_messages?entity_type=eq.lead&entity_id=eq.{{ Array.isArray($('Upsert CRM Funnel').first().json) ? $('Upsert CRM Funnel').first().json[0].id : $('Upsert CRM Funnel').first().json.id }}&order=sent_at.desc&limit=15",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -82,7 +82,7 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Welcome [RAG]\\n📞 ' + $json.phone + ' | ' + ($json.name || 'Без имени') + '\\n📋 ' + $json.workLabel + ' / ' + $json.cityLabel + '\\n💬 Мессенджер: ' + $json.messenger + (($json.interactionCount > 0) ? '\\n🔄 Повторный контакт (' + $json.interactionCount + ' сообщ.)' : '\\n🆕 Новый лид') + '\\n\\n' + $json.welcomeMsg, parse_mode: 'HTML' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Welcome [RAG]\\n📞 ' + $json.phone + ' | ' + ($json.name || 'Без имени') + '\\n📋 ' + $json.workLabel + ' / ' + $json.cityLabel + '\\n💬 Мессенджер: ' + $json.messenger + (($json.interactionCount > 0) ? '\\n🔄 Повторный контакт (' + $json.interactionCount + ' сообщ.)' : '\\n🆕 Новый лид') + '\\n\\n' + $json.welcomeMsg }) }}",
         "options": { "timeout": 10000 }
       },
       "id": "rag-admin-welcome-006",
@@ -286,7 +286,7 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Follow-up #1 [RAG]\\n📞 ' + $json.phone + (($json.hasInbound) ? '\\n✅ Клиент отвечал!' : '\\n⏳ Нет ответа') + '\\n\\n' + $json.msg, parse_mode: 'HTML' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Follow-up #1 [RAG]\\n📞 ' + $json.phone + (($json.hasInbound) ? '\\n✅ Клиент отвечал!' : '\\n⏳ Нет ответа') + '\\n\\n' + $json.msg }) }}",
         "options": { "timeout": 10000 }
       },
       "id": "rag-admin-f1-018",
@@ -472,7 +472,7 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Follow-up #2 [RAG]\\n📞 ' + $json.phone + '\\n📊 Ответов клиента: ' + $json.userMsgCount + '\\n\\n' + $json.msg + (($json.hasEmail) ? '\\n\\n📧 Email отправлен на: ' + $json.email : ''), parse_mode: 'HTML' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Follow-up #2 [RAG]\\n📞 ' + $json.phone + '\\n📊 Ответов клиента: ' + $json.userMsgCount + '\\n\\n' + $json.msg + (($json.hasEmail) ? '\\n\\n📧 Email отправлен на: ' + $json.email : '') }) }}",
         "options": { "timeout": 10000 }
       },
       "id": "rag-admin-f2-029",
@@ -634,7 +634,7 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Final [RAG]\\n📞 ' + $json.phone + '\\n📊 Вход: ' + $json.totalInbound + ' / Исх: ' + $json.totalOutbound + '\\n\\n' + $json.msg + '\\n\\n⚠️ Лид помечен как cold', parse_mode: 'HTML' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Final [RAG]\\n📞 ' + $json.phone + '\\n📊 Вход: ' + $json.totalInbound + ' / Исх: ' + $json.totalOutbound + '\\n\\n' + $json.msg + '\\n\\n⚠️ Лид помечен как cold' }) }}",
         "options": { "timeout": 10000 }
       },
       "id": "rag-admin-final-039",
