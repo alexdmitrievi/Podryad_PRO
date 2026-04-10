@@ -15,8 +15,8 @@
 | 15 | `15-contractor-registered.json` | Webhook `/contractor-registered` | Уведомление о новом исполнителе |
 | 16 | `16-send-dashboard-link.json` | Webhook `/send-dashboard-link` | Отправка ссылки на дашборд заказчику |
 | 17 | `17-send-payment-link.json` | Webhook `/send-payment-link` | Отправка ссылки на оплату заказчику |
-| 18 | `18-customer-lead-nurture.json` | Webhook `/crm-lead-nurture` | CRM-агент заказчиков: 7-дневная nurture-цепочка через MAX/email → конверсия в заказ |
-| 19 | `19-executor-avito-nurture.json` | Cron каждые 6 ч | CRM-агент исполнителей: генерирует тексты сообщений для Авито-кандидатов + отчёт admin |
+| 18 | `18-customer-lead-nurture.json` | Webhook `/crm-lead-nurture` | **RAG** CRM-агент заказчиков: nurture-цепочка (welcome → 2ч → 24ч → 3дн) с RAG-контекстом + email |
+| 19 | `19-executor-avito-nurture.json` | Cron каждые 6 ч | **RAG** CRM-агент исполнителей: Авито-рекрутинг с RAG-контекстом + email-инвайты |
 | 20 | `20-crm-conversion-tracker.json` | Webhook `/crm-conversion` | Трекер конверсий CRM: обновляет стадии воронки при order/contractor событиях |
 
 ## ENV-переменные (n8n)
@@ -69,9 +69,41 @@ CRM_WEBHOOK_SECRET=your-secret-here
 Cron (n8n)           → 06 (analytics), 07 (max-crosspost), 19 (avito-nurture)
 ```
 
+## RAG-архитектура (workflows 18, 19)
+
+Оба CRM-агента используют **RAG** (Retrieval-Augmented Generation):
+
+1. **Память**: Все сообщения хранятся в `crm_messages` (направление, канал, текст, дата)
+2. **Извлечение**: Перед генерацией каждого сообщения — запрос последних 15 сообщений из истории
+3. **Контекст**: Сообщения адаптируются к истории общения (ссылки на прошлые ответы, учёт стадии)
+4. **Профиль**: `conversation_summary` обновляется после каждого взаимодействия
+5. **Мультиканал**: TG-алерт админу + email клиенту (если email есть)
+
+### DB-миграция для RAG
+
+```sql
+-- 014_crm_rag.sql добавляет:
+-- conversation_summary TEXT     — резюме общения
+-- user_preferences JSONB        — извлечённые предпочтения
+-- last_inbound_message TEXT     — последнее сообщение от пользователя
+-- last_inbound_at TIMESTAMPTZ   — когда
+```
+
+## Настройка SMTP (email-канал)
+
+1. В n8n → Settings → Credentials → Add Credential → SMTP
+2. Имя: **Podryad PRO SMTP**
+3. Настройки SMTP (пример для Yandex):
+   - Host: `smtp.yandex.ru`
+   - Port: `465`
+   - SSL: `true`
+   - User: `noreply@podryad.pro`
+   - Password: app-password
+4. Workflows 18 и 19 автоматически используют этот credential
+
 ## Импорт в n8n
 
 1. Откройте n8n → Import from File → выберите JSON
-2. Настройте credentials (Telegram Bot)
+2. Настройте credentials: Telegram Bot + **SMTP** (Podryad PRO SMTP)
 3. Проверьте ENV-переменные
 4. Активируйте воркфлоу

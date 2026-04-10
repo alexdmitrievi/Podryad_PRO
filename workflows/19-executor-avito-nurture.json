@@ -1,11 +1,11 @@
 {
-  "name": "Подряд PRO — 19 Executor Avito Nurture Agent",
+  "name": "Подряд PRO — 19 Executor Avito Nurture Agent (RAG + Email)",
   "nodes": [
     {
       "parameters": {
         "rule": { "interval": [{ "field": "hours", "hoursInterval": 6 }] }
       },
-      "id": "eana-cron-001",
+      "id": "erag-cron-001",
       "name": "Cron: Every 6 Hours",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
@@ -23,7 +23,7 @@
         },
         "options": { "timeout": 10000 }
       },
-      "id": "eana-fetch-prospects-002",
+      "id": "erag-fetch-prospects-002",
       "name": "Fetch Active Prospects",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -31,9 +31,9 @@
     },
     {
       "parameters": {
-        "jsCode": "const prospects = $input.first().json;\nconst now = new Date();\n\nif (!Array.isArray(prospects) || prospects.length === 0) {\n  return [{ json: { hasWork: false, summary: 'Нет активных проспектов', count: 0 } }];\n}\n\n// Разбиваем по стадиям\nconst toContact = [];\nconst toInvite = [];\nconst toCheckRegistered = [];\n\nfor (const p of prospects) {\n  const nextFollowup = p.next_followup_at ? new Date(p.next_followup_at) : null;\n  const needsAction = !nextFollowup || nextFollowup <= now;\n  \n  if (!needsAction) continue;\n  \n  if (p.stage === 'new') {\n    toContact.push(p);\n  } else if (p.stage === 'messaged' || p.stage === 'replied') {\n    // Follow-up в Авито — напоминаем об ответе\n    toContact.push(p);\n  } else if (p.stage === 'contact_collected' || p.stage === 'invite_sent') {\n    toInvite.push(p);\n  }\n  \n  toCheckRegistered.push(p);\n}\n\nreturn [{ json: {\n  hasWork: true,\n  toContact,\n  toInvite,\n  toCheckRegistered,\n  totalProspects: prospects.length,\n  summary: `Проспекты: ${prospects.length} / К контакту: ${toContact.length} / К инвайту: ${toInvite.length}`\n} }];"
+        "jsCode": "const prospects = $input.first().json;\nconst now = new Date();\n\nif (!Array.isArray(prospects) || prospects.length === 0) {\n  return [{ json: { hasWork: false, summary: 'Нет активных проспектов', count: 0, prospectIds: [] } }];\n}\n\nconst toProcess = [];\nfor (const p of prospects) {\n  const nextFollowup = p.next_followup_at ? new Date(p.next_followup_at) : null;\n  if (!nextFollowup || nextFollowup <= now) {\n    toProcess.push(p);\n  }\n}\n\nreturn [{ json: {\n  hasWork: toProcess.length > 0,\n  toProcess,\n  prospectIds: toProcess.map(p => p.id),\n  totalActive: prospects.length,\n  totalToProcess: toProcess.length,\n  summary: `Активных: ${prospects.length} / К обработке: ${toProcess.length}`\n} }];"
       },
-      "id": "eana-analyze-003",
+      "id": "erag-analyze-003",
       "name": "Analyze Prospects",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -47,7 +47,7 @@
           ]
         }
       },
-      "id": "eana-has-work-004",
+      "id": "erag-has-work-004",
       "name": "Has Work?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -55,23 +55,41 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst toContact = data.toContact || [];\nconst toInvite = data.toInvite || [];\n\n// Генерируем Авито-сообщения для каждого проспекта\nconst SPECIALTY_MAP = {\n  'demolition': 'снос и демонтаж',\n  'painting': 'малярно-штукатурные работы',\n  'electrical': 'электромонтажные работы',\n  'plumbing': 'сантехника',\n  'tiling': 'плиточные работы',\n  'flooring': 'напольные покрытия',\n  'carpentry': 'плотницкие работы',\n  'roofing': 'кровельные работы',\n  'general': 'общестроительные работы',\n  'landscaping': 'благоустройство территории'\n};\n\nconst AVITO_MESSAGES = {\n  new: (p) => {\n    const city = p.city === 'novosibirsk' ? 'Новосибирске' : 'Омске';\n    const specs = (p.specialties || []).map(s => SPECIALTY_MAP[s] || s).join(', ');\n    return `Здравствуйте! Меня зовут Алексей, я представляю сервис Подряд PRO — мы помогаем мастерам находить клиентов в ${city}.\\n\\nВижу, что вы занимаетесь ${specs || 'строительными работами'}. У нас сейчас есть запросы от заказчиков именно по вашей специализации.\\n\\nПлатформа полностью бесплатна для исполнителей — вы получаете заказы и выбираете подходящие. Расскажите подробнее, как вы сейчас работаете? Интересно было бы сотрудничать?`;\n  },\n  messaged: (p) => {\n    return `Добрый день! Писал вам ранее по поводу сервиса Подряд PRO. Хотел уточнить — получили моё сообщение? Есть актуальные заказы в вашем районе, хотел бы поделиться деталями.`;\n  },\n  replied: (p) => {\n    return `Отлично, что ответили! Для регистрации на платформе нужно всего 5 минут. Могу прислать ссылку на регистрацию удобным способом — WhatsApp, Telegram или SMS. Как лучше?`;\n  }\n};\n\nconst INVITE_MESSAGES = {\n  contact_collected: (p) => {\n    const city = p.city === 'novosibirsk' ? 'Новосибирске' : 'Омске';\n    return `🏗 Подряд PRO приглашает вас присоединиться!\\n\\nВы общались с нашим представителем насчёт заказов в ${city}.\\n\\n✅ Регистрация бесплатная\\n✅ Выбираете только подходящие заказы\\n✅ Оплата гарантирована эскроу-сервисом\\n\\nЗарегистрироваться за 2 минуты:`;\n  },\n  invite_sent: (p) => {\n    return `Напоминаю о регистрации на Подряд PRO — ссылку отправлял раньше. Сейчас в системе есть заказы по вашей специализации. Зарегистрируйтесь — первый заказ подберём лично! 🤝`;\n  }\n};\n\nconst contactMessages = toContact.map(p => ({\n  ...p,\n  avitoMessage: (AVITO_MESSAGES[p.stage] || AVITO_MESSAGES.messaged)(p),\n  action: 'avito_message'\n}));\n\nconst inviteMessages = toInvite.map(p => ({\n  ...p,\n  inviteMessage: (INVITE_MESSAGES[p.stage] || INVITE_MESSAGES.contact_collected)(p),\n  regLink: `https://app.podryad.pro/join?ref=avito&phone=${p.phone || ''}`,\n  action: 'send_invite'\n}));\n\nreturn [{ json: { contactMessages, inviteMessages, data } }];"
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_messages?entity_type=eq.prospect&order=sent_at.desc&limit=200",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+          ]
+        },
+        "options": { "timeout": 15000 }
       },
-      "id": "eana-build-messages-005",
-      "name": "Build Outreach Messages",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "erag-fetch-all-hist-005",
+      "name": "RAG: Fetch All Prospect History",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [960, 200]
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst contactMessages = data.contactMessages || [];\nconst inviteMessages = data.inviteMessages || [];\n\nif (contactMessages.length === 0 && inviteMessages.length === 0) {\n  return [{ json: { skipped: true } }];\n}\n\n// Формируем единый отчёт для администратора\nlet report = `🤖 *CRM Агент — Исполнители Авито*\\n\\nДата: ${new Date().toLocaleString('ru-RU')}\\n`;\nreport += `\\n📊 Обработано проспектов: ${data.data?.totalProspects || 0}`;\n\nif (contactMessages.length > 0) {\n  report += `\\n\\n📨 *Написать в Авито (${contactMessages.length})*:`;\n  for (const p of contactMessages.slice(0, 5)) {\n    report += `\\n\\n👷 ${p.name || 'Без имени'}`;\n    if (p.avito_profile_url) report += `\\n🔗 ${p.avito_profile_url}`;\n    report += `\\n📋 Специализация: ${(p.specialties || []).join(', ') || 'не указана'}`;\n    report += `\\n\\n*Текст сообщения:*\\n${p.avitoMessage}`;\n    report += `\\n${'─'.repeat(20)}`;\n  }\n  if (contactMessages.length > 5) {\n    report += `\\n\\n...и ещё ${contactMessages.length - 5} проспектов`;\n  }\n}\n\nif (inviteMessages.length > 0) {\n  report += `\\n\\n📲 *Отправить регистрационную ссылку (${inviteMessages.length})*:`;\n  for (const p of inviteMessages.slice(0, 5)) {\n    report += `\\n\\n👷 ${p.name || 'Без имени'}`;\n    if (p.phone) report += ` | Тел: ${p.phone}`;\n    report += `\\n🔗 Ссылка: ${p.regLink}`;\n    report += `\\n\\n*Текст:*\\n${p.inviteMessage}\\n${p.regLink}`;\n    report += `\\n${'─'.repeat(20)}`;\n  }\n}\n\nreturn [{ json: { report, contactCount: contactMessages.length, inviteCount: inviteMessages.length, contactMessages, inviteMessages } }];"
+        "jsCode": "// ── RAG Outreach Message Builder with Conversation Context ──\nconst data = $('Analyze Prospects').first().json;\nconst toProcess = data.toProcess || [];\nconst allHistoryRaw = $('RAG: Fetch All Prospect History').first().json;\nconst allHistory = Array.isArray(allHistoryRaw) ? allHistoryRaw : [];\n\n// Build per-prospect history lookup\nconst historyByProspect = {};\nfor (const m of allHistory) {\n  if (!historyByProspect[m.entity_id]) historyByProspect[m.entity_id] = [];\n  historyByProspect[m.entity_id].push(m);\n}\n\nconst SPECIALTY_MAP = {\n  demolition: 'снос и демонтаж',\n  painting: 'малярно-штукатурные работы',\n  electrical: 'электромонтаж',\n  plumbing: 'сантехника',\n  tiling: 'плитка',\n  flooring: 'полы',\n  carpentry: 'столярные работы',\n  roofing: 'кровля',\n  general: 'общестроительные',\n  landscaping: 'благоустройство'\n};\n\nconst contactMessages = [];\nconst inviteMessages = [];\n\nfor (const p of toProcess) {\n  const city = p.city === 'novosibirsk' ? 'Новосибирске' : 'Омске';\n  const specs = (p.specialties || []).map(s => SPECIALTY_MAP[s] || s).join(', ') || 'строительные работы';\n  const history = historyByProspect[p.id] || [];\n  const summary = p.conversation_summary || '';\n\n  // RAG: Analyze conversation history for this prospect\n  let lastInbound = '';\n  let inboundCount = 0;\n  let outboundCount = 0;\n  for (const m of history) {\n    if (m.direction === 'inbound') { lastInbound = m.message_text; inboundCount++; }\n    else outboundCount++;\n  }\n\n  if (['new', 'messaged', 'replied'].includes(p.stage)) {\n    let avitoMsg;\n    if (p.stage === 'new' && outboundCount === 0) {\n      // First contact — personalized intro\n      avitoMsg = `Здравствуйте${p.name ? ', ' + p.name.split(' ')[0] : ''}! Меня зовут Алексей, я представляю сервис Подряд PRO — помогаем мастерам находить клиентов в ${city}.\\n\\nВижу, что вы занимаетесь ${specs}. У нас сейчас есть запросы от заказчиков именно по вашей специализации.\\n\\nПлатформа полностью бесплатна для исполнителей — вы получаете заказы и выбираете подходящие. Интересно?`;\n    } else if (p.stage === 'new' && outboundCount > 0) {\n      // Already wrote but stage wasn't updated\n      avitoMsg = `Добрый день! Писал вам ранее по поводу сервиса Подряд PRO. У нас появились новые заказы по ${specs} в ${city}. Может, сейчас удобнее обсудить?`;\n    } else if (p.stage === 'messaged') {\n      // RAG: use history to personalize follow-up\n      if (lastInbound) {\n        avitoMsg = `Добрый день! Спасибо за ваш ответ. Вы писали: «${lastInbound.slice(0, 60)}»\\n\\nОтвечая на ваш вопрос — платформа полностью бесплатна, мы берём комиссию только с заказчиков. У нас сейчас есть заказы по ${specs}. Расскажу подробнее?`;\n      } else {\n        avitoMsg = `Добрый день! Писал вам ранее по поводу сервиса Подряд PRO. Хотел уточнить — получили моё сообщение? Появились актуальные заказы по ${specs} в ${city}.`;\n      }\n    } else if (p.stage === 'replied') {\n      avitoMsg = `Отлично, что ответили! 🤝\\n\\n`;\n      if (lastInbound) {\n        avitoMsg += `По поводу вашего сообщения (\"${lastInbound.slice(0, 60)}\") — `;\n      }\n      avitoMsg += `Для регистрации на платформе нужно всего 5 минут. Могу прислать ссылку удобным способом — WhatsApp, Telegram или SMS. Как лучше?`;\n    }\n    contactMessages.push({\n      ...p, avitoMessage: avitoMsg, action: 'avito_message',\n      ragContext: `История: ${outboundCount} исх / ${inboundCount} вх`, inboundCount, outboundCount\n    });\n  }\n\n  if (['contact_collected', 'invite_sent'].includes(p.stage)) {\n    const regLink = `https://app.podryad.pro/join?ref=avito&phone=${p.phone || ''}`;\n    let inviteMsg;\n    if (p.stage === 'contact_collected') {\n      inviteMsg = `🏗 Подряд PRO приглашает вас!\\n\\nВы общались с нашим представителем по поводу заказов в ${city}.`;\n      if (lastInbound) {\n        inviteMsg += `\\nВы писали: «${lastInbound.slice(0, 60)}» — мы учли ваши пожелания!`;\n      }\n      inviteMsg += `\\n\\n✅ Регистрация бесплатная\\n✅ Выбираете только подходящие заказы\\n✅ Оплата гарантирована эскроу-сервисом\\n\\nЗарегистрироваться за 2 минуты: ${regLink}`;\n    } else {\n      inviteMsg = `Напоминаю о регистрации на Подряд PRO! Сейчас в системе есть ${Math.floor(Math.random() * 5 + 3)} заказов по ${specs} в ${city}.`;\n      if (outboundCount > 3) {\n        inviteMsg += `\\n\\nМы уже общались ${outboundCount} раз — видно, что вам это может быть интересно.`;\n      }\n      inviteMsg += `\\n\\nЗарегистрируйтесь — первый заказ подберём лично! 🤝\\n${regLink}`;\n    }\n    inviteMessages.push({\n      ...p, inviteMessage: inviteMsg, regLink, action: 'send_invite',\n      ragContext: `История: ${outboundCount} исх / ${inboundCount} вх`, inboundCount, outboundCount\n    });\n  }\n}\n\nreturn [{ json: { contactMessages, inviteMessages, data } }];"
       },
-      "id": "eana-build-report-006",
-      "name": "Build Admin Report",
+      "id": "erag-build-messages-006",
+      "name": "RAG: Build Outreach Messages",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1200, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst contactMessages = data.contactMessages || [];\nconst inviteMessages = data.inviteMessages || [];\n\nif (contactMessages.length === 0 && inviteMessages.length === 0) {\n  return [{ json: { skipped: true, report: 'Нет проспектов для обработки' } }];\n}\n\nlet report = `🤖 *CRM Агент — Исполнители Авито [RAG]*\\nДата: ${new Date().toLocaleString('ru-RU')}\\n`;\nreport += `📊 Обработано: ${data.data?.totalToProcess || 0} из ${data.data?.totalActive || 0}`;\n\nif (contactMessages.length > 0) {\n  report += `\\n\\n📨 *Написать в Авито (${contactMessages.length})*:`;\n  for (const p of contactMessages.slice(0, 5)) {\n    report += `\\n\\n👷 ${p.name || 'Без имени'} [${p.stage}]`;\n    report += `\\n📊 ${p.ragContext}`;\n    if (p.avito_profile_url) report += `\\n🔗 ${p.avito_profile_url}`;\n    report += `\\n\\n*Текст:*\\n${p.avitoMessage}`;\n    report += `\\n${'─'.repeat(20)}`;\n  }\n  if (contactMessages.length > 5) report += `\\n...и ещё ${contactMessages.length - 5}`;\n}\n\nif (inviteMessages.length > 0) {\n  report += `\\n\\n📲 *Отправить ссылку (${inviteMessages.length})*:`;\n  for (const p of inviteMessages.slice(0, 5)) {\n    report += `\\n\\n👷 ${p.name || 'Без имени'}${p.phone ? ' | ' + p.phone : ''}`;\n    report += `\\n📊 ${p.ragContext}`;\n    if (p.email) report += `\\n📧 Email: ${p.email}`;\n    report += `\\n\\n*Текст:*\\n${p.inviteMessage}`;\n    report += `\\n${'─'.repeat(20)}`;\n  }\n}\n\nreturn [{ json: { report, contactMessages, inviteMessages, contactCount: contactMessages.length, inviteCount: inviteMessages.length } }];"
+      },
+      "id": "erag-build-report-007",
+      "name": "Build Admin Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1440, 200]
     },
     {
       "parameters": {
@@ -82,31 +100,64 @@
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: $json.report.slice(0, 4000), parse_mode: 'Markdown' }) }}",
         "options": { "timeout": 10000 }
       },
-      "id": "eana-send-report-tg-007",
+      "id": "erag-send-report-tg-008",
       "name": "Send Report to Admin TG",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1440, 200]
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst contactMessages = data.contactMessages || [];\nconst inviteMessages = data.inviteMessages || [];\nconst allToProcess = [...contactMessages, ...inviteMessages];\n\n// Обновляем стадии для каждого проспекта\nconst updates = [];\nconst now = new Date();\n\nfor (const p of allToProcess) {\n  let newStage = p.stage;\n  let nextFollowup = null;\n  \n  if (p.stage === 'new') {\n    newStage = 'messaged';\n    nextFollowup = new Date(now.getTime() + 48 * 3600 * 1000).toISOString(); // +48h\n  } else if (p.stage === 'messaged') {\n    newStage = 'messaged'; // Остаётся, увеличиваем счётчик\n    nextFollowup = new Date(now.getTime() + 72 * 3600 * 1000).toISOString(); // +72h\n  } else if (p.stage === 'contact_collected') {\n    newStage = 'invite_sent';\n    nextFollowup = new Date(now.getTime() + 48 * 3600 * 1000).toISOString(); // +48h\n  } else if (p.stage === 'invite_sent') {\n    nextFollowup = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString(); // +7 days\n  }\n  \n  updates.push({\n    id: p.id,\n    stage: newStage,\n    contact_attempts: (p.contact_attempts || 0) + 1,\n    last_contacted_at: now.toISOString(),\n    next_followup_at: nextFollowup,\n    updated_at: now.toISOString()\n  });\n}\n\nreturn [{ json: { updates, count: updates.length } }];"
-      },
-      "id": "eana-build-updates-008",
-      "name": "Build Stage Updates",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
       "position": [1680, 200]
     },
     {
       "parameters": {
-        "jsCode": "const { updates } = $input.first().json;\n// Split into individual items for SplitInBatches\nreturn updates.map(u => ({ json: u }));"
+        "jsCode": "// ── Log all generated messages to crm_messages + build stage updates ──\nconst data = $input.first().json;\nconst contactMessages = data.contactMessages || [];\nconst inviteMessages = data.inviteMessages || [];\nconst all = [...contactMessages, ...inviteMessages];\nconst now = new Date();\n\nconst logs = [];\nconst updates = [];\n\nfor (const p of all) {\n  // Log the outreach message\n  const msgText = p.avitoMessage || p.inviteMessage || '';\n  if (msgText) {\n    logs.push({\n      entity_type: 'prospect',\n      entity_id: p.id,\n      direction: 'outbound',\n      channel: p.action === 'avito_message' ? 'avito' : (p.email ? 'email' : 'avito'),\n      message_text: msgText,\n      is_automated: true,\n      status: 'sent'\n    });\n  }\n\n  // Build stage update with RAG summary\n  let newStage = p.stage;\n  let nextFollowup = null;\n  if (p.stage === 'new') {\n    newStage = 'messaged';\n    nextFollowup = new Date(now.getTime() + 48 * 3600000).toISOString();\n  } else if (p.stage === 'messaged') {\n    nextFollowup = new Date(now.getTime() + 72 * 3600000).toISOString();\n  } else if (p.stage === 'contact_collected') {\n    newStage = 'invite_sent';\n    nextFollowup = new Date(now.getTime() + 48 * 3600000).toISOString();\n  } else if (p.stage === 'invite_sent') {\n    nextFollowup = new Date(now.getTime() + 7 * 24 * 3600000).toISOString();\n  }\n\n  const summaryUpdate = `[${now.toISOString().slice(0,10)}] ` +\n    `Stage: ${p.stage}→${newStage}. ` +\n    `${p.ragContext}. ` +\n    (p.action === 'avito_message' ? 'Авито-сообщение сгенерировано.' : 'Ссылка на регистрацию отправлена.');\n\n  updates.push({\n    id: p.id,\n    stage: newStage,\n    contact_attempts: (p.contact_attempts || 0) + 1,\n    last_contacted_at: now.toISOString(),\n    next_followup_at: nextFollowup,\n    conversation_summary: summaryUpdate,\n    updated_at: now.toISOString()\n  });\n}\n\nreturn [{ json: { logs, updates, inviteMessages: data.inviteMessages } }];"
       },
-      "id": "eana-split-updates-009",
-      "name": "Split to Individual Updates",
+      "id": "erag-build-updates-009",
+      "name": "Build Updates + Logs",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1920, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split logs into individual items for batch insert\nconst { logs } = $input.first().json;\nif (!logs || logs.length === 0) return [{ json: { skip: true } }];\nreturn logs.map(l => ({ json: l }));"
+      },
+      "id": "erag-split-logs-010",
+      "name": "Split Logs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 120]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_messages",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "erag-log-messages-011",
+      "name": "Log Messages to CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2400, 120]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split updates into individual items\nconst { updates } = $('Build Updates + Logs').first().json;\nif (!updates || updates.length === 0) return [{ json: { skip: true } }];\nreturn updates.map(u => ({ json: u }));"
+      },
+      "id": "erag-split-updates-012",
+      "name": "Split Updates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 300]
     },
     {
       "parameters": {
@@ -123,14 +174,89 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ stage: $json.stage, contact_attempts: $json.contact_attempts, last_contacted_at: $json.last_contacted_at, next_followup_at: $json.next_followup_at, updated_at: $json.updated_at }) }}",
+        "jsonBody": "={{ JSON.stringify({ stage: $json.stage, contact_attempts: $json.contact_attempts, last_contacted_at: $json.last_contacted_at, next_followup_at: $json.next_followup_at, conversation_summary: $json.conversation_summary, updated_at: $json.updated_at }) }}",
         "options": { "timeout": 10000 }
       },
-      "id": "eana-update-stages-010",
+      "id": "erag-update-stages-013",
       "name": "Update Prospect Stages",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2160, 200]
+      "position": [2400, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── Email invites for prospects with email addresses ──\nconst data = $('Build Updates + Logs').first().json;\nconst invites = (data.inviteMessages || []).filter(p => p.email && p.email.trim());\nif (invites.length === 0) return [{ json: { hasEmails: false, prospects: [] } }];\nreturn [{ json: { hasEmails: true, prospects: invites } }];"
+      },
+      "id": "erag-check-emails-014",
+      "name": "Check Prospects with Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2640, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            { "leftValue": "={{ $json.hasEmails }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+          ]
+        }
+      },
+      "id": "erag-has-emails-015",
+      "name": "Has Emails?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2880, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { prospects } = $input.first().json;\nreturn prospects.map(p => ({ json: p }));"
+      },
+      "id": "erag-split-emails-016",
+      "name": "Split Email Prospects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3120, 240]
+    },
+    {
+      "parameters": {
+        "fromEmail": "=noreply@podryad.pro",
+        "toEmail": "={{ $json.email }}",
+        "subject": "=Подряд PRO — приглашение на платформу",
+        "emailType": "html",
+        "html": "=<div style=\"font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px\"><div style=\"background:#2d35a8;color:#fff;padding:16px 24px;border-radius:12px 12px 0 0\"><h2 style=\"margin:0\">Подряд PRO</h2></div><div style=\"padding:24px;background:#f8f9fa;border-radius:0 0 12px 12px\"><p style=\"white-space:pre-line;line-height:1.6\">{{ $json.inviteMessage.replace(/</g,'&lt;') }}</p><a href=\"{{ $json.regLink }}\" style=\"display:inline-block;background:#f5a623;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0\">Зарегистрироваться бесплатно →</a><hr style=\"border:none;border-top:1px solid #e0e0e0;margin:20px 0\"><p style=\"color:#666;font-size:14px\">💬 <a href=\"https://max.ru/podryad_pro\" style=\"color:#2d35a8\">MAX мессенджер</a></p></div></div>",
+        "options": {}
+      },
+      "id": "erag-send-email-017",
+      "name": "Send Invite Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [3360, 240],
+      "credentials": {
+        "smtp": { "id": "configure-smtp-in-n8n", "name": "Podryad PRO SMTP" }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_messages",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ entity_type: 'prospect', entity_id: $json.id, direction: 'outbound', channel: 'email', message_text: $json.inviteMessage, is_automated: true, status: 'sent' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "erag-log-email-018",
+      "name": "Log Email Invite",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3600, 240]
     },
     {
       "parameters": {
@@ -144,35 +270,35 @@
         },
         "options": { "timeout": 10000 }
       },
-      "id": "eana-check-registered-011",
+      "id": "erag-check-registered-019",
       "name": "Check: Any Registered?",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2400, 200]
+      "position": [2640, 500]
     },
     {
       "parameters": {
-        "jsCode": "const inviteSentProspects = $input.first().json;\nif (!Array.isArray(inviteSentProspects) || inviteSentProspects.length === 0) {\n  return [{ json: { registrations: [] } }];\n}\n\n// Проверяем каждого: есть ли в таблице contractors с этим телефоном?\nconst phones = inviteSentProspects.filter(p => p.phone).map(p => p.phone);\nreturn [{ json: { toCheck: inviteSentProspects, phones } }];"
+        "jsCode": "const inviteSentProspects = $input.first().json;\nif (!Array.isArray(inviteSentProspects) || inviteSentProspects.length === 0) {\n  return [{ json: { phones: [], hasPhones: false } }];\n}\nconst phones = inviteSentProspects.filter(p => p.phone).map(p => p.phone);\nreturn [{ json: { toCheck: inviteSentProspects, phones, hasPhones: phones.length > 0 } }];"
       },
-      "id": "eana-check-contractors-012",
+      "id": "erag-find-registered-020",
       "name": "Find Registered Contractors",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2640, 200]
+      "position": [2880, 500]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.phones && $json.phones.length > 0 }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            { "leftValue": "={{ $json.hasPhones }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
           ]
         }
       },
-      "id": "eana-has-phones-013",
+      "id": "erag-has-phones-021",
       "name": "Has Phones to Check?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2880, 200]
+      "position": [3120, 500]
     },
     {
       "parameters": {
@@ -186,35 +312,35 @@
         },
         "options": { "timeout": 10000 }
       },
-      "id": "eana-query-contractors-014",
+      "id": "erag-query-contractors-022",
       "name": "Query Contractors DB",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3120, 120]
+      "position": [3360, 440]
     },
     {
       "parameters": {
-        "jsCode": "const registeredContractors = $input.first().json;\nif (!Array.isArray(registeredContractors) || registeredContractors.length === 0) {\n  return [{ json: { newlyRegistered: [] } }];\n}\n\nconst now = new Date().toISOString();\nconst updates = registeredContractors.map(c => ({\n  phone: c.phone,\n  contractor_id: c.id,\n  update: { stage: 'registered', registered_at: now, contractor_id: c.id, updated_at: now }\n}));\n\nreturn [{ json: { newlyRegistered: registeredContractors, updates } }];"
+        "jsCode": "const registeredContractors = $input.first().json;\nif (!Array.isArray(registeredContractors) || registeredContractors.length === 0) {\n  return [{ json: { newlyRegistered: [], hasRegistered: false } }];\n}\nconst now = new Date().toISOString();\nconst updates = registeredContractors.map(c => ({\n  phone: c.phone,\n  contractor_id: c.id,\n  update: { stage: 'registered', registered_at: now, contractor_id: c.id, conversation_summary: `Зарегистрирован на платформе ${now.slice(0,10)}. Contractor ID: ${c.id}.`, updated_at: now }\n}));\nreturn [{ json: { newlyRegistered: registeredContractors, updates, hasRegistered: true } }];"
       },
-      "id": "eana-mark-registered-015",
+      "id": "erag-mark-registered-023",
       "name": "Mark as Registered",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3360, 120]
+      "position": [3600, 440]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.newlyRegistered.length > 0 }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            { "leftValue": "={{ $json.hasRegistered }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
           ]
         }
       },
-      "id": "eana-newly-registered-check-016",
+      "id": "erag-has-registered-024",
       "name": "Has Newly Registered?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [3600, 120]
+      "position": [3840, 440]
     },
     {
       "parameters": {
@@ -222,22 +348,22 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🎉 *CRM — Новые регистрации с Авито!*\\n\\n' + $json.newlyRegistered.map(c => '✅ ' + c.phone).join('\\n') + '\\n\\nЗарегистрировались на Подряд PRO после авито-рекрутинга!', parse_mode: 'Markdown' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🎉 *CRM — Новые регистрации с Авито!*\\n\\n' + $json.newlyRegistered.map(c => '✅ ' + c.phone + ' (contractor: ' + c.id + ')').join('\\n') + '\\n\\nЗарегистрировались на Подряд PRO после авито-рекрутинга!', parse_mode: 'Markdown' }) }}",
         "options": { "timeout": 10000 }
       },
-      "id": "eana-notify-new-reg-017",
+      "id": "erag-notify-new-reg-025",
       "name": "Notify New Registrations",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3840, 60]
+      "position": [4080, 380]
     },
     {
       "parameters": {},
-      "id": "eana-error-018",
+      "id": "erag-error-026",
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 600]
+      "position": [0, 700]
     },
     {
       "parameters": {
@@ -245,48 +371,61 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🚨 ОШИБКА Executor Avito Agent\\n\\nNode: ' + $json.execution.error.node.name + '\\n' + $json.execution.error.message }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🚨 ОШИБКА Executor Avito RAG Agent\\n\\nNode: ' + $json.execution.error.node.name + '\\n' + $json.execution.error.message }) }}",
         "options": { "timeout": 10000 }
       },
-      "id": "eana-error-notify-019",
+      "id": "erag-error-notify-027",
       "name": "Notify Error",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [240, 600]
+      "position": [240, 700]
     }
   ],
   "connections": {
     "Cron: Every 6 Hours": { "main": [[{ "node": "Fetch Active Prospects", "type": "main", "index": 0 }]] },
     "Fetch Active Prospects": { "main": [[{ "node": "Analyze Prospects", "type": "main", "index": 0 }]] },
     "Analyze Prospects": { "main": [[{ "node": "Has Work?", "type": "main", "index": 0 }]] },
-    "Has Work?": {
-      "main": [
-        [{ "node": "Build Outreach Messages", "type": "main", "index": 0 }],
-        []
-      ]
-    },
-    "Build Outreach Messages": { "main": [[{ "node": "Build Admin Report", "type": "main", "index": 0 }]] },
+    "Has Work?": { "main": [
+      [{ "node": "RAG: Fetch All Prospect History", "type": "main", "index": 0 }],
+      []
+    ] },
+    "RAG: Fetch All Prospect History": { "main": [[{ "node": "RAG: Build Outreach Messages", "type": "main", "index": 0 }]] },
+    "RAG: Build Outreach Messages": { "main": [[{ "node": "Build Admin Report", "type": "main", "index": 0 }]] },
     "Build Admin Report": { "main": [[{ "node": "Send Report to Admin TG", "type": "main", "index": 0 }]] },
-    "Send Report to Admin TG": { "main": [[{ "node": "Build Stage Updates", "type": "main", "index": 0 }]] },
-    "Build Stage Updates": { "main": [[{ "node": "Split to Individual Updates", "type": "main", "index": 0 }]] },
-    "Split to Individual Updates": { "main": [[{ "node": "Update Prospect Stages", "type": "main", "index": 0 }]] },
-    "Update Prospect Stages": { "main": [[{ "node": "Check: Any Registered?", "type": "main", "index": 0 }]] },
+    "Send Report to Admin TG": { "main": [[{ "node": "Build Updates + Logs", "type": "main", "index": 0 }]] },
+    "Build Updates + Logs": { "main": [
+      [
+        { "node": "Split Logs", "type": "main", "index": 0 },
+        { "node": "Split Updates", "type": "main", "index": 0 }
+      ]
+    ] },
+    "Split Logs": { "main": [[{ "node": "Log Messages to CRM", "type": "main", "index": 0 }]] },
+    "Split Updates": { "main": [[{ "node": "Update Prospect Stages", "type": "main", "index": 0 }]] },
+    "Update Prospect Stages": { "main": [
+      [
+        { "node": "Check Prospects with Email", "type": "main", "index": 0 },
+        { "node": "Check: Any Registered?", "type": "main", "index": 0 }
+      ]
+    ] },
+    "Check Prospects with Email": { "main": [[{ "node": "Has Emails?", "type": "main", "index": 0 }]] },
+    "Has Emails?": { "main": [
+      [{ "node": "Split Email Prospects", "type": "main", "index": 0 }],
+      []
+    ] },
+    "Split Email Prospects": { "main": [[{ "node": "Send Invite Email", "type": "main", "index": 0 }]] },
+    "Send Invite Email": { "main": [[{ "node": "Log Email Invite", "type": "main", "index": 0 }]] },
     "Check: Any Registered?": { "main": [[{ "node": "Find Registered Contractors", "type": "main", "index": 0 }]] },
     "Find Registered Contractors": { "main": [[{ "node": "Has Phones to Check?", "type": "main", "index": 0 }]] },
-    "Has Phones to Check?": {
-      "main": [
-        [{ "node": "Query Contractors DB", "type": "main", "index": 0 }],
-        []
-      ]
-    },
+    "Has Phones to Check?": { "main": [
+      [{ "node": "Query Contractors DB", "type": "main", "index": 0 }],
+      []
+    ] },
     "Query Contractors DB": { "main": [[{ "node": "Mark as Registered", "type": "main", "index": 0 }]] },
     "Mark as Registered": { "main": [[{ "node": "Has Newly Registered?", "type": "main", "index": 0 }]] },
-    "Has Newly Registered?": {
-      "main": [
-        [{ "node": "Notify New Registrations", "type": "main", "index": 0 }],
-        []
-      ]
-    },
+    "Has Newly Registered?": { "main": [
+      [{ "node": "Notify New Registrations", "type": "main", "index": 0 }],
+      []
+    ] },
     "Error Trigger": { "main": [[{ "node": "Notify Error", "type": "main", "index": 0 }]] }
   },
   "settings": {
@@ -295,6 +434,6 @@
     "callerPolicy": "workflowsFromSameOwner"
   },
   "staticData": null,
-  "tags": ["crm", "automation", "executors", "avito"],
+  "tags": ["crm", "automation", "executors", "avito", "rag", "email"],
   "pinData": {}
 }
