@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     } catch { /* geocoding is best-effort */ }
   }
 
-  const { error } = await db.from('leads').insert({
+  const { data: insertedLead, error } = await db.from('leads').insert({
     phone: digits,
     work_type,
     city: city ?? 'omsk',
@@ -75,27 +75,43 @@ export async function POST(req: NextRequest) {
     name: name?.trim() || null,
     email: email?.trim() || null,
     telegram: telegram?.trim() || null,
-  });
+  }).select('id').single();
 
   if (error) {
     console.error('POST /api/leads:', error);
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
-  // Fire-and-forget webhook to n8n (never blocks response)
+  const leadId = insertedLead?.id ?? null;
+  const leadPayload = {
+    lead_id: leadId,
+    phone: digits, work_type, city: city ?? 'omsk',
+    address, messenger, comment, name, email, telegram,
+    source: source ?? 'landing',
+    lat, lon,
+  };
+
+  // Fire-and-forget: n8n lead notification (existing)
   const webhookUrl = process.env.N8N_LEADS_WEBHOOK_URL;
   if (webhookUrl) {
     fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone: digits, work_type, city: city ?? 'omsk',
-        address, messenger, comment,
-        source: source ?? 'landing',
-        lat, lon,
-      }),
+      body: JSON.stringify(leadPayload),
     }).catch((err) => {
       console.error('n8n lead webhook error (non-blocking):', err);
+    });
+  }
+
+  // Fire-and-forget: CRM nurture agent (new) — starts the customer conversion pipeline
+  const crmNurtureUrl = process.env.N8N_CRM_LEAD_NURTURE_WEBHOOK_URL;
+  if (crmNurtureUrl) {
+    fetch(crmNurtureUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(leadPayload),
+    }).catch((err) => {
+      console.error('n8n CRM nurture webhook error (non-blocking):', err);
     });
   }
 

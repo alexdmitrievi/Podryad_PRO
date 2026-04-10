@@ -1,6 +1,6 @@
 # n8n Workflows — Подряд PRO
 
-9 рабочих воркфлоу для автоматизации платформы. Все используют Supabase (PostgreSQL) + Telegram + MAX.
+12 рабочих воркфлоу для автоматизации платформы. Все используют Supabase (PostgreSQL) + Telegram + MAX.
 
 ## Активные воркфлоу
 
@@ -15,6 +15,9 @@
 | 15 | `15-contractor-registered.json` | Webhook `/contractor-registered` | Уведомление о новом исполнителе |
 | 16 | `16-send-dashboard-link.json` | Webhook `/send-dashboard-link` | Отправка ссылки на дашборд заказчику |
 | 17 | `17-send-payment-link.json` | Webhook `/send-payment-link` | Отправка ссылки на оплату заказчику |
+| 18 | `18-customer-lead-nurture.json` | Webhook `/crm-lead-nurture` | CRM-агент заказчиков: 7-дневная nurture-цепочка через MAX/email → конверсия в заказ |
+| 19 | `19-executor-avito-nurture.json` | Cron каждые 6 ч | CRM-агент исполнителей: генерирует тексты сообщений для Авито-кандидатов + отчёт admin |
+| 20 | `20-crm-conversion-tracker.json` | Webhook `/crm-conversion` | Трекер конверсий CRM: обновляет стадии воронки при order/contractor событиях |
 
 ## ENV-переменные (n8n)
 
@@ -32,11 +35,38 @@ MAX_ADMIN_USER_ID=xxx
 ## ENV-переменные (PWA .env.local)
 
 ```
+# Основные webhook-ы (workflows 11-17)
 N8N_LEADS_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/lead-notification
 N8N_ORDER_CREATED_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/order-created
 N8N_CONTRACTOR_REGISTERED_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/contractor-registered
 N8N_SEND_DASHBOARD_LINK_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/send-dashboard-link
 N8N_SEND_PAYMENT_LINK_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/send-payment-link
+N8N_PAYOUT_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/payout-notification
+N8N_PAYMENT_HELD_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/payment-held
+
+# CRM Agent webhooks (workflows 18-20)
+N8N_CRM_LEAD_NURTURE_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/crm-lead-nurture
+N8N_CRM_CONVERSION_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/crm-conversion
+N8N_CRM_PROSPECT_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/crm-prospect
+CRM_WEBHOOK_SECRET=your-secret-here
+```
+
+## Карта подключений (PWA API → Workflow)
+
+```
+/api/leads           → 11 (lead-notification) + 18 (crm-lead-nurture)
+/api/orders          → 14 (order-created)
+/api/orders/create   → 11 (lead-notification)
+/api/orders/respond  → 11 (lead-notification)
+/api/orders/confirm  → 13 (payout-reminder)
+/api/catalog-orders  → 11 (lead-notification)
+/api/payments/callback → 12 (payment-held)
+/api/contractors     → 15 (contractor-registered) + 20 (crm-conversion)
+/api/my/recover      → 16 (send-dashboard-link)
+/api/admin/orders/send-link → 17 (send-payment-link)
+/api/crm/update-stage → 20 (crm-conversion)
+/api/admin/crm/prospects → 20 (crm-conversion)
+Cron (n8n)           → 06 (analytics), 07 (max-crosspost), 19 (avito-nurture)
 ```
 
 ## Импорт в n8n

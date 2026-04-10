@@ -1,0 +1,510 @@
+{
+  "name": "Подряд PRO — 18 Customer Lead Nurture Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "crm-lead-nurture",
+        "options": { "responseMode": "onReceived" }
+      },
+      "id": "clna-wh-001",
+      "name": "Webhook: New Lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "podryad-crm-lead-nurture"
+    },
+    {
+      "parameters": {
+        "jsCode": "const root = $('Webhook: New Lead').first().json;\nconst b = root.body || root;\n\nconst phone = String(b.phone || '').replace(/\\D/g, '');\nconst name = String(b.name || '').trim();\nconst workType = String(b.work_type || 'labor');\nconst city = String(b.city || 'omsk');\nconst messenger = String(b.messenger || 'max').toLowerCase();\nconst email = String(b.email || '').trim();\nconst telegram = String(b.telegram || '').trim();\nconst comment = String(b.comment || '').trim();\nconst leadId = b.lead_id ? Number(b.lead_id) : null;\n\nconst WORK_TYPE_LABELS = {\n  labor: 'разнорабочих / строительные работы',\n  equipment: 'технику / спецтехнику',\n  materials: 'строительные материалы',\n  complex: 'комплексные работы'\n};\n\nconst workLabel = WORK_TYPE_LABELS[workType] || workType;\nconst cityLabel = city === 'novosibirsk' ? 'Новосибирске' : 'Омске';\nconst nameGreeting = name ? `${name.split(' ')[0]}, привет!` : 'Привет!';\n\n// Приветственное сообщение для заказчика\nconst welcomeMsg = `${nameGreeting} 👋\\n\\nЯ получил вашу заявку на ${workLabel} в ${cityLabel}.\\n\\nМы — сервис Подряд PRO, помогаем быстро найти проверенных исполнителей. Обычно подбираем бригаду за 2–4 часа.\\n\\n⏱ Уточните, пожалуйста:\\n• Когда планируете начать работы?\\n• Примерный объём / площадь?\\n\\nОтвечу по деталям и рассчитаю стоимость 🏗`;\n\n// Follow-up через 2 часа (если не ответил)\nconst followup1Msg = `${name ? name.split(' ')[0] + ', вы' : 'Вы'} оставили заявку на ${workLabel} в ${cityLabel}. Мы уже подбираем специалистов под ваш запрос!\\n\\nГотов рассказать подробнее и прислать ссылку для оформления заказа — когда вам удобно поговорить? 📞`;\n\n// Follow-up через 24 часа\nconst followup2Msg = `Добрый день! Хочу убедиться, что вы нашли то, что искали. Если ещё нужна помощь с ${workLabel} — мы готовы помочь.\\n\\nЗа 5 минут оформим заказ и найдём проверенного мастера. Вот ваша персональная ссылка: [ссылка] 👇`;\n\n// Финальный follow-up через 3 дня\nconst followup3Msg = `Последний раз пишу — если заявка была разовой или уже решили вопрос, всё в порядке 🙂\\n\\nЕсли вдруг в будущем снова понадобятся мастера или техника — сохраните мой контакт! Работаем по всему ${city === 'novosibirsk' ? 'Новосибирску' : 'Омску'}.`;\n\nreturn [{\n  json: {\n    phone, name, workType, city, cityLabel, workLabel,\n    messenger, email, telegram, comment, leadId,\n    welcomeMsg, followup1Msg, followup2Msg, followup3Msg,\n    hasEmail: !!email,\n    hasTelegram: !!telegram,\n    preferMax: messenger === 'max' || !messenger || messenger === 'по умолчанию',\n    preferTg: messenger === 'telegram' || messenger === 'tg',\n    preferEmail: messenger === 'email',\n  }\n}];"
+      },
+      "id": "clna-parse-002",
+      "name": "Parse Lead + Build Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_lead_funnel",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "resolution=merge-duplicates,return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ lead_id: $json.leadId, phone: $json.phone, name: $json.name, work_type: $json.workType, city: $json.city, messenger: $json.messenger, email: $json.email || null, telegram: $json.telegram || null, stage: 'new', contact_attempts: 0, next_followup_at: new Date(Date.now() + 7200000).toISOString() }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-upsert-003",
+      "name": "Upsert CRM Funnel Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false },
+          "conditions": [
+            { "leftValue": "={{ $json.preferMax }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+          ]
+        }
+      },
+      "id": "clna-router-004",
+      "name": "Route by Messenger",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.MAX_API_BASE }}/messages?chat_id={{ $env.MAX_ADMIN_USER_ID }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=access_token=\"{{ $env.MAX_BOT_TOKEN }}\"" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: '🤖 CRM-агент отправляет приветствие заказчику (' + $json.phone + ')\\n\\n' + $json.welcomeMsg, format: 'markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-notify-admin-max-005",
+      "name": "Notify Admin: Send via MAX",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM-агент: Новый лид ' + $json.phone + '\\nМессенджер: ' + $json.messenger + '\\nОтправить приветствие:\\n\\n' + $json.welcomeMsg, parse_mode: 'Markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-notify-admin-tg-006",
+      "name": "Notify Admin: Send via TG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 420]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_lead_funnel?phone=eq.{{ $json.phone }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'contacted', contact_attempts: 1, last_contacted_at: new Date().toISOString(), next_followup_at: new Date(Date.now() + 7200000).toISOString(), updated_at: new Date().toISOString() }) }}",
+        "method": "PATCH",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-stage-contacted-007",
+      "name": "Update Stage: contacted",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ entity_type: 'lead', entity_id: $('Parse Lead + Build Messages').first().json.leadId || 0, direction: 'outbound', channel: $('Parse Lead + Build Messages').first().json.messenger || 'max', message_text: $('Parse Lead + Build Messages').first().json.welcomeMsg, is_automated: true, status: 'sent' }) }}",
+        "method": "POST",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-log-msg-008",
+      "name": "Log Message to CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1440, 300]
+    },
+    {
+      "parameters": { "amount": 2, "unit": "hours" },
+      "id": "clna-wait-2h-009",
+      "name": "Wait 2 Hours",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1680, 300],
+      "webhookId": "clna-wait-2h"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/orders?customer_phone=eq.{{ $('Parse Lead + Build Messages').first().json.phone }}&status=neq.cancelled",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+          ]
+        },
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-check-order-010",
+      "name": "Check: Order Created?",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1920, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const orders = $input.first().json;\nconst hasOrder = Array.isArray(orders) && orders.length > 0;\nreturn [{ json: { hasOrder, ordersCount: Array.isArray(orders) ? orders.length : 0 } }];"
+      },
+      "id": "clna-check-order-result-011",
+      "name": "Has Order?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            { "leftValue": "={{ $json.hasOrder }}", "rightValue": false, "operator": { "type": "boolean", "operation": "equals" } }
+          ]
+        }
+      },
+      "id": "clna-not-converted-012",
+      "name": "Not Converted Yet?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2400, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/customer_tokens?phone=eq.{{ $('Parse Lead + Build Messages').first().json.phone }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+          ]
+        },
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-get-token-013",
+      "name": "Get Customer Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2640, 180]
+    },
+    {
+      "parameters": {
+        "jsCode": "const tokens = $input.first().json;\nconst phone = $('Parse Lead + Build Messages').first().json.phone;\nconst followup1 = $('Parse Lead + Build Messages').first().json.followup1Msg;\nlet dashboardLink = `https://app.podryad.pro/dashboard?phone=${phone}`;\nif (Array.isArray(tokens) && tokens.length > 0 && tokens[0].access_token) {\n  dashboardLink = `https://app.podryad.pro/my?token=${tokens[0].access_token}`;\n}\nconst msg = followup1 + `\\n\\n🔗 Ваш личный кабинет: ${dashboardLink}`;\nreturn [{ json: { msg, dashboardLink, phone } }];"
+      },
+      "id": "clna-build-followup1-014",
+      "name": "Build Follow-up 1 + Link",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2880, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Follow-up #1 для ' + $json.phone + '\\n\\n' + $json.msg, parse_mode: 'Markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-followup1-send-015",
+      "name": "Send Follow-up 1 (Admin Alert)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3120, 180]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_lead_funnel?phone=eq.{{ $('Parse Lead + Build Messages').first().json.phone }}",
+        "method": "PATCH",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'link_sent', contact_attempts: 2, last_contacted_at: new Date().toISOString(), next_followup_at: new Date(Date.now() + 86400000).toISOString(), updated_at: new Date().toISOString() }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-stage-linksent-016",
+      "name": "Update Stage: link_sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3360, 180]
+    },
+    {
+      "parameters": { "amount": 24, "unit": "hours" },
+      "id": "clna-wait-24h-017",
+      "name": "Wait 24 Hours",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [3600, 180],
+      "webhookId": "clna-wait-24h"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/orders?customer_phone=eq.{{ $('Parse Lead + Build Messages').first().json.phone }}&status=neq.cancelled",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+          ]
+        },
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-check-order2-018",
+      "name": "Check: Order Created? (2)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3840, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            { "leftValue": "={{ Array.isArray($json) && $json.length === 0 }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+          ]
+        }
+      },
+      "id": "clna-still-not-converted-019",
+      "name": "Still Not Converted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [4080, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Follow-up #2 для ' + $('Parse Lead + Build Messages').first().json.phone + '\\n\\n' + $('Parse Lead + Build Messages').first().json.followup2Msg + '\\n\\nEmail: ' + ($('Parse Lead + Build Messages').first().json.email || 'нет') + '\\n📧 Отправьте email если есть адрес!', parse_mode: 'Markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-followup2-send-020",
+      "name": "Send Follow-up 2 (Admin Alert)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4320, 120]
+    },
+    {
+      "parameters": { "amount": 3, "unit": "days" },
+      "id": "clna-wait-3d-021",
+      "name": "Wait 3 Days",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [4560, 120],
+      "webhookId": "clna-wait-3d"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/orders?customer_phone=eq.{{ $('Parse Lead + Build Messages').first().json.phone }}&status=neq.cancelled",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+          ]
+        },
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-check-order3-022",
+      "name": "Check: Order Created? (3)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4800, 120]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            { "leftValue": "={{ Array.isArray($json) && $json.length === 0 }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+          ]
+        }
+      },
+      "id": "clna-final-check-023",
+      "name": "Final: Not Converted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [5040, 120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Final Follow-up для ' + $('Parse Lead + Build Messages').first().json.phone + '\\n\\n' + $('Parse Lead + Build Messages').first().json.followup3Msg + '\\n\\n⚠️ После этого лид помечается как cold' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-final-send-024",
+      "name": "Send Final Follow-up",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5280, 60]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_lead_funnel?phone=eq.{{ $('Parse Lead + Build Messages').first().json.phone }}",
+        "method": "PATCH",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'cold', contact_attempts: 3, last_contacted_at: new Date().toISOString(), next_followup_at: null, updated_at: new Date().toISOString() }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-stage-cold-025",
+      "name": "Update Stage: cold",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5520, 60]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_lead_funnel?phone=eq.{{ $('Parse Lead + Build Messages').first().json.phone }}",
+        "method": "PATCH",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'converted', converted_at: new Date().toISOString(), updated_at: new Date().toISOString() }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-stage-converted-026",
+      "name": "Update Stage: converted",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5280, 300]
+    },
+    {
+      "parameters": {},
+      "id": "clna-error-027",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🚨 ОШИБКА Customer Nurture Agent\\n\\nNode: ' + $json.execution.error.node.name + '\\n' + $json.execution.error.message, parse_mode: 'Markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "clna-error-notify-028",
+      "name": "Notify Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 600]
+    }
+  ],
+  "connections": {
+    "Webhook: New Lead": { "main": [[{ "node": "Parse Lead + Build Messages", "type": "main", "index": 0 }]] },
+    "Parse Lead + Build Messages": { "main": [[{ "node": "Upsert CRM Funnel Record", "type": "main", "index": 0 }]] },
+    "Upsert CRM Funnel Record": { "main": [[{ "node": "Route by Messenger", "type": "main", "index": 0 }]] },
+    "Route by Messenger": {
+      "main": [
+        [{ "node": "Notify Admin: Send via MAX", "type": "main", "index": 0 }],
+        [{ "node": "Notify Admin: Send via TG", "type": "main", "index": 0 }]
+      ]
+    },
+    "Notify Admin: Send via MAX": { "main": [[{ "node": "Update Stage: contacted", "type": "main", "index": 0 }]] },
+    "Notify Admin: Send via TG": { "main": [[{ "node": "Update Stage: contacted", "type": "main", "index": 0 }]] },
+    "Update Stage: contacted": { "main": [[{ "node": "Log Message to CRM", "type": "main", "index": 0 }]] },
+    "Log Message to CRM": { "main": [[{ "node": "Wait 2 Hours", "type": "main", "index": 0 }]] },
+    "Wait 2 Hours": { "main": [[{ "node": "Check: Order Created?", "type": "main", "index": 0 }]] },
+    "Check: Order Created?": { "main": [[{ "node": "Has Order?", "type": "main", "index": 0 }]] },
+    "Has Order?": { "main": [
+      [{ "node": "Not Converted Yet?", "type": "main", "index": 0 }],
+      [{ "node": "Update Stage: converted", "type": "main", "index": 0 }]
+    ]},
+    "Not Converted Yet?": {
+      "main": [
+        [{ "node": "Get Customer Token", "type": "main", "index": 0 }],
+        [{ "node": "Update Stage: converted", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get Customer Token": { "main": [[{ "node": "Build Follow-up 1 + Link", "type": "main", "index": 0 }]] },
+    "Build Follow-up 1 + Link": { "main": [[{ "node": "Send Follow-up 1 (Admin Alert)", "type": "main", "index": 0 }]] },
+    "Send Follow-up 1 (Admin Alert)": { "main": [[{ "node": "Update Stage: link_sent", "type": "main", "index": 0 }]] },
+    "Update Stage: link_sent": { "main": [[{ "node": "Wait 24 Hours", "type": "main", "index": 0 }]] },
+    "Wait 24 Hours": { "main": [[{ "node": "Check: Order Created? (2)", "type": "main", "index": 0 }]] },
+    "Check: Order Created? (2)": { "main": [[{ "node": "Still Not Converted?", "type": "main", "index": 0 }]] },
+    "Still Not Converted?": {
+      "main": [
+        [{ "node": "Send Follow-up 2 (Admin Alert)", "type": "main", "index": 0 }],
+        [{ "node": "Update Stage: converted", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Follow-up 2 (Admin Alert)": { "main": [[{ "node": "Wait 3 Days", "type": "main", "index": 0 }]] },
+    "Wait 3 Days": { "main": [[{ "node": "Check: Order Created? (3)", "type": "main", "index": 0 }]] },
+    "Check: Order Created? (3)": { "main": [[{ "node": "Final: Not Converted?", "type": "main", "index": 0 }]] },
+    "Final: Not Converted?": {
+      "main": [
+        [{ "node": "Send Final Follow-up", "type": "main", "index": 0 }],
+        [{ "node": "Update Stage: converted", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Final Follow-up": { "main": [[{ "node": "Update Stage: cold", "type": "main", "index": 0 }]] },
+    "Error Trigger": { "main": [[{ "node": "Notify Error", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": ["crm", "automation", "customers"],
+  "pinData": {}
+}

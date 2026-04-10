@@ -69,14 +69,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
-  // Fire-and-forget webhook to n8n (never blocks response)
+  const contractorId = (contractor as Record<string, unknown>).id as string;
+
+  // Fire-and-forget: n8n contractor registered notification (existing)
   const webhookUrl = process.env.N8N_CONTRACTOR_REGISTERED_WEBHOOK_URL;
   if (webhookUrl) {
     fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contractor_id: (contractor as Record<string, unknown>).id,
+        contractor_id: contractorId,
         name: String(name).trim(),
         phone: digits,
         city: cityStr,
@@ -88,8 +90,25 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Fire-and-forget: CRM conversion tracker — executor registered
+  const crmConversionUrl = process.env.N8N_CRM_CONVERSION_WEBHOOK_URL;
+  if (crmConversionUrl) {
+    fetch(crmConversionUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: 'contractor_registered',
+        phone: digits,
+        entity_id: contractorId,
+        entity_type: 'contractor',
+      }),
+    }).catch((err) => {
+      console.error('n8n CRM conversion webhook error (non-blocking):', err);
+    });
+  }
+
   return NextResponse.json(
-    { ok: true, contractor_id: (contractor as Record<string, unknown>).id },
+    { ok: true, contractor_id: contractorId },
     { status: 201 },
   );
 }

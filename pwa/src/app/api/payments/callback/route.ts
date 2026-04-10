@@ -120,6 +120,23 @@ export async function POST(req: Request) {
         });
 
         console.log(`Escrow hold recorded: order=${orderId} payment=${payment.id} amount=${amount}`);
+
+        // Notify admin about payment hold via n8n
+        const paymentHeldUrl = process.env.N8N_PAYMENT_HELD_WEBHOOK_URL;
+        if (paymentHeldUrl) {
+          fetch(paymentHeldUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              order_id: orderId,
+              order_number: metadata.order_number || orderId,
+              amount,
+              customer_phone: metadata.customer_phone || '',
+              customer_email: metadata.customer_email || '',
+              yookassa_payment_id: payment.id,
+            }),
+          }).catch(() => { /* fire-and-forget */ });
+        }
       }
     }
 
