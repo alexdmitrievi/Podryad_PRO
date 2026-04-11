@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Lock, Users, ShoppingBag, Tag, AlertTriangle, BarChart3,
   Copy, Check, ExternalLink, UserPlus, RefreshCw, Save,
@@ -199,11 +200,17 @@ function PinGate({ onAuth }: { onAuth: (pin: string) => void }) {
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="bg-white dark:bg-dark-card rounded-3xl shadow-card p-8 w-full max-w-sm">
-        <div className="flex flex-col items-center gap-4 mb-8">
+        <div className="flex items-center gap-3 mb-8">
           <div className="w-14 h-14 rounded-2xl bg-brand-500 flex items-center justify-center">
             <Lock className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Админ-панель</h1>
+          <Link
+            href="/"
+            className="ml-auto text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            &larr; Главная
+          </Link>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
@@ -1845,12 +1852,20 @@ export default function AdminPage() {
             <BarChart3 className="w-5 h-5 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Админ-панель</h1>
-          <button
-            onClick={() => setPin(null)}
-            className="ml-auto text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer transition-colors"
-          >
-            Выйти
-          </button>
+          <div className="ml-auto flex items-center gap-3">
+            <Link
+              href="/"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+            >
+              &larr; Главная
+            </Link>
+            <button
+              onClick={() => setPin(null)}
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer transition-colors"
+            >
+              Выйти
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto mb-6">
