@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Spinner from '@/components/ui/Spinner';
+import { showToast } from '@/components/ui/Toast';
 
-type ContactMethod = 'phone' | 'telegram' | 'email';
+type ContactMethod = 'phone' | 'telegram';
 
 interface CatalogItem {
   id: string;
@@ -64,7 +65,7 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
     if (!consent || !contact.trim()) return;
     setLoading(true);
     try {
-      await fetch('/api/catalog-orders', {
+      const res = await fetch('/api/catalog-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -74,9 +75,10 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
           contact_value: contact.trim(),
         }),
       });
+      if (!res.ok) throw new Error('API error');
       setSubmitted(true);
     } catch {
-      setSubmitted(true);
+      showToast('Ошибка при отправке. Попробуйте ещё раз.', 'error');
     } finally {
       setLoading(false);
     }
@@ -122,7 +124,7 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
                   {([
                     { key: 'phone' as ContactMethod, label: 'Телефон' },
                     { key: 'telegram' as ContactMethod, label: 'Telegram' },
-                    { key: 'email' as ContactMethod, label: 'Почта' },
+
                   ]).map((m) => (
                     <button
                       key={m.key}
@@ -143,13 +145,11 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
               {/* Contact input */}
               <div>
                 <input
-                  type={method === 'email' ? 'email' : 'text'}
+                  type="text"
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
                   placeholder={
-                    method === 'phone' ? '+7 (___) ___-__-__' :
-                    method === 'telegram' ? '@username' :
-                    'email@example.com'
+                    method === 'phone' ? '+7 (___) ___-__-__' : '@username'
                   }
                   required
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"

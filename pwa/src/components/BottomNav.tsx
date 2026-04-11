@@ -8,9 +8,9 @@ import type { LucideIcon } from 'lucide-react';
 const NAV_ITEMS: { href: string; icon: LucideIcon; label: string }[] = [
   { href: '/', icon: Home, label: 'Главная' },
   { href: '/dashboard', icon: ClipboardList, label: 'Заказы' },
-  { href: '/marketplace', icon: Store, label: 'Рынок' },
-  { href: '/app/order', icon: PlusCircle, label: 'Заказ' },
-  { href: '/app/profile', icon: UserCircle, label: 'Профиль' },
+  { href: '/catalog/workers', icon: Store, label: 'Каталог' },
+  { href: '/order/new', icon: PlusCircle, label: 'Заказ' },
+  { href: '/join', icon: UserCircle, label: 'Работа' },
 ];
 
 export default function BottomNav() {
@@ -20,7 +20,7 @@ export default function BottomNav() {
     <nav className="md:hidden glass dark:bg-dark-card/90 dark:backdrop-blur-xl border-t border-gray-200/60 dark:border-dark-border safe-area-pb">
       <div className="flex justify-around items-center py-2 px-2">
         {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href;
+          const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
           const Icon = item.icon;
           return (
             <Link

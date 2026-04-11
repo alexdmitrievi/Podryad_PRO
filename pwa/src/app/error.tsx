@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 function messageFromUnknown(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -35,6 +36,12 @@ export default function ErrorPage({
       >
         Попробовать снова
       </button>
+      <Link
+        href="/"
+        className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+      >
+        &larr; На главную
+      </Link>
     </div>
   );
 }

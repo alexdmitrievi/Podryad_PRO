@@ -250,6 +250,12 @@ export default function CustomerDashboard() {
         <div className="max-w-lg mx-auto">
           <div className="flex items-start justify-between gap-4">
             <div>
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1 text-xs text-white/60 hover:text-white/90 transition-colors mb-1"
+              >
+                <span aria-hidden="true">&larr;</span> Главная
+              </Link>
               <h1 className="font-heading font-extrabold text-2xl text-white mb-1">
                 Мои заказы
               </h1>

@@ -5,12 +5,14 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Users, Wrench, Package, Layers, Zap } from 'lucide-react';
+import { showToast } from '@/components/ui/Toast';
+import PhoneInput, { isValidPhone, getRawPhone } from '@/components/ui/PhoneInput';
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
 
 type WorkType = 'labor' | 'equipment' | 'materials' | 'combo' | '';
 type City = 'omsk' | 'novosibirsk';
-type Messenger = 'MAX' | 'Telegram' | 'Позвонить' | 'Email';
+type Messenger = 'MAX' | 'Telegram' | 'Позвонить';
 
 const SUBCATEGORIES: Record<string, string[]> = {
   labor: ['Грузчики', 'Разнорабочие', 'Строители', 'Уборка территории', 'Благоустройство', 'Другое'],
@@ -51,7 +53,7 @@ const CITY_OPTIONS: { value: City; label: string }[] = [
   { value: 'novosibirsk', label: 'Новосибирск' },
 ];
 
-const MESSENGER_OPTIONS: Messenger[] = ['MAX', 'Telegram', 'Позвонить', 'Email'];
+const MESSENGER_OPTIONS: Messenger[] = ['MAX', 'Telegram', 'Позвонить'];
 
 function getTodayString() {
   const d = new Date();
@@ -106,9 +108,13 @@ export default function OrderNewPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!consent || !phone) return;
+    if (!isValidPhone(phone)) {
+      showToast('Введите корректный номер телефона', 'error');
+      return;
+    }
     setLoading(true);
     try {
-      await fetch('/api/orders', {
+      const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -122,15 +128,16 @@ export default function OrderNewPage() {
           people_count,
           hours: hours ? Number(hours) : undefined,
           city,
-          phone,
+          phone: getRawPhone(phone),
           customer_name,
           messenger,
           combo_components: work_type === 'combo' ? comboComponents : undefined,
         }),
       });
+      if (!res.ok) throw new Error('API error');
       setSubmitted(true);
     } catch {
-      setSubmitted(true);
+      showToast('Ошибка при отправке заявки. Попробуйте ещё раз.', 'error');
     } finally {
       setLoading(false);
     }
@@ -437,13 +444,10 @@ export default function OrderNewPage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Телефон <span className="text-red-500">*</span>
               </label>
-              <input
-                type="tel"
+              <PhoneInput
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+7 (___) ___-__-__"
+                onChange={setPhone}
                 required
-                className={inputClass}
               />
             </div>
             <div>

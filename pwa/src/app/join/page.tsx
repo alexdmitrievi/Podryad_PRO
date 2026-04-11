@@ -1,9 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import PhoneInput, { isValidPhone, getRawPhone } from '@/components/ui/PhoneInput';
+import { showToast } from '@/components/ui/Toast';
 
+type FormType = 'solo' | 'brigade';
 type City = 'omsk' | 'novosibirsk';
-type ContactMethod = 'MAX' | 'Telegram' | 'Позвонить' | 'Email';
+type ContactMethod = 'MAX' | 'Telegram' | 'Позвонить';
 
 const CITY_LABELS: Record<City, string> = {
   omsk: 'Омск',
@@ -24,10 +28,10 @@ const CONTACT_METHODS: { id: ContactMethod; label: string; activeClass: string }
   { id: 'MAX', label: 'MAX', activeClass: 'bg-max text-white border-max' },
   { id: 'Telegram', label: 'Telegram', activeClass: 'bg-brand-500 text-white border-brand-500' },
   { id: 'Позвонить', label: 'Позвонить', activeClass: 'bg-success-500 text-white border-success-500' },
-  { id: 'Email', label: 'Email', activeClass: 'bg-violet text-white border-violet' },
 ];
 
 export default function JoinPage() {
+  const [formType, setFormType] = useState<FormType>('solo');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState<City>('omsk');
@@ -39,6 +43,11 @@ export default function JoinPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // Brigade-specific fields
+  const [crewSize, setCrewSize] = useState('');
+  const [hasTransport, setHasTransport] = useState(false);
+  const [hasTools, setHasTools] = useState(false);
+
   function toggleSpecialty(spec: string) {
     setSpecialties((prev) =>
       prev.includes(spec) ? prev.filter((s) => s !== spec) : [...prev, spec],
@@ -48,24 +57,45 @@ export default function JoinPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!consent) return;
+    if (!name.trim()) {
+      showToast('Укажите имя', 'error');
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      showToast('Введите корректный номер телефона', 'error');
+      return;
+    }
+    if (specialties.length === 0) {
+      showToast('Выберите хотя бы одну специализацию', 'error');
+      return;
+    }
+    if (formType === 'brigade' && (!crewSize || parseInt(crewSize, 10) < 2)) {
+      showToast('Укажите количество человек в бригаде (от 2)', 'error');
+      return;
+    }
     setLoading(true);
     try {
-      await fetch('/api/contractors', {
+      const res = await fetch('/api/contractors', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name,
-          phone,
+          name: name.trim(),
+          phone: getRawPhone(phone),
           city,
           specialties,
           experience,
           preferred_contact: preferredContact,
           about,
+          is_brigade: formType === 'brigade',
+          crew_size: formType === 'brigade' && crewSize ? parseInt(crewSize, 10) : undefined,
+          has_transport: formType === 'brigade' ? hasTransport : undefined,
+          has_tools: formType === 'brigade' ? hasTools : undefined,
         }),
       });
+      if (!res.ok) throw new Error('Ошибка сервера');
       setSubmitted(true);
     } catch {
-      setSubmitted(true);
+      showToast('Не удалось отправить анкету. Попробуйте ещё раз.', 'error');
     } finally {
       setLoading(false);
     }
@@ -74,13 +104,47 @@ export default function JoinPage() {
   return (
     <div className="min-h-screen bg-surface font-sans">
       {/* Header */}
-      <div className="section-gradient py-14 sm:py-16 px-4 text-center">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading mb-3">
-          Стать исполнителем
-        </h1>
-        <p className="text-white/75 text-base sm:text-lg">
-          Платформа бесплатна. Получайте заказы без комиссий.
-        </p>
+      <div className="section-gradient py-10 sm:py-14 px-4">
+        <div className="max-w-lg mx-auto">
+          <Link
+            href="/"
+            className="inline-flex items-center text-sm text-white/80 hover:text-white transition-colors cursor-pointer mb-4"
+          >
+            ← Главная
+          </Link>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading mb-3 text-center">
+            Стать исполнителем
+          </h1>
+          <p className="text-white/75 text-base sm:text-lg text-center">
+            Платформа бесплатна. Получайте заказы без комиссий.
+          </p>
+
+          {/* Form type toggle */}
+          <div className="grid grid-cols-2 gap-2 mt-6">
+            <button
+              type="button"
+              onClick={() => setFormType('solo')}
+              className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
+                formType === 'solo'
+                  ? 'bg-white text-brand-900 border-white shadow-glow'
+                  : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
+              }`}
+            >
+              Я один
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormType('brigade')}
+              className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
+                formType === 'brigade'
+                  ? 'bg-white text-brand-900 border-white shadow-glow'
+                  : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
+              }`}
+            >
+              У меня бригада
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Form card */}
@@ -108,7 +172,13 @@ export default function JoinPage() {
               </svg>
             </div>
             <p className="text-green-700 font-bold text-xl mb-1">Анкета отправлена!</p>
-            <p className="text-green-600 text-sm">Мы свяжемся с вами.</p>
+            <p className="text-green-600 text-sm mb-6">Мы свяжемся с вами в ближайшее время.</p>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors min-h-[48px] cursor-pointer"
+            >
+              На главную
+            </Link>
           </div>
         ) : (
           <form
@@ -118,7 +188,7 @@ export default function JoinPage() {
             {/* Name */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Имя <span className="text-red-500">*</span>
+                {formType === 'brigade' ? 'Имя бригадира' : 'Имя'} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -135,13 +205,10 @@ export default function JoinPage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Телефон <span className="text-red-500">*</span>
               </label>
-              <input
-                type="tel"
+              <PhoneInput
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+7 (___) ___-__-__"
+                onChange={setPhone}
                 required
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
               />
             </div>
 
@@ -232,6 +299,48 @@ export default function JoinPage() {
               </div>
             </div>
 
+            {/* Brigade-specific fields */}
+            {formType === 'brigade' && (
+              <>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Количество человек в бригаде <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="2"
+                    max="50"
+                    value={crewSize}
+                    onChange={(e) => setCrewSize(e.target.value)}
+                    placeholder="Например: 5"
+                    required
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hasTransport}
+                      onChange={(e) => setHasTransport(e.target.checked)}
+                      className="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700">Есть свой транспорт</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hasTools}
+                      onChange={(e) => setHasTools(e.target.checked)}
+                      className="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700">Есть свой инструмент</span>
+                  </label>
+                </div>
+              </>
+            )}
+
             {/* About */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">О себе</label>
@@ -239,7 +348,11 @@ export default function JoinPage() {
                 value={about}
                 onChange={(e) => setAbout(e.target.value)}
                 rows={3}
-                placeholder="Расскажите о себе, своём оборудовании или команде..."
+                placeholder={
+                  formType === 'brigade'
+                    ? 'Расскажите о бригаде, опыте и выполненных объектах...'
+                    : 'Расскажите о себе, своём оборудовании или команде...'
+                }
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-shadow"
               />
             </div>

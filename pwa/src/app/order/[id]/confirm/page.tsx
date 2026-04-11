@@ -345,7 +345,7 @@ export default function ConfirmPage() {
             </p>
             <a
               href="mailto:support@podryad.pro"
-              className="text-[#2d35a8] text-sm font-medium hover:underline"
+            className="text-[#2d35a8] text-sm font-medium hover:underline"
             >
               Обратитесь в поддержку
             </a>

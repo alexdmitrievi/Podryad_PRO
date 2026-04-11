@@ -123,7 +123,7 @@ export interface Dispute {
 // ── Platform Upgrade Types (2026-04-05) ───────────────────────
 
 export type ContractorStatus = 'new' | 'verified' | 'active' | 'blocked';
-export type PreferredContact = 'max' | 'telegram' | 'phone' | 'email';
+export type PreferredContact = 'max' | 'telegram' | 'phone';
 export type ContractorSource = 'pwa' | 'telegram' | 'max';
 export type OrderLifecycleStatus =
   | 'pending'

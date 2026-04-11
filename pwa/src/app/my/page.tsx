@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import PhoneInput, { isValidPhone, getRawPhone } from '@/components/ui/PhoneInput';
+import { showToast } from '@/components/ui/Toast';
 
 export default function TokenRecoveryPage() {
   const [phone, setPhone] = useState('');
@@ -11,12 +14,16 @@ export default function TokenRecoveryPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
+    if (!isValidPhone(phone)) {
+      showToast('Введите корректный номер телефона', 'error');
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch('/api/my/recover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: getRawPhone(phone) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -34,6 +41,9 @@ export default function TokenRecoveryPage() {
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
+        <Link href="/" className="inline-flex items-center gap-1 text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors mb-4">
+          <span aria-hidden="true">&larr;</span> Главная
+        </Link>
         {success ? (
           /* Success state */
           <div className="bg-green-50 border border-green-200 rounded-2xl shadow-elevated p-8 text-center animate-fade-in">
@@ -72,14 +82,10 @@ export default function TokenRecoveryPage() {
                 <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5" htmlFor="phone">
                   Номер телефона
                 </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  required
+                <PhoneInput
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+7 (___) ___-__-__"
-                  className="w-full min-h-[48px] px-4 rounded-xl border border-[var(--color-border)] bg-surface text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-colors duration-150 shadow-inner-soft"
+                  onChange={setPhone}
+                  required
                 />
               </div>
 

@@ -709,6 +709,10 @@ export async function createContractor(contractor: {
   telegram_id?: string;
   max_id?: string;
   email?: string;
+  is_brigade?: boolean;
+  crew_size?: number;
+  has_transport?: boolean;
+  has_tools?: boolean;
 }) {
   const { data, error } = await db()
     .from('contractors')
@@ -724,6 +728,10 @@ export async function createContractor(contractor: {
       telegram_id: contractor.telegram_id ?? null,
       max_id: contractor.max_id ?? null,
       email: contractor.email ?? null,
+      is_brigade: contractor.is_brigade ?? false,
+      crew_size: contractor.crew_size ?? null,
+      has_transport: contractor.has_transport ?? null,
+      has_tools: contractor.has_tools ?? null,
     })
     .select()
     .single();

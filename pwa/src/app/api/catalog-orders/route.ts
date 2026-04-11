@@ -4,7 +4,7 @@ import { getServiceClient } from '@/lib/supabase';
 interface CatalogOrderBody {
   item_id: string;
   item_title: string;
-  contact_method: 'phone' | 'telegram' | 'email';
+  contact_method: 'phone' | 'telegram';
   contact_value: string;
 }
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 422 });
   }
 
-  const validMethods = ['phone', 'telegram', 'email'];
+  const validMethods = ['phone', 'telegram'];
   if (!validMethods.includes(contact_method)) {
     return NextResponse.json({ error: 'invalid_contact_method' }, { status: 422 });
   }
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   // Store as a lead with enriched comment
   const contactLabel =
     contact_method === 'phone' ? 'Телефон' :
-    contact_method === 'telegram' ? 'Telegram' : 'Email';
+    'Telegram';
 
   const comment = `Каталог: ${item_title} (${item_id}) | ${contactLabel}: ${contact_value.trim()}`;
 

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Manrope, Space_Grotesk } from 'next/font/google';
 import DevUnregisterSW from '@/components/DevUnregisterSW';
+import ToastProvider from '@/components/ui/Toast';
 import './globals.css';
 
 const inter = Inter({
@@ -85,6 +86,7 @@ export default function RootLayout({
       </head>
       <body className="bg-surface dark:bg-dark-bg text-[#2B2B2B] dark:text-dark-text font-sans antialiased transition-colors duration-300">
         <DevUnregisterSW />
+        <ToastProvider />
         {children}
       </body>
     </html>

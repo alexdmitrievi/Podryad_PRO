@@ -3,13 +3,23 @@
   "nodes": [
     {
       "parameters": {
-        "rule": { "interval": [{ "field": "hours", "hoursInterval": 6 }] }
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
       },
       "id": "erag-cron-001",
       "name": "Cron: Every 6 Hours",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [0, 300]
+      "position": [
+        0,
+        300
+      ]
     },
     {
       "parameters": {
@@ -17,17 +27,28 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "erag-fetch-prospects-002",
       "name": "Fetch Active Prospects",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -37,13 +58,23 @@
       "name": "Analyze Prospects",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 300]
+      "position": [
+        480,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.hasWork }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "leftValue": "={{ $json.hasWork }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -51,7 +82,10 @@
       "name": "Has Work?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [720, 300]
+      "position": [
+        720,
+        300
+      ]
     },
     {
       "parameters": {
@@ -59,17 +93,28 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 15000 }
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "erag-fetch-all-hist-005",
       "name": "RAG: Fetch All Prospect History",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [960, 200]
+      "position": [
+        960,
+        200
+      ]
     },
     {
       "parameters": {
@@ -79,7 +124,10 @@
       "name": "RAG: Build Outreach Messages",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1200, 200]
+      "position": [
+        1200,
+        200
+      ]
     },
     {
       "parameters": {
@@ -89,7 +137,10 @@
       "name": "Build Admin Report",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1440, 200]
+      "position": [
+        1440,
+        200
+      ]
     },
     {
       "parameters": {
@@ -98,23 +149,31 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: $json.report.slice(0, 4000), parse_mode: 'Markdown' }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "erag-send-report-tg-008",
       "name": "Send Report to Admin TG",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1680, 200]
+      "position": [
+        1680,
+        200
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// ── Log all generated messages to crm_messages + build stage updates ──\nconst data = $input.first().json;\nconst contactMessages = data.contactMessages || [];\nconst inviteMessages = data.inviteMessages || [];\nconst all = [...contactMessages, ...inviteMessages];\nconst now = new Date();\n\nconst logs = [];\nconst updates = [];\n\nfor (const p of all) {\n  // Log the outreach message\n  const msgText = p.avitoMessage || p.inviteMessage || '';\n  if (msgText) {\n    logs.push({\n      entity_type: 'prospect',\n      entity_id: p.id,\n      direction: 'outbound',\n      channel: p.action === 'avito_message' ? 'avito' : (p.email ? 'email' : 'avito'),\n      message_text: msgText,\n      is_automated: true,\n      status: 'sent'\n    });\n  }\n\n  // Build stage update with RAG summary\n  let newStage = p.stage;\n  let nextFollowup = null;\n  if (p.stage === 'new') {\n    newStage = 'messaged';\n    nextFollowup = new Date(now.getTime() + 48 * 3600000).toISOString();\n  } else if (p.stage === 'messaged') {\n    nextFollowup = new Date(now.getTime() + 72 * 3600000).toISOString();\n  } else if (p.stage === 'contact_collected') {\n    newStage = 'invite_sent';\n    nextFollowup = new Date(now.getTime() + 48 * 3600000).toISOString();\n  } else if (p.stage === 'invite_sent') {\n    nextFollowup = new Date(now.getTime() + 7 * 24 * 3600000).toISOString();\n  }\n\n  const summaryUpdate = `[${now.toISOString().slice(0,10)}] ` +\n    `Stage: ${p.stage}→${newStage}. ` +\n    `${p.ragContext}. ` +\n    (p.action === 'avito_message' ? 'Авито-сообщение сгенерировано.' : 'Ссылка на регистрацию отправлена.');\n\n  updates.push({\n    id: p.id,\n    stage: newStage,\n    contact_attempts: (p.contact_attempts || 0) + 1,\n    last_contacted_at: now.toISOString(),\n    next_followup_at: nextFollowup,\n    conversation_summary: summaryUpdate,\n    updated_at: now.toISOString()\n  });\n}\n\nreturn [{ json: { logs, updates, inviteMessages: data.inviteMessages } }];"
+        "jsCode": "// ── Log all generated messages to crm_messages + build stage updates ──\nconst data = $input.first().json;\nconst contactMessages = data.contactMessages || [];\nconst inviteMessages = data.inviteMessages || [];\nconst all = [...contactMessages, ...inviteMessages];\nconst now = new Date();\n\nconst logs = [];\nconst updates = [];\n\nfor (const p of all) {\n  // Log the outreach message\n  const msgText = p.avitoMessage || p.inviteMessage || '';\n  if (msgText) {\n    logs.push({\n      entity_type: 'prospect',\n      entity_id: p.id,\n      direction: 'outbound',\n      channel: 'avito',\n      message_text: msgText,\n      is_automated: true,\n      status: 'sent'\n    });\n  }\n\n  // Build stage update with RAG summary\n  let newStage = p.stage;\n  let nextFollowup = null;\n  if (p.stage === 'new') {\n    newStage = 'messaged';\n    nextFollowup = new Date(now.getTime() + 48 * 3600000).toISOString();\n  } else if (p.stage === 'messaged') {\n    nextFollowup = new Date(now.getTime() + 72 * 3600000).toISOString();\n  } else if (p.stage === 'contact_collected') {\n    newStage = 'invite_sent';\n    nextFollowup = new Date(now.getTime() + 48 * 3600000).toISOString();\n  } else if (p.stage === 'invite_sent') {\n    nextFollowup = new Date(now.getTime() + 7 * 24 * 3600000).toISOString();\n  }\n\n  const summaryUpdate = `[${now.toISOString().slice(0,10)}] ` +\n    `Stage: ${p.stage}→${newStage}. ` +\n    `${p.ragContext}. ` +\n    (p.action === 'avito_message' ? 'Авито-сообщение сгенерировано.' : 'Ссылка на регистрацию отправлена.');\n\n  updates.push({\n    id: p.id,\n    stage: newStage,\n    contact_attempts: (p.contact_attempts || 0) + 1,\n    last_contacted_at: now.toISOString(),\n    next_followup_at: nextFollowup,\n    conversation_summary: summaryUpdate,\n    updated_at: now.toISOString()\n  });\n}\n\nreturn [{ json: { logs, updates, inviteMessages: data.inviteMessages } }];"
       },
       "id": "erag-build-updates-009",
       "name": "Build Updates + Logs",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1920, 200]
+      "position": [
+        1920,
+        200
+      ]
     },
     {
       "parameters": {
@@ -124,7 +183,10 @@
       "name": "Split Logs",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2160, 120]
+      "position": [
+        2160,
+        120
+      ]
     },
     {
       "parameters": {
@@ -133,21 +195,35 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "erag-log-messages-011",
       "name": "Log Messages to CRM",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2400, 120]
+      "position": [
+        2400,
+        120
+      ]
     },
     {
       "parameters": {
@@ -157,7 +233,10 @@
       "name": "Split Updates",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2160, 300]
+      "position": [
+        2160,
+        300
+      ]
     },
     {
       "parameters": {
@@ -166,97 +245,39 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "Prefer", "value": "return=minimal" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: $json.stage, contact_attempts: $json.contact_attempts, last_contacted_at: $json.last_contacted_at, next_followup_at: $json.next_followup_at, conversation_summary: $json.conversation_summary, updated_at: $json.updated_at }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "erag-update-stages-013",
       "name": "Update Prospect Stages",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2400, 300]
-    },
-    {
-      "parameters": {
-        "jsCode": "// ── Email invites for prospects with email addresses ──\nconst data = $('Build Updates + Logs').first().json;\nconst invites = (data.inviteMessages || []).filter(p => p.email && p.email.trim());\nif (invites.length === 0) return [{ json: { hasEmails: false, prospects: [] } }];\nreturn [{ json: { hasEmails: true, prospects: invites } }];"
-      },
-      "id": "erag-check-emails-014",
-      "name": "Check Prospects with Email",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [2640, 300]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "conditions": [
-            { "leftValue": "={{ $json.hasEmails }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
-          ]
-        }
-      },
-      "id": "erag-has-emails-015",
-      "name": "Has Emails?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [2880, 300]
-    },
-    {
-      "parameters": {
-        "jsCode": "const { prospects } = $input.first().json;\nreturn prospects.map(p => ({ json: p }));"
-      },
-      "id": "erag-split-emails-016",
-      "name": "Split Email Prospects",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [3120, 240]
-    },
-    {
-      "parameters": {
-        "fromEmail": "=noreply@podryad.pro",
-        "toEmail": "={{ $json.email }}",
-        "subject": "=Подряд PRO — приглашение на платформу",
-        "emailType": "html",
-        "html": "=<div style=\"font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px\"><div style=\"background:#2d35a8;color:#fff;padding:16px 24px;border-radius:12px 12px 0 0\"><h2 style=\"margin:0\">Подряд PRO</h2></div><div style=\"padding:24px;background:#f8f9fa;border-radius:0 0 12px 12px\"><p style=\"white-space:pre-line;line-height:1.6\">{{ $json.inviteMessage.replace(/</g,'&lt;') }}</p><a href=\"{{ $json.regLink }}\" style=\"display:inline-block;background:#f5a623;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0\">Зарегистрироваться бесплатно →</a><hr style=\"border:none;border-top:1px solid #e0e0e0;margin:20px 0\"><p style=\"color:#666;font-size:14px\">💬 <a href=\"https://max.ru/podryad_pro\" style=\"color:#2d35a8\">MAX мессенджер</a></p></div></div>",
-        "options": {}
-      },
-      "id": "erag-send-email-017",
-      "name": "Send Invite Email",
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
-      "position": [3360, 240],
-      "credentials": {
-        "smtp": { "id": "configure-smtp-in-n8n", "name": "Podryad PRO SMTP" }
-      }
-    },
-    {
-      "parameters": {
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_messages",
-        "method": "POST",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ entity_type: 'prospect', entity_id: $json.id, direction: 'outbound', channel: 'email', message_text: $json.inviteMessage, is_automated: true, status: 'sent' }) }}",
-        "options": { "timeout": 10000 }
-      },
-      "id": "erag-log-email-018",
-      "name": "Log Email Invite",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [3600, 240]
+      "position": [
+        2400,
+        300
+      ]
     },
     {
       "parameters": {
@@ -264,17 +285,28 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "erag-check-registered-019",
       "name": "Check: Any Registered?",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2640, 500]
+      "position": [
+        2640,
+        500
+      ]
     },
     {
       "parameters": {
@@ -284,13 +316,23 @@
       "name": "Find Registered Contractors",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2880, 500]
+      "position": [
+        2880,
+        500
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.hasPhones }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "leftValue": "={{ $json.hasPhones }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -298,7 +340,10 @@
       "name": "Has Phones to Check?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [3120, 500]
+      "position": [
+        3120,
+        500
+      ]
     },
     {
       "parameters": {
@@ -306,17 +351,28 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "erag-query-contractors-022",
       "name": "Query Contractors DB",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3360, 440]
+      "position": [
+        3360,
+        440
+      ]
     },
     {
       "parameters": {
@@ -326,7 +382,10 @@
       "name": "Mark as Registered",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3600, 440]
+      "position": [
+        3600,
+        440
+      ]
     },
     {
       "parameters": {
@@ -335,22 +394,39 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "Prefer", "value": "return=minimal" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: $json.stage, registered_at: $json.registered_at, contractor_id: $json.contractor_id, conversation_summary: $json.conversation_summary, updated_at: $json.updated_at }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "erag-patch-registered-023b",
       "name": "PATCH Registered Prospects",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3840, 440]
+      "position": [
+        3840,
+        440
+      ]
     },
     {
       "parameters": {
@@ -360,13 +436,23 @@
       "name": "Aggregate Registered",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [4080, 440]
+      "position": [
+        4080,
+        440
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.hasRegistered }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "leftValue": "={{ $json.hasRegistered }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -374,7 +460,10 @@
       "name": "Has Newly Registered?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [4320, 440]
+      "position": [
+        4320,
+        440
+      ]
     },
     {
       "parameters": {
@@ -383,13 +472,18 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🎉 *CRM — Новые регистрации с Авито!*\\n\\n' + $json.newlyRegistered.map(c => '✅ ' + c.phone + ' (contractor: ' + c.id + ')').join('\\n') + '\\n\\nЗарегистрировались на Подряд PRO после авито-рекрутинга!', parse_mode: 'Markdown' }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "erag-notify-new-reg-025",
       "name": "Notify New Registrations",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [4080, 380]
+      "position": [
+        4080,
+        380
+      ]
     },
     {
       "parameters": {},
@@ -397,7 +491,10 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 700]
+      "position": [
+        0,
+        700
+      ]
     },
     {
       "parameters": {
@@ -406,63 +503,260 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🚨 ОШИБКА Executor Avito RAG Agent\\n\\nNode: ' + $json.execution.error.node.name + '\\n' + $json.execution.error.message }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "erag-error-notify-027",
       "name": "Notify Error",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [240, 700]
+      "position": [
+        240,
+        700
+      ]
     }
   ],
   "connections": {
-    "Cron: Every 6 Hours": { "main": [[{ "node": "Fetch Active Prospects", "type": "main", "index": 0 }]] },
-    "Fetch Active Prospects": { "main": [[{ "node": "Analyze Prospects", "type": "main", "index": 0 }]] },
-    "Analyze Prospects": { "main": [[{ "node": "Has Work?", "type": "main", "index": 0 }]] },
-    "Has Work?": { "main": [
-      [{ "node": "RAG: Fetch All Prospect History", "type": "main", "index": 0 }],
-      []
-    ] },
-    "RAG: Fetch All Prospect History": { "main": [[{ "node": "RAG: Build Outreach Messages", "type": "main", "index": 0 }]] },
-    "RAG: Build Outreach Messages": { "main": [[{ "node": "Build Admin Report", "type": "main", "index": 0 }]] },
-    "Build Admin Report": { "main": [[{ "node": "Send Report to Admin TG", "type": "main", "index": 0 }]] },
-    "Send Report to Admin TG": { "main": [[{ "node": "Build Updates + Logs", "type": "main", "index": 0 }]] },
-    "Build Updates + Logs": { "main": [
-      [
-        { "node": "Split Logs", "type": "main", "index": 0 },
-        { "node": "Split Updates", "type": "main", "index": 0 }
+    "Cron: Every 6 Hours": {
+      "main": [
+        [
+          {
+            "node": "Fetch Active Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
-    ] },
-    "Split Logs": { "main": [[{ "node": "Log Messages to CRM", "type": "main", "index": 0 }]] },
-    "Split Updates": { "main": [[{ "node": "Update Prospect Stages", "type": "main", "index": 0 }]] },
-    "Update Prospect Stages": { "main": [
-      [
-        { "node": "Check Prospects with Email", "type": "main", "index": 0 },
-        { "node": "Check: Any Registered?", "type": "main", "index": 0 }
+    },
+    "Fetch Active Prospects": {
+      "main": [
+        [
+          {
+            "node": "Analyze Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
-    ] },
-    "Check Prospects with Email": { "main": [[{ "node": "Has Emails?", "type": "main", "index": 0 }]] },
-    "Has Emails?": { "main": [
-      [{ "node": "Split Email Prospects", "type": "main", "index": 0 }],
-      []
-    ] },
-    "Split Email Prospects": { "main": [[{ "node": "Send Invite Email", "type": "main", "index": 0 }]] },
-    "Send Invite Email": { "main": [[{ "node": "Log Email Invite", "type": "main", "index": 0 }]] },
-    "Check: Any Registered?": { "main": [[{ "node": "Find Registered Contractors", "type": "main", "index": 0 }]] },
-    "Find Registered Contractors": { "main": [[{ "node": "Has Phones to Check?", "type": "main", "index": 0 }]] },
-    "Has Phones to Check?": { "main": [
-      [{ "node": "Query Contractors DB", "type": "main", "index": 0 }],
-      []
-    ] },
-    "Query Contractors DB": { "main": [[{ "node": "Mark as Registered", "type": "main", "index": 0 }]] },
-    "Mark as Registered": { "main": [[{ "node": "PATCH Registered Prospects", "type": "main", "index": 0 }]] },
-    "PATCH Registered Prospects": { "main": [[{ "node": "Aggregate Registered", "type": "main", "index": 0 }]] },
-    "Aggregate Registered": { "main": [[{ "node": "Has Newly Registered?", "type": "main", "index": 0 }]] },
-    "Has Newly Registered?": { "main": [
-      [{ "node": "Notify New Registrations", "type": "main", "index": 0 }],
-      []
-    ] },
-    "Error Trigger": { "main": [[{ "node": "Notify Error", "type": "main", "index": 0 }]] }
+    },
+    "Analyze Prospects": {
+      "main": [
+        [
+          {
+            "node": "Has Work?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Work?": {
+      "main": [
+        [
+          {
+            "node": "RAG: Fetch All Prospect History",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "RAG: Fetch All Prospect History": {
+      "main": [
+        [
+          {
+            "node": "RAG: Build Outreach Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Build Outreach Messages": {
+      "main": [
+        [
+          {
+            "node": "Build Admin Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Admin Report": {
+      "main": [
+        [
+          {
+            "node": "Send Report to Admin TG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Report to Admin TG": {
+      "main": [
+        [
+          {
+            "node": "Build Updates + Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Updates + Logs": {
+      "main": [
+        [
+          {
+            "node": "Split Logs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Updates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Logs": {
+      "main": [
+        [
+          {
+            "node": "Log Messages to CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Updates": {
+      "main": [
+        [
+          {
+            "node": "Update Prospect Stages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Prospect Stages": {
+      "main": [
+        [
+          {
+            "node": "Check: Any Registered?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check: Any Registered?": {
+      "main": [
+        [
+          {
+            "node": "Find Registered Contractors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Registered Contractors": {
+      "main": [
+        [
+          {
+            "node": "Has Phones to Check?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Phones to Check?": {
+      "main": [
+        [
+          {
+            "node": "Query Contractors DB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Query Contractors DB": {
+      "main": [
+        [
+          {
+            "node": "Mark as Registered",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark as Registered": {
+      "main": [
+        [
+          {
+            "node": "PATCH Registered Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PATCH Registered Prospects": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Registered",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Registered": {
+      "main": [
+        [
+          {
+            "node": "Has Newly Registered?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Newly Registered?": {
+      "main": [
+        [
+          {
+            "node": "Notify New Registrations",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Notify Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "settings": {
     "executionOrder": "v1",
@@ -470,6 +764,13 @@
     "callerPolicy": "workflowsFromSameOwner"
   },
   "staticData": null,
-  "tags": ["crm", "automation", "executors", "avito", "rag", "email"],
+  "tags": [
+    "crm",
+    "automation",
+    "executors",
+    "avito",
+    "rag",
+    "email"
+  ],
   "pinData": {}
 }

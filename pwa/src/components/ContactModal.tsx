@@ -71,6 +71,7 @@ export default function ContactModal({ listing, isLoggedIn, onClose }: Props) {
           <h2 className="font-bold text-gray-900 dark:text-white text-lg">Контакт поставщика</h2>
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-dark-border transition-colors cursor-pointer"
           >
             <X size={18} />

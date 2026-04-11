@@ -1,7 +1,7 @@
 # Подряд PRO
 
 ## Стек
-Next.js 15 App Router, Supabase (PostgreSQL), Tailwind CSS, ЮKassa, n8n webhooks
+Next.js 15 App Router, Supabase (PostgreSQL), Tailwind CSS, ЮKassa, n8n webhooks, OpenAI GPT-4o
 
 ## Бизнес-модель
 Скрытая наценка. Заказчик видит display_price. Исполнитель получает base_price (100%). Площадка бесплатна для исполнителей.
@@ -36,5 +36,8 @@ Next.js 15 App Router, Supabase (PostgreSQL), Tailwind CSS, ЮKassa, n8n webhook
 - Чекбокс 152-ФЗ обязателен в формах с ПД
 - Шрифт: Manrope. Основные цвета: brand-500 (#2F5BFF), brand-900 (#1E2A5A), violet (#6C5CE7), accent (#FF6B35)
 - MAX — основной мессенджер, Telegram — резервный
+- **Email НЕ является каналом коммуникации** — только Telegram, MAX, Avito
+- `pwa/src/lib/channels/` — нормализованный multi-channel слой (Telegram, MAX, Avito)
+- `pwa/src/lib/ai/` — OpenAI GPT-4o клиент (LLM для RAG-агента)
 - Админские API используют timing-safe PIN через заголовок x-admin-pin
 - Публичные API используют анонимный Supabase клиент, админские — service role

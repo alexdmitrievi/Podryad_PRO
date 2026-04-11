@@ -25,6 +25,10 @@ export async function POST(req: NextRequest) {
     telegram_id,
     max_id,
     email,
+    is_brigade,
+    crew_size,
+    has_transport,
+    has_tools,
   } = body as Record<string, unknown>;
 
   // Validate name
@@ -63,6 +67,10 @@ export async function POST(req: NextRequest) {
       telegram_id: telegram_id != null ? String(telegram_id) : undefined,
       max_id: max_id != null ? String(max_id) : undefined,
       email: email != null ? String(email) : undefined,
+      is_brigade: is_brigade === true,
+      crew_size: is_brigade === true && crew_size != null ? Number(crew_size) : undefined,
+      has_transport: is_brigade === true ? !!has_transport : undefined,
+      has_tools: is_brigade === true ? !!has_tools : undefined,
     });
   } catch (err) {
     console.error('POST /api/contractors createContractor:', err);
@@ -84,6 +92,8 @@ export async function POST(req: NextRequest) {
         city: cityStr,
         specialties,
         preferred_contact,
+        is_brigade: is_brigade === true,
+        crew_size: is_brigade === true && crew_size != null ? Number(crew_size) : undefined,
       }),
     }).catch((err) => {
       console.error('n8n contractor_registered webhook error (non-blocking):', err);

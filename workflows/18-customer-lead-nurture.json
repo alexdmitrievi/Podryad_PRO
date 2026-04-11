@@ -1,28 +1,36 @@
 {
-  "name": "Подряд PRO — 18 Customer Lead Nurture Agent (RAG + Email)",
+  "name": "Подряд PRO — 18 Customer Lead Nurture Agent (RAG)",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "crm-lead-nurture",
-        "options": { "responseMode": "onReceived" }
+        "options": {
+          "responseMode": "onReceived"
+        }
       },
       "id": "rag-wh-001",
       "name": "Webhook: New Lead",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [0, 300],
+      "position": [
+        0,
+        300
+      ],
       "webhookId": "podryad-crm-lead-nurture"
     },
     {
       "parameters": {
-        "jsCode": "const root = $('Webhook: New Lead').first().json;\nconst b = root.body || root;\n\nconst phone = String(b.phone || '').replace(/\\D/g, '');\nconst name = String(b.name || '').trim();\nconst workType = String(b.work_type || 'labor');\nconst city = String(b.city || 'omsk');\nconst messenger = String(b.messenger || 'max').toLowerCase();\nconst email = String(b.email || '').trim();\nconst telegram = String(b.telegram || '').trim();\nconst comment = String(b.comment || '').trim();\nconst leadId = b.lead_id ? Number(b.lead_id) : null;\n\nconst WORK_TYPE_LABELS = {\n  labor: 'разнорабочих / строительные работы',\n  equipment: 'технику / спецтехнику',\n  materials: 'строительные материалы',\n  complex: 'комплексные работы'\n};\nconst CITY_LABELS = { novosibirsk: 'Новосибирске', omsk: 'Омске' };\n\nconst workLabel = WORK_TYPE_LABELS[workType] || workType;\nconst cityLabel = CITY_LABELS[city] || city;\n\nreturn [{ json: {\n  phone, name, workType, workLabel, city, cityLabel,\n  messenger, email, telegram, comment, leadId,\n  hasEmail: !!email, hasTelegram: !!telegram\n} }];"
+        "jsCode": "const root = $('Webhook: New Lead').first().json;\nconst b = root.body || root;\n\nconst phone = String(b.phone || '').replace(/\\D/g, '');\nconst name = String(b.name || '').trim();\nconst workType = String(b.work_type || 'labor');\nconst city = String(b.city || 'omsk');\nconst messenger = String(b.messenger || 'max').toLowerCase();\nconst email = String(b.email || '').trim();\nconst telegram = String(b.telegram || '').trim();\nconst comment = String(b.comment || '').trim();\nconst leadId = b.lead_id ? Number(b.lead_id) : null;\n\nconst WORK_TYPE_LABELS = {\n  labor: 'разнорабочих / строительные работы',\n  equipment: 'технику / спецтехнику',\n  materials: 'строительные материалы',\n  complex: 'комплексные работы'\n};\nconst CITY_LABELS = { novosibirsk: 'Новосибирске', omsk: 'Омске' };\n\nconst workLabel = WORK_TYPE_LABELS[workType] || workType;\nconst cityLabel = CITY_LABELS[city] || city;\n\nreturn [{ json: {\n  phone, name, workType, workLabel, city, cityLabel,\n  messenger, email, telegram, comment, leadId,\n hasTelegram: !!telegram\n} }];"
       },
       "id": "rag-parse-002",
       "name": "Parse Lead Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -31,22 +39,39 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "Prefer", "value": "resolution=merge-duplicates,return=representation" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ lead_id: $json.leadId, phone: $json.phone, name: $json.name, work_type: $json.workType, city: $json.city, messenger: $json.messenger, email: $json.email || null, telegram: $json.telegram || null }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-upsert-003",
       "name": "Upsert CRM Funnel",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 300]
+      "position": [
+        480,
+        300
+      ]
     },
     {
       "parameters": {
@@ -54,27 +79,41 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-fetch-hist-004",
       "name": "RAG: Fetch History",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [720, 300]
+      "position": [
+        720,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// ── RAG Welcome Message Generator ──\nconst lead = $('Parse Lead Data').first().json;\nconst funnelRaw = $('Upsert CRM Funnel').first().json;\nconst funnel = Array.isArray(funnelRaw) ? funnelRaw[0] : funnelRaw;\nconst historyRaw = $('RAG: Fetch History').first().json;\nconst history = Array.isArray(historyRaw) ? historyRaw : [];\n\nconst name = lead.name || '';\nconst nameGreeting = name ? name.split(' ')[0] + ', здравствуйте!' : 'Здравствуйте!';\nconst workLabel = lead.workLabel;\nconst cityLabel = lead.cityLabel;\nconst email = lead.email;\n\n// ── RAG: Build conversation context ──\nlet ragContext = '';\nlet lastUserMsg = '';\nlet interactionCount = history.length;\n\nif (history.length > 0) {\n  const recent = history.slice().reverse().slice(-10);\n  for (const msg of recent) {\n    const dir = msg.direction === 'inbound' ? '← Клиент' : '→ Мы';\n    ragContext += `${dir}: ${msg.message_text.slice(0, 200)}\\n`;\n    if (msg.direction === 'inbound') lastUserMsg = msg.message_text;\n  }\n}\n\nconst prevSummary = (funnel && funnel.conversation_summary) || '';\n\n// ── Generate contextual welcome ──\nlet welcomeMsg;\nif (interactionCount > 0 && lastUserMsg) {\n  welcomeMsg = `${nameGreeting} 👋\\n\\nВижу, что мы с вами уже общались — вы интересовались ${workLabel} в ${cityLabel}.`;\n  if (lastUserMsg.length > 10) {\n    welcomeMsg += ` В прошлый раз вы писали: «${lastUserMsg.slice(0, 80)}...»`;\n  }\n  welcomeMsg += `\\n\\nХотели бы продолжить? Готов помочь с оформлением заказа — обычно подбираем бригаду за 2–4 часа! 🏗`;\n} else {\n  welcomeMsg = `${nameGreeting} 👋\\n\\nЯ получил вашу заявку на ${workLabel} в ${cityLabel}.\\n\\nМы — сервис Подряд PRO, помогаем быстро найти проверенных исполнителей. Обычно подбираем бригаду за 2–4 часа.\\n\\n⏱ Уточните, пожалуйста:\\n• Когда планируете начать работы?\\n• Примерный объём / площадь?\\n\\nОтвечу по деталям и рассчитаю стоимость 🏗`;\n}\n\n// ── Email version ──\nconst emailSubject = interactionCount > 0\n  ? 'Подряд PRO — продолжаем оформление заказа'\n  : `Подряд PRO — ваша заявка на ${workLabel}`;\n\nconst emailHtml = `<div style=\"font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px\"><div style=\"background:#2d35a8;color:#fff;padding:16px 24px;border-radius:12px 12px 0 0\"><h2 style=\"margin:0\">Подряд PRO</h2></div><div style=\"padding:24px;background:#f8f9fa;border-radius:0 0 12px 12px\"><p style=\"white-space:pre-line;line-height:1.6\">${welcomeMsg.replace(/</g,'&lt;')}</p><hr style=\"border:none;border-top:1px solid #e0e0e0;margin:20px 0\"><p style=\"color:#666;font-size:14px\">Ответьте на это письмо или свяжитесь с нами:<br>💬 <a href=\"https://max.ru/podryad_pro\" style=\"color:#2d35a8\">MAX мессенджер</a></p></div></div>`;\n\nconst summaryUpdate = interactionCount > 0\n  ? `Повторный контакт (${interactionCount} сообщ. в истории). Отправлено приветствие с учётом предыдущего общения.`\n  : `Первый контакт. Заявка на ${workLabel} в ${cityLabel}.`;\n\nreturn [{ json: {\n  ...lead, welcomeMsg, emailSubject, emailHtml,\n  summaryUpdate, ragContext, interactionCount, lastUserMsg,\n  leadFunnelId: funnel ? funnel.id : null\n} }];"
+        "jsCode": "// ── RAG Welcome Message Generator ──\nconst lead = $('Parse Lead Data').first().json;\nconst funnelRaw = $('Upsert CRM Funnel').first().json;\nconst funnel = Array.isArray(funnelRaw) ? funnelRaw[0] : funnelRaw;\nconst historyRaw = $('RAG: Fetch History').first().json;\nconst history = Array.isArray(historyRaw) ? historyRaw : [];\n\nconst name = lead.name || '';\nconst nameGreeting = name ? name.split(' ')[0] + ', здравствуйте!' : 'Здравствуйте!';\nconst workLabel = lead.workLabel;\nconst cityLabel = lead.cityLabel;\n\n// ── RAG: Build conversation context ──\nlet ragContext = '';\nlet lastUserMsg = '';\nlet interactionCount = history.length;\n\nif (history.length > 0) {\n  const recent = history.slice().reverse().slice(-10);\n  for (const msg of recent) {\n    const dir = msg.direction === 'inbound' ? '← Клиент' : '→ Мы';\n    ragContext += `${dir}: ${msg.message_text.slice(0, 200)}\\n`;\n    if (msg.direction === 'inbound') lastUserMsg = msg.message_text;\n  }\n}\n\nconst prevSummary = (funnel && funnel.conversation_summary) || '';\n\n// ── Generate contextual welcome ──\nlet welcomeMsg;\nif (interactionCount > 0 && lastUserMsg) {\n  welcomeMsg = `${nameGreeting} 👋\\n\\nВижу, что мы с вами уже общались — вы интересовались ${workLabel} в ${cityLabel}.`;\n  if (lastUserMsg.length > 10) {\n    welcomeMsg += ` В прошлый раз вы писали: «${lastUserMsg.slice(0, 80)}...»`;\n  }\n  welcomeMsg += `\\n\\nХотели бы продолжить? Готов помочь с оформлением заказа — обычно подбираем бригаду за 2–4 часа! 🏗`;\n} else {\n  welcomeMsg = `${nameGreeting} 👋\\n\\nЯ получил вашу заявку на ${workLabel} в ${cityLabel}.\\n\\nМы — сервис Подряд PRO, помогаем быстро найти проверенных исполнителей. Обычно подбираем бригаду за 2–4 часа.\\n\\n⏱ Уточните, пожалуйста:\\n• Когда планируете начать работы?\\n• Примерный объём / площадь?\\n\\nОтвечу по деталям и рассчитаю стоимость 🏗`;\n}\n\n\nconst summaryUpdate = interactionCount > 0\n  ? `Повторный контакт (${interactionCount} сообщ. в истории). Отправлено приветствие с учётом предыдущего общения.`\n  : `Первый контакт. Заявка на ${workLabel} в ${cityLabel}.`;\n\nreturn [{ json: {\n  ...lead, welcomeMsg,\n  summaryUpdate, ragContext, interactionCount, lastUserMsg,\n  leadFunnelId: funnel ? funnel.id : null\n} }];"
       },
       "id": "rag-welcome-005",
       "name": "RAG: Generate Welcome",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [960, 300]
+      "position": [
+        960,
+        300
+      ]
     },
     {
       "parameters": {
@@ -83,13 +122,18 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Welcome [RAG]\\n📞 ' + $json.phone + ' | ' + ($json.name || 'Без имени') + '\\n📋 ' + $json.workLabel + ' / ' + $json.cityLabel + '\\n💬 Мессенджер: ' + $json.messenger + (($json.interactionCount > 0) ? '\\n🔄 Повторный контакт (' + $json.interactionCount + ' сообщ.)' : '\\n🆕 Новый лид') + '\\n\\n' + $json.welcomeMsg }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-admin-welcome-006",
       "name": "Admin TG: Welcome",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1200, 300]
+      "position": [
+        1200,
+        300
+      ]
     },
     {
       "parameters": {
@@ -98,21 +142,35 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ entity_type: 'lead', entity_id: $json.leadFunnelId || $json.leadId || 0, direction: 'outbound', channel: $json.messenger || 'max', message_text: $json.welcomeMsg, is_automated: true, status: 'sent' }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-log-welcome-007",
       "name": "Log Welcome",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1440, 300]
+      "position": [
+        1440,
+        300
+      ]
     },
     {
       "parameters": {
@@ -121,85 +179,53 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "Prefer", "value": "return=minimal" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'contacted', contact_attempts: 1, last_contacted_at: new Date().toISOString(), next_followup_at: new Date(Date.now() + 7200000).toISOString(), conversation_summary: $('RAG: Generate Welcome').first().json.summaryUpdate, updated_at: new Date().toISOString() }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-stage-contacted-008",
       "name": "Update Stage: contacted + Summary",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1680, 300]
+      "position": [
+        1680,
+        300
+      ]
     },
     {
       "parameters": {
-        "conditions": {
-          "conditions": [
-            { "leftValue": "={{ $('RAG: Generate Welcome').first().json.hasEmail }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
-          ]
-        }
+        "amount": 2,
+        "unit": "hours"
       },
-      "id": "rag-has-email-w-009",
-      "name": "Has Email: Welcome?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [1680, 560]
-    },
-    {
-      "parameters": {
-        "fromEmail": "=noreply@podryad.pro",
-        "toEmail": "={{ $('RAG: Generate Welcome').first().json.email }}",
-        "subject": "={{ $('RAG: Generate Welcome').first().json.emailSubject }}",
-        "emailType": "html",
-        "html": "={{ $('RAG: Generate Welcome').first().json.emailHtml }}",
-        "options": {}
-      },
-      "id": "rag-email-welcome-010",
-      "name": "Send Welcome Email",
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
-      "position": [1920, 500],
-      "credentials": {
-        "smtp": { "id": "configure-smtp-in-n8n", "name": "Podryad PRO SMTP" }
-      }
-    },
-    {
-      "parameters": {
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_messages",
-        "method": "POST",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ entity_type: 'lead', entity_id: $('RAG: Generate Welcome').first().json.leadFunnelId || 0, direction: 'outbound', channel: 'email', message_text: $('RAG: Generate Welcome').first().json.welcomeMsg, is_automated: true, status: 'sent' }) }}",
-        "options": { "timeout": 10000 }
-      },
-      "id": "rag-log-email-w-011",
-      "name": "Log Welcome Email",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [2160, 500]
-    },
-    {
-      "parameters": { "amount": 2, "unit": "hours" },
       "id": "rag-wait-2h-012",
       "name": "Wait 2 Hours",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [1920, 300],
+      "position": [
+        1920,
+        300
+      ],
       "webhookId": "rag-wait-2h"
     },
     {
@@ -208,23 +234,41 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-check-order1-013",
       "name": "Check Order (1)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2160, 300]
+      "position": [
+        2160,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ Array.isArray($json) ? $json.length : 1 }}", "rightValue": 0, "operator": { "type": "number", "operation": "equals" } }
+            {
+              "leftValue": "={{ Array.isArray($json) ? $json.length : 1 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -232,7 +276,10 @@
       "name": "Not Converted? (1)",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2400, 300]
+      "position": [
+        2400,
+        300
+      ]
     },
     {
       "parameters": {
@@ -240,17 +287,28 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-fetch-hist2-015",
       "name": "RAG: Fetch History (2)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2640, 300]
+      "position": [
+        2640,
+        300
+      ]
     },
     {
       "parameters": {
@@ -258,27 +316,41 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-get-token-016",
       "name": "Get Customer Token",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2880, 300]
+      "position": [
+        2880,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// ── RAG Follow-up 1 Message Generator ──\nconst lead = $('Parse Lead Data').first().json;\nconst historyRaw = $('RAG: Fetch History (2)').first().json;\nconst history = Array.isArray(historyRaw) ? historyRaw : [];\nconst tokens = $('Get Customer Token').first().json;\n\nconst name = lead.name || '';\nconst firstName = name ? name.split(' ')[0] : '';\nconst workLabel = lead.workLabel;\nconst cityLabel = lead.cityLabel;\nconst email = lead.email;\nconst phone = lead.phone;\n\n// ── RAG context ──\nlet lastUserMsg = '';\nlet hasInbound = false;\nfor (const m of history) {\n  if (m.direction === 'inbound') { lastUserMsg = m.message_text; hasInbound = true; }\n}\n\n// Dashboard link\nlet dashboardLink = `https://app.podryad.pro/dashboard?phone=${phone}`;\nif (Array.isArray(tokens) && tokens.length > 0 && tokens[0].access_token) {\n  dashboardLink = `https://app.podryad.pro/my?token=${tokens[0].access_token}`;\n}\n\n// Generate contextual follow-up 1\nlet msg;\nif (hasInbound && lastUserMsg) {\n  msg = `${firstName ? firstName + ', д' : 'Д'}обрый день! Спасибо за ваш ответ 🙏\\n\\nОтвечая на ваше сообщение: «${lastUserMsg.slice(0, 80)}»\\n\\nМы уже подбираем специалистов по ${workLabel} в ${cityLabel}. Вот ваш личный кабинет для удобного оформления:\\n\\n🔗 ${dashboardLink}\\n\\nТам можно описать задачу подробнее — и мы подберём лучших мастеров!`;\n} else {\n  msg = `${firstName ? firstName + ', в' : 'В'}ы оставили заявку на ${workLabel} в ${cityLabel}. Мы уже подбираем специалистов под ваш запрос! 💪\\n\\nВот ваш личный кабинет — здесь можно оформить заказ за 5 минут:\\n\\n🔗 ${dashboardLink}\\n\\nГотов рассказать подробнее и помочь с оформлением 📞`;\n}\n\nconst emailSubject = hasInbound\n  ? 'Подряд PRO — мы уже подбираем мастеров'\n  : `Подряд PRO — ваш личный кабинет`;\n\nconst emailHtml = `<div style=\"font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px\"><div style=\"background:#2d35a8;color:#fff;padding:16px 24px;border-radius:12px 12px 0 0\"><h2 style=\"margin:0\">Подряд PRO</h2></div><div style=\"padding:24px;background:#f8f9fa;border-radius:0 0 12px 12px\"><p style=\"white-space:pre-line;line-height:1.6\">${msg.replace(/</g,'&lt;')}</p><a href=\"${dashboardLink}\" style=\"display:inline-block;background:#2d35a8;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;margin:16px 0\">Открыть личный кабинет →</a><hr style=\"border:none;border-top:1px solid #e0e0e0;margin:20px 0\"><p style=\"color:#666;font-size:14px\">💬 <a href=\"https://max.ru/podryad_pro\" style=\"color:#2d35a8\">MAX мессенджер</a></p></div></div>`;\n\nconst summaryUpdate = hasInbound\n  ? `Follow-up 1: клиент ответил (\"${lastUserMsg.slice(0, 60)}\"). Отправлена ссылка на ЛК.`\n  : `Follow-up 1: нет ответа. Отправлена ссылка на ЛК.`;\n\nreturn [{ json: {\n  ...lead, msg, emailSubject, emailHtml, dashboardLink,\n  summaryUpdate, hasInbound, lastUserMsg, hasEmail: !!email\n} }];"
+        "jsCode": "// ── RAG Follow-up 1 Message Generator ──\nconst lead = $('Parse Lead Data').first().json;\nconst historyRaw = $('RAG: Fetch History (2)').first().json;\nconst history = Array.isArray(historyRaw) ? historyRaw : [];\nconst tokens = $('Get Customer Token').first().json;\n\nconst name = lead.name || '';\nconst firstName = name ? name.split(' ')[0] : '';\nconst workLabel = lead.workLabel;\nconst cityLabel = lead.cityLabel;\nconst phone = lead.phone;\n\n// ── RAG context ──\nlet lastUserMsg = '';\nlet hasInbound = false;\nfor (const m of history) {\n  if (m.direction === 'inbound') { lastUserMsg = m.message_text; hasInbound = true; }\n}\n\n// Dashboard link\nlet dashboardLink = `https://app.podryad.pro/dashboard?phone=${phone}`;\nif (Array.isArray(tokens) && tokens.length > 0 && tokens[0].access_token) {\n  dashboardLink = `https://app.podryad.pro/my?token=${tokens[0].access_token}`;\n}\n\n// Generate contextual follow-up 1\nlet msg;\nif (hasInbound && lastUserMsg) {\n  msg = `${firstName ? firstName + ', д' : 'Д'}обрый день! Спасибо за ваш ответ 🙏\\n\\nОтвечая на ваше сообщение: «${lastUserMsg.slice(0, 80)}»\\n\\nМы уже подбираем специалистов по ${workLabel} в ${cityLabel}. Вот ваш личный кабинет для удобного оформления:\\n\\n🔗 ${dashboardLink}\\n\\nТам можно описать задачу подробнее — и мы подберём лучших мастеров!`;\n} else {\n  msg = `${firstName ? firstName + ', в' : 'В'}ы оставили заявку на ${workLabel} в ${cityLabel}. Мы уже подбираем специалистов под ваш запрос! 💪\\n\\nВот ваш личный кабинет — здесь можно оформить заказ за 5 минут:\\n\\n🔗 ${dashboardLink}\\n\\nГотов рассказать подробнее и помочь с оформлением 📞`;\n}\n\n  ? 'Подряд PRO — мы уже подбираем мастеров'\n  : `Подряд PRO — ваш личный кабинет`;\n\n\nconst summaryUpdate = hasInbound\n  ? `Follow-up 1: клиент ответил (\"${lastUserMsg.slice(0, 60)}\"). Отправлена ссылка на ЛК.`\n  : `Follow-up 1: нет ответа. Отправлена ссылка на ЛК.`;\n\nreturn [{ json: {\n  ...lead, msg, dashboardLink,\n  summaryUpdate, hasInbound, lastUserMsg\n} }];"
       },
       "id": "rag-followup1-017",
       "name": "RAG: Follow-up 1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3120, 300]
+      "position": [
+        3120,
+        300
+      ]
     },
     {
       "parameters": {
@@ -287,13 +359,18 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Follow-up #1 [RAG]\\n📞 ' + $json.phone + (($json.hasInbound) ? '\\n✅ Клиент отвечал!' : '\\n⏳ Нет ответа') + '\\n\\n' + $json.msg }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-admin-f1-018",
       "name": "Admin TG: Follow-up 1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3360, 300]
+      "position": [
+        3360,
+        300
+      ]
     },
     {
       "parameters": {
@@ -302,21 +379,35 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ entity_type: 'lead', entity_id: $('RAG: Generate Welcome').first().json.leadFunnelId || 0, direction: 'outbound', channel: $('Parse Lead Data').first().json.messenger || 'max', message_text: $('RAG: Follow-up 1').first().json.msg, is_automated: true, status: 'sent' }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-log-f1-019",
       "name": "Log Follow-up 1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3600, 300]
+      "position": [
+        3600,
+        300
+      ]
     },
     {
       "parameters": {
@@ -325,85 +416,53 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "Prefer", "value": "return=minimal" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'link_sent', contact_attempts: 2, last_contacted_at: new Date().toISOString(), next_followup_at: new Date(Date.now() + 86400000).toISOString(), conversation_summary: $('RAG: Follow-up 1').first().json.summaryUpdate, updated_at: new Date().toISOString() }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-stage-linksent-020",
       "name": "Update Stage: link_sent + Summary",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3840, 300]
+      "position": [
+        3840,
+        300
+      ]
     },
     {
       "parameters": {
-        "conditions": {
-          "conditions": [
-            { "leftValue": "={{ $('RAG: Follow-up 1').first().json.hasEmail }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
-          ]
-        }
+        "amount": 24,
+        "unit": "hours"
       },
-      "id": "rag-has-email-f1-021",
-      "name": "Has Email: F1?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [3840, 560]
-    },
-    {
-      "parameters": {
-        "fromEmail": "=noreply@podryad.pro",
-        "toEmail": "={{ $('RAG: Follow-up 1').first().json.email }}",
-        "subject": "={{ $('RAG: Follow-up 1').first().json.emailSubject }}",
-        "emailType": "html",
-        "html": "={{ $('RAG: Follow-up 1').first().json.emailHtml }}",
-        "options": {}
-      },
-      "id": "rag-email-f1-022",
-      "name": "Send F1 Email",
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
-      "position": [4080, 500],
-      "credentials": {
-        "smtp": { "id": "configure-smtp-in-n8n", "name": "Podryad PRO SMTP" }
-      }
-    },
-    {
-      "parameters": {
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_messages",
-        "method": "POST",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ entity_type: 'lead', entity_id: $('RAG: Generate Welcome').first().json.leadFunnelId || 0, direction: 'outbound', channel: 'email', message_text: $('RAG: Follow-up 1').first().json.msg, is_automated: true, status: 'sent' }) }}",
-        "options": { "timeout": 10000 }
-      },
-      "id": "rag-log-email-f1-023",
-      "name": "Log F1 Email",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [4320, 500]
-    },
-    {
-      "parameters": { "amount": 24, "unit": "hours" },
       "id": "rag-wait-24h-024",
       "name": "Wait 24 Hours",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [4080, 300],
+      "position": [
+        4080,
+        300
+      ],
       "webhookId": "rag-wait-24h"
     },
     {
@@ -412,23 +471,41 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-check-order2-025",
       "name": "Check Order (2)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [4320, 300]
+      "position": [
+        4320,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ Array.isArray($json) ? $json.length : 1 }}", "rightValue": 0, "operator": { "type": "number", "operation": "equals" } }
+            {
+              "leftValue": "={{ Array.isArray($json) ? $json.length : 1 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -436,7 +513,10 @@
       "name": "Not Converted? (2)",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [4560, 300]
+      "position": [
+        4560,
+        300
+      ]
     },
     {
       "parameters": {
@@ -444,27 +524,41 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-fetch-hist3-027",
       "name": "RAG: Fetch History (3)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [4800, 300]
+      "position": [
+        4800,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// ── RAG Follow-up 2 Message Generator ──\nconst lead = $('Parse Lead Data').first().json;\nconst historyRaw = $('RAG: Fetch History (3)').first().json;\nconst history = Array.isArray(historyRaw) ? historyRaw : [];\n\nconst name = lead.name || '';\nconst firstName = name ? name.split(' ')[0] : '';\nconst workLabel = lead.workLabel;\nconst cityLabel = lead.cityLabel;\nconst email = lead.email;\n\n// ── RAG: Analyze conversation ──\nlet lastUserMsg = '';\nlet userMsgCount = 0;\nlet ourMsgCount = 0;\nfor (const m of history) {\n  if (m.direction === 'inbound') { lastUserMsg = m.message_text; userMsgCount++; }\n  else ourMsgCount++;\n}\n\n// ── Generate contextual follow-up 2 ──\nlet msg;\nif (userMsgCount > 0 && lastUserMsg) {\n  msg = `${firstName ? firstName + ', з' : 'З'}дравствуйте! Хотел вернуться к нашему разговору 🤝\\n\\n`;\n  if (lastUserMsg.length > 10) {\n    msg += `Вы упоминали: «${lastUserMsg.slice(0, 80)}»\\n\\n`;\n  }\n  msg += `Мы можем помочь с ${workLabel} прямо сейчас — есть свободные бригады в ${cityLabel}. Оформление заказа займёт всего 5 минут!\\n\\nНапишите, если остались вопросы — отвечу лично 💬`;\n} else {\n  msg = `Добрый день! Хочу убедиться, что вы нашли то, что искали.\\n\\nЕсли ещё нужна помощь с ${workLabel} в ${cityLabel} — мы готовы помочь. Прямо сейчас есть свободные бригады!\\n\\nЗа 5 минут оформим заказ и найдём проверенного мастера. Напишите «Да» — и я всё организую 👷`;\n}\n\nconst emailSubject = 'Подряд PRO — есть свободные бригады в ' + cityLabel;\nconst emailHtml = `<div style=\"font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px\"><div style=\"background:#2d35a8;color:#fff;padding:16px 24px;border-radius:12px 12px 0 0\"><h2 style=\"margin:0\">Подряд PRO</h2></div><div style=\"padding:24px;background:#f8f9fa;border-radius:0 0 12px 12px\"><p style=\"white-space:pre-line;line-height:1.6\">${msg.replace(/</g,'&lt;')}</p><hr style=\"border:none;border-top:1px solid #e0e0e0;margin:20px 0\"><p style=\"color:#666;font-size:14px\">💬 <a href=\"https://max.ru/podryad_pro\" style=\"color:#2d35a8\">MAX мессенджер</a></p></div></div>`;\n\nconst summaryUpdate = `Follow-up 2: ${userMsgCount > 0 ? 'клиент ответил ' + userMsgCount + ' раз' : 'нет ответа'}. Всего отправлено ${ourMsgCount} сообщений.`;\n\nreturn [{ json: {\n  ...lead, msg, emailSubject, emailHtml,\n  summaryUpdate, userMsgCount, hasEmail: !!email\n} }];"
+        "jsCode": "// ── RAG Follow-up 2 Message Generator ──\nconst lead = $('Parse Lead Data').first().json;\nconst historyRaw = $('RAG: Fetch History (3)').first().json;\nconst history = Array.isArray(historyRaw) ? historyRaw : [];\n\nconst name = lead.name || '';\nconst firstName = name ? name.split(' ')[0] : '';\nconst workLabel = lead.workLabel;\nconst cityLabel = lead.cityLabel;\n\n// ── RAG: Analyze conversation ──\nlet lastUserMsg = '';\nlet userMsgCount = 0;\nlet ourMsgCount = 0;\nfor (const m of history) {\n  if (m.direction === 'inbound') { lastUserMsg = m.message_text; userMsgCount++; }\n  else ourMsgCount++;\n}\n\n// ── Generate contextual follow-up 2 ──\nlet msg;\nif (userMsgCount > 0 && lastUserMsg) {\n  msg = `${firstName ? firstName + ', з' : 'З'}дравствуйте! Хотел вернуться к нашему разговору 🤝\\n\\n`;\n  if (lastUserMsg.length > 10) {\n    msg += `Вы упоминали: «${lastUserMsg.slice(0, 80)}»\\n\\n`;\n  }\n  msg += `Мы можем помочь с ${workLabel} прямо сейчас — есть свободные бригады в ${cityLabel}. Оформление заказа займёт всего 5 минут!\\n\\nНапишите, если остались вопросы — отвечу лично 💬`;\n} else {\n  msg = `Добрый день! Хочу убедиться, что вы нашли то, что искали.\\n\\nЕсли ещё нужна помощь с ${workLabel} в ${cityLabel} — мы готовы помочь. Прямо сейчас есть свободные бригады!\\n\\nЗа 5 минут оформим заказ и найдём проверенного мастера. Напишите «Да» — и я всё организую 👷`;\n}\n\n\nconst summaryUpdate = `Follow-up 2: ${userMsgCount > 0 ? 'клиент ответил ' + userMsgCount + ' раз' : 'нет ответа'}. Всего отправлено ${ourMsgCount} сообщений.`;\n\nreturn [{ json: {\n  ...lead, msg,\n  summaryUpdate, userMsgCount\n} }];"
       },
       "id": "rag-followup2-028",
       "name": "RAG: Follow-up 2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [5040, 300]
+      "position": [
+        5040,
+        300
+      ]
     },
     {
       "parameters": {
@@ -473,13 +567,18 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Follow-up #2 [RAG]\\n📞 ' + $json.phone + '\\n📊 Ответов клиента: ' + $json.userMsgCount + '\\n\\n' + $json.msg + (($json.hasEmail) ? '\\n\\n📧 Email отправлен на: ' + $json.email : '') }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-admin-f2-029",
       "name": "Admin TG: Follow-up 2",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [5280, 300]
+      "position": [
+        5280,
+        300
+      ]
     },
     {
       "parameters": {
@@ -488,84 +587,49 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ entity_type: 'lead', entity_id: $('RAG: Generate Welcome').first().json.leadFunnelId || 0, direction: 'outbound', channel: $('Parse Lead Data').first().json.messenger || 'max', message_text: $('RAG: Follow-up 2').first().json.msg, is_automated: true, status: 'sent' }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-log-f2-030",
       "name": "Log Follow-up 2",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [5520, 300]
+      "position": [
+        5520,
+        300
+      ]
     },
     {
       "parameters": {
-        "conditions": {
-          "conditions": [
-            { "leftValue": "={{ $('RAG: Follow-up 2').first().json.hasEmail }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
-          ]
-        }
+        "amount": 3,
+        "unit": "days"
       },
-      "id": "rag-has-email-f2-031",
-      "name": "Has Email: F2?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [5520, 560]
-    },
-    {
-      "parameters": {
-        "fromEmail": "=noreply@podryad.pro",
-        "toEmail": "={{ $('RAG: Follow-up 2').first().json.email }}",
-        "subject": "={{ $('RAG: Follow-up 2').first().json.emailSubject }}",
-        "emailType": "html",
-        "html": "={{ $('RAG: Follow-up 2').first().json.emailHtml }}",
-        "options": {}
-      },
-      "id": "rag-email-f2-032",
-      "name": "Send F2 Email",
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
-      "position": [5760, 500],
-      "credentials": {
-        "smtp": { "id": "configure-smtp-in-n8n", "name": "Podryad PRO SMTP" }
-      }
-    },
-    {
-      "parameters": {
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_messages",
-        "method": "POST",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ entity_type: 'lead', entity_id: $('RAG: Generate Welcome').first().json.leadFunnelId || 0, direction: 'outbound', channel: 'email', message_text: $('RAG: Follow-up 2').first().json.msg, is_automated: true, status: 'sent' }) }}",
-        "options": { "timeout": 10000 }
-      },
-      "id": "rag-log-email-f2-033",
-      "name": "Log F2 Email",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [6000, 500]
-    },
-    {
-      "parameters": { "amount": 3, "unit": "days" },
       "id": "rag-wait-3d-034",
       "name": "Wait 3 Days",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [5760, 300],
+      "position": [
+        5760,
+        300
+      ],
       "webhookId": "rag-wait-3d"
     },
     {
@@ -574,23 +638,41 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-check-order3-035",
       "name": "Check Order (3)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [6000, 300]
+      "position": [
+        6000,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ Array.isArray($json) ? $json.length : 1 }}", "rightValue": 0, "operator": { "type": "number", "operation": "equals" } }
+            {
+              "leftValue": "={{ Array.isArray($json) ? $json.length : 1 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -598,7 +680,10 @@
       "name": "Not Converted? (3)",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [6240, 300]
+      "position": [
+        6240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -606,27 +691,41 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-fetch-hist4-037",
       "name": "RAG: Fetch History (4)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [6480, 300]
+      "position": [
+        6480,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// ── RAG Final Message Generator ──\nconst lead = $('Parse Lead Data').first().json;\nconst historyRaw = $('RAG: Fetch History (4)').first().json;\nconst history = Array.isArray(historyRaw) ? historyRaw : [];\n\nconst name = lead.name || '';\nconst firstName = name ? name.split(' ')[0] : '';\nconst workLabel = lead.workLabel;\nconst cityLabel = lead.cityLabel;\nconst email = lead.email;\nconst city = lead.city;\n\n// ── RAG: Full conversation analysis ──\nlet totalOutbound = 0;\nlet totalInbound = 0;\nlet lastUserMsg = '';\nconst channels = new Set();\nfor (const m of history) {\n  channels.add(m.channel);\n  if (m.direction === 'inbound') { totalInbound++; lastUserMsg = m.message_text; }\n  else totalOutbound++;\n}\n\nconst cityName = city === 'novosibirsk' ? 'Новосибирску' : 'Омску';\n\n// ── Generate contextual final message ──\nlet msg;\nif (totalInbound > 0) {\n  msg = `${firstName ? firstName + ', д' : 'Д'}обрый день! Мы общались по поводу ${workLabel} — хотел узнать, актуален ли ещё вопрос?\\n\\nЕсли да — готов помочь оформить заказ прямо сейчас 💪\\nЕсли уже решили — рад, что помогли! Сохраните мой контакт на будущее 🙂\\n\\nРаботаем по всему ${cityName}!`;\n} else {\n  msg = `Здравствуйте! Последний раз пишу по вашей заявке на ${workLabel} 🙂\\n\\nЕсли вопрос ещё актуален — напишите, и мы оформим заказ за 5 минут.\\nЕсли уже решили — всё в порядке! Сохраните контакт на будущее.\\n\\nРаботаем по всему ${cityName}. Всегда на связи! 🤝`;\n}\n\nconst emailSubject = 'Подряд PRO — остался ли вопрос?';\nconst emailHtml = `<div style=\"font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px\"><div style=\"background:#2d35a8;color:#fff;padding:16px 24px;border-radius:12px 12px 0 0\"><h2 style=\"margin:0\">Подряд PRO</h2></div><div style=\"padding:24px;background:#f8f9fa;border-radius:0 0 12px 12px\"><p style=\"white-space:pre-line;line-height:1.6\">${msg.replace(/</g,'&lt;')}</p><hr style=\"border:none;border-top:1px solid #e0e0e0;margin:20px 0\"><p style=\"color:#666;font-size:14px\">💬 <a href=\"https://max.ru/podryad_pro\" style=\"color:#2d35a8\">MAX мессенджер</a></p></div></div>`;\n\nconst summaryUpdate = `Final: ${totalInbound > 0 ? 'клиент отвечал ' + totalInbound + ' раз' : 'нет ответа за весь цикл'}. Всего ${totalOutbound} исх. сообщений через ${[...channels].join(', ')}. Лид → cold.`;\n\nreturn [{ json: {\n  ...lead, msg, emailSubject, emailHtml,\n  summaryUpdate, totalInbound, totalOutbound, hasEmail: !!email\n} }];"
+        "jsCode": "// ── RAG Final Message Generator ──\nconst lead = $('Parse Lead Data').first().json;\nconst historyRaw = $('RAG: Fetch History (4)').first().json;\nconst history = Array.isArray(historyRaw) ? historyRaw : [];\n\nconst name = lead.name || '';\nconst firstName = name ? name.split(' ')[0] : '';\nconst workLabel = lead.workLabel;\nconst cityLabel = lead.cityLabel;\nconst city = lead.city;\n\n// ── RAG: Full conversation analysis ──\nlet totalOutbound = 0;\nlet totalInbound = 0;\nlet lastUserMsg = '';\nconst channels = new Set();\nfor (const m of history) {\n  channels.add(m.channel);\n  if (m.direction === 'inbound') { totalInbound++; lastUserMsg = m.message_text; }\n  else totalOutbound++;\n}\n\nconst cityName = city === 'novosibirsk' ? 'Новосибирску' : 'Омску';\n\n// ── Generate contextual final message ──\nlet msg;\nif (totalInbound > 0) {\n  msg = `${firstName ? firstName + ', д' : 'Д'}обрый день! Мы общались по поводу ${workLabel} — хотел узнать, актуален ли ещё вопрос?\\n\\nЕсли да — готов помочь оформить заказ прямо сейчас 💪\\nЕсли уже решили — рад, что помогли! Сохраните мой контакт на будущее 🙂\\n\\nРаботаем по всему ${cityName}!`;\n} else {\n  msg = `Здравствуйте! Последний раз пишу по вашей заявке на ${workLabel} 🙂\\n\\nЕсли вопрос ещё актуален — напишите, и мы оформим заказ за 5 минут.\\nЕсли уже решили — всё в порядке! Сохраните контакт на будущее.\\n\\nРаботаем по всему ${cityName}. Всегда на связи! 🤝`;\n}\n\n\nconst summaryUpdate = `Final: ${totalInbound > 0 ? 'клиент отвечал ' + totalInbound + ' раз' : 'нет ответа за весь цикл'}. Всего ${totalOutbound} исх. сообщений через ${[...channels].join(', ')}. Лид → cold.`;\n\nreturn [{ json: {\n  ...lead, msg,\n  summaryUpdate, totalInbound, totalOutbound\n} }];"
       },
       "id": "rag-final-038",
       "name": "RAG: Final",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [6720, 300]
+      "position": [
+        6720,
+        300
+      ]
     },
     {
       "parameters": {
@@ -635,13 +734,18 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🤖 CRM Final [RAG]\\n📞 ' + $json.phone + '\\n📊 Вход: ' + $json.totalInbound + ' / Исх: ' + $json.totalOutbound + '\\n\\n' + $json.msg + '\\n\\n⚠️ Лид помечен как cold' }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-admin-final-039",
       "name": "Admin TG: Final",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [6960, 300]
+      "position": [
+        6960,
+        300
+      ]
     },
     {
       "parameters": {
@@ -650,21 +754,35 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ entity_type: 'lead', entity_id: $('RAG: Generate Welcome').first().json.leadFunnelId || 0, direction: 'outbound', channel: $('Parse Lead Data').first().json.messenger || 'max', message_text: $('RAG: Final').first().json.msg, is_automated: true, status: 'sent' }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-log-final-040",
       "name": "Log Final",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [7200, 300]
+      "position": [
+        7200,
+        300
+      ]
     },
     {
       "parameters": {
@@ -673,77 +791,39 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "Prefer", "value": "return=minimal" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'cold', contact_attempts: 4, last_contacted_at: new Date().toISOString(), next_followup_at: null, conversation_summary: $('RAG: Final').first().json.summaryUpdate, updated_at: new Date().toISOString() }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-stage-cold-041",
       "name": "Update Stage: cold + Summary",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [7440, 300]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "conditions": [
-            { "leftValue": "={{ $('RAG: Final').first().json.hasEmail }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
-          ]
-        }
-      },
-      "id": "rag-has-email-final-042",
-      "name": "Has Email: Final?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [7440, 560]
-    },
-    {
-      "parameters": {
-        "fromEmail": "=noreply@podryad.pro",
-        "toEmail": "={{ $('RAG: Final').first().json.email }}",
-        "subject": "={{ $('RAG: Final').first().json.emailSubject }}",
-        "emailType": "html",
-        "html": "={{ $('RAG: Final').first().json.emailHtml }}",
-        "options": {}
-      },
-      "id": "rag-email-final-043",
-      "name": "Send Final Email",
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
-      "position": [7680, 500],
-      "credentials": {
-        "smtp": { "id": "configure-smtp-in-n8n", "name": "Podryad PRO SMTP" }
-      }
-    },
-    {
-      "parameters": {
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/crm_messages",
-        "method": "POST",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ entity_type: 'lead', entity_id: $('RAG: Generate Welcome').first().json.leadFunnelId || 0, direction: 'outbound', channel: 'email', message_text: $('RAG: Final').first().json.msg, is_automated: true, status: 'sent' }) }}",
-        "options": { "timeout": 10000 }
-      },
-      "id": "rag-log-email-final-044",
-      "name": "Log Final Email",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [7920, 500]
+      "position": [
+        7440,
+        300
+      ]
     },
     {
       "parameters": {
@@ -752,22 +832,39 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "Prefer", "value": "return=minimal" }
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'converted', converted_at: new Date().toISOString(), updated_at: new Date().toISOString() }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-stage-converted-045",
       "name": "Update Stage: converted",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2400, 100]
+      "position": [
+        2400,
+        100
+      ]
     },
     {
       "parameters": {},
@@ -775,7 +872,10 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 700]
+      "position": [
+        0,
+        700
+      ]
     },
     {
       "parameters": {
@@ -784,95 +884,399 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🚨 ОШИБКА Customer Nurture RAG Agent\\n\\nNode: ' + $json.execution.error.node.name + '\\n' + $json.execution.error.message }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "rag-error-notify-047",
       "name": "Notify Error",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [240, 700]
+      "position": [
+        240,
+        700
+      ]
     }
   ],
   "connections": {
-    "Webhook: New Lead": { "main": [[{ "node": "Parse Lead Data", "type": "main", "index": 0 }]] },
-    "Parse Lead Data": { "main": [[{ "node": "Upsert CRM Funnel", "type": "main", "index": 0 }]] },
-    "Upsert CRM Funnel": { "main": [[{ "node": "RAG: Fetch History", "type": "main", "index": 0 }]] },
-    "RAG: Fetch History": { "main": [[{ "node": "RAG: Generate Welcome", "type": "main", "index": 0 }]] },
-    "RAG: Generate Welcome": { "main": [[{ "node": "Admin TG: Welcome", "type": "main", "index": 0 }]] },
-    "Admin TG: Welcome": { "main": [[{ "node": "Log Welcome", "type": "main", "index": 0 }]] },
-    "Log Welcome": { "main": [[{ "node": "Update Stage: contacted + Summary", "type": "main", "index": 0 }]] },
-    "Update Stage: contacted + Summary": { "main": [
-      [
-        { "node": "Wait 2 Hours", "type": "main", "index": 0 },
-        { "node": "Has Email: Welcome?", "type": "main", "index": 0 }
+    "Webhook: New Lead": {
+      "main": [
+        [
+          {
+            "node": "Parse Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
-    ] },
-    "Has Email: Welcome?": { "main": [
-      [{ "node": "Send Welcome Email", "type": "main", "index": 0 }],
-      []
-    ] },
-    "Send Welcome Email": { "main": [[{ "node": "Log Welcome Email", "type": "main", "index": 0 }]] },
-    "Wait 2 Hours": { "main": [[{ "node": "Check Order (1)", "type": "main", "index": 0 }]] },
-    "Check Order (1)": { "main": [[{ "node": "Not Converted? (1)", "type": "main", "index": 0 }]] },
-    "Not Converted? (1)": { "main": [
-      [{ "node": "RAG: Fetch History (2)", "type": "main", "index": 0 }],
-      [{ "node": "Update Stage: converted", "type": "main", "index": 0 }]
-    ] },
-    "RAG: Fetch History (2)": { "main": [[{ "node": "Get Customer Token", "type": "main", "index": 0 }]] },
-    "Get Customer Token": { "main": [[{ "node": "RAG: Follow-up 1", "type": "main", "index": 0 }]] },
-    "RAG: Follow-up 1": { "main": [[{ "node": "Admin TG: Follow-up 1", "type": "main", "index": 0 }]] },
-    "Admin TG: Follow-up 1": { "main": [[{ "node": "Log Follow-up 1", "type": "main", "index": 0 }]] },
-    "Log Follow-up 1": { "main": [[{ "node": "Update Stage: link_sent + Summary", "type": "main", "index": 0 }]] },
-    "Update Stage: link_sent + Summary": { "main": [
-      [
-        { "node": "Wait 24 Hours", "type": "main", "index": 0 },
-        { "node": "Has Email: F1?", "type": "main", "index": 0 }
+    },
+    "Parse Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Upsert CRM Funnel",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
-    ] },
-    "Has Email: F1?": { "main": [
-      [{ "node": "Send F1 Email", "type": "main", "index": 0 }],
-      []
-    ] },
-    "Send F1 Email": { "main": [[{ "node": "Log F1 Email", "type": "main", "index": 0 }]] },
-    "Wait 24 Hours": { "main": [[{ "node": "Check Order (2)", "type": "main", "index": 0 }]] },
-    "Check Order (2)": { "main": [[{ "node": "Not Converted? (2)", "type": "main", "index": 0 }]] },
-    "Not Converted? (2)": { "main": [
-      [{ "node": "RAG: Fetch History (3)", "type": "main", "index": 0 }],
-      [{ "node": "Update Stage: converted", "type": "main", "index": 0 }]
-    ] },
-    "RAG: Fetch History (3)": { "main": [[{ "node": "RAG: Follow-up 2", "type": "main", "index": 0 }]] },
-    "RAG: Follow-up 2": { "main": [[{ "node": "Admin TG: Follow-up 2", "type": "main", "index": 0 }]] },
-    "Admin TG: Follow-up 2": { "main": [[{ "node": "Log Follow-up 2", "type": "main", "index": 0 }]] },
-    "Log Follow-up 2": { "main": [
-      [
-        { "node": "Wait 3 Days", "type": "main", "index": 0 },
-        { "node": "Has Email: F2?", "type": "main", "index": 0 }
+    },
+    "Upsert CRM Funnel": {
+      "main": [
+        [
+          {
+            "node": "RAG: Fetch History",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
-    ] },
-    "Has Email: F2?": { "main": [
-      [{ "node": "Send F2 Email", "type": "main", "index": 0 }],
-      []
-    ] },
-    "Send F2 Email": { "main": [[{ "node": "Log F2 Email", "type": "main", "index": 0 }]] },
-    "Wait 3 Days": { "main": [[{ "node": "Check Order (3)", "type": "main", "index": 0 }]] },
-    "Check Order (3)": { "main": [[{ "node": "Not Converted? (3)", "type": "main", "index": 0 }]] },
-    "Not Converted? (3)": { "main": [
-      [{ "node": "RAG: Fetch History (4)", "type": "main", "index": 0 }],
-      [{ "node": "Update Stage: converted", "type": "main", "index": 0 }]
-    ] },
-    "RAG: Fetch History (4)": { "main": [[{ "node": "RAG: Final", "type": "main", "index": 0 }]] },
-    "RAG: Final": { "main": [[{ "node": "Admin TG: Final", "type": "main", "index": 0 }]] },
-    "Admin TG: Final": { "main": [[{ "node": "Log Final", "type": "main", "index": 0 }]] },
-    "Log Final": { "main": [[{ "node": "Update Stage: cold + Summary", "type": "main", "index": 0 }]] },
-    "Update Stage: cold + Summary": { "main": [
-      [{ "node": "Has Email: Final?", "type": "main", "index": 0 }]
-    ] },
-    "Has Email: Final?": { "main": [
-      [{ "node": "Send Final Email", "type": "main", "index": 0 }],
-      []
-    ] },
-    "Send Final Email": { "main": [[{ "node": "Log Final Email", "type": "main", "index": 0 }]] },
-    "Error Trigger": { "main": [[{ "node": "Notify Error", "type": "main", "index": 0 }]] }
+    },
+    "RAG: Fetch History": {
+      "main": [
+        [
+          {
+            "node": "RAG: Generate Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Generate Welcome": {
+      "main": [
+        [
+          {
+            "node": "Admin TG: Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin TG: Welcome": {
+      "main": [
+        [
+          {
+            "node": "Log Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Welcome": {
+      "main": [
+        [
+          {
+            "node": "Update Stage: contacted + Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Stage: contacted + Summary": {
+      "main": [
+        [
+          {
+            "node": "Wait 2 Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2 Hours": {
+      "main": [
+        [
+          {
+            "node": "Check Order (1)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Order (1)": {
+      "main": [
+        [
+          {
+            "node": "Not Converted? (1)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Converted? (1)": {
+      "main": [
+        [
+          {
+            "node": "RAG: Fetch History (2)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Stage: converted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Fetch History (2)": {
+      "main": [
+        [
+          {
+            "node": "Get Customer Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Customer Token": {
+      "main": [
+        [
+          {
+            "node": "RAG: Follow-up 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Follow-up 1": {
+      "main": [
+        [
+          {
+            "node": "Admin TG: Follow-up 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin TG: Follow-up 1": {
+      "main": [
+        [
+          {
+            "node": "Log Follow-up 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Follow-up 1": {
+      "main": [
+        [
+          {
+            "node": "Update Stage: link_sent + Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Stage: link_sent + Summary": {
+      "main": [
+        [
+          {
+            "node": "Wait 24 Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 24 Hours": {
+      "main": [
+        [
+          {
+            "node": "Check Order (2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Order (2)": {
+      "main": [
+        [
+          {
+            "node": "Not Converted? (2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Converted? (2)": {
+      "main": [
+        [
+          {
+            "node": "RAG: Fetch History (3)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Stage: converted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Fetch History (3)": {
+      "main": [
+        [
+          {
+            "node": "RAG: Follow-up 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Follow-up 2": {
+      "main": [
+        [
+          {
+            "node": "Admin TG: Follow-up 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin TG: Follow-up 2": {
+      "main": [
+        [
+          {
+            "node": "Log Follow-up 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Follow-up 2": {
+      "main": [
+        [
+          {
+            "node": "Wait 3 Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 3 Days": {
+      "main": [
+        [
+          {
+            "node": "Check Order (3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Order (3)": {
+      "main": [
+        [
+          {
+            "node": "Not Converted? (3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Converted? (3)": {
+      "main": [
+        [
+          {
+            "node": "RAG: Fetch History (4)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Stage: converted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Fetch History (4)": {
+      "main": [
+        [
+          {
+            "node": "RAG: Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Final": {
+      "main": [
+        [
+          {
+            "node": "Admin TG: Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin TG: Final": {
+      "main": [
+        [
+          {
+            "node": "Log Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Final": {
+      "main": [
+        [
+          {
+            "node": "Update Stage: cold + Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Stage: cold + Summary": {
+      "main": [
+        []
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Notify Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "settings": {
     "executionOrder": "v1",
@@ -881,6 +1285,12 @@
     "errorWorkflow": ""
   },
   "staticData": null,
-  "tags": ["crm", "automation", "customers", "rag", "email"],
+  "tags": [
+    "crm",
+    "automation",
+    "customers",
+    "rag",
+    "email"
+  ],
   "pinData": {}
 }
