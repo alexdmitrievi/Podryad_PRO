@@ -31,9 +31,10 @@ interface PhoneInputProps {
   className?: string;
   required?: boolean;
   error?: string;
+  placeholder?: string;
 }
 
-export default function PhoneInput({ value, onChange, className, required, error }: PhoneInputProps) {
+export default function PhoneInput({ value, onChange, className, required, error, placeholder }: PhoneInputProps) {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const formatted = formatPhone(e.target.value);
@@ -62,7 +63,7 @@ export default function PhoneInput({ value, onChange, className, required, error
         value={value}
         onChange={handleChange}
         onFocus={handleFocus}
-        placeholder="+7 (___) ___-__-__"
+        placeholder={placeholder ?? "+7 (___) ___-__-__"}
         required={required}
         maxLength={18}
         className={`w-full border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-shadow ${borderClass} ${className ?? ''}`}

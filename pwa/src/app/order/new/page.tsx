@@ -195,12 +195,15 @@ export default function OrderNewPage() {
             <Image src="/logo.png" alt="Подряд PRO" width={36} height={36} className="rounded-lg" />
             <span className="text-lg font-extrabold text-brand-900 font-heading">Подряд PRO</span>
           </div>
-          <Link
-            href="/"
-            className="text-sm text-gray-500 hover:text-brand-500 transition-colors font-semibold cursor-pointer"
-          >
-            ← На главную
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="text-sm text-gray-500 hover:text-brand-500 transition-colors font-semibold cursor-pointer">
+              ← На главную
+            </Link>
+            <span className="text-gray-200">|</span>
+            <Link href="/login" className="text-sm text-[#2F5BFF] hover:underline font-semibold cursor-pointer">
+              Войти в кабинет
+            </Link>
+          </div>
         </div>
       </nav>
 

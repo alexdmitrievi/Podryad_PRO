@@ -140,12 +140,13 @@ interface ContactEntry {
   source: string;
 }
 
-type TabId = 'listings' | 'contractors' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'stats' | 'crm';
+type TabId = 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'stats' | 'crm';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "crm", label: "CRM Воронка", icon: TrendingUp },
   { id: "listings", label: "Позиции", icon: Package },
   { id: "contractors", label: "Исполнители", icon: UserPlus },
+  { id: "customers", label: "Заказчики", icon: Users },
   { id: "leads", label: "Заявки", icon: FileText },
   { id: "contacts", label: "Контакты", icon: Contact },
   { id: "responses", label: "Отклики", icon: MessageSquare },
@@ -1033,6 +1034,129 @@ function ListingsTab({ pin }: { pin: string }) {
   );
 }
 
+interface CustomerAccount {
+  id: string;
+  phone: string;
+  name: string;
+  customer_type: 'personal' | 'business';
+  org_name: string | null;
+  inn: string | null;
+  city: string | null;
+  preferred_contact: string | null;
+  admin_notes: string | null;
+  created_at: string;
+}
+
+const CUSTOMER_TYPE_LABELS: Record<string, string> = {
+  personal: 'Частное лицо',
+  business: 'Бизнес / ИП',
+};
+
+function CustomersTab({ pin }: { pin: string }) {
+  const [customers, setCustomers] = useState<CustomerAccount[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'personal' | 'business'>('all');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/customers', { headers: { 'x-admin-pin': pin } });
+      const data = await res.json();
+      if (res.ok) setCustomers(data.customers || []);
+    } catch { /* */ }
+    finally { setLoading(false); }
+  };
+
+  const saveNotes = async (id: string, notes: string) => {
+    await fetch('/api/admin/customers', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+      body: JSON.stringify({ id, admin_notes: notes }),
+    });
+  };
+
+  const filtered = customers.filter(c => {
+    if (typeFilter !== 'all' && c.customer_type !== typeFilter) return false;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(q) ||
+      c.phone.includes(q) ||
+      (c.org_name?.toLowerCase().includes(q)) ||
+      (c.inn?.includes(q))
+    );
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <button onClick={load} disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
+          <RefreshCw className={loading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} /> Загрузить
+        </button>
+        {customers.length > 0 && <span className="text-sm text-gray-500">Всего: {filtered.length} из {customers.length}</span>}
+      </div>
+
+      {customers.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск по имени, телефону, ИНН..."
+            className="flex-1 px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          <div className="flex gap-1.5">
+            {([['all', 'Все'], ['personal', 'Частные'], ['business', 'Бизнес']] as const).map(([key, label]) => (
+              <button key={key} onClick={() => setTypeFilter(key)}
+                className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${typeFilter === key ? 'bg-brand-500 text-white border-brand-500' : 'bg-white text-gray-600 border-gray-200 hover:border-brand-500'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {filtered.map(c => (
+          <div key={c.id} className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card border border-gray-100">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2F5BFF] to-[#2d35a8] flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                {c.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className="font-bold text-gray-900 dark:text-white">{c.name}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.customer_type === 'business' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                    {CUSTOMER_TYPE_LABELS[c.customer_type] || c.customer_type}
+                  </span>
+                </div>
+                {c.org_name && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    {c.org_name}{c.inn && <span className="text-gray-400"> · ИНН {c.inn}</span>}
+                  </div>
+                )}
+                <div className="text-sm text-gray-500 dark:text-gray-400 flex flex-wrap gap-3">
+                  <a href={`tel:+7${c.phone}`} className="flex items-center gap-1 hover:text-brand-500 transition-colors">
+                    <Phone className="w-3 h-3" />
+                    +7 {c.phone.replace(/^7/, '').replace(/(\d{3})(\d{3})(\d{2})(\d{2})/, '$1 $2-$3-$4')}
+                  </a>
+                  {c.city && <span>{c.city === 'omsk' ? 'Омск' : c.city === 'novosibirsk' ? 'Новосибирск' : c.city}</span>}
+                  <span>{fmtDate(c.created_at)}</span>
+                </div>
+                <div className="mt-3">
+                  <input defaultValue={c.admin_notes || ''} placeholder="Заметка..."
+                    onBlur={e => saveNotes(c.id, e.target.value)}
+                    className="w-full text-xs px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-brand-500/30" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+        {customers.length > 0 && filtered.length === 0 && (
+          <p className="text-sm text-gray-400 text-center py-8">Нет результатов</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function LeadsTab({ pin }: { pin: string }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
@@ -1833,7 +1957,7 @@ function getInitialTab(): TabId {
   if (typeof window === 'undefined') return 'listings';
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab');
-  const validTabs: TabId[] = ['listings', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'stats', 'crm'];
+  const validTabs: TabId[] = ['listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'stats', 'crm'];
   if (tab && validTabs.includes(tab as TabId)) return tab as TabId;
   return 'listings';
 }
@@ -1895,6 +2019,7 @@ export default function AdminPage() {
           {activeTab === 'crm' && <CrmFunnelTab pin={pin} />}
           {activeTab === 'listings' && <ListingsTab pin={pin} />}
           {activeTab === 'contractors' && <ContractorsTab pin={pin} />}
+          {activeTab === 'customers' && <CustomersTab pin={pin} />}
           {activeTab === 'leads' && <LeadsTab pin={pin} />}
           {activeTab === 'contacts' && <ContactsTab pin={pin} />}
           {activeTab === 'responses' && <ResponsesTab pin={pin} />}
