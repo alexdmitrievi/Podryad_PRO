@@ -252,7 +252,7 @@ export default function CustomerDashboard() {
             <div>
               <Link
                 href="/"
-                className="inline-flex items-center gap-1 text-xs text-white/60 hover:text-white/90 transition-colors mb-1"
+                className="inline-flex items-center gap-1 text-sm text-white/80 hover:text-white transition-colors mb-1"
               >
                 <span aria-hidden="true">&larr;</span> Главная
               </Link>
