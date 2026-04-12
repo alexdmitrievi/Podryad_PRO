@@ -116,6 +116,8 @@ export default function LiveOrdersMap() {
       dragging: true,
       doubleClickZoom: false,
       attributionControl: false,
+      tap: true,
+      touchZoom: true,
     });
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -124,6 +126,10 @@ export default function LiveOrdersMap() {
     }).addTo(map);
 
     mapInstance.current = map;
+
+    // Leaflet needs explicit size recalc — critical for mobile browsers
+    requestAnimationFrame(() => map.invalidateSize());
+
     return () => {
       map.remove();
       mapInstance.current = null;

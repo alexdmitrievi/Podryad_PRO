@@ -63,7 +63,7 @@ export default function OrdersMap({ orders, city }: Props) {
     <MapContainer
       center={center}
       zoom={12}
-      style={{ height: 'calc(100vh - 64px)', width: '100%' }}
+      style={{ height: 'calc(100dvh - 64px)', width: '100%' }}
       attributionControl={false}
     >
       <TileLayer

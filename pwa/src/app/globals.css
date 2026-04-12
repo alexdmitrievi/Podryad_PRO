@@ -95,6 +95,10 @@
 
 /* ─── Animations ─── */
 
+@keyframes live-map-ping {
+  75%, 100% { transform: scale(2.5); opacity: 0; }
+}
+
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
