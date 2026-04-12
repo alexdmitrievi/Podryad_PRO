@@ -127,7 +127,11 @@ export default function LiveOrdersMap() {
     mapInstance.current = map;
 
     // Leaflet needs explicit size recalc — critical for mobile browsers
-    requestAnimationFrame(() => map.invalidateSize());
+    requestAnimationFrame(() => {
+      map.invalidateSize();
+      // Second pass after layout settles (mobile Safari needs extra time)
+      setTimeout(() => map.invalidateSize(), 300);
+    });
 
     return () => {
       map.remove();
@@ -190,7 +194,11 @@ export default function LiveOrdersMap() {
       </div>
 
       {/* Map container */}
-      <div ref={mapRef} className="w-full h-[380px] sm:h-[440px]" />
+      <div
+        ref={mapRef}
+        className="w-full h-[380px] sm:h-[440px]"
+        style={{ minHeight: 380 }}
+      />
 
       {/* Selected order card */}
       {selected && (
