@@ -185,7 +185,7 @@ export default function LiveOrdersMap() {
       </div>
 
       {/* Legend */}
-      <div className="absolute top-3 right-3 z-[500] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg px-3 py-2">
+      <div className="absolute bottom-3 left-3 sm:bottom-auto sm:top-3 sm:left-auto sm:right-3 z-[500] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg px-3 py-2">
         <div className="flex items-center gap-3 text-[10px] font-medium text-gray-500">
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#2F5BFF]"></span>Рабочие</span>
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]"></span>Техника</span>
