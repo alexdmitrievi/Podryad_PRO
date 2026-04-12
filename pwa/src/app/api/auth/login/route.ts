@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { verifyPassword, createSessionToken, setSessionCookie } from '@/lib/customerAuth';
+import { checkRateLimit, resetRateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const rl = checkRateLimit(`login:${clientIp}`, 5, 15 * 60 * 1000);
+    if (rl.limited) {
+      return NextResponse.json(
+        { error: 'Слишком много попыток. Повторите через 15 минут.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } },
+      );
+    }
+
     const body = await req.json();
     const { phone, password } = body;
 
@@ -28,6 +38,9 @@ export async function POST(req: NextRequest) {
     if (!customer || !valid) {
       return NextResponse.json({ error: 'Неверный телефон или пароль' }, { status: 401 });
     }
+
+    // Successful login — reset rate limit
+    resetRateLimit(`login:${clientIp}`);
 
     const token = await createSessionToken({ sub: customer.id, phone: customer.phone, name: customer.name });
     await setSessionCookie(token);

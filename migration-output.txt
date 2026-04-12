@@ -1,0 +1,47 @@
+Project ref: rnqalafmuyrlfioqdore
+Migrations dir: c:\Users\HP\Desktop\╨Я╨╛╨┤╤А╤П╨┤_PRO\supabase\migrations
+Found 17 SQL files
+
+[01] 001_initial_schema.sql ... тЬЧ FAILED
+     {"message":"Failed to run sql query: ERROR:  42601: syntax error at or near \"\\\"\nLINE 11: \\i ../schema.sql\n         ^\n"}
+
+[02] 002_add_worker_fields.sql ... тЬЧ FAILED
+     {"message":"Failed to run sql query: ERROR:  42P01: relation \"workers\" does not exist\n"}
+
+[03] 003_add_user_email_fields.sql ... тЬЧ FAILED
+     {"message":"Failed to run sql query: ERROR:  42P01: relation \"users\" does not exist\n"}
+
+[04] 004_material_requests.sql ... тЬУ OK
+[05] 005_marketplace.sql ... тЬЧ FAILED
+     {"message":"Failed to run sql query: ERROR:  42P01: relation \"users\" does not exist\n"}
+
+[06] 006_escrow.sql ... тЬЧ FAILED
+     {"message":"Failed to run sql query: ERROR:  42P01: relation \"orders\" does not exist\n"}
+
+[07] 007_catalog.sql ... тЬЧ FAILED
+     {"message":"Failed to run sql query: ERROR:  42P01: relation \"listings\" does not exist\n"}
+
+[08] 008_orders_markup.sql ... тЬЧ FAILED
+     {"message":"Failed to run sql query: ERROR:  42P01: relation \"orders\" does not exist\n"}
+
+[09] 009_leads.sql ... тЬУ OK
+[10] 010_payout_method.sql ... тЬЧ FAILED
+     {"message":"Failed to run sql query: ERROR:  42P01: relation \"orders\" does not exist\n"}
+
+[11] 011_contractors_tokens.sql ... тЬЧ FAILED
+     {"message":"Failed to run sql query: ERROR:  42P01: relation \"orders\" does not exist\n"}
+
+[12] 012_leads_address_contacts.sql ... тЬУ OK
+[13] 013_crm_agent.sql ... тЬУ OK
+[14] 013_executor_responses.sql ... тЬУ OK
+[15] 014_crm_rag.sql ... тЬУ OK
+[16] 015_contractors_brigade.sql ... тЬЧ FAILED
+     {"message":"Failed to run sql query: ERROR:  42P01: relation \"contractors\" does not exist\n"}
+
+[17] 016_customers.sql ... тЬЧ FAILED
+     {"message":"Failed to run sql query: ERROR:  42P01: relation \"orders\" does not exist\n"}
+
+
+тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА
+Done: 6 OK, 11 failed
+Failed migrations may already be applied (IF NOT EXISTS guards). Check errors above.

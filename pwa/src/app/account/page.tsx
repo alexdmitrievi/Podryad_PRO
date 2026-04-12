@@ -128,7 +128,8 @@ export default function AccountPage() {
     e.preventDefault();
     if (!editName.trim()) { showToast('Введите имя', 'error'); return; }
     if (editType === 'business' && !editOrgName.trim()) { showToast('Введите название организации', 'error'); return; }
-    if (newPwd && newPwd.length < 6) { showToast('Пароль минимум 6 символов', 'error'); return; }
+    if (newPwd && newPwd.length < 8) { showToast('Пароль минимум 8 символов', 'error'); return; }
+    if (newPwd && (!/[A-ZА-Я]/.test(newPwd) || !/[0-9]/.test(newPwd))) { showToast('Пароль должен содержать заглавную букву и цифру', 'error'); return; }
     if (newPwd && newPwd !== newPwdConfirm) { showToast('Пароли не совпадают', 'error'); return; }
 
     setSaving(true);
@@ -357,16 +358,19 @@ export default function AccountPage() {
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Текущий пароль</label>
                 <input type="password" value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} placeholder="Текущий пароль"
+                  autoComplete="current-password"
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2F5BFF]/20 focus:border-[#2F5BFF]" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Новый пароль</label>
-                <input type="password" value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="Минимум 6 символов"
+                <input type="password" value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="Минимум 8 символов, заглавная + цифра"
+                  autoComplete="new-password"
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2F5BFF]/20 focus:border-[#2F5BFF]" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Повторите пароль</label>
                 <input type="password" value={newPwdConfirm} onChange={e => setNewPwdConfirm(e.target.value)} placeholder="Повторите пароль"
+                  autoComplete="new-password"
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2F5BFF]/20 focus:border-[#2F5BFF]" />
               </div>
             </div>

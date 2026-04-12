@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Spinner from '@/components/ui/Spinner';
@@ -54,11 +54,36 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
   const [consent, setConsent] = useState(false);
 
   const stableOnClose = useCallback(onClose, [onClose]);
+  const modalRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') stableOnClose(); };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [stableOnClose]);
+
+  // Focus trap: keep Tab within modal
+  useEffect(() => {
+    const modal = modalRef.current;
+    if (!modal) return;
+    const focusable = modal.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+
+    const trap = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener('keydown', trap);
+    return () => document.removeEventListener('keydown', trap);
+  }, [submitted]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -87,13 +112,14 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true" aria-label={`Заказать ${item.title}`}>
       <div
-        className="bg-white rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-xl relative animate-fade-in max-h-[90vh] overflow-y-auto"
+        ref={modalRef}
+        className="bg-white dark:bg-dark-card rounded-2xl w-full max-w-sm sm:max-w-md p-6 sm:p-8 shadow-xl relative animate-fade-in max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
           aria-label="Закрыть"
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-gray-500"
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-dark-border hover:bg-gray-200 dark:hover:bg-dark-muted/30 transition-colors text-gray-500 dark:text-dark-muted"
         >
           ✕
         </button>
@@ -106,18 +132,18 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
             <div className="success-icon mx-auto mb-4">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-green-600 success-check"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Заявка отправлена!</h3>
-            <p className="text-gray-500 text-sm">Мы свяжемся с вами в течение 15 минут с предложением и ссылкой на оплату.</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Заявка отправлена!</h3>
+            <p className="text-gray-500 dark:text-dark-muted text-sm">Мы свяжемся с вами в течение 15 минут с предложением и ссылкой на оплату.</p>
           </div>
         ) : (
           <>
-            <h3 className="text-xl font-bold text-gray-900 mb-1">Заказать</h3>
-            <p className="text-gray-500 text-sm mb-6">{item.title} — от {item.price.toLocaleString('ru-RU')} ₽/{item.unit}</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Заказать</h3>
+            <p className="text-gray-500 dark:text-dark-muted text-sm mb-6">{item.title} — от {item.price.toLocaleString('ru-RU')} ₽/{item.unit}</p>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Contact method selector */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                   Куда отправить предложение и ссылку на оплату?
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -133,7 +159,7 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
                       className={`py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
                         method === m.key
                           ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-brand-500'
+                          : 'bg-white dark:bg-dark-card text-gray-700 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-brand-500'
                       }`}
                     >
                       {m.label}
@@ -152,7 +178,7 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
                     method === 'phone' ? '+7 (___) ___-__-__' : '@username'
                   }
                   required
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
+                  className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
                 />
               </div>
 
@@ -162,9 +188,9 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
                   type="checkbox"
                   checked={consent}
                   onChange={(e) => setConsent(e.target.checked)}
-                  className="mt-0.5 w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                  className="mt-0.5 w-5 h-5 rounded border-gray-300 dark:border-dark-border text-brand-500 focus:ring-brand-500 cursor-pointer"
                 />
-                <span className="text-xs text-gray-500 leading-relaxed">
+                <span className="text-xs text-gray-500 dark:text-dark-muted leading-relaxed">
                   Я даю согласие на обработку персональных данных в соответствии
                   с&nbsp;
                   <a href="/privacy" className="text-brand-500 underline" target="_blank">
@@ -265,9 +291,9 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
 
   if (!meta) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-dark-bg flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Категория не найдена</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Категория не найдена</h1>
           <Link href="/" className="text-brand-500 hover:underline">Вернуться на главную</Link>
         </div>
       </div>
@@ -275,14 +301,14 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
   }
 
   return (
-    <div className="min-h-screen bg-surface font-sans">
+    <div className="min-h-screen bg-surface dark:bg-dark-bg font-sans">
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
+      <nav className="sticky top-0 z-50 bg-white/95 dark:bg-dark-card/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-dark-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
               <Image src="/logo.png" alt="Подряд PRO" width={36} height={36} className="rounded-lg" />
-              <span className="text-lg font-extrabold text-brand-900 font-heading">Подряд PRO</span>
+              <span className="text-lg font-extrabold text-brand-900 dark:text-white font-heading">Подряд PRO</span>
             </Link>
           </div>
           <Link
@@ -314,7 +340,7 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 animate-pulse">
+                <div key={i} className="bg-white dark:bg-dark-card rounded-2xl p-6 border border-gray-100 dark:border-dark-border animate-pulse">
                   <div className="h-6 bg-gray-200 rounded w-3/4 mb-4" />
                   <div className="h-4 bg-gray-100 rounded w-full mb-2" />
                   <div className="h-4 bg-gray-100 rounded w-2/3 mb-6" />
@@ -327,7 +353,7 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="group bg-white rounded-2xl p-6 sm:p-8 shadow-card border border-gray-100 card-lift flex flex-col"
+                  className="group bg-white dark:bg-dark-card rounded-2xl p-6 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift flex flex-col"
                 >
                   <div className="relative w-full h-40 rounded-xl overflow-hidden mb-4 bg-gray-100">
                     {item.image ? (
@@ -338,11 +364,11 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
                       </div>
                     )}
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 font-heading">{item.title}</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 font-heading line-clamp-2">{item.title}</h3>
                   {item.description && (
-                    <p className="text-gray-500 text-sm mb-4 leading-relaxed flex-1">{item.description}</p>
+                    <p className="text-gray-500 text-sm mb-4 leading-relaxed flex-1 line-clamp-3">{item.description}</p>
                   )}
-                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-dark-border">
                     <span className="text-lg font-extrabold text-brand-500">
                       от {item.price.toLocaleString('ru-RU')} ₽/{item.unit}
                     </span>
@@ -359,8 +385,14 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
           )}
 
           {!loading && items.length === 0 && (
-            <div className="text-center py-16">
+            <div className="text-center py-16 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto">
+                <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-gray-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
               <p className="text-gray-400 text-lg">Товары пока не добавлены</p>
+              <a href="/catalog" className="inline-block text-sm text-brand-500 hover:text-brand-600 font-semibold transition-colors">← Вернуться в каталог</a>
             </div>
           )}
         </div>

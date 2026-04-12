@@ -41,8 +41,12 @@ export async function PUT(req: NextRequest) {
       if (!current_password) {
         return NextResponse.json({ error: 'Введите текущий пароль' }, { status: 400 });
       }
-      if (String(new_password).length < 6) {
-        return NextResponse.json({ error: 'Новый пароль минимум 6 символов' }, { status: 400 });
+      const pwd = String(new_password);
+      if (pwd.length < 8) {
+        return NextResponse.json({ error: 'Новый пароль минимум 8 символов' }, { status: 400 });
+      }
+      if (!/[A-ZА-Я]/.test(pwd) || !/[0-9]/.test(pwd)) {
+        return NextResponse.json({ error: 'Пароль должен содержать заглавную букву и цифру' }, { status: 400 });
       }
       const { data: cust } = await db
         .from('customers')

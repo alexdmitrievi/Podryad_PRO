@@ -63,6 +63,7 @@ export default function LoginPage() {
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Пароль</label>
               <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Ваш пароль"
+                autoComplete="current-password"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2F5BFF]/20 focus:border-[#2F5BFF]"
                 required />
             </div>

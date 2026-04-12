@@ -19,6 +19,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [loading, setLoading] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
 
   function handleInfoNext(e: React.FormEvent) {
     e.preventDefault();
@@ -30,7 +31,8 @@ export default function RegisterPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 6) { showToast('Пароль минимум 6 символов', 'error'); return; }
+    if (password.length < 8) { showToast('Пароль минимум 8 символов', 'error'); return; }
+    if (!/[A-ZА-Я]/.test(password) || !/[0-9]/.test(password)) { showToast('Пароль должен содержать заглавную букву и цифру', 'error'); return; }
     if (password !== passwordConfirm) { showToast('Пароли не совпадают', 'error'); return; }
 
     setLoading(true);
@@ -108,6 +110,7 @@ export default function RegisterPage() {
                   {customerType === 'business' ? 'Контактное лицо' : 'Ваше имя'} *
                 </label>
                 <input value={name} onChange={e => setName(e.target.value)} placeholder="Иван Иванов"
+                  autoComplete="name" maxLength={100}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2F5BFF]/20 focus:border-[#2F5BFF]"
                   required />
               </div>
@@ -116,7 +119,7 @@ export default function RegisterPage() {
                 <>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Организация / ИП *</label>
-                    <input value={orgName} onChange={e => setOrgName(e.target.value)} placeholder="ООО «Строймаш»"
+                    <input value={orgName} onChange={e => setOrgName(e.target.value)} placeholder="ООО «Строймаш»" maxLength={200}
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2F5BFF]/20 focus:border-[#2F5BFF]" />
                   </div>
                   <div>
@@ -129,7 +132,13 @@ export default function RegisterPage() {
 
               <div>
                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Телефон *</label>
-                <PhoneInput value={phone} onChange={setPhone} placeholder="+7 (999) 000-00-00" />
+                <PhoneInput
+                  value={phone}
+                  onChange={(v) => { setPhone(v); if (phoneError) setPhoneError(''); }}
+                  onBlur={() => { if (phone && !isValidPhone(phone)) setPhoneError('Введите корректный номер'); else setPhoneError(''); }}
+                  error={phoneError}
+                  placeholder="+7 (999) 000-00-00"
+                />
               </div>
 
               <div>
@@ -157,7 +166,8 @@ export default function RegisterPage() {
                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1">
                   <Lock className="w-3 h-3" /> Пароль *
                 </label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Минимум 6 символов"
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Минимум 8 символов, заглавная + цифра"
+                  autoComplete="new-password"
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2F5BFF]/20 focus:border-[#2F5BFF]"
                   autoFocus required />
               </div>
@@ -166,6 +176,7 @@ export default function RegisterPage() {
                   <Lock className="w-3 h-3" /> Повторите пароль *
                 </label>
                 <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} placeholder="Повторите пароль"
+                  autoComplete="new-password"
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2F5BFF]/20 focus:border-[#2F5BFF]"
                   required />
               </div>

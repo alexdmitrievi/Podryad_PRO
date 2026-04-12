@@ -3,9 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import ComboOfferBanner from '@/components/landing/ComboOfferBanner';
 import PhoneInput, { isValidPhone } from '@/components/ui/PhoneInput';
 import Spinner from '@/components/ui/Spinner';
+
+const LiveOrdersMap = dynamic(() => import('@/components/LiveOrdersMap'), { ssr: false });
 
 type WorkType = 'labor' | 'equipment' | 'materials';
 type City = 'omsk' | 'novosibirsk';
@@ -190,9 +193,9 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans">
-      {/* ── NAVBAR ───────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
+    <div className="min-h-screen bg-white dark:bg-dark-bg font-sans">
+      {/* ── NAVBAR ─────────────────────────────────────────────────────── */}
+      <nav className="sticky top-0 z-50 bg-white/95 dark:bg-dark-card/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-dark-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Image
@@ -274,24 +277,43 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── LIVE MAP — активные заказы (сразу после Hero) ────── */}
+      <section className="py-12 sm:py-16 px-4 bg-surface dark:bg-dark-bg">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-8">
+            <span className="inline-block text-brand-500 font-semibold text-sm tracking-wider uppercase mb-3">Карта заказов</span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#2B2B2B] dark:text-white font-heading mb-3">
+              Заказы прямо сейчас
+            </h2>
+            <p className="text-gray-500 dark:text-dark-muted max-w-xl mx-auto">
+              Активные заказы на карте в реальном времени. Нажмите на маркер, чтобы увидеть детали.
+            </p>
+          </div>
+          <LiveOrdersMap />
+          <p className="text-center text-gray-400 text-sm mt-4">
+            <Link href="/dashboard" className="text-brand-500 hover:underline">Открыть полную карту →</Link>
+          </p>
+        </div>
+      </section>
+
       {/* ── 2. УСЛУГИ — 3 карточки ──────────────────────────────── */}
-      <section className="py-16 sm:py-20 px-4 bg-surface">
+      <section className="py-16 sm:py-20 px-4 bg-white dark:bg-dark-bg">
         <div ref={revServices} className="max-w-6xl mx-auto reveal">
           <div className="text-center mb-12">
             <span className="inline-block text-brand-500 font-semibold text-sm tracking-wider uppercase mb-3">Услуги</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#2B2B2B] font-heading">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#2B2B2B] dark:text-white font-heading">
               Что мы предлагаем
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 stagger-grid">
             {/* Рабочая сила */}
-            <Link href="/catalog/labor" className="group bg-white rounded-xl p-6 sm:p-8 shadow-card border border-gray-100 card-lift cursor-pointer block">
+            <Link href="/catalog/labor" className="group bg-white dark:bg-dark-card rounded-xl p-6 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block">
               <div className="w-14 h-14 rounded-xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </div>
-              <h3 className="text-xl font-bold text-[#2B2B2B] mb-4 font-heading">Рабочая сила</h3>
-              <ul className="space-y-2 text-gray-600 text-sm">
+              <h3 className="text-xl font-bold text-[#2B2B2B] dark:text-white mb-4 font-heading">Рабочая сила</h3>
+              <ul className="space-y-2 text-gray-600 dark:text-dark-text text-sm">
                 <li className="flex justify-between">
                   <span>Грузчики</span>
                   <span className="font-semibold text-gray-900">от 350 &#8381;/ч</span>
@@ -316,12 +338,12 @@ export default function HomePage() {
             </Link>
 
             {/* Аренда техники */}
-            <Link href="/catalog/equipment" className="group bg-white rounded-xl p-6 sm:p-8 shadow-card border border-gray-100 card-lift cursor-pointer block">
+            <Link href="/catalog/equipment" className="group bg-white dark:bg-dark-card rounded-xl p-6 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block">
               <div className="w-14 h-14 rounded-xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </div>
-              <h3 className="text-xl font-bold text-[#2B2B2B] mb-4 font-heading">Аренда техники</h3>
-              <ul className="space-y-2 text-gray-600 text-sm">
+              <h3 className="text-xl font-bold text-[#2B2B2B] dark:text-white mb-4 font-heading">Аренда техники</h3>
+              <ul className="space-y-2 text-gray-600 dark:text-dark-text text-sm">
                 {(equipment.length > 0 ? equipment : FALLBACK_EQUIPMENT).slice(0, 5).map((l) => (
                   <li key={l.listing_id} className="flex justify-between">
                     <span className="truncate mr-2">{l.title}</span>
@@ -338,12 +360,12 @@ export default function HomePage() {
             </Link>
 
             {/* Стройматериалы */}
-            <Link href="/catalog/materials" className="group bg-white rounded-xl p-6 sm:p-8 shadow-card border border-gray-100 card-lift cursor-pointer block">
+            <Link href="/catalog/materials" className="group bg-white dark:bg-dark-card rounded-xl p-6 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block">
               <div className="w-14 h-14 rounded-xl bg-brand-500/10 flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-500 group-hover:shadow-glow">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
               </div>
-              <h3 className="text-xl font-bold text-[#2B2B2B] mb-4 font-heading">Стройматериалы</h3>
-              <ul className="space-y-2 text-gray-600 text-sm">
+              <h3 className="text-xl font-bold text-[#2B2B2B] dark:text-white mb-4 font-heading">Стройматериалы</h3>
+              <ul className="space-y-2 text-gray-600 dark:text-dark-text text-sm">
                 {(materials.length > 0 ? materials : FALLBACK_MATERIALS).slice(0, 5).map((l) => (
                   <li key={l.listing_id} className="flex justify-between">
                     <span className="truncate mr-2">{l.title}</span>
@@ -363,12 +385,12 @@ export default function HomePage() {
       </section>
 
       {/* ── 2.5. СОЗДАТЬ ЗАКАЗ — CTA ────────────────────────────── */}
-      <section className="py-16 sm:py-20 px-4 bg-white">
+      <section className="py-16 sm:py-20 px-4 bg-white dark:bg-dark-bg">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#2B2B2B] font-heading mb-4">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#2B2B2B] dark:text-white font-heading mb-4">
             Разместите заказ прямо сейчас
           </h2>
-          <p className="text-gray-500 mb-8 max-w-xl mx-auto">
+          <p className="text-gray-500 dark:text-dark-muted mb-8 max-w-xl mx-auto">
             Укажите адрес на карте, параметры работы — исполнители увидят ваш заказ и откликнутся
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -382,7 +404,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/order/new?type=equipment"
-              className="group inline-flex items-center justify-center gap-2 bg-white text-brand-500 border-2 border-brand-500 font-bold px-8 py-4 rounded-xl transition-all duration-300 hover:bg-brand-500/5 cursor-pointer min-w-[220px]"
+              className="group inline-flex items-center justify-center gap-2 bg-white dark:bg-dark-card text-brand-500 border-2 border-brand-500 font-bold px-8 py-4 rounded-xl transition-all duration-300 hover:bg-brand-500/5 cursor-pointer min-w-[220px]"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
               Арендовать технику
@@ -458,14 +480,14 @@ export default function HomePage() {
       </section>
 
       {/* ── 5. ФОРМА ЗАЯВКИ ─────────────────────────────────────── */}
-      <section id="lead-form" className="py-16 sm:py-20 px-4 bg-surface">
+      <section id="lead-form" className="py-16 sm:py-20 px-4 bg-surface dark:bg-dark-bg">
         <div ref={revForm} className="max-w-lg mx-auto reveal">
           <div className="text-center mb-10">
             <span className="inline-block text-brand-500 font-semibold text-sm tracking-wider uppercase mb-3">Связаться</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#2B2B2B] font-heading mb-3">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#2B2B2B] dark:text-white font-heading mb-3">
               Оставить заявку
             </h2>
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-dark-muted">
               Свяжемся за 15 минут
             </p>
           </div>
@@ -493,11 +515,11 @@ export default function HomePage() {
           ) : (
             <form
               onSubmit={handleSubmit}
-              className="bg-white rounded-xl p-6 sm:p-8 shadow-elevated border border-gray-100/80 space-y-6"
+              className="bg-white dark:bg-dark-card rounded-xl p-6 sm:p-8 shadow-elevated border border-gray-100/80 dark:border-dark-border space-y-6"
             >
               {/* Категория */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                   Категория
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -509,7 +531,7 @@ export default function HomePage() {
                       className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
                         category === wt
                           ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-brand-500 hover:shadow-sm'
+                          : 'bg-white dark:bg-dark-card text-gray-700 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-brand-500 hover:shadow-sm'
                       }`}
                     >
                       {CATEGORY_LABELS[wt]}
@@ -521,7 +543,7 @@ export default function HomePage() {
               {/* Наименование техники (только для категории Техника) */}
               {category === 'equipment' && (
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                     Какая техника нужна?
                   </label>
                   <input
@@ -529,14 +551,14 @@ export default function HomePage() {
                     value={equipmentName}
                     onChange={(e) => setEquipmentName(e.target.value)}
                     placeholder="Экскаватор, бульдозер, автокран..."
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
+                    className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
                   />
                 </div>
               )}
 
               {/* Описание */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                   Описание задачи
                 </label>
                 <textarea
@@ -544,13 +566,13 @@ export default function HomePage() {
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
                   placeholder={category === 'equipment' ? 'На какой срок, с оператором или без...' : 'Что нужно сделать...'}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-shadow"
+                  className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-shadow"
                 />
               </div>
 
               {/* Адрес */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                   Адрес объекта
                 </label>
                 <input
@@ -558,18 +580,19 @@ export default function HomePage() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="ул. Ленина, 1 (необязательно)"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
+                  className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
                 />
               </div>
 
               {/* Телефон */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                   Телефон <span className="text-red-400">*</span>
                 </label>
                 <PhoneInput
                   value={phone}
-                  onChange={setPhone}
+                  onChange={(v) => { setPhone(v); if (errors.phone) setErrors((prev) => { const { phone: _, ...rest } = prev; return rest; }); }}
+                  onBlur={() => { if (phone && !isValidPhone(phone)) setErrors((prev) => ({ ...prev, phone: 'Введите корректный номер телефона' })); }}
                   required
                   error={errors.phone}
                 />
@@ -577,7 +600,7 @@ export default function HomePage() {
 
               {/* Город */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                   Город
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -589,7 +612,7 @@ export default function HomePage() {
                       className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
                         city === c
                           ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-brand-500 hover:shadow-sm'
+                          : 'bg-white dark:bg-dark-card text-gray-700 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-brand-500 hover:shadow-sm'
                       }`}
                     >
                       {CITY_LABELS[c]}
@@ -600,7 +623,7 @@ export default function HomePage() {
 
               {/* Мессенджер */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                   Как связаться
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -612,7 +635,7 @@ export default function HomePage() {
                       className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
                         messenger === m
                           ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-brand-500 hover:shadow-sm'
+                          : 'bg-white dark:bg-dark-card text-gray-700 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-brand-500 hover:shadow-sm'
                       }`}
                     >
                       {m}
@@ -629,7 +652,7 @@ export default function HomePage() {
                   onChange={(e) => setConsent(e.target.checked)}
                   className="mt-0.5 w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
                 />
-                <span className="text-xs text-gray-500 leading-relaxed">
+                <span className="text-xs text-gray-500 dark:text-dark-muted leading-relaxed">
                   Я даю согласие на обработку персональных данных в соответствии
                   с&nbsp;
                   <a href="/privacy" className="text-brand-500 underline">

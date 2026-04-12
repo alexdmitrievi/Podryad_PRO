@@ -67,7 +67,7 @@ const chipBase =
   'py-2.5 px-4 text-sm font-semibold rounded-xl border-[1.5px] transition-all duration-200 cursor-pointer';
 const chipActive = 'bg-brand-500 text-white border-brand-500 shadow-glow';
 const chipInactive =
-  'bg-white text-gray-700 border-gray-200 hover:border-brand-400 hover:shadow-sm';
+  'bg-white dark:bg-dark-card text-gray-700 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-brand-400 hover:shadow-sm';
 
 const inputClass = 'input-field';
 
@@ -89,6 +89,7 @@ export default function OrderNewPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [comboComponents, setComboComponents] = useState<string[]>([]);
+  const [phoneError, setPhoneError] = useState('');
 
   function toggleComboComponent(key: string) {
     setComboComponents(prev =>
@@ -145,16 +146,16 @@ export default function OrderNewPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-surface font-sans">
-        <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
+      <div className="min-h-screen bg-surface dark:bg-dark-bg font-sans">
+        <nav className="sticky top-0 z-50 bg-white/95 dark:bg-dark-card/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-dark-border">
           <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Image src="/logo.png" alt="Подряд PRO" width={36} height={36} className="rounded-lg" />
-              <span className="text-lg font-extrabold text-brand-900 font-heading">Подряд PRO</span>
+              <span className="text-lg font-extrabold text-brand-900 dark:text-white font-heading">Подряд PRO</span>
             </div>
             <Link
               href="/"
-              className="text-sm text-gray-500 hover:text-brand-500 transition-colors font-semibold cursor-pointer"
+              className="text-sm text-gray-500 dark:text-dark-muted hover:text-brand-500 transition-colors font-semibold cursor-pointer"
             >
               ← На главную
             </Link>
@@ -187,19 +188,19 @@ export default function OrderNewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface font-sans">
+    <div className="min-h-screen bg-surface dark:bg-dark-bg font-sans">
       {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
+      <nav className="sticky top-0 z-50 bg-white/95 dark:bg-dark-card/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-dark-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Image src="/logo.png" alt="Подряд PRO" width={36} height={36} className="rounded-lg" />
-            <span className="text-lg font-extrabold text-brand-900 font-heading">Подряд PRO</span>
+            <span className="text-lg font-extrabold text-brand-900 dark:text-white font-heading">Подряд PRO</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-sm text-gray-500 hover:text-brand-500 transition-colors font-semibold cursor-pointer">
+            <Link href="/" className="text-sm text-gray-500 dark:text-dark-muted hover:text-brand-500 transition-colors font-semibold cursor-pointer">
               ← На главную
             </Link>
-            <span className="text-gray-200">|</span>
+            <span className="text-gray-200 dark:text-dark-border">|</span>
             <Link href="/login" className="text-sm text-[#2F5BFF] hover:underline font-semibold cursor-pointer">
               Войти в кабинет
             </Link>
@@ -213,10 +214,10 @@ export default function OrderNewPage() {
           <span className="inline-block text-brand-500 font-semibold text-sm tracking-wider uppercase mb-3">
             Новый заказ
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-heading">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white font-heading">
             Разместить заказ
           </h1>
-          <p className="text-gray-500 mt-2 text-sm">
+          <p className="text-gray-500 dark:text-dark-muted mt-2 text-sm">
             Заполните форму — мы подберём исполнителя и свяжемся за 15 минут
           </p>
         </div>
@@ -224,12 +225,12 @@ export default function OrderNewPage() {
         <form
           id="order-form"
           onSubmit={handleSubmit}
-          className="bg-white rounded-xl p-6 sm:p-8 shadow-elevated border border-gray-100 space-y-6"
+          className="bg-white dark:bg-dark-card rounded-xl p-6 sm:p-8 shadow-elevated border border-gray-100 dark:border-dark-border space-y-6"
         >
           {/* 1. Category */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Категория
+            <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-3">
+              Категория <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-2 gap-3">
               {CATEGORY_OPTIONS.map(({ value, label, icon, badge }) => (
@@ -263,7 +264,7 @@ export default function OrderNewPage() {
           {work_type === 'combo' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-3">
                   Что включить в комбо?
                 </label>
                 <div className="grid gap-2">
@@ -308,7 +309,7 @@ export default function OrderNewPage() {
           )}
           {work_type && work_type !== 'combo' && SUBCATEGORIES[work_type]?.length > 0 && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-3">
                 Подкатегория
               </label>
               <div className="flex flex-wrap gap-2">
@@ -328,13 +329,14 @@ export default function OrderNewPage() {
 
           {/* 3. Description */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
               Описание задачи
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
+              maxLength={2000}
               placeholder="Что нужно сделать..."
               className={`${inputClass} resize-none`}
             />
@@ -342,7 +344,7 @@ export default function OrderNewPage() {
 
           {/* 4. Address + Map */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
               Адрес объекта
             </label>
             <input
@@ -350,6 +352,7 @@ export default function OrderNewPage() {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Введите адрес..."
+              maxLength={500}
               className={`${inputClass} mb-3`}
             />
             <MapPicker
@@ -368,7 +371,7 @@ export default function OrderNewPage() {
           {/* 5. Date + People + Hours */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-3 sm:col-span-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                 Дата
               </label>
               <input
@@ -380,7 +383,7 @@ export default function OrderNewPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                 Человек
               </label>
               <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden min-h-[48px]">
@@ -392,7 +395,7 @@ export default function OrderNewPage() {
                 >
                   −
                 </button>
-                <span className="flex-1 text-center text-sm font-bold text-gray-900 tabular-nums">
+                <span className="flex-1 text-center text-sm font-bold text-gray-900 dark:text-white tabular-nums">
                   {people_count}
                 </span>
                 <button
@@ -406,7 +409,7 @@ export default function OrderNewPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                 Часов
               </label>
               <input
@@ -422,7 +425,7 @@ export default function OrderNewPage() {
 
           {/* 6. City */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
               Город
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -444,17 +447,19 @@ export default function OrderNewPage() {
           {/* 7. Phone + Name */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                 Телефон <span className="text-red-500">*</span>
               </label>
               <PhoneInput
                 value={phone}
-                onChange={setPhone}
+                onChange={(v) => { setPhone(v); if (phoneError) setPhoneError(''); }}
+                onBlur={() => { if (phone && !isValidPhone(phone)) setPhoneError('Введите корректный номер'); else setPhoneError(''); }}
+                error={phoneError}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                 Имя
               </label>
               <input
@@ -462,6 +467,7 @@ export default function OrderNewPage() {
                 value={customer_name}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="Иван"
+                maxLength={100}
                 className={inputClass}
               />
             </div>
@@ -469,7 +475,7 @@ export default function OrderNewPage() {
 
           {/* 8. Messenger */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
               Как связаться
             </label>
             <div className="flex flex-wrap gap-2">
@@ -494,7 +500,7 @@ export default function OrderNewPage() {
               onChange={(e) => setConsent(e.target.checked)}
               className="mt-0.5 w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
             />
-            <span className="text-xs text-gray-500 leading-relaxed">
+            <span className="text-xs text-gray-500 dark:text-dark-muted leading-relaxed">
               Я даю согласие на обработку персональных данных в соответствии
               с&nbsp;
               <a href="/privacy" className="text-brand-500 underline">
@@ -515,7 +521,7 @@ export default function OrderNewPage() {
       </div>
 
       {/* Mobile sticky CTA */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-3 safe-area-pb">
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/95 dark:bg-dark-card/95 backdrop-blur-md border-t border-gray-200 dark:border-dark-border px-4 py-3 safe-area-pb">
         <button
           type="submit"
           form="order-form"

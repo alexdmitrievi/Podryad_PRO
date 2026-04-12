@@ -35,7 +35,7 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Image src="/logo.png" alt="Подряд PRO" width={32} height={32} className="rounded-lg" />
-            <span className="text-base font-extrabold text-brand-900 font-heading">Подряд PRO</span>
+            <span className="text-base font-extrabold text-brand-900 dark:text-white font-heading">Подряд PRO</span>
           </Link>
           <Link
             href="/order/new"
@@ -52,15 +52,15 @@ export default function DashboardPage() {
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
           {/* Order count badge */}
           {!loading && (
-            <div className="bg-white/90 backdrop-blur rounded-xl shadow-card px-3 py-2 flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-gray-700">
+            <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur rounded-xl shadow-card px-3 py-2 flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-gray-700 dark:text-dark-text">
                 {orders.length} заказ{orders.length === 1 ? '' : orders.length < 5 ? 'а' : 'ов'} на карте
               </span>
             </div>
           )}
 
           {/* City toggle */}
-          <div className="bg-white/90 backdrop-blur rounded-xl shadow-card px-1.5 py-1.5 flex items-center gap-1">
+          <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur rounded-xl shadow-card px-1.5 py-1.5 flex items-center gap-1">
             {CITY_OPTIONS.map((opt) => (
               <button
                 key={opt.key}
@@ -68,7 +68,7 @@ export default function DashboardPage() {
                 className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                   city === opt.key
                     ? 'bg-[#2F5BFF] text-white'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 dark:text-dark-muted hover:text-gray-900 dark:hover:text-dark-text'
                 }`}
               >
                 {opt.label}
@@ -79,14 +79,14 @@ export default function DashboardPage() {
 
         {/* Map / loading / empty */}
         {loading ? (
-          <div className="flex items-center justify-center h-full bg-surface">
+          <div className="flex items-center justify-center h-full bg-surface dark:bg-dark-bg">
             <div className="flex flex-col items-center gap-3">
               <div className="w-8 h-8 border-2 border-[#2F5BFF] border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-gray-500">Загружаем заказы…</p>
+              <p className="text-sm text-gray-500 dark:text-dark-muted">Загружаем заказы…</p>
             </div>
           </div>
         ) : orders.length === 0 ? (
-          <div className="flex items-center justify-center h-full bg-surface">
+          <div className="flex items-center justify-center h-full bg-surface dark:bg-dark-bg">
             <div className="text-center max-w-xs px-6">
               <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -103,8 +103,8 @@ export default function DashboardPage() {
                   <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Пока нет заказов на карте</h3>
-              <p className="text-sm text-gray-500 mb-5">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Пока нет заказов на карте</h3>
+              <p className="text-sm text-gray-500 dark:text-dark-muted mb-5">
                 Заказы с указанным адресом появятся здесь автоматически
               </p>
               <Link href="/order/new" className="btn-primary text-sm px-5 py-2.5 rounded-xl">

@@ -1,0 +1,92 @@
+ тЪа Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\HP\Desktop\╨Я╨╛╨┤╤А╤П╨┤_PRO\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\HP\Desktop\╨Я╨╛╨┤╤А╤П╨┤_PRO\pwa\package-lock.json
+
+   тЦ▓ Next.js 15.5.12
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ┬╖ optimizePackageImports
+
+   Creating an optimized production build ...
+ тЬУ (pwa) Compiling for server...
+ тЬУ (pwa) Compiling for server...
+ тЬУ (pwa) Compiling for client (static)...
+ тЧЛ (pwa) Service worker: C:\Users\HP\Desktop\╨Я╨╛╨┤╤А╤П╨┤_PRO\pwa\public\sw.js
+ тЧЛ (pwa)   URL: /sw.js
+ тЧЛ (pwa)   Scope: /
+ тЬУ Compiled successfully in 2.2min
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/45) ...
+   Generating static pages (11/45) 
+   Generating static pages (22/45) 
+   Generating static pages (33/45) 
+ тЬУ Generating static pages (45/45)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+тФМ тЧЛ /                                      11 kB         125 kB
+тФЬ тЧЛ /_not-found                            227 B         105 kB
+тФЬ тЧЛ /account                             6.52 kB         115 kB
+тФЬ тЧЛ /admin                               15.1 kB         124 kB
+тФЬ ╞Т /api/account                           227 B         105 kB
+тФЬ ╞Т /api/admin/contacts                    227 B         105 kB
+тФЬ ╞Т /api/admin/contractors                 227 B         105 kB
+тФЬ ╞Т /api/admin/crm/funnel                  227 B         105 kB
+тФЬ ╞Т /api/admin/crm/prospects               227 B         105 kB
+тФЬ ╞Т /api/admin/customers                   227 B         105 kB
+тФЬ ╞Т /api/admin/leads                       227 B         105 kB
+тФЬ ╞Т /api/admin/listings                    227 B         105 kB
+тФЬ ╞Т /api/admin/orders                      227 B         105 kB
+тФЬ ╞Т /api/admin/orders/[id]                 227 B         105 kB
+тФЬ ╞Т /api/admin/orders/[id]/send-link       227 B         105 kB
+тФЬ ╞Т /api/admin/responses                   227 B         105 kB
+тФЬ ╞Т /api/admin/upload                      227 B         105 kB
+тФЬ ╞Т /api/admin/verify-pin                  227 B         105 kB
+тФЬ ╞Т /api/auth/login                        227 B         105 kB
+тФЬ ╞Т /api/auth/logout                       227 B         105 kB
+тФЬ ╞Т /api/auth/me                           227 B         105 kB
+тФЬ ╞Т /api/auth/register                     227 B         105 kB
+тФЬ ╞Т /api/catalog-orders                    227 B         105 kB
+тФЬ ╞Т /api/contractors                       227 B         105 kB
+тФЬ ╞Т /api/crm/update-stage                  227 B         105 kB
+тФЬ ╞Т /api/cron/capture-expired              227 B         105 kB
+тФЬ ╞Т /api/leads                             227 B         105 kB
+тФЬ ╞Т /api/listings/public                   227 B         105 kB
+тФЬ ╞Т /api/my/recover                        227 B         105 kB
+тФЬ ╞Т /api/orders                            227 B         105 kB
+тФЬ ╞Т /api/orders/[id]/confirm               227 B         105 kB
+тФЬ ╞Т /api/orders/[id]/dispute               227 B         105 kB
+тФЬ ╞Т /api/orders/create                     227 B         105 kB
+тФЬ ╞Т /api/orders/my                         227 B         105 kB
+тФЬ ╞Т /api/orders/public                     227 B         105 kB
+тФЬ ╞Т /api/orders/respond                    227 B         105 kB
+тФЬ ╞Т /api/payments/callback                 227 B         105 kB
+тФЬ ╞Т /api/payments/create-escrow            227 B         105 kB
+тФЬ ╞Т /catalog/[category]                  6.44 kB         120 kB
+тФЬ тЧЛ /dashboard                           2.63 kB         116 kB
+тФЬ тЧЛ /join                                6.37 kB         115 kB
+тФЬ тЧЛ /login                               3.67 kB         112 kB
+тФЬ тЧЛ /my                                  3.78 kB         112 kB
+тФЬ ╞Т /my/[token]                          3.02 kB         112 kB
+тФЬ ╞Т /order/[id]/confirm                  3.36 kB         112 kB
+тФЬ ╞Т /order/[id]/pay                      2.27 kB         107 kB
+тФЬ ╞Т /order/[id]/status                   2.34 kB         111 kB
+тФЬ тЧЛ /order/new                            8.1 kB         122 kB
+тФЬ тЧЛ /orders/new                          6.19 kB         120 kB
+тФЬ тЧЛ /orders/new-rental                   6.34 kB         120 kB
+тФЬ тЧЛ /privacy                               169 B         109 kB
+тФФ тЧЛ /register                            4.87 kB         113 kB
++ First Load JS shared by all             105 kB
+  тФЬ chunks/4696-a1d1884a3bd5c6d2.js      48.3 kB
+  тФЬ chunks/4bd1b696-f785427dddbba9fb.js  54.2 kB
+  тФФ other shared chunks (total)           2.6 kB
+
+
+тЧЛ  (Static)   prerendered as static content
+╞Т  (Dynamic)  server-rendered on demand
+

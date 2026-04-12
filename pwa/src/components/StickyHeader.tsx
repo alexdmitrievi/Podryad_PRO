@@ -63,13 +63,16 @@ export default function StickyHeader() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            {NAV_ITEMS.map((item) => (
+            {NAV_ITEMS.map((item) => {
+              const active = pathname === item.href;
+              return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? 'page' : undefined}
                 className={`
                 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300
-                ${pathname === item.href
+                ${active
                   ? scrolled
                     ? 'bg-brand-500/10 text-brand-500'
                     : 'bg-white/20 text-white'
@@ -81,7 +84,8 @@ export default function StickyHeader() {
               >
                 {item.label}
               </Link>
-            ))}
+              );
+            })}
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
@@ -140,7 +144,7 @@ export default function StickyHeader() {
           <button
             type="button"
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden w-10 h-10 flex items-center justify-center cursor-pointer rounded-lg hover:bg-white/10 transition-colors"
+            className="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer rounded-lg hover:bg-white/10 transition-colors"
             aria-label={menuOpen ? 'Закрыть меню' : 'Меню'}
           >
             {menuOpen ? (

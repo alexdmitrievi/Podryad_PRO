@@ -314,6 +314,12 @@
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+.dark .input-field {
+  color: #e4e4e7;
+  background: #12151f;
+  border-color: #1e2233;
+}
+
 .input-field::placeholder {
   color: #9ca3af;
 }
@@ -336,6 +342,11 @@
   padding: 1.5rem;
   border: 1px solid #f1f5f9;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.dark .form-card {
+  background: #12151f;
+  border-color: #1e2233;
 }
 
 @media (min-width: 640px) {
@@ -405,6 +416,10 @@
   -webkit-backdrop-filter: blur(12px) saturate(180%);
   border-bottom: 1px solid #f1f5f9;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.dark .navbar {
+  background: rgba(18,21,31,0.95);
+  border-bottom-color: #1e2233;
 }
 
 /* ─── Badge / chip styles ─── */

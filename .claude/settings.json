@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ui-expert": {
+      "command": "npx",
+      "args": ["-y", "@reallygood83/ui-expert-mcp"]
+    }
+  }
+}

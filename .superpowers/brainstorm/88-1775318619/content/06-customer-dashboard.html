@@ -1,0 +1,139 @@
+<h2>Дашборд заказчика (по номеру телефона)</h2>
+<p class="subtitle">Заказчик получает ссылку вида /my?phone=79001234567&code=XXXX — вводит код из SMS и видит свои заказы. Без регистрации.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Страница /my — Мои заказы</div>
+  <div class="mockup-body" style="padding: 0; font-family: system-ui; font-size: 13px;">
+
+    <!-- Header -->
+    <div style="padding: 16px 20px; background: linear-gradient(135deg, #1E2A5A, #2F5BFF); color: white; display: flex; align-items: center; justify-content: between;">
+      <div style="flex: 1;">
+        <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 2px;">Добро пожаловать</div>
+        <div style="font-weight: 700; font-size: 16px;">+7 (900) 123-45-67</div>
+      </div>
+      <div style="padding: 6px 14px; background: rgba(255,255,255,0.15); border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;">
+        + Новый заказ
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #eee;">
+      <div style="background: white; padding: 14px; text-align: center;">
+        <div style="font-size: 22px; font-weight: 800; color: #2F5BFF;">2</div>
+        <div style="font-size: 10px; color: #999; margin-top: 2px;">Активных</div>
+      </div>
+      <div style="background: white; padding: 14px; text-align: center;">
+        <div style="font-size: 22px; font-weight: 800; color: #22c55e;">5</div>
+        <div style="font-size: 10px; color: #999; margin-top: 2px;">Завершено</div>
+      </div>
+      <div style="background: white; padding: 14px; text-align: center;">
+        <div style="font-size: 22px; font-weight: 800; color: #f5a623;">1</div>
+        <div style="font-size: 10px; color: #999; margin-top: 2px;">Ожидает оплату</div>
+      </div>
+    </div>
+
+    <!-- Order cards -->
+    <div style="padding: 16px 20px;">
+      <div style="font-weight: 700; font-size: 14px; margin-bottom: 12px; color: #333;">Активные заказы</div>
+
+      <!-- Order 1 - awaiting payment -->
+      <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 14px; padding: 16px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <div>
+            <div style="font-weight: 700; font-size: 14px; color: #333;">ПРО-01007</div>
+            <div style="font-size: 12px; color: #666; margin-top: 2px;">Грузчики &middot; 4 чел. &middot; 8 часов</div>
+          </div>
+          <div style="padding: 4px 10px; border-radius: 8px; background: #F59E0B; color: white; font-size: 11px; font-weight: 600;">
+            Ожидает оплату
+          </div>
+        </div>
+        <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+          &#128205; ул. Ленина, 25, Омск &middot; 07 апр, 09:00
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-weight: 800; font-size: 18px; color: #333;">14 000 &#8381;</div>
+          <div style="padding: 10px 20px; background: #2F5BFF; color: white; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer;">
+            Оплатить
+          </div>
+        </div>
+      </div>
+
+      <!-- Order 2 - in progress -->
+      <div style="background: white; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <div>
+            <div style="font-weight: 700; font-size: 14px; color: #333;">ПРО-01005</div>
+            <div style="font-size: 12px; color: #666; margin-top: 2px;">Разнорабочие &middot; 2 чел. &middot; 6 часов</div>
+          </div>
+          <div style="padding: 4px 10px; border-radius: 8px; background: #2F5BFF; color: white; font-size: 11px; font-weight: 600;">
+            В работе
+          </div>
+        </div>
+        <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+          &#128205; ул. Маркса, 12, Омск &middot; Сегодня, 14:00
+        </div>
+        <!-- Progress -->
+        <div style="margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #999; margin-bottom: 4px;">
+            <span>Прогресс</span><span>4/6 часов</span>
+          </div>
+          <div style="height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+            <div style="width: 66%; height: 100%; background: linear-gradient(90deg, #2F5BFF, #6C5CE7); border-radius: 3px;"></div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div style="flex: 1; padding: 10px; background: #f8f9fc; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 600; color: #2F5BFF; cursor: pointer;">
+            Подтвердить работу
+          </div>
+          <div style="flex: 1; padding: 10px; background: #FEF2F2; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 600; color: #EF4444; cursor: pointer;">
+            Спор
+          </div>
+        </div>
+      </div>
+
+      <!-- Order 3 - completed -->
+      <div style="font-weight: 700; font-size: 14px; margin: 20px 0 12px; color: #333;">Завершённые</div>
+      <div style="background: white; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; opacity: 0.7;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="font-weight: 700; font-size: 14px; color: #333;">ПРО-01003</div>
+            <div style="font-size: 12px; color: #666; margin-top: 2px;">Строители &middot; 3 чел. &middot; 2 дня</div>
+          </div>
+          <div style="padding: 4px 10px; border-radius: 8px; background: #22c55e; color: white; font-size: 11px; font-weight: 600;">
+            Завершён
+          </div>
+        </div>
+        <div style="font-size: 12px; color: #666; margin-top: 6px;">
+          01 апр &middot; 28 000 &#8381; &middot; &#11088; 4.8
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<h3>Подходит ли такой дашборд заказчика?</h3>
+
+<div class="options">
+  <div class="option" data-choice="ok" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Да, всё верно</h3>
+      <p>Статистика сверху, активные заказы с действиями (оплатить / подтвердить / спор), завершённые с оценкой</p>
+    </div>
+  </div>
+  <div class="option" data-choice="simpler" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Упростить — только список заказов</h3>
+      <p>Без статистики и прогресс-баров, просто карточки со статусами</p>
+    </div>
+  </div>
+  <div class="option" data-choice="modify" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Нужно изменить</h3>
+      <p>Укажите в терминале, что добавить или убрать</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,64 @@
+<h2>Авторизация заказчика без SMS (бесплатно)</h2>
+<p class="subtitle">Как заказчик попадает на свой дашборд без платных SMS?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Секретная ссылка через мессенджер (рекомендую)</h3>
+      <p>После создания заказа заказчик получает уникальную ссылку в MAX/Telegram/Email:
+        <br><code style="font-size: 11px; background: #f5f5f5; padding: 2px 6px; border-radius: 4px;">podryad.pro/my/abc123xyz</code>
+        <br><br>Ссылка привязана к его телефону. Кто знает ссылку — видит свои заказы. Можно добавить в закладки.
+        <br>Если потерял — запрашивает повторно через бота или форму (ввёл телефон → получил ссылку в мессенджер).</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Плюсы</h4><ul>
+          <li>Полностью бесплатно</li>
+          <li>Ноль трения — один клик из мессенджера</li>
+          <li>Работает через каналы, которые уже есть (MAX/TG/Email)</li>
+        </ul></div>
+        <div class="cons"><h4>Минусы</h4><ul>
+          <li>Кто получил ссылку — тот имеет доступ (но можно добавить PIN)</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Телефон + 4-значный PIN-код</h3>
+      <p>Заказчик при первом заказе придумывает PIN (4 цифры). Чтобы войти в дашборд: вводит телефон + PIN.
+        <br>Забыл PIN → получает новую ссылку-сброс через мессенджер.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Плюсы</h4><ul>
+          <li>Бесплатно</li>
+          <li>Безопаснее — нужно знать и телефон, и PIN</li>
+          <li>Привычный формат</li>
+        </ul></div>
+        <div class="cons"><h4>Минусы</h4><ul>
+          <li>Ещё одно поле в форме заказа</li>
+          <li>Заказчики забывают PIN</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Код подтверждения через мессенджер (OTP без SMS)</h3>
+      <p>Заказчик вводит телефон на странице входа → получает 6-значный код в MAX/Telegram/Email → вводит код → попадает в дашборд. По сути SMS-код, но через мессенджер.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Плюсы</h4><ul>
+          <li>Бесплатно</li>
+          <li>Привычный UX (как SMS-код)</li>
+          <li>Безопасно — код одноразовый</li>
+        </ul></div>
+        <div class="cons"><h4>Минусы</h4><ul>
+          <li>Два шага: ввести телефон → переключиться в мессенджер → скопировать код → вернуться</li>
+          <li>Нужно, чтобы бот уже знал пользователя</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>

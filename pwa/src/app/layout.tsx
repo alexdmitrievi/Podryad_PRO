@@ -85,6 +85,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="bg-surface dark:bg-dark-bg text-[#2B2B2B] dark:text-dark-text font-sans antialiased transition-colors duration-300">
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-brand-500 focus:text-white focus:rounded-xl focus:text-sm focus:font-semibold">Перейти к контенту</a>
         <DevUnregisterSW />
         <ToastProvider />
         {children}

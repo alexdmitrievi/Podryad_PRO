@@ -59,11 +59,13 @@ export default function ToastProvider() {
 
   if (toasts.length === 0) return null;
 
+  const hasError = toasts.some((t) => t.type === 'error');
+
   return (
     <div
       className="fixed top-4 right-4 left-4 sm:left-auto sm:w-96 z-[100] flex flex-col gap-2 pointer-events-none"
-      aria-live="polite"
-      role="status"
+      aria-live={hasError ? 'assertive' : 'polite'}
+      role={hasError ? 'alert' : 'status'}
     >
       {toasts.map((toast) => {
         const Icon = ICONS[toast.type];

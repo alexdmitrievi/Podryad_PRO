@@ -1,17 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { hashPassword, createSessionToken, setSessionCookie } from '@/lib/customerAuth';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const rl = checkRateLimit(`register:${clientIp}`, 5, 15 * 60 * 1000);
+    if (rl.limited) {
+      return NextResponse.json(
+        { error: 'Слишком много попыток. Повторите через 15 минут.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } },
+      );
+    }
+
     const body = await req.json();
     const { phone, name, password, customer_type, org_name, inn, city, preferred_contact } = body;
 
     if (!phone || !name || !password) {
       return NextResponse.json({ error: 'Телефон, имя и пароль обязательны' }, { status: 400 });
     }
-    if (String(password).length < 6) {
-      return NextResponse.json({ error: 'Пароль минимум 6 символов' }, { status: 400 });
+    const pwd = String(password);
+    if (pwd.length < 8) {
+      return NextResponse.json({ error: 'Пароль минимум 8 символов' }, { status: 400 });
+    }
+    if (!/[A-ZА-Я]/.test(pwd) || !/[0-9]/.test(pwd)) {
+      return NextResponse.json({ error: 'Пароль должен содержать заглавную букву и цифру' }, { status: 400 });
+    }
+    if (String(name).trim().length > 100) {
+      return NextResponse.json({ error: 'Имя слишком длинное' }, { status: 400 });
     }
     const rawPhone = String(phone).replace(/\D/g, '').replace(/^8/, '7');
     if (rawPhone.length < 10) {

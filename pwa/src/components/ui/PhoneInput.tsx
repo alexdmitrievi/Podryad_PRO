@@ -28,13 +28,14 @@ export function isValidPhone(formatted: string): boolean {
 interface PhoneInputProps {
   value: string;
   onChange: (formatted: string) => void;
+  onBlur?: () => void;
   className?: string;
   required?: boolean;
   error?: string;
   placeholder?: string;
 }
 
-export default function PhoneInput({ value, onChange, className, required, error, placeholder }: PhoneInputProps) {
+export default function PhoneInput({ value, onChange, onBlur, className, required, error, placeholder }: PhoneInputProps) {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const formatted = formatPhone(e.target.value);
@@ -54,6 +55,8 @@ export default function PhoneInput({ value, onChange, className, required, error
     ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
     : 'border-gray-200 focus:border-brand-500 focus:ring-brand-500/20';
 
+  const errorId = error ? 'phone-input-error' : undefined;
+
   return (
     <div>
       <input
@@ -63,12 +66,15 @@ export default function PhoneInput({ value, onChange, className, required, error
         value={value}
         onChange={handleChange}
         onFocus={handleFocus}
+        onBlur={onBlur}
         placeholder={placeholder ?? "+7 (___) ___-__-__"}
         required={required}
         maxLength={18}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={errorId}
         className={`w-full border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-shadow ${borderClass} ${className ?? ''}`}
       />
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p id={errorId} className="mt-1 text-xs text-red-500" role="alert">{error}</p>}
     </div>
   );
 }

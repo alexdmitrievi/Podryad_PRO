@@ -1,0 +1,110 @@
+<h2>Итоговая структура приложения</h2>
+<p class="subtitle">Все решения собраны. Проверьте полную карту страниц и потоков.</p>
+
+<div class="section">
+  <h3>Публичные страницы</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-family: system-ui;">
+    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px;">
+      <div style="font-weight: 700; font-size: 14px; color: #2F5BFF; margin-bottom: 4px;">/</div>
+      <div style="font-weight: 600; font-size: 13px; color: #333;">Лендинг</div>
+      <div style="font-size: 11px; color: #999; margin-top: 4px;">Hero, услуги, безопасная сделка, для исполнителей, форма заявки</div>
+    </div>
+    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px;">
+      <div style="font-weight: 700; font-size: 14px; color: #2F5BFF; margin-bottom: 4px;">/order/new</div>
+      <div style="font-weight: 600; font-size: 13px; color: #333;">Создать заказ</div>
+      <div style="font-size: 11px; color: #999; margin-top: 4px;">Тип → детали → адрес на карте → дата/люди → контакты</div>
+    </div>
+    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px;">
+      <div style="font-weight: 700; font-size: 14px; color: #2F5BFF; margin-bottom: 4px;">/join</div>
+      <div style="font-weight: 600; font-size: 13px; color: #333;">Стать исполнителем</div>
+      <div style="font-size: 11px; color: #999; margin-top: 4px;">Анкета: ФИО, телефон, город, специальность, опыт, канал связи</div>
+    </div>
+    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px;">
+      <div style="font-weight: 700; font-size: 14px; color: #2F5BFF; margin-bottom: 4px;">/privacy</div>
+      <div style="font-weight: 600; font-size: 13px; color: #333;">Политика конфиденциальности</div>
+      <div style="font-size: 11px; color: #999; margin-top: 4px;">152-ФЗ (уже реализована)</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Личный кабинет заказчика (по секретной ссылке)</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-family: system-ui;">
+    <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 16px;">
+      <div style="font-weight: 700; font-size: 14px; color: #2F5BFF; margin-bottom: 4px;">/my/{token}</div>
+      <div style="font-weight: 600; font-size: 13px; color: #333;">Дашборд заказчика</div>
+      <div style="font-size: 11px; color: #666; margin-top: 4px;">Статистика, активные заказы, завершённые, кнопка «Новый заказ»</div>
+    </div>
+    <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 16px;">
+      <div style="font-weight: 700; font-size: 14px; color: #2F5BFF; margin-bottom: 4px;">/order/{id}/pay</div>
+      <div style="font-weight: 600; font-size: 13px; color: #333;">Оплата заказа</div>
+      <div style="font-size: 11px; color: #666; margin-top: 4px;">YooKassa эскроу (уже реализована)</div>
+    </div>
+    <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 16px;">
+      <div style="font-weight: 700; font-size: 14px; color: #2F5BFF; margin-bottom: 4px;">/order/{id}/confirm</div>
+      <div style="font-weight: 600; font-size: 13px; color: #333;">Подтверждение работы</div>
+      <div style="font-size: 11px; color: #666; margin-top: 4px;">Dual confirmation (уже реализована)</div>
+    </div>
+    <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 16px;">
+      <div style="font-weight: 700; font-size: 14px; color: #2F5BFF; margin-bottom: 4px;">/order/{id}/status</div>
+      <div style="font-weight: 600; font-size: 13px; color: #333;">Статус заказа</div>
+      <div style="font-size: 11px; color: #666; margin-top: 4px;">Таймлайн прогресса (уже реализована)</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Админ-панель</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-family: system-ui;">
+    <div style="background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 12px; padding: 16px;">
+      <div style="font-weight: 700; font-size: 14px; color: #EA580C; margin-bottom: 4px;">/admin</div>
+      <div style="font-weight: 600; font-size: 13px; color: #333;">Панель управления</div>
+      <div style="font-size: 11px; color: #666; margin-top: 4px;">Обновлённые табы:</div>
+      <ul style="font-size: 11px; color: #666; margin: 6px 0 0 16px; padding: 0;">
+        <li><strong>Заказы</strong> — все заказы + назначение цены/исполнителя + отправка ссылки на оплату</li>
+        <li><strong>Исполнители</strong> — CRM с кнопками связи (MAX/TG/тел/email)</li>
+        <li><strong>Заявки</strong> — входящие лиды с лендинга</li>
+        <li><strong>Каталог</strong> — управление листингами</li>
+        <li><strong>Наценки</strong> — редактор ставок</li>
+        <li><strong>Статистика</strong> — метрики</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Потоки данных</h3>
+  <div style="font-family: system-ui; font-size: 13px; background: #f8f9fc; border-radius: 12px; padding: 20px; line-height: 1.8;">
+    <div style="margin-bottom: 12px;">
+      <strong style="color: #2F5BFF;">Заказчик:</strong>
+      <span style="color: #666;">Лендинг / /order/new → POST /api/orders → n8n уведомление админу → Админ назначает цену + исполнителя → Секретная ссылка в мессенджер → /my/{token} дашборд → Оплата → Подтверждение</span>
+    </div>
+    <div style="margin-bottom: 12px;">
+      <strong style="color: #22c55e;">Исполнитель:</strong>
+      <span style="color: #666;">/join или Telegram/MAX бот → POST /api/contractors → n8n уведомление админу → Админ связывается через CRM → Назначает на заказ</span>
+    </div>
+    <div>
+      <strong style="color: #EA580C;">Админ:</strong>
+      <span style="color: #666;">/admin → Видит заказы + исполнителей → Назначает исполнителя на заказ → Выставляет display_price → Отправляет ссылку на оплату заказчику → Отправляет секретную ссылку на дашборд</span>
+    </div>
+  </div>
+</div>
+
+<h3>Всё ли корректно в архитектуре?</h3>
+
+<div class="options">
+  <div class="option" data-choice="approved" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Всё верно, утверждаю</h3>
+      <p>Переходим к детальному дизайн-документу и плану реализации</p>
+    </div>
+  </div>
+  <div class="option" data-choice="modify" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Нужны изменения</h3>
+      <p>Укажите в терминале, что поправить</p>
+    </div>
+  </div>
+</div>

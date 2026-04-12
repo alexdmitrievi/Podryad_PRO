@@ -18,7 +18,7 @@ export default function BottomNav() {
 
   return (
     <nav className="md:hidden glass dark:bg-dark-card/90 dark:backdrop-blur-xl border-t border-gray-200/60 dark:border-dark-border safe-area-pb">
-      <div className="flex justify-around items-center py-2 px-2">
+      <div className="flex justify-around items-center py-1 px-1">
         {NAV_ITEMS.map((item) => {
           const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
           const Icon = item.icon;
@@ -27,8 +27,9 @@ export default function BottomNav() {
               key={item.href}
               href={item.href}
               aria-label={item.label}
+              aria-current={active ? 'page' : undefined}
               className={`
-                relative flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-2xl
+                relative flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[48px] px-3 py-2 rounded-2xl
                 transition-all duration-200
                 ${active
                   ? 'text-brand-500'
