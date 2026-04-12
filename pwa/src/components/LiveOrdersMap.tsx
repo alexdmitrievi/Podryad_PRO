@@ -116,7 +116,6 @@ export default function LiveOrdersMap() {
       dragging: true,
       doubleClickZoom: false,
       attributionControl: false,
-      tap: true,
       touchZoom: true,
     });
 

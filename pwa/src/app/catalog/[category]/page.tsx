@@ -392,7 +392,7 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
                 </svg>
               </div>
               <p className="text-gray-400 text-lg">Товары пока не добавлены</p>
-              <a href="/catalog" className="inline-block text-sm text-brand-500 hover:text-brand-600 font-semibold transition-colors">← Вернуться в каталог</a>
+              <Link href="/catalog" className="inline-block text-sm text-brand-500 hover:text-brand-600 font-semibold transition-colors">← Вернуться в каталог</Link>
             </div>
           )}
         </div>
