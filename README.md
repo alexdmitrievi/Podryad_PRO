@@ -89,17 +89,117 @@ docker-compose logs -f n8n
 
 ## ⚙️ Переменные окружения
 
-Актуальный список и комментарии — в **`.env.example`**. Кратко:
+Создай файл `pwa/.env.local` для локальной разработки. Для продакшена все переменные добавляются в **Vercel → Settings → Environment Variables**.
+
+> Переменные с префиксом `NEXT_PUBLIC_` видны в браузере — не клади туда секреты.
+
+### 🟦 Supabase
+**→ [supabase.com/dashboard/project/rnqalafmuyrlfioqdore/settings/api](https://supabase.com/dashboard/project/rnqalafmuyrlfioqdore/settings/api)**
+
+| Переменная | Откуда брать |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL (`https://rnqalafmuyrlfioqdore.supabase.co`) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Project API Keys → **anon / public** |
+| `SUPABASE_SERVICE_ROLE_KEY` | Project API Keys → **service_role** (только сервер!) |
+
+### 🔐 Auth / Session — генерируй сам
+```powershell
+node -e "console.log('SESSION_SECRET=' + require('crypto').randomBytes(64).toString('hex'))"
+node -e "console.log('CUSTOMER_JWT_SECRET=' + require('crypto').randomBytes(32).toString('hex'))"
+node -e "console.log('CRON_SECRET=' + require('crypto').randomBytes(32).toString('hex'))"
+node -e "console.log('CRM_WEBHOOK_SECRET=' + require('crypto').randomBytes(32).toString('hex'))"
+```
 
 | Переменная | Описание |
 |---|---|
-| `TELEGRAM_BOT_TOKEN` | Токен бота |
-| `TELEGRAM_CHANNEL_ID` | ID канала |
-| `NEXT_PUBLIC_SUPABASE_URL` | URL проекта Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key (клиент) |
-| `SUPABASE_SERVICE_ROLE_KEY` | service role (сервер, API, n8n) |
-| `N8N_WEBHOOK_BASE` | Базовый URL webhooks n8n |
-| `SESSION_SECRET` | Подпись cookie личного кабинета |
+| `SESSION_SECRET` | Подпись cookie сессии исполнителей (64 байта hex) |
+| `CUSTOMER_JWT_SECRET` | JWT токен для заказчиков (32 байта hex) |
+| `CRON_SECRET` | Защита cron-endpoint `/api/cron/*` |
+| `CRM_WEBHOOK_SECRET` | Защита `/api/crm/update-stage` |
+| `ADMIN_PIN` | PIN для входа в админ-панель (4–6 цифр) |
+
+### 🤖 Telegram
+**→ [@BotFather](https://t.me/BotFather) → `/newbot`**
+
+| Переменная | Описание |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | Токен бота (вида `7123456789:AAFxxxx...`) |
+| `NEXT_PUBLIC_BOT_NAME` | Имя бота без @ (например `Podryad_PRO_bot`) |
+| `NEXT_PUBLIC_MAX_CHANNEL_LINK` | Ссылка на канал в MAX Messenger |
+
+### 💳 ЮKassa
+**→ [yookassa.ru/my/api-keys](https://yookassa.ru/my/api-keys)**
+
+| Переменная | Откуда брать |
+|---|---|
+| `YUKASSA_SHOP_ID` | Настройки → shopId (число) |
+| `YUKASSA_SECRET_KEY` | API ключи → Секретный ключ (`test_xxxx` или `live_xxxx`) |
+| `YUKASSA_PAYOUT_AGENT_ID` | Выплаты → Подключение → agentId (нужен договор агента) |
+| `YUKASSA_PAYOUT_SECRET` | Выплаты → API ключ для выплат |
+| `NEXT_PUBLIC_YUKASSA_PAYOUT_WIDGET_KEY` | Выплаты → Интеграция → Ключ виджета |
+
+### 🔔 Web Push (VAPID)
+Сгенерировать один раз:
+```powershell
+Push-Location "pwa"; npx web-push generate-vapid-keys; Pop-Location
+```
+
+| Переменная | Описание |
+|---|---|
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Публичный VAPID ключ |
+| `VAPID_PRIVATE_KEY` | Приватный VAPID ключ |
+| `VAPID_SUBJECT` | Email для VAPID (например `mailto:admin@podryad.pro`) |
+
+### 🤖 OpenAI (CRM агент)
+**→ [platform.openai.com/api-keys](https://platform.openai.com/api-keys)**
+
+| Переменная | Значение по умолчанию |
+|---|---|
+| `OPENAI_API_KEY` | `sk-proj-xxxx...` |
+| `OPENAI_MODEL` | `gpt-4o` |
+| `OPENAI_MAX_TOKENS` | `1024` |
+| `OPENAI_TEMPERATURE` | `0.3` |
+
+### 💬 Дополнительные мессенджеры (опционально)
+
+| Переменная | Откуда |
+|---|---|
+| `MAX_BOT_TOKEN` | [max.ru](https://max.ru) → Developer → Bots |
+| `AVITO_CLIENT_ID` | [developers.avito.ru/apps](https://developers.avito.ru/apps) |
+| `AVITO_CLIENT_SECRET` | То же приложение Avito |
+| `AVITO_USER_ID` | Числовой ID аккаунта Avito (из URL профиля) |
+
+### 🌐 App URL
+
+| Переменная | Локально | Продакшен |
+|---|---|---|
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | `https://podryad.pro` |
+
+### 🔗 n8n Webhooks
+**→ [astra55.app.n8n.cloud](https://astra55.app.n8n.cloud)** — откройте workflow → Webhook нода → скопируйте **Production URL**
+
+| Переменная | Workflow |
+|---|---|
+| `N8N_LEADS_WEBHOOK_URL` | `11-lead-notification` |
+| `N8N_PAYMENT_HELD_WEBHOOK_URL` | `12-payment-held` |
+| `N8N_PAYOUT_WEBHOOK_URL` | `13-payout-reminder` |
+| `N8N_ORDER_CREATED_WEBHOOK_URL` | `14-order-created` |
+| `N8N_CONTRACTOR_REGISTERED_WEBHOOK_URL` | `15-contractor-registered` |
+| `N8N_SEND_DASHBOARD_LINK_WEBHOOK_URL` | `16-send-dashboard-link` |
+| `N8N_SEND_PAYMENT_LINK_WEBHOOK_URL` | `17-send-payment-link` |
+| `N8N_CRM_LEAD_NURTURE_WEBHOOK_URL` | `18-customer-lead-nurture` |
+| `N8N_CRM_PROSPECT_WEBHOOK_URL` | `19-executor-avito-nurture` |
+| `N8N_CRM_CONVERSION_WEBHOOK_URL` | `20-crm-conversion-tracker` |
+
+### Приоритет настройки
+
+1. **Supabase** — без этого ничего не работает
+2. **SESSION_SECRET + CUSTOMER_JWT_SECRET + ADMIN_PIN** — генерируй сразу
+3. **TELEGRAM_BOT_TOKEN** — уведомления и бот
+4. **YUKASSA_SHOP_ID + YUKASSA_SECRET_KEY** — платежи
+5. **OPENAI_API_KEY** — CRM агент
+6. **VAPID ключи** — push-уведомления
+7. **n8n webhooks** — по мере активации workflows
 
 ## 🔄 Как работает система
 
