@@ -39,7 +39,7 @@ export default function SafeDealSection() {
               Ваши деньги под защитой
             </h2>
             <p className="text-gray-500 dark:text-dark-muted mt-3 max-w-xl mx-auto">
-              Оплата замораживается до завершения работы — не «эскроу», а простая гарантия для обеих сторон
+              Оплата по СБП или счёту — исполнитель выезжает только после подтверждения платежа
             </p>
           </div>
         </ScrollReveal>

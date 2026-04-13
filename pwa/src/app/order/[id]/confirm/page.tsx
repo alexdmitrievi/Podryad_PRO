@@ -193,7 +193,6 @@ export default function ConfirmPage() {
         status: string;
         role: string;
         bothConfirmed: boolean;
-        escrowStatus: string;
       };
 
       if (data.status === 'already_confirmed') {
