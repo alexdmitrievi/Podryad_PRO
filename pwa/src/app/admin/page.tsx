@@ -14,7 +14,9 @@ interface Order {
   order_id: string;
   order_number: string | null;
   status: string;
-  escrow_status: string | null;
+  customer_type: string | null;
+  payment_status: string | null;
+  executor_payout_status: string | null;
   customer_total: number | null;
   supplier_payout: number | null;
   platform_margin: number | null;
@@ -364,6 +366,11 @@ interface AdminContractor {
   status: string;
   admin_notes: string | null;
   created_at: string;
+  payout_type: string | null;
+  payout_sbp_phone: string | null;
+  payout_bank_details: string | null;
+  is_legal_entity: boolean | null;
+  inn: string | null;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -472,6 +479,19 @@ function ContractorsTab({ pin }: { pin: string }) {
                     onBlur={e => saveNotes(c.id, e.target.value)}
                     className="flex-1 text-xs px-2 py-1 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-brand-500/30" />
                 </div>
+                {/* Payout requisites */}
+                {c.payout_type && (
+                  <div className="mt-3 p-3 rounded-xl bg-purple-50 border border-purple-100 text-xs space-y-1">
+                    <span className="font-semibold text-purple-700">Реквизиты выплаты</span>
+                    <div className="text-gray-600">
+                      {c.payout_type === 'sbp' && <>СБП: <span className="font-medium">{c.payout_sbp_phone || c.phone}</span></>}
+                      {c.payout_type === 'bank_transfer' && <span className="whitespace-pre-wrap">{c.payout_bank_details}</span>}
+                      {c.payout_type === 'cash' && <span>Наличные</span>}
+                    </div>
+                    {c.inn && <div className="text-gray-500">ИНН: {c.inn}</div>}
+                    {c.is_legal_entity && <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">ИП / Организация</span>}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -502,6 +522,8 @@ function OrdersTab({ pin }: { pin: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [assignState, setAssignState] = useState<Record<string, { price: string; cid: string }>>({});
+  const [paymentState, setPaymentState] = useState<Record<string, { customerType: string }>>({});
+  const [paymentLoading, setPaymentLoading] = useState<Record<string, string>>({});
 
   const loadOrders = async () => {
     setError('');
@@ -534,6 +556,49 @@ function OrdersTab({ pin }: { pin: string }) {
       });
       setOrders(os => os.map(o => o.order_id === orderId ? { ...o, status: 'priced', display_price: Number(st.price), contractor_id: st.cid } : o));
     } catch { /* */ }
+  };
+
+  const sendInvoice = async (orderId: string) => {
+    const ctype = paymentState[orderId]?.customerType || 'individual';
+    setPaymentLoading(s => ({ ...s, [orderId]: 'invoice' }));
+    try {
+      await fetch(`/api/admin/orders/${orderId}/send-invoice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ customer_type: ctype }),
+      });
+      setOrders(os => os.map(o => o.order_id === orderId ? { ...o, payment_status: 'invoice_sent', customer_type: ctype } : o));
+    } catch { /* */ } finally {
+      setPaymentLoading(s => { const n = { ...s }; delete n[orderId]; return n; });
+    }
+  };
+
+  const markPaymentReceived = async (orderId: string) => {
+    setPaymentLoading(s => ({ ...s, [orderId]: 'paid' }));
+    try {
+      await fetch(`/api/admin/orders/${orderId}/payment-status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ payment_status: 'paid' }),
+      });
+      setOrders(os => os.map(o => o.order_id === orderId ? { ...o, payment_status: 'paid', status: 'paid' } : o));
+    } catch { /* */ } finally {
+      setPaymentLoading(s => { const n = { ...s }; delete n[orderId]; return n; });
+    }
+  };
+
+  const markExecutorPaid = async (orderId: string) => {
+    setPaymentLoading(s => ({ ...s, [orderId]: 'payout' }));
+    try {
+      await fetch(`/api/admin/orders/${orderId}/payment-status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ executor_payout_status: 'paid' }),
+      });
+      setOrders(os => os.map(o => o.order_id === orderId ? { ...o, executor_payout_status: 'paid', status: 'completed' } : o));
+    } catch { /* */ } finally {
+      setPaymentLoading(s => { const n = { ...s }; delete n[orderId]; return n; });
+    }
   };
 
   const sendLink = async (orderId: string) => {
@@ -614,12 +679,63 @@ function OrdersTab({ pin }: { pin: string }) {
                   </button>
                 </div>
               )}
-              {/* Send payment link for priced orders */}
-              {o.status === 'priced' && (
-                <button onClick={() => sendLink(oid)}
-                  className="mt-3 w-full py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium cursor-pointer transition-colors">
-                  Отправить ссылку на оплату
-                </button>
+              {/* Payment management for priced+ orders */}
+              {(['priced', 'payment_sent', 'paid', 'in_progress', 'confirming'].includes(o.status)) && (
+                <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
+                  <div className="text-xs font-semibold text-amber-700 mb-1">Оплата</div>
+                  {/* Customer type toggle */}
+                  <div className="flex gap-2">
+                    {(['individual', 'legal_entity'] as const).map(ct => (
+                      <button key={ct} type="button"
+                        onClick={() => setPaymentState(s => ({ ...s, [oid]: { ...s[oid], customerType: ct } }))}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                          (paymentState[oid]?.customerType || o.customer_type || 'individual') === ct
+                            ? 'bg-amber-500 text-white border-amber-500'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-amber-300'
+                        }`}>
+                        {ct === 'individual' ? 'Физлицо / СБП' : 'Организация / Счёт'}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Status badges */}
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className={`px-2 py-0.5 rounded-full font-medium ${
+                      o.payment_status === 'paid' ? 'bg-green-100 text-green-700' :
+                      o.payment_status === 'invoice_sent' ? 'bg-blue-100 text-blue-700' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>Оплата: {o.payment_status === 'paid' ? 'Получено ✓' : o.payment_status === 'invoice_sent' ? 'Счёт отправлен' : 'Ожидается'}</span>
+                    <span className={`px-2 py-0.5 rounded-full font-medium ${
+                      o.executor_payout_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    }`}>Исполнитель: {o.executor_payout_status === 'paid' ? 'Выплачено ✓' : 'Ожидается'}</span>
+                  </div>
+                  {/* Action buttons */}
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {o.payment_status !== 'paid' && (
+                      <button onClick={() => sendInvoice(oid)}
+                        disabled={paymentLoading[oid] === 'invoice'}
+                        className="w-full py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium cursor-pointer disabled:opacity-50 transition-colors">
+                        {paymentLoading[oid] === 'invoice' ? 'Отправка...' :
+                          (paymentState[oid]?.customerType || o.customer_type) === 'legal_entity'
+                            ? 'Выставить счёт (ФИД)'
+                            : 'Отправить реквизиты СБП'}
+                      </button>
+                    )}
+                    {o.payment_status !== 'paid' && (
+                      <button onClick={() => markPaymentReceived(oid)}
+                        disabled={paymentLoading[oid] === 'paid'}
+                        className="w-full py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-xs font-medium cursor-pointer disabled:opacity-50 transition-colors">
+                        {paymentLoading[oid] === 'paid' ? 'Сохранение...' : 'Оплата получена ✓'}
+                      </button>
+                    )}
+                    {o.payment_status === 'paid' && o.executor_payout_status !== 'paid' && (
+                      <button onClick={() => markExecutorPaid(oid)}
+                        disabled={paymentLoading[oid] === 'payout'}
+                        className="w-full py-2 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium cursor-pointer disabled:opacity-50 transition-colors">
+                        {paymentLoading[oid] === 'payout' ? 'Сохранение...' : 'Выплачено исполнителю ✓'}
+                      </button>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           );
@@ -1238,7 +1354,7 @@ function StatsTab({ pin }: { pin: string }) {
 
   const totalMargin = orders.reduce((s, o) => s + (o.platform_margin || 0), 0);
   const avgMargin = orders.length ? totalMargin / orders.length : 0;
-  const disputeCount = orders.filter(o => o.escrow_status === 'dispute' || o.status === 'dispute').length;
+  const disputeCount = orders.filter(o => o.status === 'disputed').length;
 
   const stats = [
     { label: 'Сумма маржи платформы', value: fmtMoney(totalMargin) },

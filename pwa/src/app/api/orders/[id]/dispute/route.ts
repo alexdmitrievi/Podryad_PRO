@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
-import { getOrderById, updateOrder, createDispute, getDisputesByOrder, updateDispute, insertEscrowLedger } from '@/lib/db';
-import { cancelPayment, createRefund } from '@/lib/yukassa';
+import { getOrderById, updateOrder, createDispute, getDisputesByOrder, updateDispute } from '@/lib/db';
 
 export async function POST(
   req: Request,
@@ -36,8 +35,8 @@ export async function POST(
     }
 
     // Cannot dispute completed or cancelled orders
-    const escrowStatus = String(order.escrow_status ?? '');
-    if (escrowStatus === 'completed' || escrowStatus === 'cancelled') {
+    const orderStatus = String((order as Record<string, unknown>).status ?? '');
+    if (orderStatus === 'completed' || orderStatus === 'cancelled') {
       return NextResponse.json(
         { error: 'Cannot dispute a completed/cancelled order' },
         { status: 409 }
@@ -52,8 +51,8 @@ export async function POST(
       description: typeof description === 'string' ? description : undefined,
     });
 
-    // Update escrow_status to 'disputed'
-    await updateOrder(id, { escrow_status: 'disputed' });
+    // Update order status to 'disputed'
+    await updateOrder(id, { status: 'disputed' });
 
     return NextResponse.json(
       { disputeId: (dispute as Record<string, unknown>).id, status: 'disputed' },
@@ -106,7 +105,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    const mappedOrder = order as Record<string, unknown>;
     const disputes = await getDisputesByOrder(id);
     const pendingDispute = disputes.find((d) => d.resolution === 'pending');
     if (!pendingDispute) {
@@ -114,42 +112,12 @@ export async function PATCH(
     }
 
     if (resolution === 'refund_full') {
-      const paymentId = mappedOrder.yookassa_payment_id as string | undefined;
-      const captured = Boolean(mappedOrder.payment_captured);
-      const amount = Number(mappedOrder.customer_total ?? mappedOrder.total ?? 0);
-
-      if (!paymentId) {
-        return NextResponse.json({ error: 'No YooKassa payment linked to this order' }, { status: 409 });
-      }
-
-      const idempKey = `dispute-refund-${id}-${Date.now()}`;
-
-      if (!captured) {
-        // Payment is still on hold — cancel it
-        await cancelPayment(paymentId, idempKey);
-        await insertEscrowLedger({
-          order_id: id,
-          type: 'refund',
-          amount,
-          yookassa_operation_id: paymentId,
-          note: 'Dispute resolved: hold cancelled',
-        });
-      } else {
-        // Payment was captured — issue a refund
-        await createRefund(paymentId, amount, idempKey);
-        await insertEscrowLedger({
-          order_id: id,
-          type: 'refund',
-          amount,
-          yookassa_operation_id: paymentId,
-          note: 'Dispute resolved: refund issued',
-        });
-      }
-
-      await updateOrder(id, { escrow_status: 'cancelled' });
+      // Manual refund: admin will process payment return externally.
+      // Mark order as cancelled so customer knows refund is in progress.
+      await updateOrder(id, { status: 'cancelled' });
     } else {
-      // release_payment: mark completed, payout handled separately by admin
-      await updateOrder(id, { escrow_status: 'completed' });
+      // release_payment: admin decided in favour of executor — mark completed.
+      await updateOrder(id, { status: 'completed' });
     }
 
     await updateDispute(pendingDispute.id, {

@@ -31,7 +31,6 @@ export async function GET(req: NextRequest) {
     people_count: o.people_count,
     hours: o.hours,
     status: o.status,
-    escrow_status: o.escrow_status,
     display_price: o.display_price ?? o.customer_total,
     created_at: o.created_at,
     customer_confirmed: o.customer_confirmed,

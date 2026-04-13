@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const db = getServiceClient();
   const { data, error } = await db
     .from('orders')
-    .select('order_id, order_number, status, escrow_status, customer_total, supplier_payout, platform_margin, created_at, customer_phone, customer_name, address, work_date, people_count, hours, work_type, subcategory, customer_comment, preferred_contact, contractor_id, display_price')
+    .select('order_id, order_number, status, customer_total, supplier_payout, platform_margin, created_at, customer_phone, customer_name, address, work_date, people_count, hours, work_type, subcategory, customer_comment, preferred_contact, contractor_id, display_price')
     .order('created_at', { ascending: false })
     .limit(200);
 

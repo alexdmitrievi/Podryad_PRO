@@ -8,10 +8,7 @@ interface OrderData {
   order_id?: string;
   work_type?: string;
   address?: string;
-  total?: number;
-  subtotal?: number;
-  payout_amount?: number;
-  escrow_status?: string;
+  display_price?: number;
 }
 
 type ConfirmResult =

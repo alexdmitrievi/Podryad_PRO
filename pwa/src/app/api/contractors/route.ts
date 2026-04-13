@@ -29,6 +29,11 @@ export async function POST(req: NextRequest) {
     crew_size,
     has_transport,
     has_tools,
+    payout_type,
+    payout_sbp_phone,
+    payout_bank_details,
+    is_legal_entity,
+    inn,
   } = body as Record<string, unknown>;
 
   // Validate name
@@ -71,6 +76,11 @@ export async function POST(req: NextRequest) {
       crew_size: is_brigade === true && crew_size != null ? Number(crew_size) : undefined,
       has_transport: is_brigade === true ? !!has_transport : undefined,
       has_tools: is_brigade === true ? !!has_tools : undefined,
+      payout_type: payout_type != null ? String(payout_type) : undefined,
+      payout_sbp_phone: payout_sbp_phone != null ? String(payout_sbp_phone) : undefined,
+      payout_bank_details: payout_bank_details != null ? String(payout_bank_details) : undefined,
+      is_legal_entity: is_legal_entity === true,
+      inn: inn != null ? String(inn) : undefined,
     });
   } catch (err) {
     console.error('POST /api/contractors createContractor:', err);

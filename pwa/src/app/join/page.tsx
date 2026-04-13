@@ -44,9 +44,14 @@ export default function JoinPage() {
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
 
-  // Brigade-specific fields
-  const [crewSize, setCrewSize] = useState('');
+  // Реквизиты для выплаты
+  const [payoutType, setPayoutType] = useState<'sbp' | 'bank_transfer' | 'cash'>('sbp');
+  const [payoutSbpPhone, setPayoutSbpPhone] = useState('');
+  const [payoutBankDetails, setPayoutBankDetails] = useState('');
+  const [isLegalEntity, setIsLegalEntity] = useState(false);
+  const [inn, setInn] = useState('');
   const [hasTransport, setHasTransport] = useState(false);
   const [hasTools, setHasTools] = useState(false);
 
@@ -92,6 +97,11 @@ export default function JoinPage() {
           crew_size: formType === 'brigade' && crewSize ? parseInt(crewSize, 10) : undefined,
           has_transport: formType === 'brigade' ? hasTransport : undefined,
           has_tools: formType === 'brigade' ? hasTools : undefined,
+          payout_type: payoutType,
+          payout_sbp_phone: payoutType === 'sbp' ? (payoutSbpPhone.trim() || getRawPhone(phone)) : undefined,
+          payout_bank_details: payoutType === 'bank_transfer' ? payoutBankDetails.trim() : undefined,
+          is_legal_entity: isLegalEntity,
+          inn: inn.trim() || undefined,
         }),
       });
       if (!res.ok) throw new Error('Ошибка сервера');
@@ -357,6 +367,64 @@ export default function JoinPage() {
                 }
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-shadow"
               />
+            </div>
+
+            {/* Payout requisites */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700">Как удобно получать оплату?</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['sbp', 'bank_transfer', 'cash'] as const).map((type) => {
+                  const labels = { sbp: 'СБП', bank_transfer: 'Перевод', cash: 'Наличные' };
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setPayoutType(type)}
+                      className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                        payoutType === type
+                          ? 'bg-brand-500 text-white border-brand-500'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300'
+                      }`}
+                    >
+                      {labels[type]}
+                    </button>
+                  );
+                })}
+              </div>
+              {payoutType === 'sbp' && (
+                <input
+                  type="tel"
+                  value={payoutSbpPhone}
+                  onChange={(e) => setPayoutSbpPhone(e.target.value)}
+                  placeholder="Телефон для СБП (если отличается от основного)"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                />
+              )}
+              {payoutType === 'bank_transfer' && (
+                <textarea
+                  value={payoutBankDetails}
+                  onChange={(e) => setPayoutBankDetails(e.target.value)}
+                  placeholder="Банк, расчётный счёт, БИК, ИНН получателя"
+                  rows={3}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none"
+                />
+              )}
+              <input
+                type="text"
+                value={inn}
+                onChange={(e) => setInn(e.target.value)}
+                placeholder="ИНН (если есть, необязательно)"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+              />
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isLegalEntity}
+                  onChange={(e) => setIsLegalEntity(e.target.checked)}
+                  className="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                />
+                <span className="text-sm text-gray-600">Я ИП или организация</span>
+              </label>
             </div>
 
             {/* 152-ФЗ consent */}
