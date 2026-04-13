@@ -120,7 +120,7 @@ export async function PATCH(
       await updateOrder(id, { status: 'completed' });
     }
 
-    await updateDispute(pendingDispute.id, {
+    await updateDispute(String(pendingDispute.id), {
       resolution,
       resolved_at: new Date().toISOString(),
     });
