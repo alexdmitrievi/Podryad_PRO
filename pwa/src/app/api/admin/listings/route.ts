@@ -85,3 +85,66 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true, listing: data }, { status: 201 });
 }
+
+export async function PUT(req: NextRequest) {
+  const pin = req.headers.get('x-admin-pin') ?? '';
+  if (!verifyPin(pin)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  let body: { listing_id: string; title?: string; price?: number; price_unit?: string; is_active?: boolean };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const { listing_id, title, price, price_unit, is_active } = body;
+  if (!listing_id) {
+    return NextResponse.json({ error: 'listing_id required' }, { status: 400 });
+  }
+
+  const db = getServiceClient();
+  const updates: Record<string, unknown> = {};
+
+  if (title !== undefined) updates.title = String(title).trim();
+  if (price_unit !== undefined) updates.price_unit = String(price_unit);
+  if (is_active !== undefined) updates.is_active = Boolean(is_active);
+
+  if (price !== undefined) {
+    const basePrice = Number(price);
+    if (isNaN(basePrice) || basePrice <= 0) {
+      return NextResponse.json({ error: 'invalid_price' }, { status: 400 });
+    }
+    // Fetch current listing to get category for markup
+    const { data: current } = await db
+      .from('listings')
+      .select('listing_type, category_slug')
+      .eq('listing_id', listing_id)
+      .single();
+
+    const markupPercent = current
+      ? await getMarkupRate(db, current.listing_type, current.category_slug)
+      : 0;
+    const { displayPrice } = applyMarkup(basePrice, markupPercent);
+    updates.price = basePrice;
+    updates.display_price = displayPrice;
+    updates.markup_percent = markupPercent;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+  }
+
+  const { error } = await db
+    .from('listings')
+    .update(updates)
+    .eq('listing_id', listing_id);
+
+  if (error) {
+    console.error('PUT /api/admin/listings:', error);
+    return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

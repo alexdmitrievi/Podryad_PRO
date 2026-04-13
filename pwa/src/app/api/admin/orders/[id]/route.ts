@@ -32,14 +32,14 @@ export async function PUT(
 
   const { id: orderId } = await params;
 
-  let body: { display_price?: number; contractor_id?: string; status?: string };
+  let body: { display_price?: number; contractor_id?: string; status?: string; address?: string; work_date?: string; hours?: number | null; people_count?: number | null; customer_comment?: string; customer_name?: string; customer_phone?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { display_price, contractor_id, status } = body;
+  const { display_price, contractor_id, status, address, work_date, hours, people_count, customer_comment, customer_name, customer_phone } = body;
 
   // Validate display_price if present
   if (display_price !== undefined && (typeof display_price !== 'number' || display_price <= 0)) {
@@ -61,6 +61,13 @@ export async function PUT(
     updates.customer_total = display_price;
   }
   if (contractor_id !== undefined) updates.contractor_id = contractor_id;
+  if (address !== undefined) updates.address = String(address);
+  if (work_date !== undefined) updates.work_date = String(work_date);
+  if (hours !== undefined) updates.hours = hours;
+  if (people_count !== undefined) updates.people_count = people_count;
+  if (customer_comment !== undefined) updates.customer_comment = String(customer_comment);
+  if (customer_name !== undefined) updates.customer_name = String(customer_name);
+  if (customer_phone !== undefined) updates.customer_phone = String(customer_phone);
 
   // Auto-set status to 'priced' when price + contractor assigned but no explicit status
   if (status !== undefined) {

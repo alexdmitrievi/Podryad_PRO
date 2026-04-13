@@ -25,11 +25,11 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false }),
     // All orders (for totals)
     db.from('orders')
-      .select('order_id, status, payment_status, executor_payout_status, customer_total, platform_margin, display_price, contractor_id, created_at')
+      .select('order_id, status, payment_status, executor_payout_status, customer_total, supplier_payout, platform_margin, display_price, contractor_id, customer_name, customer_phone, created_at')
       .order('created_at', { ascending: false }),
     // Contractors
     db.from('contractors')
-      .select('id, status, city, specialties, created_at'),
+      .select('id, name, status, city, specialties, created_at'),
     // Customers
     db.from('customers')
       .select('id, customer_type, city, created_at'),
@@ -63,68 +63,75 @@ export async function GET(req: NextRequest) {
   const completedOrders = allOrders.filter(o => o.status === 'completed' || o.status === 'done');
 
   // === Order Status Distribution ===
-  const statusCounts: Record<string, number> = {};
-  orders.forEach(o => { statusCounts[o.status] = (statusCounts[o.status] || 0) + 1; });
+  const statusCountsMap: Record<string, number> = {};
+  orders.forEach(o => { statusCountsMap[o.status] = (statusCountsMap[o.status] || 0) + 1; });
 
   // === Payment Status Distribution ===
-  const paymentCounts: Record<string, number> = {};
+  const paymentCountsMap: Record<string, number> = {};
   orders.forEach(o => {
     const ps = o.payment_status || 'pending';
-    paymentCounts[ps] = (paymentCounts[ps] || 0) + 1;
+    paymentCountsMap[ps] = (paymentCountsMap[ps] || 0) + 1;
   });
 
-  // === Orders by Work Type ===
-  const byWorkType: Record<string, number> = {};
+  // === Orders by Work Type (with revenue) ===
+  const byWorkTypeMap: Record<string, { count: number; revenue: number }> = {};
   orders.forEach(o => {
     const wt = o.work_type || 'other';
-    byWorkType[wt] = (byWorkType[wt] || 0) + 1;
+    if (!byWorkTypeMap[wt]) byWorkTypeMap[wt] = { count: 0, revenue: 0 };
+    byWorkTypeMap[wt].count += 1;
+    byWorkTypeMap[wt].revenue += Number(o.platform_margin) || 0;
   });
 
   // === Daily Orders (for chart) ===
-  const dailyOrders: Record<string, number> = {};
-  const dailyRevenue: Record<string, number> = {};
+  const dailyOrdersMap: Record<string, number> = {};
+  const dailyRevenueMap: Record<string, number> = {};
   orders.forEach(o => {
     const day = o.created_at?.slice(0, 10) || 'unknown';
-    dailyOrders[day] = (dailyOrders[day] || 0) + 1;
-    dailyRevenue[day] = (dailyRevenue[day] || 0) + (Number(o.platform_margin) || 0);
+    dailyOrdersMap[day] = (dailyOrdersMap[day] || 0) + 1;
+    dailyRevenueMap[day] = (dailyRevenueMap[day] || 0) + (Number(o.platform_margin) || 0);
   });
 
   // === Leads by Source ===
-  const leadsBySource: Record<string, number> = {};
+  const leadsBySourceMap: Record<string, number> = {};
   leads.forEach(l => {
-    leadsBySource[l.source] = (leadsBySource[l.source] || 0) + 1;
+    leadsBySourceMap[l.source] = (leadsBySourceMap[l.source] || 0) + 1;
   });
 
   // === Conversion Funnel ===
-  const uniqueLeadPhones = new Set(leads.map(l => l.id));
   const leadsToOrders = orders.filter(o => o.customer_phone).length;
 
   // === Top Contractors (by assigned orders) ===
-  const contractorOrders: Record<string, number> = {};
+  const contractorOrdersMap: Record<string, { count: number; earned: number }> = {};
   allOrders.forEach(o => {
     if (o.contractor_id) {
-      contractorOrders[o.contractor_id] = (contractorOrders[o.contractor_id] || 0) + 1;
+      if (!contractorOrdersMap[o.contractor_id]) contractorOrdersMap[o.contractor_id] = { count: 0, earned: 0 };
+      contractorOrdersMap[o.contractor_id].count += 1;
+      contractorOrdersMap[o.contractor_id].earned += Number(o.supplier_payout) || 0;
     }
   });
 
-  // === Top Customers (by orders count) ===
-  const customerOrders: Record<string, number> = {};
+  // === Top Customers (by orders count + spending) ===
+  const customerOrdersMap: Record<string, { count: number; spent: number; name: string }> = {};
   allOrders.forEach(o => {
-    const phone = (o as Record<string, unknown>).customer_phone as string;
+    const phone = o.customer_phone as string;
     if (phone) {
-      customerOrders[phone] = (customerOrders[phone] || 0) + 1;
+      if (!customerOrdersMap[phone]) customerOrdersMap[phone] = { count: 0, spent: 0, name: '' };
+      customerOrdersMap[phone].count += 1;
+      customerOrdersMap[phone].spent += Number(o.customer_total) || Number(o.display_price) || 0;
+      const name = o.customer_name as string;
+      if (name && !customerOrdersMap[phone].name) customerOrdersMap[phone].name = name;
     }
   });
-  // For top customers we need to match with customer data
-  const topCustomerPhones = Object.entries(customerOrders)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
 
   // === Contractor Status Distribution ===
-  const contractorStatuses: Record<string, number> = {};
+  const contractorStatusesMap: Record<string, number> = {};
   contractors.forEach(c => {
-    contractorStatuses[c.status] = (contractorStatuses[c.status] || 0) + 1;
+    contractorStatusesMap[c.status] = (contractorStatusesMap[c.status] || 0) + 1;
   });
+
+  // Build contractor name lookup
+  const contractorNameMap: Record<string, string> = {};
+  contractors.forEach(c => { contractorNameMap[c.id] = c.name || c.id; });
 
   // === Response rate ===
   const acceptedResponses = responses.filter(r => r.status === 'accepted').length;
@@ -154,18 +161,21 @@ export async function GET(req: NextRequest) {
       resolvedDisputes: disputes.filter(d => d.resolution && d.resolution !== 'pending').length,
     },
     charts: {
-      statusCounts,
-      paymentCounts,
-      byWorkType,
-      dailyOrders,
-      dailyRevenue,
-      leadsBySource,
-      contractorStatuses,
+      statusCounts: Object.entries(statusCountsMap).map(([status, count]) => ({ status, count })),
+      paymentCounts: Object.entries(paymentCountsMap).map(([payment_status, count]) => ({ payment_status, count })),
+      byWorkType: Object.entries(byWorkTypeMap).map(([work_type, v]) => ({ work_type, count: v.count, revenue: v.revenue })),
+      dailyOrders: Object.entries(dailyOrdersMap).sort().map(([date, count]) => ({ date, count })),
+      dailyRevenue: Object.entries(dailyRevenueMap).sort().map(([date, revenue]) => ({ date, revenue })),
+      leadsBySource: Object.entries(leadsBySourceMap).map(([source, count]) => ({ source, count })),
+      contractorStatuses: Object.entries(contractorStatusesMap).map(([status, count]) => ({ status, count })),
     },
-    topCustomers: topCustomerPhones.map(([phone, count]) => ({ phone, ordersCount: count })),
-    topContractors: Object.entries(contractorOrders)
-      .sort((a, b) => b[1] - a[1])
+    topCustomers: Object.entries(customerOrdersMap)
+      .sort((a, b) => b[1].spent - a[1].spent)
       .slice(0, 10)
-      .map(([id, count]) => ({ id, ordersCount: count })),
+      .map(([phone, v]) => ({ name: v.name || phone, phone, orders: v.count, total_spent: v.spent })),
+    topContractors: Object.entries(contractorOrdersMap)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 10)
+      .map(([id, v]) => ({ name: contractorNameMap[id] || id, orders: v.count, total_earned: v.earned })),
   });
 }

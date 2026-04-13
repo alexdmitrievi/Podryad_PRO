@@ -261,8 +261,8 @@ function UsersTab({ pin }: { pin: string }) {
     try {
       const res = await fetch('/api/admin/generate-link', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, name, phone }),
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ name, phone }),
       });
       const data = await res.json();
       if (res.ok && data.link) {
@@ -528,6 +528,10 @@ function OrdersTab({ pin }: { pin: string }) {
   const [assignState, setAssignState] = useState<Record<string, { price: string; cid: string }>>({});
   const [paymentState, setPaymentState] = useState<Record<string, { customerType: string }>>({});
   const [paymentLoading, setPaymentLoading] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [editingOrder, setEditingOrder] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
 
   const loadOrders = async () => {
     setError('');
@@ -643,18 +647,64 @@ function OrdersTab({ pin }: { pin: string }) {
     ],
   };
 
+  const saveEdit = async (orderId: string) => {
+    const f = editForm;
+    const updates: Record<string, unknown> = {};
+    if (f.address !== undefined) updates.address = f.address;
+    if (f.work_date !== undefined) updates.work_date = f.work_date;
+    if (f.hours !== undefined) updates.hours = Number(f.hours) || null;
+    if (f.people_count !== undefined) updates.people_count = Number(f.people_count) || null;
+    if (f.customer_comment !== undefined) updates.customer_comment = f.customer_comment;
+    if (f.customer_name !== undefined) updates.customer_name = f.customer_name;
+    if (f.customer_phone !== undefined) updates.customer_phone = f.customer_phone;
+    if (Object.keys(updates).length === 0) { setEditingOrder(null); return; }
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify(updates),
+      });
+      if (res.ok) {
+        setOrders(os => os.map(o => (o.order_id || o.id) === orderId ? { ...o, ...updates } as Order : o));
+        setEditingOrder(null);
+      }
+    } catch { /* */ }
+  };
+
+  const filteredOrders = orders.filter(o => {
+    if (statusFilter && o.status !== statusFilter) return false;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      (o.order_number || '').toLowerCase().includes(q) ||
+      (o.customer_name || '').toLowerCase().includes(q) ||
+      (o.customer_phone || '').includes(q) ||
+      (o.work_type || '').toLowerCase().includes(q) ||
+      (o.address || '').toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button onClick={loadOrders} disabled={loading}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
           <RefreshCw className={loading ? "w-4 h-4 animate-spin" : "w-4 h-4"} /> Загрузить
         </button>
-        {orders.length > 0 && <span className="text-sm text-gray-500">Всего: {orders.length}</span>}
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск по имени, телефону, адресу..."
+          className="flex-1 min-w-[200px] px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          className="px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer">
+          <option value="">Все статусы</option>
+          {['pending', 'priced', 'payment_sent', 'paid', 'in_progress', 'completed', 'cancelled', 'disputed'].map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        {orders.length > 0 && <span className="text-sm text-gray-500">Показано: {filteredOrders.length} / {orders.length}</span>}
       </div>
       {error && <p className="text-red-500 text-sm">{error}</p>}
       <div className="grid gap-4">
-        {orders.map(o => {
+        {filteredOrders.map(o => {
           const oid = o.order_id || o.id;
           return (
             <div key={oid} className="bg-white rounded-2xl p-5 shadow-card border border-gray-100">
@@ -779,6 +829,51 @@ function OrdersTab({ pin }: { pin: string }) {
                   ))}
                 </div>
               )}
+              {/* Edit button */}
+              <button onClick={() => {
+                if (editingOrder === oid) { setEditingOrder(null); return; }
+                setEditForm({
+                  address: o.address || '',
+                  work_date: o.work_date || '',
+                  hours: String(o.hours || ''),
+                  people_count: String(o.people_count || ''),
+                  customer_comment: o.customer_comment || '',
+                  customer_name: o.customer_name || '',
+                  customer_phone: o.customer_phone || '',
+                });
+                setEditingOrder(oid);
+              }}
+                className="mt-2 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 cursor-pointer transition-colors">
+                {editingOrder === oid ? 'Отмена' : 'Редактировать'}
+              </button>
+              {/* Inline edit form */}
+              {editingOrder === oid && (
+                <div className="mt-3 p-3 rounded-xl bg-blue-50 border border-blue-200 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input value={editForm.customer_name || ''} onChange={e => setEditForm(f => ({ ...f, customer_name: e.target.value }))}
+                      placeholder="Имя клиента" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                    <input value={editForm.customer_phone || ''} onChange={e => setEditForm(f => ({ ...f, customer_phone: e.target.value }))}
+                      placeholder="Телефон" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                  </div>
+                  <input value={editForm.address || ''} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))}
+                    placeholder="Адрес" className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                  <div className="grid grid-cols-3 gap-2">
+                    <input value={editForm.work_date || ''} onChange={e => setEditForm(f => ({ ...f, work_date: e.target.value }))}
+                      placeholder="Дата работ" type="date" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                    <input value={editForm.hours || ''} onChange={e => setEditForm(f => ({ ...f, hours: e.target.value }))}
+                      placeholder="Часы" type="number" min="0" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                    <input value={editForm.people_count || ''} onChange={e => setEditForm(f => ({ ...f, people_count: e.target.value }))}
+                      placeholder="Человек" type="number" min="0" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                  </div>
+                  <textarea value={editForm.customer_comment || ''} onChange={e => setEditForm(f => ({ ...f, customer_comment: e.target.value }))}
+                    placeholder="Комментарий клиента" rows={2}
+                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-sm resize-none" />
+                  <button onClick={() => saveEdit(oid)}
+                    className="w-full py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium cursor-pointer transition-colors">
+                    Сохранить
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}
@@ -815,8 +910,8 @@ function MarkupsTab({ pin }: { pin: string }) {
     try {
       const res = await fetch('/api/admin/markup-rates', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, rates }),
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ rates }),
       });
       const data = await res.json();
       if (res.ok) { setSuccess('Сохранено'); } else { setError(data.error || 'Ошибка'); }
@@ -830,8 +925,8 @@ function MarkupsTab({ pin }: { pin: string }) {
     try {
       const res = await fetch('/api/admin/recalculate-prices', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin }),
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({}),
       });
       const data = await res.json();
       if (res.ok) { setSuccess('Цены пересчитаны'); } else { setError(data.error || 'Ошибка'); }
@@ -992,6 +1087,40 @@ function ListingsTab({ pin }: { pin: string }) {
   const [saving, setSaving] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState('');
+  const [editingListing, setEditingListing] = useState<string | null>(null);
+  const [editListingForm, setEditListingForm] = useState<{ title: string; price: string; price_unit: string }>({ title: '', price: '', price_unit: '' });
+
+  const toggleListingActive = async (listingId: string, currentActive: boolean) => {
+    try {
+      const res = await fetch('/api/admin/listings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ listing_id: listingId, is_active: !currentActive }),
+      });
+      if (res.ok) {
+        setListings(ls => ls.map(l => l.listing_id === listingId ? { ...l, is_active: !currentActive } : l));
+      }
+    } catch { /* */ }
+  };
+
+  const saveListingEdit = async (listingId: string) => {
+    setSaving(true);
+    try {
+      const updates: Record<string, unknown> = { listing_id: listingId };
+      if (editListingForm.title) updates.title = editListingForm.title;
+      if (editListingForm.price) updates.price = Number(editListingForm.price);
+      if (editListingForm.price_unit) updates.price_unit = editListingForm.price_unit;
+      const res = await fetch('/api/admin/listings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify(updates),
+      });
+      if (res.ok) {
+        setEditingListing(null);
+        loadListings();
+      }
+    } catch { /* */ } finally { setSaving(false); }
+  };
 
   const handleUploadPhoto = async (listingId: string, file: File) => {
     setUploadingId(listingId);
@@ -1079,7 +1208,7 @@ function ListingsTab({ pin }: { pin: string }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 dark:border-dark-border">
-                {['Название', 'Категория', 'Тип', 'База', 'Витрина', 'Наценка', 'Ед.', 'Фото', 'Статус', 'Дата'].map(h => (
+                {['Название', 'Категория', 'Тип', 'База', 'Витрина', 'Наценка', 'Ед.', 'Фото', 'Статус', 'Дата', 'Действия'].map(h => (
                   <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -1120,6 +1249,34 @@ function ListingsTab({ pin }: { pin: string }) {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(l.created_at)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1">
+                      <button onClick={() => toggleListingActive(l.listing_id, l.is_active)}
+                        className={`px-2 py-1 rounded-lg text-xs font-medium cursor-pointer transition-colors ${l.is_active ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}>
+                        {l.is_active ? 'Скрыть' : 'Активировать'}
+                      </button>
+                      <button onClick={() => {
+                        if (editingListing === l.listing_id) { setEditingListing(null); return; }
+                        setEditListingForm({ title: l.title, price: String(l.price), price_unit: l.price_unit });
+                        setEditingListing(l.listing_id);
+                      }}
+                        className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 cursor-pointer transition-colors">
+                        Ред.
+                      </button>
+                    </div>
+                    {editingListing === l.listing_id && (
+                      <div className="mt-2 space-y-1.5 min-w-[250px]">
+                        <input value={editListingForm.title} onChange={e => setEditListingForm(f => ({ ...f, title: e.target.value }))}
+                          placeholder="Название" className="w-full px-2 py-1 rounded-lg border border-gray-200 text-xs" />
+                        <input value={editListingForm.price} onChange={e => setEditListingForm(f => ({ ...f, price: e.target.value }))}
+                          placeholder="Базовая цена" type="number" className="w-full px-2 py-1 rounded-lg border border-gray-200 text-xs" />
+                        <button onClick={() => saveListingEdit(l.listing_id)} disabled={saving}
+                          className="w-full py-1 rounded-lg bg-blue-500 text-white text-xs font-medium cursor-pointer hover:bg-blue-600 disabled:opacity-50 transition-colors">
+                          {saving ? '...' : 'Сохранить'}
+                        </button>
+                      </div>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1972,6 +2129,12 @@ function CrmFunnelTab({ pin }: { pin: string }) {
                       Последний контакт: {fmtDate(l.last_contacted_at)} · Попытки: {l.contact_attempts}
                     </div>
                   )}
+                  {l.next_followup_at && (
+                    <div className={`text-xs mt-1 ${new Date(l.next_followup_at) <= new Date() ? 'text-red-500 font-medium' : 'text-blue-500'}`}>
+                      Следующий контакт: {fmtDate(l.next_followup_at)}
+                      {new Date(l.next_followup_at) <= new Date() && ' ⚠ просрочено'}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2 items-end">
                   <div className="flex gap-1">
@@ -2024,6 +2187,12 @@ function CrmFunnelTab({ pin }: { pin: string }) {
                   {p.last_contacted_at && (
                     <div className="text-xs text-gray-400 mt-1">
                       Контакт: {fmtDate(p.last_contacted_at)} · Попытки: {p.contact_attempts}
+                    </div>
+                  )}
+                  {p.next_followup_at && (
+                    <div className={`text-xs mt-1 ${new Date(p.next_followup_at) <= new Date() ? 'text-red-500 font-medium' : 'text-blue-500'}`}>
+                      Следующий контакт: {fmtDate(p.next_followup_at)}
+                      {new Date(p.next_followup_at) <= new Date() && ' ⚠ просрочено'}
                     </div>
                   )}
                   {p.registered_at && <div className="text-xs text-green-600 mt-1">✅ Зарегистрирован: {fmtDate(p.registered_at)}</div>}

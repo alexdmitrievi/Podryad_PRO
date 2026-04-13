@@ -18,13 +18,31 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  let body: { id?: number; markup_percent?: number };
+  let body: { id?: number; markup_percent?: number; rates?: { id: number; markup_percent: number }[] };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
+  const db = getServiceClient();
+
+  // Support batch update (array of rates)
+  if (Array.isArray(body.rates)) {
+    let updated = 0;
+    for (const rate of body.rates) {
+      if (!rate.id || typeof rate.markup_percent !== 'number') continue;
+      if (rate.markup_percent < 0 || rate.markup_percent > 100) continue;
+      const { error } = await db
+        .from('markup_rates')
+        .update({ markup_percent: rate.markup_percent })
+        .eq('id', rate.id);
+      if (!error) updated++;
+    }
+    return NextResponse.json({ ok: true, updated });
+  }
+
+  // Single update
   if (!body.id || typeof body.markup_percent !== 'number') {
     return NextResponse.json({ error: 'id and markup_percent required' }, { status: 400 });
   }
@@ -33,7 +51,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'markup_percent must be 0-100' }, { status: 400 });
   }
 
-  const db = getServiceClient();
   const { error } = await db
     .from('markup_rates')
     .update({ markup_percent: body.markup_percent })
