@@ -71,7 +71,7 @@ export default function TokenRecoveryPage() {
             </div>
 
             <h1 className="font-heading font-extrabold text-2xl text-[var(--color-text)] text-center mb-2">
-              Мои заказы
+              Восстановить доступ
             </h1>
             <p className="text-sm text-[var(--color-muted)] text-center mb-7 text-balance">
               Введите номер телефона — мы отправим ссылку на ваш дашборд
