@@ -6,7 +6,9 @@ import {
   Lock, Users, ShoppingBag, Tag, AlertTriangle, BarChart3,
   Copy, Check, ExternalLink, UserPlus, RefreshCw, Save,
   Package, FileText, Plus, X, Camera, Upload, MessageSquare,
-  Phone, Mail, Send, Contact, TrendingUp, MapPin, Clipboard
+  Phone, Mail, Send, Contact, TrendingUp, MapPin, Clipboard,
+  Activity, FileDown, ArrowUpRight, ArrowDownRight, Minus,
+  DollarSign, Briefcase, UserCheck, Clock, Percent, PieChart
 } from 'lucide-react';
 
 interface Order {
@@ -142,10 +144,12 @@ interface ContactEntry {
   source: string;
 }
 
-type TabId = 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'stats' | 'crm';
+type TabId = 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'stats' | 'crm' | 'analytics' | 'documents';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "crm", label: "CRM Воронка", icon: TrendingUp },
+  { id: "analytics", label: "Аналитика", icon: Activity },
+  { id: "orders", label: "Заказы", icon: ShoppingBag },
   { id: "listings", label: "Позиции", icon: Package },
   { id: "contractors", label: "Исполнители", icon: UserPlus },
   { id: "customers", label: "Заказчики", icon: Users },
@@ -153,7 +157,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "contacts", label: "Контакты", icon: Contact },
   { id: "responses", label: "Отклики", icon: MessageSquare },
   { id: "users", label: "Пользователи", icon: Users },
-  { id: "orders", label: "Заказы", icon: ShoppingBag },
+  { id: "documents", label: "Документы", icon: FileDown },
   { id: "markups", label: "Наценки", icon: Tag },
   { id: "disputes", label: "Споры", icon: AlertTriangle },
   { id: "stats", label: "Статистика", icon: BarChart3 },
@@ -612,6 +616,33 @@ function OrdersTab({ pin }: { pin: string }) {
     } catch { /* */ }
   };
 
+  const changeStatus = async (orderId: string, newStatus: string) => {
+    try {
+      await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setOrders(os => os.map(o => o.order_id === orderId ? { ...o, status: newStatus } : o));
+    } catch { /* */ }
+  };
+
+  const STATUS_TRANSITIONS: Record<string, { label: string; next: string; color: string }[]> = {
+    paid: [{ label: 'В работу', next: 'in_progress', color: 'bg-blue-500 hover:bg-blue-600' }],
+    in_progress: [
+      { label: 'Исполнен', next: 'completed', color: 'bg-green-500 hover:bg-green-600' },
+      { label: 'Спор', next: 'disputed', color: 'bg-red-500 hover:bg-red-600' },
+    ],
+    confirming: [
+      { label: 'Завершён', next: 'completed', color: 'bg-green-500 hover:bg-green-600' },
+      { label: 'Спор', next: 'disputed', color: 'bg-red-500 hover:bg-red-600' },
+    ],
+    disputed: [
+      { label: 'Решено (завершён)', next: 'completed', color: 'bg-green-500 hover:bg-green-600' },
+      { label: 'Отклонён', next: 'cancelled', color: 'bg-gray-500 hover:bg-gray-600' },
+    ],
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -735,6 +766,17 @@ function OrdersTab({ pin }: { pin: string }) {
                       </button>
                     )}
                   </div>
+                </div>
+              )}
+              {/* Status transition buttons */}
+              {STATUS_TRANSITIONS[o.status] && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {STATUS_TRANSITIONS[o.status].map(t => (
+                    <button key={t.next} onClick={() => changeStatus(oid, t.next)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold text-white cursor-pointer transition-colors ${t.color}`}>
+                      {t.label}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -2069,11 +2111,403 @@ function CrmFunnelTab({ pin }: { pin: string }) {
   );
 }
 
+// === ANALYTICS DASHBOARD ===
+interface AnalyticsData {
+  kpi: {
+    totalRevenue: number;
+    periodRevenue: number;
+    periodGMV: number;
+    totalOrders: number;
+    periodOrders: number;
+    paidOrdersCount: number;
+    completedOrdersCount: number;
+    avgOrderValue: number;
+    avgMargin: number;
+    totalContractors: number;
+    activeContractors: number;
+    totalCustomers: number;
+    businessCustomers: number;
+    totalLeads: number;
+    totalResponses: number;
+    acceptedResponses: number;
+    responseRate: number;
+    totalDisputes: number;
+    resolvedDisputes: number;
+  };
+  charts: {
+    statusCounts: { status: string; count: number }[];
+    paymentCounts: { payment_status: string; count: number }[];
+    byWorkType: { work_type: string; count: number; revenue: number }[];
+    dailyOrders: { date: string; count: number }[];
+    dailyRevenue: { date: string; revenue: number }[];
+    leadsBySource: { source: string; count: number }[];
+    contractorStatuses: { status: string; count: number }[];
+  };
+  topCustomers: { name: string; phone: string; orders: number; total_spent: number }[];
+  topContractors: { name: string; orders: number; total_earned: number }[];
+}
+
+function KpiCard({ label, value, subValue, icon: Icon, color, trend }: {
+  label: string; value: string; subValue?: string; icon: React.ElementType; color: string; trend?: 'up' | 'down' | 'neutral';
+}) {
+  return (
+    <div className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card border border-gray-100 dark:border-dark-border">
+      <div className="flex items-start justify-between mb-3">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        {trend && (
+          <span className={`flex items-center gap-0.5 text-xs font-semibold ${
+            trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-500' : 'text-gray-400'
+          }`}>
+            {trend === 'up' ? <ArrowUpRight className="w-3.5 h-3.5" /> : trend === 'down' ? <ArrowDownRight className="w-3.5 h-3.5" /> : <Minus className="w-3.5 h-3.5" />}
+          </span>
+        )}
+      </div>
+      <div className="text-2xl font-bold text-gray-900 dark:text-white">{value}</div>
+      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{label}</div>
+      {subValue && <div className="text-xs text-gray-400 mt-0.5">{subValue}</div>}
+    </div>
+  );
+}
+
+function MiniBarChart({ data, labelKey, valueKey, color }: {
+  data: { [key: string]: string | number }[]; labelKey: string; valueKey: string; color: string;
+}) {
+  const max = Math.max(...data.map(d => Number(d[valueKey]) || 0), 1);
+  return (
+    <div className="space-y-2">
+      {data.slice(0, 8).map((item, i) => (
+        <div key={i} className="flex items-center gap-3">
+          <span className="text-xs text-gray-600 dark:text-gray-400 w-28 truncate">{String(item[labelKey])}</span>
+          <div className="flex-1 h-5 bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full ${color}`}
+              style={{ width: `${Math.max((Number(item[valueKey]) / max) * 100, 2)}%` }}
+            />
+          </div>
+          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 w-12 text-right">{Number(item[valueKey]).toLocaleString('ru-RU')}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AnalyticsTab({ pin }: { pin: string }) {
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [period, setPeriod] = useState(30);
+
+  const load = useCallback(async () => {
+    setError(''); setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/analytics?period=${period}`, { headers: { 'x-admin-pin': pin } });
+      const d = await res.json();
+      if (res.ok) setData(d);
+      else setError(d.error || 'Ошибка загрузки');
+    } catch { setError('Ошибка соединения'); }
+    finally { setLoading(false); }
+  }, [pin, period]);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (loading && !data) return (
+    <div className="flex items-center justify-center py-20">
+      <RefreshCw className="w-6 h-6 animate-spin text-brand-500" />
+    </div>
+  );
+
+  if (!data) return (
+    <div className="space-y-4">
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      <button onClick={load} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150">
+        <RefreshCw className="w-4 h-4" /> Загрузить аналитику
+      </button>
+    </div>
+  );
+
+  const { kpi, charts, topCustomers, topContractors } = data;
+
+  return (
+    <div className="space-y-6">
+      {/* Period selector + refresh */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex gap-1.5">
+          {[7, 14, 30, 90].map(d => (
+            <button key={d} onClick={() => setPeriod(d)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                period === d ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}>
+              {d} дн.
+            </button>
+          ))}
+        </div>
+        <button onClick={load} disabled={loading}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer disabled:opacity-50">
+          <RefreshCw className={loading ? 'w-3.5 h-3.5 animate-spin' : 'w-3.5 h-3.5'} /> Обновить
+        </button>
+        {error && <span className="text-red-500 text-xs">{error}</span>}
+      </div>
+
+      {/* KPI Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <KpiCard icon={DollarSign} color="bg-gradient-to-br from-green-500 to-emerald-600" label={`Выручка (${period} дн.)`} value={fmtMoney(kpi.periodRevenue)} subValue={`Всего: ${fmtMoney(kpi.totalRevenue)}`} trend={kpi.periodRevenue > 0 ? 'up' : 'neutral'} />
+        <KpiCard icon={ShoppingBag} color="bg-gradient-to-br from-blue-500 to-indigo-600" label={`Заказов (${period} дн.)`} value={String(kpi.periodOrders)} subValue={`Всего: ${kpi.totalOrders} · Оплачено: ${kpi.paidOrdersCount}`} />
+        <KpiCard icon={Percent} color="bg-gradient-to-br from-purple-500 to-violet-600" label="Средняя маржа" value={fmtMoney(Math.round(kpi.avgMargin))} subValue={`Средний чек: ${fmtMoney(Math.round(kpi.avgOrderValue))}`} />
+        <KpiCard icon={Briefcase} color="bg-gradient-to-br from-amber-500 to-orange-600" label={`GMV (${period} дн.)`} value={fmtMoney(kpi.periodGMV)} />
+        <KpiCard icon={UserPlus} color="bg-gradient-to-br from-cyan-500 to-teal-600" label="Исполнители" value={String(kpi.totalContractors)} subValue={`Активных: ${kpi.activeContractors}`} />
+        <KpiCard icon={Users} color="bg-gradient-to-br from-indigo-500 to-blue-600" label="Заказчики" value={String(kpi.totalCustomers)} subValue={`Бизнес: ${kpi.businessCustomers}`} />
+        <KpiCard icon={FileText} color="bg-gradient-to-br from-rose-500 to-pink-600" label="Заявки / Отклики" value={`${kpi.totalLeads} / ${kpi.totalResponses}`} subValue={`Принято: ${kpi.acceptedResponses} (${kpi.responseRate}%)`} />
+        <KpiCard icon={AlertTriangle} color="bg-gradient-to-br from-red-500 to-rose-600" label="Споры" value={String(kpi.totalDisputes)} subValue={`Решено: ${kpi.resolvedDisputes}`} trend={kpi.totalDisputes > 0 ? 'down' : 'neutral'} />
+      </div>
+
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Status distribution */}
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Заказы по статусам</h3>
+          <MiniBarChart data={charts.statusCounts.map(s => ({ ...s, label: s.status }))} labelKey="status" valueKey="count" color="bg-brand-500" />
+        </div>
+
+        {/* Payment distribution */}
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Статусы оплаты</h3>
+          <MiniBarChart data={charts.paymentCounts.map(s => ({ ...s, label: s.payment_status || 'pending' }))} labelKey="label" valueKey="count" color="bg-green-500" />
+        </div>
+
+        {/* Work type revenue */}
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Выручка по типам работ</h3>
+          <MiniBarChart data={charts.byWorkType.map(s => ({ ...s, label: WORK_TYPE_LABELS[s.work_type] || s.work_type || 'Другое' }))} labelKey="label" valueKey="revenue" color="bg-purple-500" />
+        </div>
+
+        {/* Leads by source */}
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Заявки по источникам</h3>
+          <MiniBarChart data={charts.leadsBySource} labelKey="source" valueKey="count" color="bg-amber-500" />
+        </div>
+
+        {/* Contractor statuses */}
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Исполнители по статусам</h3>
+          <MiniBarChart data={charts.contractorStatuses} labelKey="status" valueKey="count" color="bg-teal-500" />
+        </div>
+
+        {/* Daily orders sparkline */}
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Заказы по дням</h3>
+          {charts.dailyOrders.length > 0 ? (
+            <div className="flex items-end gap-1 h-24">
+              {charts.dailyOrders.slice(-30).map((d, i) => {
+                const max = Math.max(...charts.dailyOrders.map(x => x.count), 1);
+                const h = Math.max((d.count / max) * 100, 4);
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
+                    <div className="w-full bg-brand-500/80 rounded-t-sm transition-all hover:bg-brand-500" style={{ height: `${h}%` }} />
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-gray-900 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap">{d.date}: {d.count}</div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : <p className="text-gray-400 text-sm">Нет данных</p>}
+        </div>
+      </div>
+
+      {/* Top customers & contractors */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Топ заказчики</h3>
+          <div className="space-y-3">
+            {topCustomers.map((c, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <span className="w-6 h-6 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center text-xs font-bold">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{c.name}</p>
+                  <p className="text-xs text-gray-400">{c.phone} · {c.orders} заказ(ов)</p>
+                </div>
+                <span className="text-sm font-bold text-green-600">{fmtMoney(c.total_spent)}</span>
+              </div>
+            ))}
+            {topCustomers.length === 0 && <p className="text-gray-400 text-sm">Нет данных</p>}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Топ исполнители</h3>
+          <div className="space-y-3">
+            {topContractors.map((c, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <span className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xs font-bold">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{c.name}</p>
+                  <p className="text-xs text-gray-400">{c.orders} заказ(ов)</p>
+                </div>
+                <span className="text-sm font-bold text-emerald-600">{fmtMoney(c.total_earned)}</span>
+              </div>
+            ))}
+            {topContractors.length === 0 && <p className="text-gray-400 text-sm">Нет данных</p>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// === DOCUMENTS GENERATION ===
+const DOC_TYPE_LABELS: Record<string, string> = {
+  invoice: 'Счёт на оплату',
+  act: 'Акт выполненных работ',
+  upd: 'УПД (универсальный передаточный документ)',
+  nakladnaya: 'Товарная накладная',
+};
+
+function DocumentsTab({ pin }: { pin: string }) {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [docType, setDocType] = useState<string>('invoice');
+  const [companyOverride, setCompanyOverride] = useState({ company_name: '', inn: '', kpp: '', address: '' });
+  const [showCompanyForm, setShowCompanyForm] = useState(false);
+
+  const loadOrders = async () => {
+    setError(''); setLoading(true);
+    try {
+      const res = await fetch('/api/admin/orders', { headers: { 'x-admin-pin': pin } });
+      const d = await res.json();
+      if (res.ok) setOrders(d.orders || []);
+      else setError(d.error || 'Ошибка');
+    } catch { setError('Ошибка соединения'); }
+    finally { setLoading(false); }
+  };
+
+  const generateDoc = async (orderId: string) => {
+    setGeneratingId(orderId);
+    try {
+      const body: Record<string, string> = { order_id: orderId, doc_type: docType };
+      if (showCompanyForm) {
+        if (companyOverride.company_name) body.company_name = companyOverride.company_name;
+        if (companyOverride.inn) body.inn = companyOverride.inn;
+        if (companyOverride.kpp) body.kpp = companyOverride.kpp;
+        if (companyOverride.address) body.address = companyOverride.address;
+      }
+      const res = await fetch('/api/admin/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const html = await res.text();
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setError(d.error || 'Ошибка генерации');
+      }
+    } catch { setError('Ошибка соединения'); }
+    finally { setGeneratingId(null); }
+  };
+
+  const filtered = orders.filter(o => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      (o.order_number || '').toLowerCase().includes(q) ||
+      (o.customer_name || '').toLowerCase().includes(q) ||
+      (o.customer_phone || '').includes(q) ||
+      (o.work_type || '').toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <FileDown className="w-5 h-5 text-brand-500" />
+          Генерация документов
+        </h2>
+        <div className="flex flex-wrap gap-3 items-end">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Тип документа</label>
+            <select value={docType} onChange={e => setDocType(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500/30">
+              {Object.entries(DOC_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <button onClick={() => setShowCompanyForm(!showCompanyForm)}
+            className={`px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${showCompanyForm ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            {showCompanyForm ? 'Скрыть реквизиты' : 'Указать реквизиты покупателя'}
+          </button>
+          <button onClick={loadOrders} disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors disabled:opacity-50">
+            <RefreshCw className={loading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} /> Загрузить заказы
+          </button>
+        </div>
+        {showCompanyForm && (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input value={companyOverride.company_name} onChange={e => setCompanyOverride(s => ({ ...s, company_name: e.target.value }))}
+              placeholder="Наименование организации" className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+            <input value={companyOverride.inn} onChange={e => setCompanyOverride(s => ({ ...s, inn: e.target.value }))}
+              placeholder="ИНН" className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+            <input value={companyOverride.kpp} onChange={e => setCompanyOverride(s => ({ ...s, kpp: e.target.value }))}
+              placeholder="КПП" className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+            <input value={companyOverride.address} onChange={e => setCompanyOverride(s => ({ ...s, address: e.target.value }))}
+              placeholder="Юридический адрес" className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+          </div>
+        )}
+      </div>
+
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      {/* Search */}
+      {orders.length > 0 && (
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск по номеру, имени, телефону..."
+          className="w-full px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+      )}
+
+      {/* Orders list */}
+      <div className="space-y-3">
+        {filtered.map(o => {
+          const oid = o.order_id || o.id;
+          return (
+            <div key={oid} className="bg-white dark:bg-dark-card rounded-2xl p-4 shadow-card border border-gray-100 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-bold text-gray-900 dark:text-white text-sm">{o.order_number || truncId(oid)}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ORDER_STATUS_COLORS[o.status] || 'bg-gray-100'}`}>{o.status}</span>
+                  {o.payment_status && (
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${o.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {o.payment_status === 'paid' ? 'Оплачен' : o.payment_status === 'invoice_sent' ? 'Счёт отправлен' : 'Не оплачен'}
+                    </span>
+                  )}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {o.customer_name || o.customer_phone || '—'} · {WORK_TYPE_LABELS[o.work_type || ''] || o.work_type} · {fmtMoney(o.display_price || o.customer_total)}
+                </div>
+              </div>
+              <button onClick={() => generateDoc(oid)} disabled={generatingId === oid}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium cursor-pointer transition-colors disabled:opacity-50 flex-shrink-0">
+                {generatingId === oid ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                {DOC_TYPE_LABELS[docType]?.split(' ')[0] || 'Документ'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function getInitialTab(): TabId {
   if (typeof window === 'undefined') return 'listings';
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab');
-  const validTabs: TabId[] = ['listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'stats', 'crm'];
+  const validTabs: TabId[] = ['listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'stats', 'crm', 'analytics', 'documents'];
   if (tab && validTabs.includes(tab as TabId)) return tab as TabId;
   return 'listings';
 }
@@ -2133,6 +2567,7 @@ export default function AdminPage() {
 
         <div>
           {activeTab === 'crm' && <CrmFunnelTab pin={pin} />}
+          {activeTab === 'analytics' && <AnalyticsTab pin={pin} />}
           {activeTab === 'listings' && <ListingsTab pin={pin} />}
           {activeTab === 'contractors' && <ContractorsTab pin={pin} />}
           {activeTab === 'customers' && <CustomersTab pin={pin} />}
@@ -2141,6 +2576,7 @@ export default function AdminPage() {
           {activeTab === 'responses' && <ResponsesTab pin={pin} />}
           {activeTab === 'users' && <UsersTab pin={pin} />}
           {activeTab === 'orders' && <OrdersTab pin={pin} />}
+          {activeTab === 'documents' && <DocumentsTab pin={pin} />}
           {activeTab === 'markups' && <MarkupsTab pin={pin} />}
           {activeTab === 'disputes' && <DisputesTab pin={pin} />}
           {activeTab === 'stats' && <StatsTab pin={pin} />}
