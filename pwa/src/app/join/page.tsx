@@ -52,6 +52,7 @@ export default function JoinPage() {
   const [payoutBankDetails, setPayoutBankDetails] = useState('');
   const [isLegalEntity, setIsLegalEntity] = useState(false);
   const [inn, setInn] = useState('');
+  const [crewSize, setCrewSize] = useState('');
   const [hasTransport, setHasTransport] = useState(false);
   const [hasTools, setHasTools] = useState(false);
 

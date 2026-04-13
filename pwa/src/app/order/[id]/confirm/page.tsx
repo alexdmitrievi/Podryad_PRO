@@ -217,10 +217,7 @@ export default function ConfirmPage() {
       ? 'bg-blue-100 text-blue-700'
       : 'bg-amber-100 text-amber-700';
 
-  const displayAmount =
-    role === 'supplier'
-      ? (order?.payout_amount ?? order?.subtotal)
-      : (order?.total ?? order?.subtotal);
+  const displayAmount = order?.display_price;
 
   // ── Error: invalid link ──
   if (invalidLink) {
