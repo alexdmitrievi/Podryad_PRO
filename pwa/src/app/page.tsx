@@ -245,7 +245,7 @@ export default function HomePage() {
           <p className="text-white/70 text-base sm:text-lg mb-8 max-w-xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.15s' }}>
             Стройка, благоустройство, частные участки.
             <br />
-            Оплата по СБП или счёту &middot; Перезвоним за 15 минут
+            Безопасная оплата &middot; Перезвоним за 15 минут
           </p>
 
           {/* Stats card */}
@@ -433,8 +433,8 @@ export default function HomePage() {
             {[
               { n: '1', title: 'Заявка', desc: 'Опишите задачу — объём, сроки, контакт' },
               { n: '2', title: 'Подбор', desc: 'Находим подходящего исполнителя из базы' },
-              { n: '3', title: 'Оплата', desc: 'Менеджер пришлёт реквизиты СБП или счёт на оплату' },
-              { n: '4', title: 'Подтверждение', desc: 'Исполнитель выезжает после получения оплаты' },
+              { n: '3', title: 'Оплата', desc: 'Деньги поступают на счёт платформы — исполнитель ждёт сдачи' },
+              { n: '4', title: 'Подтверждение', desc: 'Приняли работу — мы переводим оплату исполнителю' },
             ].map((step, i) => (
               <div key={step.n} className="relative text-center" style={{ transitionDelay: `${i * 0.15}s` }}>
                 <div className="relative z-10 w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-violet flex items-center justify-center text-white font-extrabold text-lg mx-auto mb-5 shadow-glow-hover ring-4 ring-white/20 animate-pulse-ring" style={{ animationDelay: `${i * 0.5}s` }}>
