@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { getMarkupRate } from '@/lib/pricing';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -32,14 +33,14 @@ export async function PUT(
 
   const { id: orderId } = await params;
 
-  let body: { display_price?: number; contractor_id?: string; status?: string; address?: string; work_date?: string; hours?: number | null; people_count?: number | null; customer_comment?: string; customer_name?: string; customer_phone?: string };
+  let body: { display_price?: number; contractor_id?: string; status?: string; address?: string; work_date?: string; hours?: number | null; people_count?: number | null; customer_comment?: string; customer_name?: string; customer_phone?: string; supplier_payout?: number };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { display_price, contractor_id, status, address, work_date, hours, people_count, customer_comment, customer_name, customer_phone } = body;
+  const { display_price, contractor_id, status, address, work_date, hours, people_count, customer_comment, customer_name, customer_phone, supplier_payout } = body;
 
   // Validate display_price if present
   if (display_price !== undefined && (typeof display_price !== 'number' || display_price <= 0)) {
@@ -68,6 +69,30 @@ export async function PUT(
   if (customer_comment !== undefined) updates.customer_comment = String(customer_comment);
   if (customer_name !== undefined) updates.customer_name = String(customer_name);
   if (customer_phone !== undefined) updates.customer_phone = String(customer_phone);
+
+  // Auto-calculate supplier_payout and platform_margin when display_price is set
+  if (display_price !== undefined) {
+    if (supplier_payout !== undefined && typeof supplier_payout === 'number' && supplier_payout >= 0) {
+      // Admin explicitly set supplier_payout
+      updates.supplier_payout = supplier_payout;
+      updates.platform_margin = Math.round((display_price - supplier_payout) * 100) / 100;
+    } else {
+      // Auto-derive from markup rate based on order's work_type
+      const db = getServiceClient();
+      const { data: order } = await db
+        .from('orders')
+        .select('work_type, subcategory')
+        .eq('order_id', orderId)
+        .maybeSingle();
+
+      const workType = order?.work_type || 'labor';
+      const subcategory = order?.subcategory || undefined;
+      const markupPercent = await getMarkupRate(db, workType, undefined, subcategory);
+      const derivedSupplierPayout = Math.round((display_price / (1 + markupPercent / 100)) * 100) / 100;
+      updates.supplier_payout = derivedSupplierPayout;
+      updates.platform_margin = Math.round((display_price - derivedSupplierPayout) * 100) / 100;
+    }
+  }
 
   // Auto-set status to 'priced' when price + contractor assigned but no explicit status
   if (status !== undefined) {

@@ -144,7 +144,7 @@ interface ContactEntry {
   source: string;
 }
 
-type TabId = 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'stats' | 'crm' | 'analytics' | 'documents';
+type TabId = 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'crm' | 'analytics' | 'documents';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "crm", label: "CRM Воронка", icon: TrendingUp },
@@ -160,7 +160,6 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "documents", label: "Документы", icon: FileDown },
   { id: "markups", label: "Наценки", icon: Tag },
   { id: "disputes", label: "Споры", icon: AlertTriangle },
-  { id: "stats", label: "Статистика", icon: BarChart3 },
 ];
 
 function fmtDate(iso: string): string {
@@ -1532,60 +1531,6 @@ function LeadsTab({ pin }: { pin: string }) {
   );
 }
 
-function StatsTab({ pin }: { pin: string }) {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const loadStats = useCallback(async () => {
-    if (loaded) return;
-    setError(''); setLoading(true);
-    try {
-      const res = await fetch('/api/admin/orders', { headers: { 'x-admin-pin': pin } });
-      const data = await res.json();
-      if (res.ok) { setOrders(data.orders || data || []); setLoaded(true); }
-      else { setError(data.error || 'Ошибка'); }
-    } catch {
-      setError('Ошибка соединения');
-    } finally { setLoading(false); }
-  }, [loaded, pin]);
-
-  const totalMargin = orders.reduce((s, o) => s + (o.platform_margin || 0), 0);
-  const avgMargin = orders.length ? totalMargin / orders.length : 0;
-  const disputeCount = orders.filter(o => o.status === 'disputed').length;
-
-  const stats = [
-    { label: 'Сумма маржи платформы', value: fmtMoney(totalMargin) },
-    { label: 'Всего заказов', value: String(orders.length) },
-    { label: 'Средняя маржа', value: fmtMoney(Math.round(avgMargin)) },
-    { label: 'Кол-во споров', value: String(disputeCount) },
-  ];
-
-  return (
-    <div className="space-y-4">
-      {!loaded && (
-        <button onClick={loadStats} disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
-          <RefreshCw className={loading ? "w-4 h-4 animate-spin" : "w-4 h-4"} />
-          Загрузить статистику
-        </button>
-      )}
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-      {loaded && (
-        <div className="grid grid-cols-2 gap-4">
-          {stats.map(st => (
-            <div key={st.label} className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{st.label}</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{st.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function ContactsTab({ pin }: { pin: string }) {
   const [contacts, setContacts] = useState<ContactEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -2416,6 +2361,58 @@ function AnalyticsTab({ pin }: { pin: string }) {
           className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer disabled:opacity-50">
           <RefreshCw className={loading ? 'w-3.5 h-3.5 animate-spin' : 'w-3.5 h-3.5'} /> Обновить
         </button>
+        <button onClick={() => {
+          if (!data) return;
+          const { kpi: k, charts: c, topCustomers: tc, topContractors: tcon } = data;
+          const rows = [
+            ['=== KPI ==='],
+            ['Метрика', 'Значение'],
+            ['Выручка за период', String(k.periodRevenue)],
+            ['Выручка всего', String(k.totalRevenue)],
+            ['GMV за период', String(k.periodGMV)],
+            ['Заказов за период', String(k.periodOrders)],
+            ['Всего заказов', String(k.totalOrders)],
+            ['Оплаченных', String(k.paidOrdersCount)],
+            ['Завершённых', String(k.completedOrdersCount)],
+            ['Средний чек', String(k.avgOrderValue)],
+            ['Средняя маржа', String(k.avgMargin)],
+            ['Исполнителей', String(k.totalContractors)],
+            ['Активных исп.', String(k.activeContractors)],
+            ['Заказчиков', String(k.totalCustomers)],
+            ['Бизнес-клиентов', String(k.businessCustomers)],
+            ['Заявок', String(k.totalLeads)],
+            ['Откликов', String(k.totalResponses)],
+            ['Принято откликов', String(k.acceptedResponses)],
+            ['Споров', String(k.totalDisputes)],
+            ['Решённых споров', String(k.resolvedDisputes)],
+            [],
+            ['=== Заказы по статусам ==='],
+            ['Статус', 'Количество'],
+            ...c.statusCounts.map(s => [s.status, String(s.count)]),
+            [],
+            ['=== По типам работ ==='],
+            ['Тип работ', 'Количество', 'Выручка'],
+            ...c.byWorkType.map(s => [s.work_type, String(s.count), String(s.revenue)]),
+            [],
+            ['=== Топ заказчики ==='],
+            ['Имя', 'Телефон', 'Заказов', 'Потрачено'],
+            ...tc.map(c => [c.name, c.phone, String(c.orders), String(c.total_spent)]),
+            [],
+            ['=== Топ исполнители ==='],
+            ['Имя', 'Заказов', 'Заработано'],
+            ...tcon.map(c => [c.name, String(c.orders), String(c.total_earned)]),
+          ];
+          const csv = rows.map(r => r.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(';')).join('\n');
+          const bom = '\uFEFF';
+          const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = `analytics-${period}d-${new Date().toISOString().slice(0,10)}.csv`;
+          a.click(); URL.revokeObjectURL(url);
+        }}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer">
+          <FileDown className="w-3.5 h-3.5" /> CSV
+        </button>
         {error && <span className="text-red-500 text-xs">{error}</span>}
       </div>
 
@@ -2676,7 +2673,7 @@ function getInitialTab(): TabId {
   if (typeof window === 'undefined') return 'listings';
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab');
-  const validTabs: TabId[] = ['listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'stats', 'crm', 'analytics', 'documents'];
+  const validTabs: TabId[] = ['listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'crm', 'analytics', 'documents'];
   if (tab && validTabs.includes(tab as TabId)) return tab as TabId;
   return 'listings';
 }
@@ -2748,7 +2745,6 @@ export default function AdminPage() {
           {activeTab === 'documents' && <DocumentsTab pin={pin} />}
           {activeTab === 'markups' && <MarkupsTab pin={pin} />}
           {activeTab === 'disputes' && <DisputesTab pin={pin} />}
-          {activeTab === 'stats' && <StatsTab pin={pin} />}
         </div>
       </div>
     </div>
