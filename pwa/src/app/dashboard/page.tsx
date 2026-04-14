@@ -79,10 +79,21 @@ export default function DashboardPage() {
 
         {/* Map / loading / empty */}
         {loading ? (
-          <div className="flex items-center justify-center h-full bg-surface dark:bg-dark-bg">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-2 border-[#2F5BFF] border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-gray-500 dark:text-dark-muted">Загружаем заказы…</p>
+          <div className="flex flex-col items-center h-full bg-surface dark:bg-dark-bg">
+            {/* Floating skeleton controls */}
+            <div className="w-full px-4 pt-4">
+              <div className="flex justify-center gap-2 mb-4">
+                <div className="skeleton h-9 w-32 rounded-xl" />
+                <div className="skeleton h-9 w-28 rounded-xl" />
+              </div>
+            </div>
+            {/* Skeleton map placeholder */}
+            <div className="flex-1 w-full relative">
+              <div className="absolute inset-0 skeleton rounded-none" />
+              {/* Fake marker dots */}
+              <div className="absolute top-1/3 left-1/4 w-3 h-3 rounded-full bg-brand-200/50 animate-pulse-dot" />
+              <div className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full bg-brand-200/50 animate-pulse-dot" style={{ animationDelay: '0.3s' }} />
+              <div className="absolute top-2/5 right-1/3 w-3 h-3 rounded-full bg-brand-200/50 animate-pulse-dot" style={{ animationDelay: '0.6s' }} />
             </div>
           </div>
         ) : orders.length === 0 ? (

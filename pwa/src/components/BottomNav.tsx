@@ -30,7 +30,7 @@ export default function BottomNav() {
               aria-current={active ? 'page' : undefined}
               className={`
                 relative flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[48px] px-3 py-2 rounded-2xl
-                transition-all duration-200
+                transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2
                 ${active
                   ? 'text-brand-500'
                   : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 active:scale-95'}

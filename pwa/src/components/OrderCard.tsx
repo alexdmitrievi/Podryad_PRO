@@ -34,6 +34,7 @@ export default function OrderCard({ order }: { order: Order }) {
       border border-gray-100
       hover:shadow-card-hover hover:-translate-y-0.5
       transition-all duration-300 animate-fade-in
+      active:scale-[0.99]
     ">
       {/* Header */}
       <div className="flex justify-between items-center">

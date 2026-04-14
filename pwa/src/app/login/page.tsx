@@ -69,7 +69,8 @@ export default function LoginPage() {
             </div>
 
             <button type="submit" disabled={loading}
-              className="w-full py-3 rounded-xl bg-[#2F5BFF] hover:bg-[#2d35a8] text-white font-semibold cursor-pointer transition-colors duration-150 disabled:opacity-50">
+              className="w-full py-3 rounded-xl bg-[#2F5BFF] hover:bg-[#2d35a8] text-white font-semibold cursor-pointer transition-all duration-150 disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2">
+              {loading && <span className="btn-spinner" aria-hidden />}
               {loading ? 'Вход…' : 'Войти'}
             </button>
           </form>

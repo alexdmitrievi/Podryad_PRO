@@ -448,9 +448,10 @@ export default function JoinPage() {
             <button
               type="submit"
               disabled={loading || !consent}
-              className="bg-brand-500 hover:bg-brand-600 text-white font-bold min-h-[56px] py-4 rounded-xl w-full text-base transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer btn-press"
+              className="bg-brand-500 hover:bg-brand-600 text-white font-bold min-h-[56px] py-4 rounded-xl w-full text-base transition-all hover:shadow-glow-hover disabled:opacity-50 cursor-pointer btn-press flex items-center justify-center gap-2"
             >
-              {loading ? 'Отправляем...' : 'Отправить анкету'}
+              {loading && <span className="btn-spinner" aria-hidden />}
+              {loading ? 'Отправляем…' : 'Отправить анкету'}
             </button>
           </form>
         )}
