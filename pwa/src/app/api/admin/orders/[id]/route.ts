@@ -12,13 +12,14 @@ function verifyPin(pin: string): boolean {
 }
 
 const VALID_STATUSES = [
-  'new',
+  'pending',
   'priced',
   'payment_sent',
   'paid',
   'in_progress',
+  'confirming',
   'completed',
-  'closed',
+  'disputed',
   'cancelled',
 ] as const;
 

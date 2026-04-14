@@ -49,11 +49,11 @@ export function orderFromDb(row: Record<string, unknown>): Order {
 
 // ── ЗАКАЗЫ ──
 
-export async function getPublishedOrders() {
+export async function getActiveOrders() {
   const { data, error } = await db()
     .from('orders')
     .select('*')
-    .eq('status', 'published')
+    .in('status', ['pending', 'priced', 'payment_sent', 'paid', 'in_progress'])
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data || [];
@@ -202,7 +202,7 @@ export async function getWorkerStats(telegramId: string): Promise<WorkerStats> {
     .from('orders')
     .select('worker_payout, payout_status')
     .eq('executor_id', telegramId)
-    .eq('status', 'closed');
+    .in('status', ['completed', 'closed']);
   if (error) throw error;
 
   let total_earned = 0;
@@ -321,15 +321,15 @@ export function validateWorkerAccess(worker: Record<string, unknown>): string | 
 }
 
 /**
- * Атомарный захват заказа: обновляет только если status='published'.
+ * Атомарный захват заказа: обновляет только если status='paid'.
  * Возвращает количество обновлённых строк (0 = кто-то уже забрал).
  */
 export async function atomicClaimOrder(orderId: string, executorId: string): Promise<number> {
   const { data, error } = await db()
     .from('orders')
-    .update({ status: 'closed', executor_id: executorId })
+    .update({ status: 'in_progress', executor_id: executorId })
     .eq('order_id', orderId)
-    .eq('status', 'published')
+    .eq('status', 'paid')
     .select('order_id');
   if (error) throw error;
   return data?.length ?? 0;

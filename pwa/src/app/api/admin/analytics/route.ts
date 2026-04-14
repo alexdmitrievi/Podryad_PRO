@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
   const periodGMV = orders.reduce((s, o) => s + (Number(o.customer_total) || Number(o.display_price) || 0), 0);
 
   const paidOrders = orders.filter(o => o.payment_status === 'paid');
-  const completedOrders = allOrders.filter(o => o.status === 'completed' || o.status === 'done');
+  const completedOrders = allOrders.filter(o => o.status === 'completed');
 
   // === Order Status Distribution ===
   const statusCountsMap: Record<string, number> = {};

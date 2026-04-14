@@ -74,11 +74,11 @@ function createPulsingIcon(workType: string) {
 
 /* ── Static fallback orders for empty DB ── */
 const DEMO_ORDERS: PublicOrderMarker[] = [
-  { order_id: 'demo-1', order_number: '101', work_type: 'workers', address: 'ул. Ленина, 25', address_lat: 54.9893, address_lng: 73.3686, status: 'published', people_count: 4, hours: 8, created_at: new Date().toISOString() },
+  { order_id: 'demo-1', order_number: '101', work_type: 'labor', address: 'ул. Ленина, 25', address_lat: 54.9893, address_lng: 73.3686, status: 'pending', people_count: 4, hours: 8, created_at: new Date().toISOString() },
   { order_id: 'demo-2', order_number: '102', work_type: 'equipment', address: 'Красный Путь, 101', address_lat: 54.9760, address_lng: 73.3820, status: 'paid', people_count: 1, hours: 4, created_at: new Date().toISOString(), subcategory: 'Экскаватор' },
   { order_id: 'demo-3', order_number: '103', work_type: 'materials', address: 'пр. Мира, 55', address_lat: 55.0010, address_lng: 73.3450, status: 'in_progress', created_at: new Date().toISOString(), subcategory: 'Бетон М300' },
-  { order_id: 'demo-4', order_number: '104', work_type: 'workers', address: 'ул. 10 лет Октября, 40', address_lat: 54.9650, address_lng: 73.3950, status: 'published', people_count: 2, hours: 6, created_at: new Date().toISOString() },
-  { order_id: 'demo-5', order_number: '105', work_type: 'combo', address: 'ул. Герцена, 12', address_lat: 54.9950, address_lng: 73.3550, status: 'published', people_count: 6, hours: 10, created_at: new Date().toISOString() },
+  { order_id: 'demo-4', order_number: '104', work_type: 'labor', address: 'ул. 10 лет Октября, 40', address_lat: 54.9650, address_lng: 73.3950, status: 'pending', people_count: 2, hours: 6, created_at: new Date().toISOString() },
+  { order_id: 'demo-5', order_number: '105', work_type: 'combo', address: 'ул. Герцена, 12', address_lat: 54.9950, address_lng: 73.3550, status: 'priced', people_count: 6, hours: 10, created_at: new Date().toISOString() },
 ];
 
 export default function LiveOrdersMap() {

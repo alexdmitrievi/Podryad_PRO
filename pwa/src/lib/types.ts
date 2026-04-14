@@ -12,7 +12,7 @@ export interface Order {
   hours: number;
   work_type: string;
   comment?: string;
-  status: 'pending' | 'paid' | 'published' | 'closed' | 'cancelled' | 'done';
+  status: OrderLifecycleStatus;
   executor_id?: string;
   message_id?: string;
   created_at: string;
@@ -86,7 +86,8 @@ export type OrderLifecycleStatus =
   | 'in_progress'
   | 'confirming'
   | 'completed'
-  | 'disputed';
+  | 'disputed'
+  | 'cancelled';
 
 export interface Contractor {
   id: string;

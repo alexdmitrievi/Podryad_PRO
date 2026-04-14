@@ -17,7 +17,7 @@ export async function GET() {
     )
     .not('address_lat', 'is', null)
     .not('address_lng', 'is', null)
-    .in('status', ['pending', 'priced', 'payment_sent', 'paid', 'in_progress', 'published'])
+    .in('status', ['pending', 'priced', 'payment_sent', 'paid', 'in_progress'])
     .order('created_at', { ascending: false })
     .limit(100);
 

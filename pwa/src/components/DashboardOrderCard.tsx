@@ -32,21 +32,27 @@ function workTypeLabel(workType: string): string {
 }
 
 const statusBorderClass: Record<string, string> = {
-  published: 'border-l-4 border-l-brand-500',
-  closed: 'border-l-4 border-l-emerald-500',
-  pending: 'border-l-4 border-l-amber-400',
-  paid: 'border-l-4 border-l-amber-400',
-  cancelled: 'border-l-4 border-l-red-400',
-  done: 'border-l-4 border-l-emerald-600',
+  pending:      'border-l-4 border-l-amber-400',
+  priced:       'border-l-4 border-l-brand-500',
+  payment_sent: 'border-l-4 border-l-amber-400',
+  paid:         'border-l-4 border-l-blue-500',
+  in_progress:  'border-l-4 border-l-blue-500',
+  confirming:   'border-l-4 border-l-violet-500',
+  completed:    'border-l-4 border-l-emerald-500',
+  disputed:     'border-l-4 border-l-red-500',
+  cancelled:    'border-l-4 border-l-gray-400',
 };
 
 const statusLabelMap: Record<string, string> = {
-  pending: 'Ожидает оплаты',
-  paid: 'Оплачен',
-  published: 'Активен',
-  closed: 'Закрыт',
-  cancelled: 'Отменён',
-  done: 'Выполнен',
+  pending:      'На рассмотрении',
+  priced:       'Оценён',
+  payment_sent: 'Ожидает оплату',
+  paid:         'Оплачен',
+  in_progress:  'В работе',
+  confirming:   'Подтверждение',
+  completed:    'Завершён',
+  disputed:     'Спор',
+  cancelled:    'Отменён',
 };
 
 export interface DashboardOrderCardProps {
@@ -106,7 +112,7 @@ export default function DashboardOrderCard({
   };
 
   const showRespond =
-    userRole === 'worker' && order.status === 'published' && !isMyOrder;
+    userRole === 'worker' && order.status === 'paid' && !isMyOrder;
 
   return (
     <>

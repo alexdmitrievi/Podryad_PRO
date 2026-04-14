@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+/** Constant-time string comparison to prevent timing attacks. */
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -26,7 +36,7 @@ export function middleware(req: NextRequest) {
     const pin = req.headers.get('x-admin-pin') ?? '';
     const adminPin = process.env.ADMIN_PIN;
 
-    if (!adminPin || pin !== adminPin) {
+    if (!adminPin || !constantTimeEqual(pin, adminPin)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
   }

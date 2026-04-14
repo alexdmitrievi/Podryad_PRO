@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       time: new Date().toISOString(),
       payment_text: `${rate} ₽/${unit} × ${quantity} × ${people} чел.`,
       comment: comment || null,
-      status: 'published',
+      status: 'pending',
       customer_total: customerTotal,
       client_rate: rate,
     };
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
       time: new Date().toISOString(),
       payment_text: `${equipment_type} × ${quantity} ${rentalUnit}${with_operator ? ' (с оператором)' : ''}`,
       comment: `Техника: ${equipment_type}${with_operator ? ', с оператором' : ', без оператора'}${comment ? ` | ${comment}` : ''}`,
-      status: 'published',
+      status: 'pending',
     };
 
     const { error } = await db.from('orders').insert(orderData);

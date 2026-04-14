@@ -14,7 +14,8 @@ type OrderStatus =
   | 'in_progress'
   | 'confirming'
   | 'completed'
-  | 'disputed';
+  | 'disputed'
+  | 'cancelled';
 
 interface Order {
   id: string;
@@ -48,6 +49,7 @@ const STATUS_CONFIG: Record<
   confirming:   { label: 'Подтверждение',    badge: 'bg-blue-100 text-blue-700' },
   completed:    { label: 'Завершён',          badge: 'bg-green-100 text-green-700' },
   disputed:     { label: 'Спор',             badge: 'bg-red-100 text-red-700' },
+  cancelled:    { label: 'Отменён',           badge: 'bg-gray-100 text-gray-500' },
 };
 
 const ACTIVE_STATUSES: OrderStatus[] = [
@@ -234,7 +236,7 @@ export default function CustomerDashboard() {
   }
 
   const active = data.orders.filter((o) => ACTIVE_STATUSES.includes(o.status));
-  const completed = data.orders.filter((o) => o.status === 'completed' || o.status === 'disputed');
+  const completed = data.orders.filter((o) => o.status === 'completed' || o.status === 'disputed' || o.status === 'cancelled');
   const countActive = active.length;
   const countCompleted = completed.length;
   const countAwaitingPayment = data.orders.filter((o) =>

@@ -509,12 +509,9 @@ const ORDER_STATUS_COLORS: Record<string, string> = {
   priced: 'bg-amber-100 text-amber-700',
   payment_sent: 'bg-amber-100 text-amber-700',
   paid: 'bg-blue-100 text-blue-700',
-  published: 'bg-blue-100 text-blue-700',
   in_progress: 'bg-blue-100 text-blue-700',
   confirming: 'bg-violet-100 text-violet-700',
   completed: 'bg-green-100 text-green-700',
-  closed: 'bg-green-100 text-green-700',
-  done: 'bg-green-100 text-green-700',
   disputed: 'bg-red-100 text-red-700',
   cancelled: 'bg-red-100 text-red-700',
 };
@@ -695,7 +692,7 @@ function OrdersTab({ pin }: { pin: string }) {
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer">
           <option value="">Все статусы</option>
-          {['pending', 'priced', 'payment_sent', 'paid', 'in_progress', 'completed', 'cancelled', 'disputed'].map(s => (
+          {['pending', 'priced', 'payment_sent', 'paid', 'in_progress', 'confirming', 'completed', 'cancelled', 'disputed'].map(s => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>

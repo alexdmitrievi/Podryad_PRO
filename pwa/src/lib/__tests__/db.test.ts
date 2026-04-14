@@ -16,7 +16,7 @@ describe('orderFromDb', () => {
       hours: 3,
       work_type: 'грузчики',
       comment: 'тест',
-      status: 'published',
+      status: 'pending',
       executor_id: null,
       message_id: null,
       created_at: '2025-01-01T00:00:00Z',
@@ -35,7 +35,7 @@ describe('orderFromDb', () => {
     expect(order.lat).toBe(54.98);
     expect(order.lon).toBe(73.37);
     expect(order.people).toBe(2);
-    expect(order.status).toBe('published');
+    expect(order.status).toBe('pending');
     expect(order.executor_id).toBeUndefined();
     expect(order.client_total).toBe(4200);
     expect(order.max_posted).toBe(false);

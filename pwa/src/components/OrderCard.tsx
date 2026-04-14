@@ -3,12 +3,15 @@ import YandexButton from './YandexButton';
 import type { Order } from '@/lib/types';
 
 const statusConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
-  published: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Открыт' },
-  closed:    { bg: 'bg-gray-100',   text: 'text-gray-500',    dot: 'bg-gray-400',    label: 'Закрыт' },
-  pending:   { bg: 'bg-amber-50',   text: 'text-amber-700',   dot: 'bg-amber-500',   label: 'Ожидает' },
-  paid:      { bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500',     label: 'Оплачен' },
-  cancelled: { bg: 'bg-red-50',     text: 'text-red-600',     dot: 'bg-red-500',      label: 'Отменён' },
-  done:      { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500',  label: 'Выполнен' },
+  pending:      { bg: 'bg-amber-50',    text: 'text-amber-700',   dot: 'bg-amber-500',    label: 'На рассмотрении' },
+  priced:       { bg: 'bg-brand-50',    text: 'text-brand-700',   dot: 'bg-brand-500',    label: 'Оценён' },
+  payment_sent: { bg: 'bg-amber-50',    text: 'text-amber-700',   dot: 'bg-amber-500',    label: 'Ожидает оплату' },
+  paid:         { bg: 'bg-blue-50',     text: 'text-blue-700',    dot: 'bg-blue-500',     label: 'Оплачен' },
+  in_progress:  { bg: 'bg-blue-50',     text: 'text-blue-700',    dot: 'bg-blue-500',     label: 'В работе' },
+  confirming:   { bg: 'bg-violet-50',   text: 'text-violet-700',  dot: 'bg-violet-500',   label: 'Подтверждение' },
+  completed:    { bg: 'bg-emerald-50',  text: 'text-emerald-700', dot: 'bg-emerald-500',  label: 'Выполнен' },
+  disputed:     { bg: 'bg-red-50',      text: 'text-red-600',     dot: 'bg-red-500',      label: 'Спор' },
+  cancelled:    { bg: 'bg-gray-100',    text: 'text-gray-500',    dot: 'bg-gray-400',     label: 'Отменён' },
 };
 
 const workTypeEmoji: Record<string, string> = {
@@ -97,7 +100,7 @@ export default function OrderCard({ order }: { order: Order }) {
           </div>
         </div>
 
-        {order.status === 'published' && (
+        {(order.status === 'pending' || order.status === 'priced' || order.status === 'paid') && (
           <div className="grid grid-cols-2 gap-2">
             <a
               href={`https://t.me/${botName}?start=order_${order.order_id}`}

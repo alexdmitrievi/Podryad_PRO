@@ -23,7 +23,7 @@ interface Props {
 
 export default function MapView({ orders }: Props) {
   const published = orders.filter(
-    (o) => o.lat && o.lon && o.status === 'published'
+    (o) => o.lat && o.lon && ['pending', 'priced', 'paid', 'in_progress'].includes(o.status)
   );
 
   return (
