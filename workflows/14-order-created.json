@@ -42,7 +42,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://botapi.max.ru/messages?chat_id={{ $env.MAX_ADMIN_USER_ID }}",
+        "url": "={{ $env.MAX_API_BASE || 'https://botapi.max.ru' }}/messages?chat_id={{ $env.MAX_ADMIN_USER_ID }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

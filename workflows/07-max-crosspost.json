@@ -24,7 +24,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?select=*&status=in.(paid,in_progress)&max_posted=not.is.true&address_lat=not.is.null' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/orders?select=*&status=in.(paid,in_progress)&max_posted=not.is.true&lat=not.is.null' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

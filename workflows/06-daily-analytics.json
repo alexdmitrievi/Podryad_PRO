@@ -58,7 +58,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/workers?select=*' }}",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/contractors?select=*' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -81,7 +81,7 @@
         }
       },
       "id": "f1b2c3d4-6666-4000-8000-000000000003",
-      "name": "Fetch Workers Supabase",
+      "name": "Fetch Contractors Supabase",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -91,7 +91,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const ordersRaw = $('Fetch Orders Supabase').first().json;\nconst allOrders = Array.isArray(ordersRaw) ? ordersRaw : [ordersRaw].filter(Boolean);\nconst workersRaw = $('Fetch Workers Supabase').first().json;\nconst allWorkers = Array.isArray(workersRaw) ? workersRaw : [workersRaw].filter(Boolean);\n\n// Сегодняшняя дата (MSK = UTC+3)\nconst now = new Date();\nconst mskOffset = 3 * 60 * 60 * 1000;\nconst mskNow = new Date(now.getTime() + mskOffset);\nconst todayStr = mskNow.toISOString().slice(0, 10); // YYYY-MM-DD\n\n// Фильтруем заказы за сегодня\nconst todayOrders = allOrders.filter(o => {\n  if (!o.created_at) return false;\n  const orderDate = new Date(o.created_at);\n  const orderMsk = new Date(orderDate.getTime() + mskOffset);\n  return orderMsk.toISOString().slice(0, 10) === todayStr;\n});\n\nconst total = todayOrders.length;\nconst published = todayOrders.filter(o => o.status === 'published').length;\nconst closed = todayOrders.filter(o => o.status === 'closed').length;\nconst pending = todayOrders.filter(o => o.status === 'pending').length;\nconst cancelled = todayOrders.filter(o => o.status === 'cancelled').length;\nconst revenue = todayOrders.filter(o => o.status === 'closed' || o.status === 'published' || o.status === 'done').reduce((sum, o) => sum + (Number(o.margin) || 0), 0);\nconst conversion = total > 0 ? Math.round(closed / total * 100) : 0;\n\n// Топ исполнитель дня\nconst todayExecutors = todayOrders\n  .filter(o => o.status === 'closed' && o.executor_id)\n  .reduce((acc, o) => {\n    acc[o.executor_id] = (acc[o.executor_id] || 0) + 1;\n    return acc;\n  }, {});\n\nlet topWorker = 'нет данных';\nconst topExecutorId = Object.entries(todayExecutors)\n  .sort((a, b) => b[1] - a[1])[0];\n\nif (topExecutorId) {\n  const w = allWorkers.find(w => String(w.telegram_id) === String(topExecutorId[0]));\n  if (w) {\n    topWorker = `${w.name || w.username} (⭐${w.rating}, ${topExecutorId[1]} заказов)`;\n  }\n}\n\n// Общая статистика\nconst totalWorkers = allWorkers.length;\nconst activeWorkers = allWorkers.filter(w => parseInt(w.jobs_count || 0) > 0).length;\nconst vipWorkers = allWorkers.filter(w => w.is_vip === 'TRUE' || w.is_vip === true).length;\n\nconst dateFormatted = mskNow.toLocaleDateString('ru-RU', {\n  day: '2-digit', month: '2-digit', year: 'numeric'\n});\n\nreturn [{\n  json: {\n    date: dateFormatted,\n    total, published, closed, pending, cancelled,\n    revenue, conversion,\n    topWorker,\n    totalWorkers, activeWorkers, vipWorkers,\n    totalAllOrders: allOrders.length\n  }\n}];"
+        "jsCode": "const ordersRaw = $('Fetch Orders Supabase').first().json;\nconst allOrders = Array.isArray(ordersRaw) ? ordersRaw : [ordersRaw].filter(Boolean);\nconst contractorsRaw = $('Fetch Contractors Supabase').first().json;\nconst allContractors = Array.isArray(contractorsRaw) ? contractorsRaw : [contractorsRaw].filter(Boolean);\n\n// Сегодняшняя дата (MSK = UTC+3)\nconst now = new Date();\nconst mskOffset = 3 * 60 * 60 * 1000;\nconst mskNow = new Date(now.getTime() + mskOffset);\nconst todayStr = mskNow.toISOString().slice(0, 10); // YYYY-MM-DD\n\n// Фильтруем заказы за сегодня\nconst todayOrders = allOrders.filter(o => {\n  if (!o.created_at) return false;\n  const orderDate = new Date(o.created_at);\n  const orderMsk = new Date(orderDate.getTime() + mskOffset);\n  return orderMsk.toISOString().slice(0, 10) === todayStr;\n});\n\nconst total = todayOrders.length;\nconst newOrders = todayOrders.filter(o => o.status === 'new').length;\nconst priced = todayOrders.filter(o => o.status === 'priced').length;\nconst paid = todayOrders.filter(o => o.status === 'paid').length;\nconst completed = todayOrders.filter(o => o.status === 'completed').length;\nconst cancelled = todayOrders.filter(o => o.status === 'cancelled').length;\nconst revenue = todayOrders.filter(o => ['paid', 'completed', 'in_progress'].includes(o.status)).reduce((sum, o) => sum + (Number(o.platform_margin) || 0), 0);\nconst conversion = total > 0 ? Math.round(completed / total * 100) : 0;\n\n// Топ исполнитель дня\nconst todayExecutors = todayOrders\n  .filter(o => o.status === 'completed' && o.contractor_id)\n  .reduce((acc, o) => {\n    acc[o.contractor_id] = (acc[o.contractor_id] || 0) + 1;\n    return acc;\n  }, {});\n\nlet topContractor = 'нет данных';\nconst topEntry = Object.entries(todayExecutors)\n  .sort((a, b) => b[1] - a[1])[0];\n\nif (topEntry) {\n  const c = allContractors.find(c => String(c.id) === String(topEntry[0]));\n  if (c) {\n    topContractor = `${c.name || 'Без имени'} (${topEntry[1]} заказов)`;\n  }\n}\n\n// Общая статистика\nconst totalContractors = allContractors.length;\nconst activeContractors = allContractors.filter(c => c.status === 'active' || c.status === 'verified').length;\n\nconst dateFormatted = mskNow.toLocaleDateString('ru-RU', {\n  day: '2-digit', month: '2-digit', year: 'numeric'\n});\n\nreturn [{\n  json: {\n    date: dateFormatted,\n    total, newOrders, priced, paid, completed, cancelled,\n    revenue, conversion,\n    topContractor,\n    totalContractors, activeContractors,\n    totalAllOrders: allOrders.length\n  }\n}];"
       },
       "id": "f1b2c3d4-6666-4000-8000-000000000004",
       "name": "Calculate Metrics",
@@ -105,7 +105,7 @@
     {
       "parameters": {
         "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
-        "text": "📊 *Подряд PRO | Итоги {{ $json.date }}*\n\n━━━ *Заказы за сегодня* ━━━\n📥 Новых: {{ $json.total }}\n⏳ В ожидании: {{ $json.pending }}\n📤 Опубликовано: {{ $json.published }}\n✅ Закрыто: {{ $json.closed }}\n❌ Отменено: {{ $json.cancelled }}\n\n━━━ *Финансы* ━━━\n💰 Выручка: {{ $json.revenue }}₽\n📈 Конверсия: {{ $json.conversion }}%\n\n━━━ *Исполнители* ━━━\n👥 Всего: {{ $json.totalWorkers }}\n🔧 Активных: {{ $json.activeWorkers }}\n🌟 VIP: {{ $json.vipWorkers }}\n\n🏆 *Топ дня:* {{ $json.topWorker }}\n\n📋 Всего заказов в системе: {{ $json.totalAllOrders }}",
+        "text": "📊 *Подряд PRO | Итоги {{ $json.date }}*\n\n━━━ *Заказы за сегодня* ━━━\n📥 Новых: {{ $json.total }}\n🆕 Новые: {{ $json.newOrders }}\n💰 Оценено: {{ $json.priced }}\n✅ Оплачено: {{ $json.paid }}\n🏁 Завершено: {{ $json.completed }}\n❌ Отменено: {{ $json.cancelled }}\n\n━━━ *Финансы* ━━━\n💰 Маржа платформы: {{ $json.revenue }}₽\n📈 Конверсия: {{ $json.conversion }}%\n\n━━━ *Исполнители* ━━━\n👥 Всего: {{ $json.totalContractors }}\n🔧 Активных: {{ $json.activeContractors }}\n\n🏆 *Топ дня:* {{ $json.topContractor }}\n\n📋 Всего заказов в системе: {{ $json.totalAllOrders }}",
         "additionalFields": {
           "parse_mode": "Markdown"
         }
@@ -198,14 +198,14 @@
       "main": [
         [
           {
-            "node": "Fetch Workers Supabase",
+            "node": "Fetch Contractors Supabase",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Fetch Workers Supabase": {
+    "Fetch Contractors Supabase": {
       "main": [
         [
           {

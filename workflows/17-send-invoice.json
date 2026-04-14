@@ -44,16 +44,18 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ 'https://botapi.max.ru/sendMessage?token=' + $env.MAX_BOT_TOKEN }}",
-        "sendBody": true,
-        "bodyParameters": {
+        "url": "={{ ($env.MAX_API_BASE || 'https://botapi.max.ru') + '/messages?chat_id=' + ($('Webhook Invoice').first().json.body?.max_user_id || $('Webhook Invoice').first().json.max_user_id || $env.MAX_ADMIN_USER_ID) }}",
+        "sendHeaders": true,
+        "headerParameters": {
           "parameters": [
-            { "name": "chat_id", "value": "={{ $('Webhook Invoice').first().json.body?.telegram_chat_id || $('Webhook Invoice').first().json.telegram_chat_id }}" },
-            { "name": "text", "value": "={{ $('Build Message').first().json.text }}" },
-            { "name": "parse_mode", "value": "Markdown" }
+            { "name": "Authorization", "value": "=access_token=\"{{ $env.MAX_BOT_TOKEN }}\"" },
+            { "name": "Content-Type", "value": "application/json" }
           ]
         },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $('Build Message').first().json.text, format: 'markdown' }) }}",
+        "options": { "timeout": 10000 }
       },
       "id": "inv-max-004",
       "name": "Send via MAX",
@@ -80,6 +82,29 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [720, 400]
+    },
+    {
+      "parameters": {},
+      "id": "inv-error-006",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🚨 *ОШИБКА в Send Invoice*\\n\\nNode: ' + $json.execution.error.node.name + '\\nОшибка: ' + $json.execution.error.message, parse_mode: 'Markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "inv-error-notify-007",
+      "name": "Notify Admin Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 600]
     }
   ],
   "connections": {
@@ -94,6 +119,9 @@
         [{ "node": "Send via MAX", "type": "main", "index": 0 }],
         [{ "node": "Send via Telegram", "type": "main", "index": 0 }]
       ]
+    },
+    "Error Trigger": {
+      "main": [[{ "node": "Notify Admin Error", "type": "main", "index": 0 }]]
     }
   },
   "active": false,

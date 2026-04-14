@@ -26,20 +26,45 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "string": [
+        "rules": {
+          "values": [
             {
-              "value1": "={{ $json.preferred_contact }}",
-              "operation": "equals",
-              "value2": "telegram"
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.preferred_contact }}",
+                    "rightValue": "telegram",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.preferred_contact }}",
+                    "rightValue": "max",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "max"
             }
-          ]
-        }
+          ],
+          "fallbackOutput": {
+            "fallbackOutputIndex": 2
+          }
+        },
+        "options": {}
       },
-      "id": "dash-if-tg-003",
-      "name": "Is Telegram?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "id": "dash-switch-003",
+      "name": "Route by Contact",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
       "position": [480, 300]
     },
     {
@@ -48,7 +73,7 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: $json.telegram_chat_id || Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '\uD83D\uDCCA Ваш личный кабинет готов!\n\n\uD83D\uDD17 ' + $json.dashboard_url, parse_mode: 'Markdown' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: $json.telegram_chat_id || Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '📊 Ваш личный кабинет готов!\\n\\n🔗 ' + $json.dashboard_url, parse_mode: 'Markdown' }) }}",
         "options": { "timeout": 10000 }
       },
       "id": "dash-tg-send-004",
@@ -59,26 +84,8 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{ $json.preferred_contact }}",
-              "operation": "equals",
-              "value2": "max"
-            }
-          ]
-        }
-      },
-      "id": "dash-if-max-005",
-      "name": "Is MAX?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [480, 480]
-    },
-    {
-      "parameters": {
         "method": "POST",
-        "url": "=https://botapi.max.ru/messages?chat_id={{ $json.max_user_id || $env.MAX_ADMIN_USER_ID }}",
+        "url": "={{ ($env.MAX_API_BASE || 'https://botapi.max.ru') + '/messages?chat_id=' + ($json.max_user_id || $env.MAX_ADMIN_USER_ID) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -88,14 +95,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ text: '\uD83D\uDCCA Ваш личный кабинет готов!\n\n\uD83D\uDD17 ' + $json.dashboard_url, format: 'markdown' }) }}",
+        "jsonBody": "={{ JSON.stringify({ text: '📊 Ваш личный кабинет готов!\\n\\n🔗 ' + $json.dashboard_url, format: 'markdown' }) }}",
         "options": { "timeout": 10000 }
       },
       "id": "dash-max-send-006",
       "name": "Send via MAX",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [740, 440]
+      "position": [740, 340]
     },
     {
       "parameters": {
@@ -103,14 +110,14 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '\uD83D\uDCCB *Ручная отправка ссылки*\n\nИсполнитель: ' + $json.name + '\nКонтакт: ' + $json.preferred_contact + '\nСсылка: ' + $json.dashboard_url + '\n\nОтправьте ссылку вручную!', parse_mode: 'Markdown' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '📋 *Ручная отправка ссылки*\\n\\nИсполнитель: ' + $json.name + '\\nКонтакт: ' + $json.preferred_contact + '\\nСсылка: ' + $json.dashboard_url + '\\n\\nОтправьте ссылку вручную!', parse_mode: 'Markdown' }) }}",
         "options": { "timeout": 10000 }
       },
       "id": "dash-manual-007",
       "name": "Notify Admin Manual",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [740, 700]
+      "position": [740, 520]
     },
     {
       "parameters": {},
@@ -118,7 +125,7 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 600]
+      "position": [0, 700]
     },
     {
       "parameters": {
@@ -126,14 +133,14 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '\uD83D\uDEA8 *ОШИБКА в Send Dashboard Link*\n\nNode: ' + $json.execution.error.node.name + '\nОшибка: ' + $json.execution.error.message, parse_mode: 'Markdown' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🚨 *ОШИБКА в Send Dashboard Link*\\n\\nNode: ' + $json.execution.error.node.name + '\\nОшибка: ' + $json.execution.error.message, parse_mode: 'Markdown' }) }}",
         "options": { "timeout": 10000 }
       },
       "id": "dash-error-notify-009",
       "name": "Notify Admin Error",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [260, 780]
+      "position": [260, 700]
     }
   ],
   "connections": {
@@ -142,20 +149,12 @@
     },
     "Parse Payload": {
       "main": [
-        [
-          { "node": "Is Telegram?", "type": "main", "index": 0 },
-          { "node": "Is MAX?", "type": "main", "index": 0 }
-        ]
+        [{ "node": "Route by Contact", "type": "main", "index": 0 }]
       ]
     },
-    "Is Telegram?": {
+    "Route by Contact": {
       "main": [
         [{ "node": "Send via Telegram", "type": "main", "index": 0 }],
-        []
-      ]
-    },
-    "Is MAX?": {
-      "main": [
         [{ "node": "Send via MAX", "type": "main", "index": 0 }],
         [{ "node": "Notify Admin Manual", "type": "main", "index": 0 }]
       ]
@@ -166,7 +165,7 @@
   },
   "active": false,
   "settings": { "executionOrder": "v1", "saveManualExecutions": true },
-  "versionId": "podryad-16-send-dashboard-link-v1",
+  "versionId": "podryad-16-send-dashboard-link-v2",
   "meta": { "instanceId": "podryad-pro" },
   "tags": [{ "name": "podryad-pro" }, { "name": "contractors" }, { "name": "dashboard" }]
 }
