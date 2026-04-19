@@ -104,7 +104,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_CHAT_ID }}",
         "text": "📊 *Подряд PRO | Итоги {{ $json.date }}*\n\n━━━ *Заказы за сегодня* ━━━\n📥 Новых: {{ $json.total }}\n🆕 Новые: {{ $json.newOrders }}\n💰 Оценено: {{ $json.priced }}\n✅ Оплачено: {{ $json.paid }}\n🏁 Завершено: {{ $json.completed }}\n❌ Отменено: {{ $json.cancelled }}\n\n━━━ *Финансы* ━━━\n💰 Маржа платформы: {{ $json.revenue }}₽\n📈 Конверсия: {{ $json.conversion }}%\n\n━━━ *Исполнители* ━━━\n👥 Всего: {{ $json.totalContractors }}\n🔧 Активных: {{ $json.activeContractors }}\n\n🏆 *Топ дня:* {{ $json.topContractor }}\n\n📋 Всего заказов в системе: {{ $json.totalAllOrders }}",
         "additionalFields": {
           "parse_mode": "Markdown"
@@ -138,7 +138,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_CHAT_ID }}",
         "text": "🚨 *ОШИБКА в Daily Analytics*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
         "additionalFields": {
           "parse_mode": "Markdown"
