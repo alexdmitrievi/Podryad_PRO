@@ -222,8 +222,11 @@ export default function HomePage() {
 
       {/* ── 1. HERO ─────────────────────────────────────────────── */}
       <section
-        className="section-gradient hero-grid relative py-16 sm:py-24 px-4 overflow-hidden"
+        className="section-gradient relative py-16 sm:py-24 px-4 overflow-hidden"
       >
+        {/* Grid overlay (must be on a child div, not on section — otherwise overwrites section-gradient) */}
+        <div className="absolute inset-0 hero-grid opacity-60 pointer-events-none" />
+
         {/* Animated floating orbs */}
         <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-violet/20 blur-[120px] pointer-events-none orb-1" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-brand-500/25 blur-[100px] pointer-events-none orb-2" />
