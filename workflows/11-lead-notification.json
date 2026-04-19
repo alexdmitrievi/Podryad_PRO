@@ -16,7 +16,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const root = $('Webhook Lead').first().json;\nconst b = root.body || root;\nconst category = String(b.category || 'не указана');\nconst description = String(b.description || '').slice(0, 500);\nconst phone = String(b.phone || 'не указан');\nconst city = String(b.city || 'Омск');\nconst messenger = String(b.messenger || 'не указан');\nconst createdAt = b.created_at || new Date().toISOString();\n\nconst maxText = `\\uD83D\\uDD14 *Новая заявка!*\\n\\n\\uD83D\\uDCCB Категория: ${category}\\n\\uD83D\\uDCDD Описание: ${description}\\n\\uD83D\\uDCDE Телефон: ${phone}\\n\\uD83C\\uDFD9 Город: ${city}\\n\\uD83D\\uDCAC Мессенджер: ${messenger}\\n\\uD83D\\uDD52 Дата: ${createdAt}`;\n\nconst tgText = `\\uD83D\\uDD14 *Новая заявка!*\\n\\n\\uD83D\\uDCCB Категория: ${category}\\n\\uD83D\\uDCDD Описание: ${description}\\n\\uD83D\\uDCDE Телефон: ${phone}\\n\\uD83C\\uDFD9 Город: ${city}\\n\\uD83D\\uDCAC Мессенджер: ${messenger}\\n\\uD83D\\uDD52 Дата: ${createdAt}`;\n\nreturn [{ json: { maxText, tgText, category, phone } }];"
+        "jsCode": "const root = $('Webhook Lead').first().json;\nconst b = root.body || root;\nconst WORK_TYPE_LABELS = { labor: 'Рабочие / бригада', equipment: 'Техника', materials: 'Материалы', complex: 'Комплекс услуг' };\nconst workType = String(b.work_type || b.category || '');\nconst categoryLabel = WORK_TYPE_LABELS[workType] || workType || 'не указана';\nconst comment = String(b.comment || b.description || '').slice(0, 500);\nconst phone = String(b.phone || 'не указан');\nconst city = String(b.city || 'Омск');\nconst messenger = String(b.messenger || 'не указан');\nconst name = b.name ? `\\n\\uD83D\\uDC64 Имя: ${b.name}` : '';\nconst commentLine = comment ? `\\n\\uD83D\\uDCAC Комментарий: ${comment}` : '';\nconst createdAt = b.created_at || new Date().toISOString();\n\nconst text = `\\uD83D\\uDD14 *Новая заявка!*\\n\\n\\uD83D\\uDD28 Тип работ: ${categoryLabel}${name}\\n\\uD83D\\uDCDE Телефон: ${phone}\\n\\uD83C\\uDFD9 Город: ${city}\\n\\uD83D\\uDCAC Мессенджер: ${messenger}${commentLine}\\n\\uD83D\\uDD52 Дата: ${createdAt}`;\n\nreturn [{ json: { maxText: text, tgText: text, workType, phone } }];"
       },
       "id": "lead-parse-002",
       "name": "Build Messages",
@@ -52,7 +52,7 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_ID), text: $json.tgText, parse_mode: 'Markdown' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: $json.tgText, parse_mode: 'Markdown' }) }}",
         "options": { "timeout": 10000 }
       },
       "id": "lead-tg-004",
@@ -71,7 +71,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $env.TELEGRAM_ADMIN_ID }}",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_CHAT_ID }}",
         "text": "=\uD83D\uDEA8 *ОШИБКА в Lead Notification*\n\nNode: {{ $json.execution.error.node.name }}\nОшибка: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.id }}",
         "additionalFields": { "parse_mode": "Markdown" }
       },

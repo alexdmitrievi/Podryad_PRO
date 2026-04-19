@@ -16,7 +16,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const root = $('Webhook Dashboard').first().json;\nconst b = root.body || root;\nreturn [{\n  json: {\n    preferred_contact: String(b.preferred_contact || '').toLowerCase(),\n    dashboard_url: String(b.dashboard_url || ''),\n    telegram_chat_id: b.telegram_chat_id || null,\n    max_user_id: b.max_user_id || null,\n    name: String(b.name || 'Исполнитель')\n  }\n}];"
+        "jsCode": "const root = $('Webhook Dashboard').first().json;\nconst b = root.body || root;\nconst preferred_contact = String(b.preferred_contact || '').toLowerCase();\nconst accessToken = String(b.access_token || '');\nconst dashboard_url = accessToken\n  ? `https://podryad.pro/my?token=${accessToken}`\n  : String(b.dashboard_url || '');\nconst messengerId = b.messenger_id || null;\nconst telegram_chat_id = (preferred_contact === 'telegram' && messengerId)\n  ? String(messengerId)\n  : (b.telegram_chat_id ? String(b.telegram_chat_id) : null);\nconst max_user_id = (preferred_contact === 'max' && messengerId)\n  ? String(messengerId)\n  : (b.max_user_id ? String(b.max_user_id) : null);\nconst name = String(b.name || 'Пользователь');\nreturn [{ json: { preferred_contact, dashboard_url, telegram_chat_id, max_user_id, name } }];"
       },
       "id": "dash-parse-002",
       "name": "Parse Payload",
