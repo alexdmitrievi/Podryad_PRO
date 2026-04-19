@@ -277,7 +277,7 @@ export default function HomePage() {
 
           {/* Stats card */}
           <div
-            className="inline-flex items-center gap-8 sm:gap-14 bg-white/[0.07] backdrop-blur-2xl border border-white/[0.11] rounded-2xl px-8 sm:px-10 py-5 mb-8 animate-fade-in shadow-hero"
+            className="inline-flex items-center gap-6 sm:gap-12 bg-white/[0.07] backdrop-blur-2xl border border-white/[0.11] rounded-2xl px-6 sm:px-10 py-4 sm:py-5 mb-8 animate-fade-in shadow-hero"
             style={{ animationDelay: '0.3s' }}
           >
             <div className="text-center">
@@ -327,7 +327,7 @@ export default function HomePage() {
       <section className="py-14 sm:py-18 px-4 bg-surface dark:bg-dark-bg">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8">
-            <span className="eyebrow text-brand-500 mb-4 block">Карта заказов</span>
+            <span className="eyebrow text-brand-500 mb-4">Карта заказов</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
               Заказы прямо сейчас
             </h2>
@@ -348,7 +348,7 @@ export default function HomePage() {
       <section className="py-16 sm:py-20 px-4 bg-white dark:bg-dark-bg">
         <div ref={revServices} className="max-w-6xl mx-auto reveal">
           <div className="text-center mb-12">
-            <span className="eyebrow text-brand-500 mb-4 block">Услуги</span>
+            <span className="eyebrow text-brand-500 mb-4">Услуги</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
               Что мы предлагаем
             </h2>
@@ -449,7 +449,7 @@ export default function HomePage() {
       {/* ── 2.5. СОЗДАТЬ ЗАКАЗ — CTA ────────────────────────────── */}
       <section className="cta-bg py-16 sm:py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <span className="eyebrow text-brand-500 mb-4 block">Начать работу</span>
+          <span className="eyebrow text-brand-500 mb-4">Начать работу</span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
             Разместите заказ прямо сейчас
           </h2>
@@ -494,7 +494,7 @@ export default function HomePage() {
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-violet/10 blur-[100px] pointer-events-none" />
         <div ref={revSteps} className="relative z-10 max-w-5xl mx-auto reveal">
           <div className="text-center mb-14">
-            <span className="eyebrow text-brand-400 mb-4 block">Как это работает</span>
+            <span className="eyebrow text-brand-400 mb-4">Как это работает</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading tracking-tight">
               Безопасная сделка
             </h2>
@@ -502,7 +502,7 @@ export default function HomePage() {
               Деньги хранятся у нас до подтверждения работы — никакого риска
             </p>
           </div>
-          <div className="relative grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
+          <div className="relative grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6 md:gap-8">
             {/* Connecting line (desktop) */}
             <div className="hidden md:block absolute top-7 left-[12.5%] right-[12.5%] h-px">
               <div className="w-full h-full bg-gradient-to-r from-brand-500/20 via-white/30 to-brand-500/20" />
@@ -576,7 +576,7 @@ export default function HomePage() {
         <div className="absolute inset-0 hero-grid opacity-50 pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full bg-brand-500/10 blur-[120px] pointer-events-none" />
         <div ref={revExecutors} className="relative z-10 max-w-3xl mx-auto text-center reveal">
-          <span className="eyebrow text-white/60 mb-4 block">Партнёрам</span>
+          <span className="eyebrow text-white/60 mb-4">Партнёрам</span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-4 font-heading tracking-tight">
             Для исполнителей
           </h2>
@@ -624,7 +624,7 @@ export default function HomePage() {
       <section id="lead-form" className="py-16 sm:py-20 px-4 bg-surface dark:bg-dark-bg">
         <div ref={revForm} className="max-w-lg mx-auto reveal">
           <div className="text-center mb-10">
-            <span className="eyebrow text-brand-500 mb-4 block">Связаться</span>
+            <span className="eyebrow text-brand-500 mb-4">Связаться</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
               Оставить заявку
             </h2>
