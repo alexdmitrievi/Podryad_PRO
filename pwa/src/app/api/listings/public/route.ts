@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from('listings')
-    .select('listing_id, title, description, display_price, price_unit, images, category_slug, listing_type, city')
+    .select('listing_id, title, description, display_price, price_unit, images, category_slug, listing_type, city, discount_percent, includes_operator, year_manufactured, min_rental_hours, specs_json')
     .eq('is_active', true)
     .order('display_price', { ascending: true })
     .limit(100);

@@ -568,6 +568,134 @@ export default function HomePage() {
       {/* ── 3.5. КОМБО-СКИДКА ─────────────────────────────────── */}
       <ComboOfferBanner />
 
+      {/* ── 3.7. НАША ТЕХНИКА — promo block ────────────────────── */}
+      <section className="relative py-16 sm:py-24 px-4 overflow-hidden bg-gradient-to-br from-brand-900 via-[#1a2550] to-[#2d1b69]">
+        {/* Background effects */}
+        <div className="absolute inset-0 hero-grid opacity-40 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-violet/20 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-brand-500/20 blur-[100px] pointer-events-none" />
+        <div className="absolute inset-0 noise-overlay pointer-events-none" />
+
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Left — text */}
+            <div>
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-2 mb-6">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse-dot flex-shrink-0" />
+                <span className="text-white/80 text-xs font-semibold tracking-wide uppercase">Собственный парк техники</span>
+              </div>
+
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-[1.1] mb-5 font-heading tracking-tight">
+                Аренда техники
+                <br />
+                <span className="text-gradient">на 20% дешевле</span>
+                <br />
+                рынка
+              </h2>
+
+              <p className="text-white/60 text-base sm:text-lg mb-8 leading-relaxed max-w-md">
+                Подряд PRO владеет собственным парком спецтехники. Без посредников — вы
+                получаете прямую скидку&nbsp;20% и гарантию надёжности.
+              </p>
+
+              {/* Key benefits */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                {[
+                  { icon: '🏷', title: '−20% к рынку', desc: 'Без наценки посредников' },
+                  { icon: '👷', title: 'Опытный оператор', desc: 'В комплекте по запросу' },
+                  { icon: '⚡', title: 'Выезд от 4 часов', desc: 'Минимальная аренда' },
+                  { icon: '🛡', title: 'Гарантия сделки', desc: 'Эскроу-защита оплаты' },
+                ].map((b) => (
+                  <div key={b.title} className="flex items-start gap-3 bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3.5 hover:bg-white/[0.09] transition-colors duration-200">
+                    <span className="text-xl flex-shrink-0 mt-0.5">{b.icon}</span>
+                    <div>
+                      <div className="text-white font-semibold text-sm">{b.title}</div>
+                      <div className="text-white/45 text-xs mt-0.5">{b.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/equipment"
+                  className="btn-shine group inline-flex items-center justify-center gap-2.5 bg-white text-brand-900 hover:text-brand-700 font-bold text-base px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-glow-hover btn-press cursor-pointer"
+                >
+                  Смотреть технику
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1.5"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </Link>
+                <a
+                  href="#lead-form"
+                  className="inline-flex items-center justify-center gap-2 text-white/60 hover:text-white/90 font-semibold text-sm px-6 py-4 rounded-xl transition-all duration-200 border border-white/10 hover:border-white/20 hover:bg-white/5 cursor-pointer"
+                >
+                  Оставить заявку
+                </a>
+              </div>
+            </div>
+
+            {/* Right — savings calculator */}
+            <div className="lg:pl-6">
+              <div className="bg-white/[0.07] backdrop-blur-xl border border-white/[0.12] rounded-2xl p-6 sm:p-8 shadow-hero">
+                <div className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-5">
+                  Пример экономии
+                </div>
+
+                {/* Calculator row */}
+                {[
+                  { name: 'Экскаватор 20 т', days: '5 дней', market: 25000, ours: 20000 },
+                  { name: 'Самосвал 15 т', days: '3 дня', market: 18000, ours: 14400 },
+                  { name: 'Автокран 25 т', days: '1 день', market: 35000, ours: 28000 },
+                ].map((row) => (
+                  <div key={row.name} className="flex items-center justify-between py-3.5 border-b border-white/[0.07] last:border-0">
+                    <div>
+                      <div className="text-white font-semibold text-sm">{row.name}</div>
+                      <div className="text-white/35 text-xs mt-0.5">{row.days}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center gap-2 justify-end">
+                        <span className="text-white/30 text-xs line-through">
+                          {row.market.toLocaleString('ru-RU')} ₽
+                        </span>
+                        <span className="bg-green-500/20 text-green-400 text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                          −20%
+                        </span>
+                      </div>
+                      <div className="text-white font-bold text-base mt-0.5">
+                        {row.ours.toLocaleString('ru-RU')} ₽
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Total savings highlight */}
+                <div className="mt-5 bg-gradient-to-r from-brand-500/20 to-violet/20 border border-brand-500/30 rounded-xl p-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-white/60 text-xs mb-0.5">Ваша экономия на 3 позициях</div>
+                    <div className="text-white font-extrabold text-xl font-heading">
+                      {(
+                        (25000 - 20000) + (18000 - 14400) + (35000 - 28000)
+                      ).toLocaleString('ru-RU')} ₽
+                    </div>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-brand-500/30 flex items-center justify-center flex-shrink-0">
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-400" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <Link
+                  href="/equipment"
+                  className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm py-3.5 rounded-xl transition-all duration-200 hover:shadow-glow cursor-pointer"
+                >
+                  Посмотреть весь парк →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── 4. ДЛЯ ИСПОЛНИТЕЛЕЙ ────────────────────────────────── */}
       <section className="section-gradient relative py-16 sm:py-24 px-4 overflow-hidden">
         <div className="absolute inset-0 hero-grid opacity-50 pointer-events-none" />
