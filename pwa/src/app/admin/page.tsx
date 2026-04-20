@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Lock, Users, ShoppingBag, Tag, AlertTriangle, BarChart3,
@@ -8,7 +8,8 @@ import {
   Package, FileText, Plus, X, Camera, Upload, MessageSquare,
   Phone, Mail, Send, Contact, TrendingUp, MapPin, Clipboard,
   Activity, FileDown, ArrowUpRight, ArrowDownRight, Minus,
-  DollarSign, Briefcase, UserCheck, Clock, Percent, PieChart
+  DollarSign, Briefcase, UserCheck, Clock, Percent, PieChart,
+  Truck, Wrench, Star, Trash2, Edit3, ImagePlus, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
 interface Order {
@@ -144,10 +145,11 @@ interface ContactEntry {
   source: string;
 }
 
-type TabId = 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'crm' | 'analytics' | 'documents';
+type TabId = 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'crm' | 'analytics' | 'documents' | 'own-equipment';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "crm", label: "CRM Воронка", icon: TrendingUp },
+  { id: "own-equipment", label: "Наша техника", icon: Truck },
   { id: "analytics", label: "Аналитика", icon: Activity },
   { id: "orders", label: "Заказы", icon: ShoppingBag },
   { id: "listings", label: "Позиции", icon: Package },
@@ -1783,6 +1785,567 @@ function ResponsesTab({ pin }: { pin: string }) {
   );
 }
 
+// === OWN EQUIPMENT MANAGEMENT ===
+
+const OWN_EQUIPMENT_CATEGORIES = [
+  { slug: 'excavator', label: 'Экскаватор' },
+  { slug: 'bulldozer', label: 'Бульдозер' },
+  { slug: 'crane', label: 'Автокран' },
+  { slug: 'dump-truck', label: 'Самосвал' },
+  { slug: 'loader', label: 'Погрузчик' },
+  { slug: 'mini-loader', label: 'Мини-погрузчик' },
+  { slug: 'concrete-mixer', label: 'Автобетоносмеситель' },
+  { slug: 'flatbed', label: 'Трал / негабарит' },
+  { slug: 'compactor', label: 'Виброплита / трамбовка' },
+  { slug: 'generator', label: 'Генератор' },
+  { slug: 'other', label: 'Другое' },
+];
+
+const OWN_EQUIPMENT_PRICE_UNITS = ['₽/час', '₽/смена', '₽/сутки', '₽/рейс'];
+
+const SPEC_PRESETS: Record<string, string[]> = {
+  excavator: ['Мощность (л.с.)', 'Объём ковша (м³)', 'Вес (т)', 'Глубина копания (м)', 'Вылет стрелы (м)'],
+  bulldozer: ['Мощность (л.с.)', 'Вес (т)', 'Ширина отвала (м)'],
+  crane: ['Грузоподъёмность (т)', 'Вылет стрелы (м)', 'Высота подъёма (м)', 'Мощность (л.с.)'],
+  'dump-truck': ['Грузоподъёмность (т)', 'Объём кузова (м³)', 'Мощность (л.с.)'],
+  loader: ['Грузоподъёмность (т)', 'Мощность (л.с.)', 'Высота подъёма (м)'],
+  'mini-loader': ['Грузоподъёмность (кг)', 'Мощность (л.с.)', 'Ширина (м)'],
+  'concrete-mixer': ['Объём барабана (м³)', 'Мощность (л.с.)'],
+  flatbed: ['Грузоподъёмность (т)', 'Длина платформы (м)'],
+  compactor: ['Тип', 'Мощность (л.с.)', 'Ширина (мм)', 'Вес (кг)'],
+  generator: ['Мощность (кВт)', 'Тип топлива', 'Запас хода (ч)'],
+  other: ['Характеристика 1', 'Характеристика 2'],
+};
+
+interface OwnEquipmentItem {
+  listing_id: string;
+  title: string;
+  description?: string;
+  price: number;
+  display_price: number;
+  discount_percent: number;
+  price_unit: string;
+  images?: string[];
+  category_slug: string;
+  specs_json?: Record<string, string>;
+  includes_operator: boolean;
+  year_manufactured?: number;
+  vehicle_number?: string;
+  min_rental_hours: number;
+  max_rental_days: number;
+  is_active: boolean;
+  city: string;
+  created_at: string;
+}
+
+type OwnEquipmentView = 'list' | 'add' | 'edit';
+
+const EMPTY_FORM = {
+  title: '',
+  description: '',
+  category_slug: 'excavator',
+  price: '',
+  price_unit: '₽/час',
+  includes_operator: false,
+  year_manufactured: '',
+  vehicle_number: '',
+  min_rental_hours: '4',
+  max_rental_days: '30',
+  city: 'Омск',
+  specs: [] as { key: string; value: string }[],
+};
+
+function OwnEquipmentTab({ pin }: { pin: string }) {
+  const [items, setItems] = useState<OwnEquipmentItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [view, setView] = useState<OwnEquipmentView>('list');
+  const [editItem, setEditItem] = useState<OwnEquipmentItem | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/own-equipment', { headers: { 'x-admin-pin': pin } });
+      const data = await res.json();
+      if (res.ok) setItems(data.items || []);
+      else setError(data.error || 'Ошибка загрузки');
+    } catch { setError('Ошибка соединения'); }
+    finally { setLoading(false); }
+  }, [pin]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const resetForm = () => { setForm(EMPTY_FORM); setEditItem(null); setError(''); setSuccess(''); };
+
+  const openAdd = () => { resetForm(); setView('add'); };
+  const openEdit = (item: OwnEquipmentItem) => {
+    setEditItem(item);
+    setForm({
+      title: item.title,
+      description: item.description || '',
+      category_slug: item.category_slug,
+      price: String(item.price),
+      price_unit: item.price_unit,
+      includes_operator: item.includes_operator,
+      year_manufactured: item.year_manufactured ? String(item.year_manufactured) : '',
+      vehicle_number: item.vehicle_number || '',
+      min_rental_hours: String(item.min_rental_hours),
+      max_rental_days: String(item.max_rental_days),
+      city: item.city,
+      specs: Object.entries(item.specs_json || {}).map(([key, value]) => ({ key, value })),
+    });
+    setView('edit');
+  };
+
+  const specPresets = SPEC_PRESETS[form.category_slug] || SPEC_PRESETS.other;
+  const addSpecRow = () => setForm(f => ({ ...f, specs: [...f.specs, { key: '', value: '' }] }));
+  const addPresetSpec = (key: string) => {
+    if (!form.specs.find(s => s.key === key)) {
+      setForm(f => ({ ...f, specs: [...f.specs, { key, value: '' }] }));
+    }
+  };
+  const updateSpec = (i: number, field: 'key' | 'value', val: string) => {
+    setForm(f => ({ ...f, specs: f.specs.map((s, idx) => idx === i ? { ...s, [field]: val } : s) }));
+  };
+  const removeSpec = (i: number) => setForm(f => ({ ...f, specs: f.specs.filter((_, idx) => idx !== i) }));
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(''); setSuccess(''); setSaving(true);
+    const price = Number(form.price);
+    if (!form.title || !price || price <= 0) {
+      setError('Заполните название и цену'); setSaving(false); return;
+    }
+    const specs_json: Record<string, string> = {};
+    form.specs.filter(s => s.key && s.value).forEach(s => { specs_json[s.key] = s.value; });
+
+    const payload = {
+      title: form.title, description: form.description, category_slug: form.category_slug,
+      price, price_unit: form.price_unit, specs_json,
+      includes_operator: form.includes_operator,
+      year_manufactured: form.year_manufactured ? Number(form.year_manufactured) : undefined,
+      vehicle_number: form.vehicle_number || undefined,
+      min_rental_hours: Number(form.min_rental_hours) || 4,
+      max_rental_days: Number(form.max_rental_days) || 30,
+      city: form.city,
+      ...(editItem ? { listing_id: editItem.listing_id } : {}),
+    };
+
+    try {
+      const res = await fetch('/api/admin/own-equipment', {
+        method: editItem ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess(editItem ? 'Обновлено!' : 'Добавлено!');
+        load();
+        if (!editItem) { resetForm(); setView('list'); }
+      } else { setError(data.error || 'Ошибка сохранения'); }
+    } catch { setError('Ошибка соединения'); }
+    finally { setSaving(false); }
+  };
+
+  const handleToggle = async (item: OwnEquipmentItem) => {
+    const updated = { ...item, is_active: !item.is_active };
+    setItems(prev => prev.map(i => i.listing_id === item.listing_id ? updated : i));
+    await fetch('/api/admin/own-equipment', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+      body: JSON.stringify({ listing_id: item.listing_id, is_active: !item.is_active }),
+    });
+  };
+
+  const handleDelete = async (item: OwnEquipmentItem) => {
+    if (!confirm(`Удалить «${item.title}»? Это действие необратимо.`)) return;
+    setDeletingId(item.listing_id);
+    const res = await fetch(`/api/admin/own-equipment?id=${item.listing_id}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-pin': pin },
+    });
+    if (res.ok) {
+      setItems(prev => prev.filter(i => i.listing_id !== item.listing_id));
+      if (view === 'edit' && editItem?.listing_id === item.listing_id) { setView('list'); resetForm(); }
+    }
+    setDeletingId(null);
+  };
+
+  const handlePhotoUpload = async (listingId: string, file: File) => {
+    setUploadingId(listingId);
+    const fd = new FormData();
+    fd.append('pin', pin);
+    fd.append('file', file);
+    fd.append('listing_id', listingId);
+    try {
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setItems(prev => prev.map(i => i.listing_id === listingId
+          ? { ...i, images: [...(i.images || []), data.url] } : i));
+        if (editItem?.listing_id === listingId) {
+          setEditItem(ei => ei ? { ...ei, images: [...(ei.images || []), data.url] } : ei);
+        }
+      } else { setError(data.error || 'Ошибка загрузки фото'); }
+    } catch { setError('Ошибка соединения'); }
+    finally { setUploadingId(null); }
+  };
+
+  const handlePhotoDelete = async (listingId: string, url: string) => {
+    const item = items.find(i => i.listing_id === listingId);
+    if (!item) return;
+    const newImages = (item.images || []).filter(u => u !== url);
+    await fetch('/api/admin/own-equipment', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+      body: JSON.stringify({ listing_id: listingId, images: newImages }),
+    });
+    setItems(prev => prev.map(i => i.listing_id === listingId ? { ...i, images: newImages } : i));
+    if (editItem?.listing_id === listingId) {
+      setEditItem(ei => ei ? { ...ei, images: newImages } : ei);
+    }
+  };
+
+  const FormPanel = ({ isEdit }: { isEdit: boolean }) => {
+    const currentItem = isEdit ? editItem : null;
+    return (
+      <form onSubmit={handleSave} className="space-y-5">
+        {/* Basic info */}
+        <div className="bg-white rounded-2xl p-5 shadow-card space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <Wrench className="w-4 h-4 text-brand-500" /> Основная информация
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Название *</label>
+              <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                required placeholder="Экскаватор Komatsu PC200"
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Категория *</label>
+              <select value={form.category_slug} onChange={e => setForm(f => ({ ...f, category_slug: e.target.value, specs: [] }))}
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer">
+                {OWN_EQUIPMENT_CATEGORIES.map(c => <option key={c.slug} value={c.slug}>{c.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Описание</label>
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              rows={3} placeholder="Краткое описание техники, особенности, условия аренды..."
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-none" />
+          </div>
+        </div>
+
+        {/* Pricing */}
+        <div className="bg-white rounded-2xl p-5 shadow-card space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-green-500" /> Цена (скидка 20% рассчитается автоматически)
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Рыночная цена (₽) *</label>
+              <input value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                type="number" min="1" required placeholder="3000"
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Единица</label>
+              <select value={form.price_unit} onChange={e => setForm(f => ({ ...f, price_unit: e.target.value }))}
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer">
+                {OWN_EQUIPMENT_PRICE_UNITS.map(u => <option key={u}>{u}</option>)}
+              </select>
+            </div>
+          </div>
+          {form.price && Number(form.price) > 0 && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
+              <span className="text-sm text-gray-500 line-through">{Number(form.price).toLocaleString('ru-RU')} ₽</span>
+              <span className="text-lg font-bold text-green-600">{Math.round(Number(form.price) * 0.8).toLocaleString('ru-RU')} ₽</span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-500 text-white">−20%</span>
+              <span className="text-xs text-gray-500">{form.price_unit}</span>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Мин. аренда (часов)</label>
+              <input value={form.min_rental_hours} onChange={e => setForm(f => ({ ...f, min_rental_hours: e.target.value }))}
+                type="number" min="1" placeholder="4"
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Макс. аренда (дней)</label>
+              <input value={form.max_rental_days} onChange={e => setForm(f => ({ ...f, max_rental_days: e.target.value }))}
+                type="number" min="1" placeholder="30"
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+            </div>
+          </div>
+        </div>
+
+        {/* Technical details */}
+        <div className="bg-white rounded-2xl p-5 shadow-card space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <Clipboard className="w-4 h-4 text-purple-500" /> Технические данные
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Год выпуска</label>
+              <input value={form.year_manufactured} onChange={e => setForm(f => ({ ...f, year_manufactured: e.target.value }))}
+                type="number" min="1990" max={new Date().getFullYear()} placeholder="2020"
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Гос. номер</label>
+              <input value={form.vehicle_number} onChange={e => setForm(f => ({ ...f, vehicle_number: e.target.value }))}
+                placeholder="К123АВ55"
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Город</label>
+              <select value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer">
+                <option value="Омск">Омск</option>
+                <option value="Новосибирск">Новосибирск</option>
+              </select>
+            </div>
+          </div>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div
+              onClick={() => setForm(f => ({ ...f, includes_operator: !f.includes_operator }))}
+              className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${form.includes_operator ? 'bg-brand-500' : 'bg-gray-300'}`}>
+              <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.includes_operator ? 'translate-x-5' : ''}`} />
+            </div>
+            <span className="text-sm text-gray-700">В комплекте оператор / машинист</span>
+          </label>
+        </div>
+
+        {/* Specs */}
+        <div className="bg-white rounded-2xl p-5 shadow-card space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+              <Star className="w-4 h-4 text-amber-500" /> Характеристики
+            </h3>
+            <button type="button" onClick={addSpecRow}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer">
+              <Plus className="w-3.5 h-3.5" /> Добавить
+            </button>
+          </div>
+          {/* Presets */}
+          <div className="flex flex-wrap gap-1.5">
+            {specPresets.map(preset => (
+              <button key={preset} type="button" onClick={() => addPresetSpec(preset)}
+                className={`px-2 py-0.5 rounded-full text-xs cursor-pointer transition-colors ${
+                  form.specs.find(s => s.key === preset) ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}>
+                {preset}
+              </button>
+            ))}
+          </div>
+          {form.specs.map((spec, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <input value={spec.key} onChange={e => updateSpec(i, 'key', e.target.value)}
+                placeholder="Характеристика" className="flex-1 px-2 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500/30" />
+              <input value={spec.value} onChange={e => updateSpec(i, 'value', e.target.value)}
+                placeholder="Значение" className="flex-1 px-2 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500/30" />
+              <button type="button" onClick={() => removeSpec(i)}
+                className="p-1 text-red-400 hover:text-red-600 cursor-pointer"><X className="w-4 h-4" /></button>
+            </div>
+          ))}
+        </div>
+
+        {/* Photos (only in edit mode — need listing_id first) */}
+        {isEdit && currentItem && (
+          <div className="bg-white rounded-2xl p-5 shadow-card space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <Camera className="w-4 h-4 text-blue-500" /> Фотографии
+              </h3>
+              <div>
+                <p className="text-xs text-gray-400">JPG/WebP, макс 5 МБ, 1200×800px рекомендуется</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {(currentItem.images || []).map((url, idx) => (
+                <div key={idx} className="relative group aspect-video rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => handlePhotoDelete(currentItem.listing_id, url)}
+                    className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <X className="w-3 h-3" />
+                  </button>
+                  {idx === 0 && <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] bg-black/60 text-white">Главное</span>}
+                </div>
+              ))}
+              <label className={`aspect-video rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-brand-500 hover:bg-brand-500/5 transition-colors ${uploadingId === currentItem.listing_id ? 'opacity-50' : ''}`}>
+                {uploadingId === currentItem.listing_id
+                  ? <RefreshCw className="w-5 h-5 text-brand-500 animate-spin" />
+                  : <><ImagePlus className="w-5 h-5 text-gray-400" /><span className="text-xs text-gray-400">Добавить фото</span></>}
+                <input ref={editFileRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(currentItem.listing_id, f); e.target.value = ''; }} />
+              </label>
+            </div>
+          </div>
+        )}
+
+        {!isEdit && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
+            💡 После добавления техники вы сможете загрузить фотографии через кнопку редактирования.
+          </div>
+        )}
+
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {success && <p className="text-green-600 text-sm">{success}</p>}
+
+        <div className="flex gap-3">
+          <button type="button" onClick={() => { setView('list'); resetForm(); }}
+            className="flex-1 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer">
+            Отмена
+          </button>
+          <button type="submit" disabled={saving}
+            className="flex-1 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium cursor-pointer transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? 'Сохранение...' : (isEdit ? 'Сохранить изменения' : 'Добавить технику')}
+          </button>
+        </div>
+      </form>
+    );
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-[#6C5CE7] flex items-center justify-center">
+            <Truck className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Наша техника</h2>
+            <p className="text-xs text-gray-500">Собственный автопарк Подряд PRO · скидка 20% для всех</p>
+          </div>
+        </div>
+        <div className="ml-auto flex gap-2">
+          <button onClick={load} disabled={loading}
+            className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer disabled:opacity-50">
+            <RefreshCw className={loading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} /> Обновить
+          </button>
+          {view === 'list' && (
+            <button onClick={openAdd}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium cursor-pointer transition-colors">
+              <Plus className="w-4 h-4" /> Добавить технику
+            </button>
+          )}
+        </div>
+      </div>
+
+      {view === 'list' && (
+        <>
+          {items.length === 0 && !loading && (
+            <div className="bg-white rounded-2xl p-10 shadow-card text-center">
+              <Truck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 font-medium">Техника не добавлена</p>
+              <p className="text-sm text-gray-400 mt-1 mb-4">Добавьте первую единицу собственного автопарка</p>
+              <button onClick={openAdd}
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium cursor-pointer transition-colors">
+                <Plus className="w-4 h-4" /> Добавить технику
+              </button>
+            </div>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {items.map(item => (
+              <div key={item.listing_id} className={`bg-white rounded-2xl shadow-card border overflow-hidden ${item.is_active ? 'border-gray-100' : 'border-gray-200 opacity-75'}`}>
+                {/* Photo */}
+                <div className="relative h-44 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                  {item.images?.[0]
+                    ? <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center"><Truck className="w-16 h-16 text-gray-300" /></div>}
+                  <div className="absolute top-2 right-2 flex gap-1.5">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-500 text-white">−20%</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${item.is_active ? 'bg-white text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                      {item.is_active ? 'Доступна' : 'Скрыта'}
+                    </span>
+                  </div>
+                  {item.images && item.images.length > 1 && (
+                    <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-[10px] bg-black/50 text-white">{item.images.length} фото</span>
+                  )}
+                </div>
+                <div className="p-4 space-y-3">
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-bold text-gray-900 text-sm">{item.title}</h3>
+                      {item.year_manufactured && <span className="text-xs text-gray-400 flex-shrink-0">{item.year_manufactured} г.</span>}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-gray-400 line-through">{item.price.toLocaleString('ru-RU')} ₽</span>
+                      <span className="text-base font-bold text-brand-500">{item.display_price.toLocaleString('ru-RU')} ₽</span>
+                      <span className="text-xs text-gray-500">{item.price_unit}</span>
+                    </div>
+                  </div>
+                  {item.specs_json && Object.keys(item.specs_json).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(item.specs_json).slice(0, 3).map(([k, v]) => (
+                        <span key={k} className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{k}: {v}</span>
+                      ))}
+                      {Object.keys(item.specs_json).length > 3 && (
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-400">+{Object.keys(item.specs_json).length - 3} ещё</span>
+                      )}
+                    </div>
+                  )}
+                  {item.includes_operator && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-brand-500/10 text-brand-600 font-medium">
+                      <UserCheck className="w-3 h-3" /> Оператор в комплекте
+                    </span>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={() => openEdit(item)}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-xs text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">
+                      <Edit3 className="w-3.5 h-3.5" /> Редактировать
+                    </button>
+                    <button onClick={() => handleToggle(item)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+                        item.is_active ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-green-100 text-green-700 hover:bg-green-200'
+                      }`}>
+                      {item.is_active ? 'Скрыть' : 'Показать'}
+                    </button>
+                    <button onClick={() => handleDelete(item)} disabled={deletingId === item.listing_id}
+                      className="px-3 py-1.5 rounded-xl text-xs text-red-500 hover:bg-red-50 cursor-pointer transition-colors disabled:opacity-50">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {view === 'add' && (
+        <div className="max-w-2xl">
+          <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Plus className="w-4 h-4 text-brand-500" /> Добавить единицу техники
+          </h3>
+          <FormPanel isEdit={false} />
+        </div>
+      )}
+
+      {view === 'edit' && editItem && (
+        <div className="max-w-2xl">
+          <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Edit3 className="w-4 h-4 text-brand-500" /> Редактировать: {editItem.title}
+          </h3>
+          <FormPanel isEdit={true} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // === CRM LEAD FUNNEL STAGES ===
 const LEAD_STAGE_LABELS: Record<string, string> = {
   new: 'Новая',
@@ -2801,7 +3364,7 @@ function getInitialTab(): TabId {
   if (typeof window === 'undefined') return 'listings';
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab');
-  const validTabs: TabId[] = ['listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'crm', 'analytics', 'documents'];
+  const validTabs: TabId[] = ['listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'crm', 'analytics', 'documents', 'own-equipment'];
   if (tab && validTabs.includes(tab as TabId)) return tab as TabId;
   return 'listings';
 }
@@ -2860,6 +3423,7 @@ export default function AdminPage() {
         </div>
 
         <div>
+          {activeTab === 'own-equipment' && <OwnEquipmentTab pin={pin} />}
           {activeTab === 'crm' && <CrmFunnelTab pin={pin} />}
           {activeTab === 'analytics' && <AnalyticsTab pin={pin} />}
           {activeTab === 'listings' && <ListingsTab pin={pin} />}
