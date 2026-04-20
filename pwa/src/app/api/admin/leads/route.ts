@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     .from('leads')
     .select('id, phone, work_type, city, comment, source, created_at')
     .order('created_at', { ascending: false })
-    .limit(500);
+    .limit(1000);
 
   if (error) {
     console.error('GET /api/admin/leads:', error);

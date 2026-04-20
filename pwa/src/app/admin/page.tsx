@@ -1841,6 +1841,7 @@ interface CrmLead {
   converted_at?: string;
   order_id?: string;
   admin_notes?: string;
+  conversation_summary?: string;
   created_at: string;
 }
 
@@ -1885,8 +1886,11 @@ function CrmFunnelTab({ pin }: { pin: string }) {
   const [prospects, setProspects] = useState<CrmProspect[]>([]);
   const [stats, setStats] = useState<CrmStats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [savingError, setSavingError] = useState('');
   const [activeSection, setActiveSection] = useState<'customers' | 'executors' | 'add'>('customers');
   const [filterStage, setFilterStage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedSummary, setExpandedSummary] = useState<number | null>(null);
 
   const [newProspect, setNewProspect] = useState({
     name: '', phone: '', city: 'omsk', avito_profile_url: '', specialties: [] as string[], admin_notes: '',
@@ -1912,37 +1916,102 @@ function CrmFunnelTab({ pin }: { pin: string }) {
   useEffect(() => { load(); }, [load]);
 
   const updateLeadStage = async (id: number, stage: string) => {
-    await fetch('/api/admin/crm/funnel', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
-      body: JSON.stringify({ type: 'lead', id, stage }),
-    });
+    const prev = leads.find(l => l.id === id);
     setLeads(ls => ls.map(l => l.id === id ? { ...l, stage } : l));
+    try {
+      const res = await fetch('/api/admin/crm/funnel', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ type: 'lead', id, stage }),
+      });
+      if (!res.ok) {
+        if (prev) setLeads(ls => ls.map(l => l.id === id ? prev : l));
+        setSavingError('Не удалось сохранить этап лида');
+        setTimeout(() => setSavingError(''), 4000);
+      }
+    } catch {
+      if (prev) setLeads(ls => ls.map(l => l.id === id ? prev : l));
+      setSavingError('Ошибка соединения');
+      setTimeout(() => setSavingError(''), 4000);
+    }
   };
 
   const updateLeadNotes = async (id: number, notes: string) => {
-    await fetch('/api/admin/crm/funnel', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
-      body: JSON.stringify({ type: 'lead', id, admin_notes: notes }),
-    });
+    try {
+      const res = await fetch('/api/admin/crm/funnel', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ type: 'lead', id, admin_notes: notes }),
+      });
+      if (!res.ok) {
+        setSavingError('Не удалось сохранить заметку');
+        setTimeout(() => setSavingError(''), 4000);
+      }
+    } catch {
+      setSavingError('Ошибка соединения');
+      setTimeout(() => setSavingError(''), 4000);
+    }
   };
 
   const updateProspectStage = async (id: number, stage: string) => {
-    await fetch('/api/admin/crm/prospects', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
-      body: JSON.stringify({ id, stage }),
-    });
+    const prev = prospects.find(p => p.id === id);
     setProspects(ps => ps.map(p => p.id === id ? { ...p, stage } : p));
+    try {
+      const res = await fetch('/api/admin/crm/prospects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ id, stage }),
+      });
+      if (!res.ok) {
+        if (prev) setProspects(ps => ps.map(p => p.id === id ? prev : p));
+        setSavingError('Не удалось сохранить этап проспекта');
+        setTimeout(() => setSavingError(''), 4000);
+      }
+    } catch {
+      if (prev) setProspects(ps => ps.map(p => p.id === id ? prev : p));
+      setSavingError('Ошибка соединения');
+      setTimeout(() => setSavingError(''), 4000);
+    }
   };
 
   const updateProspectNotes = async (id: number, notes: string) => {
-    await fetch('/api/admin/crm/prospects', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
-      body: JSON.stringify({ id, admin_notes: notes }),
-    });
+    try {
+      const res = await fetch('/api/admin/crm/prospects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ id, admin_notes: notes }),
+      });
+      if (!res.ok) {
+        setSavingError('Не удалось сохранить заметку');
+        setTimeout(() => setSavingError(''), 4000);
+      }
+    } catch {
+      setSavingError('Ошибка соединения');
+      setTimeout(() => setSavingError(''), 4000);
+    }
+  };
+
+  const snoozeItem = async (type: 'lead' | 'prospect', id: number) => {
+    const snoozeUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    if (type === 'lead') {
+      const prev = leads.find(l => l.id === id);
+      setLeads(ls => ls.map(l => l.id === id ? { ...l, next_followup_at: snoozeUntil } : l));
+      const res = await fetch('/api/admin/crm/funnel', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ type: 'lead', id, next_followup_at: snoozeUntil }),
+      });
+      if (!res.ok && prev) setLeads(ls => ls.map(l => l.id === id ? prev : l));
+    } else {
+      const prev = prospects.find(p => p.id === id);
+      setProspects(ps => ps.map(p => p.id === id ? { ...p, next_followup_at: snoozeUntil } : p));
+      const res = await fetch('/api/admin/crm/prospects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ id, next_followup_at: snoozeUntil }),
+      });
+      if (!res.ok && prev) setProspects(ps => ps.map(p => p.id === id ? prev : p));
+    }
   };
 
   const handleAddProspect = async (e: React.FormEvent) => {
@@ -1971,8 +2040,21 @@ function CrmFunnelTab({ pin }: { pin: string }) {
     }));
   };
 
-  const filteredLeads = filterStage ? leads.filter(l => l.stage === filterStage) : leads;
-  const filteredProspects = filterStage ? prospects.filter(p => p.stage === filterStage) : prospects;
+  const now = new Date();
+  const overdueLeads = leads.filter(l =>
+    l.next_followup_at && new Date(l.next_followup_at) <= now && !['converted', 'lost', 'cold'].includes(l.stage)
+  );
+  const overdueProspects = prospects.filter(p =>
+    p.next_followup_at && new Date(p.next_followup_at) <= now && !['registered', 'active', 'lost', 'blocked'].includes(p.stage)
+  );
+
+  const q = searchQuery.trim().toLowerCase();
+  const filteredLeads = leads
+    .filter(l => !filterStage || l.stage === filterStage)
+    .filter(l => !q || l.phone.includes(q) || (l.name || '').toLowerCase().includes(q));
+  const filteredProspects = prospects
+    .filter(p => !filterStage || p.stage === filterStage)
+    .filter(p => !q || (p.phone || '').includes(q) || p.name.toLowerCase().includes(q));
 
   const convRate = stats && stats.totalLeads > 0
     ? Math.round((stats.convertedLeads / stats.totalLeads) * 100) : 0;
@@ -1981,31 +2063,41 @@ function CrmFunnelTab({ pin }: { pin: string }) {
     <div className="space-y-6">
       {/* Stats Row */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {[
             { label: 'Лидов всего', val: stats.totalLeads, color: 'text-gray-900' },
             { label: 'Конвертировано', val: stats.convertedLeads, color: 'text-green-600' },
-            { label: 'Конверсия %', val: convRate + '%', color: 'text-brand-500' },
-            { label: 'Проспектов (Авито)', val: stats.totalProspects, color: 'text-gray-900' },
+            { label: 'Конверсия', val: convRate + '%', color: 'text-brand-500' },
+            { label: 'Просроч. лиды', val: overdueLeads.length, color: overdueLeads.length > 0 ? 'text-red-500' : 'text-gray-400' },
+            { label: 'Проспектов', val: stats.totalProspects, color: 'text-gray-900' },
             { label: 'Зарегистрировано', val: stats.registeredProspects, color: 'text-emerald-600' },
+            { label: 'Просроч. проспекты', val: overdueProspects.length, color: overdueProspects.length > 0 ? 'text-red-500' : 'text-gray-400' },
           ].map(s => (
-            <div key={s.label} className="bg-white rounded-2xl p-4 shadow-card text-center">
-              <div className={`text-2xl font-bold ${s.color}`}>{s.val}</div>
-              <div className="text-xs text-gray-500 mt-1">{s.label}</div>
+            <div key={s.label} className="bg-white rounded-2xl p-3 shadow-card text-center">
+              <div className={`text-xl font-bold ${s.color}`}>{s.val}</div>
+              <div className="text-xs text-gray-500 mt-0.5 leading-tight">{s.label}</div>
             </div>
           ))}
         </div>
       )}
 
+      {/* Error banner */}
+      {savingError && (
+        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          {savingError}
+        </div>
+      )}
+
       {/* Section Tabs */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {[
           { id: 'customers', label: '📋 Заказчики (лиды)' },
           { id: 'executors', label: '👷 Исполнители (Авито)' },
           { id: 'add', label: '➕ Добавить проспекта' },
         ].map(s => (
           <button key={s.id}
-            onClick={() => { setActiveSection(s.id as typeof activeSection); setFilterStage(''); }}
+            onClick={() => { setActiveSection(s.id as typeof activeSection); setFilterStage(''); setSearchQuery(''); }}
             className={`px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-colors ${
               activeSection === s.id
                 ? 'bg-brand-500 text-white'
@@ -2017,28 +2109,36 @@ function CrmFunnelTab({ pin }: { pin: string }) {
         <button onClick={load} disabled={loading}
           className="ml-auto flex items-center gap-1 px-3 py-2 rounded-xl text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer transition-colors disabled:opacity-50">
           <RefreshCw className={loading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
-          Загрузить
+          Обновить
         </button>
       </div>
 
-      {/* Stage filter */}
+      {/* Search + Stage filter */}
       {activeSection !== 'add' && (
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setFilterStage('')}
-            className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${!filterStage ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
-            Все
-          </button>
-          {(activeSection === 'customers'
-            ? Object.keys(LEAD_STAGE_LABELS)
-            : Object.keys(PROSPECT_STAGE_LABELS)
-          ).map(stage => (
-            <button key={stage} onClick={() => setFilterStage(stage)}
-              className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-                filterStage === stage ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}>
-              {activeSection === 'customers' ? LEAD_STAGE_LABELS[stage] : PROSPECT_STAGE_LABELS[stage]}
+        <div className="space-y-2">
+          <input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Поиск по имени или телефону..."
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          />
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setFilterStage('')}
+              className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${!filterStage ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              Все
             </button>
-          ))}
+            {(activeSection === 'customers'
+              ? Object.keys(LEAD_STAGE_LABELS)
+              : Object.keys(PROSPECT_STAGE_LABELS)
+            ).map(stage => (
+              <button key={stage} onClick={() => setFilterStage(stage)}
+                className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                  filterStage === stage ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}>
+                {activeSection === 'customers' ? LEAD_STAGE_LABELS[stage] : PROSPECT_STAGE_LABELS[stage]}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -2047,57 +2147,79 @@ function CrmFunnelTab({ pin }: { pin: string }) {
         <div className="space-y-3">
           {filteredLeads.length === 0 && !loading && (
             <p className="text-gray-400 text-sm text-center py-8">
-              Нет лидов в воронке. Они появятся автоматически при заполнении формы на лендинге.
+              {searchQuery || filterStage ? 'Ничего не найдено.' : 'Нет лидов в воронке. Они появятся автоматически при заполнении формы на лендинге.'}
             </p>
           )}
-          {filteredLeads.map(l => (
-            <div key={l.id} className="bg-white rounded-2xl p-4 shadow-card border border-gray-100">
-              <div className="flex flex-wrap items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="font-bold text-gray-900">{l.name || l.phone}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${LEAD_STAGE_COLORS[l.stage] || 'bg-gray-100'}`}>
-                      {LEAD_STAGE_LABELS[l.stage] || l.stage}
-                    </span>
-                    {l.messenger && <span className="px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">{l.messenger}</span>}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {l.name && <span>{l.phone} · </span>}
-                    {WORK_TYPE_LABELS[l.work_type || ''] || l.work_type}
-                    {l.city && ` · ${l.city === 'novosibirsk' ? 'Новосибирск' : 'Омск'}`}
-                  </div>
-                  {l.last_contacted_at && (
-                    <div className="text-xs text-gray-400 mt-1">
-                      Последний контакт: {fmtDate(l.last_contacted_at)} · Попытки: {l.contact_attempts}
+          {filteredLeads.map(l => {
+            const isOverdue = !!l.next_followup_at && new Date(l.next_followup_at) <= now;
+            const hasSummary = !!l.conversation_summary;
+            return (
+              <div key={l.id} className={`bg-white rounded-2xl p-4 shadow-card border ${isOverdue ? 'border-red-200' : 'border-gray-100'}`}>
+                <div className="flex flex-wrap items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-bold text-gray-900">{l.name || l.phone}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${LEAD_STAGE_COLORS[l.stage] || 'bg-gray-100'}`}>
+                        {LEAD_STAGE_LABELS[l.stage] || l.stage}
+                      </span>
+                      {l.messenger && <span className="px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">{l.messenger}</span>}
+                      {isOverdue && <span className="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-600 font-semibold">⚠ просрочено</span>}
                     </div>
-                  )}
-                  {l.next_followup_at && (
-                    <div className={`text-xs mt-1 ${new Date(l.next_followup_at) <= new Date() ? 'text-red-500 font-medium' : 'text-blue-500'}`}>
-                      Следующий контакт: {fmtDate(l.next_followup_at)}
-                      {new Date(l.next_followup_at) <= new Date() && ' ⚠ просрочено'}
+                    <div className="text-sm text-gray-500">
+                      {l.name && <span>{l.phone} · </span>}
+                      {WORK_TYPE_LABELS[l.work_type || ''] || l.work_type}
+                      {l.city && ` · ${l.city === 'novosibirsk' ? 'Новосибирск' : 'Омск'}`}
                     </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2 items-end">
-                  <div className="flex gap-1">
-                    <a href={`https://max.im/search?q=${l.phone}`} target="_blank" rel="noopener noreferrer"
-                      className="px-2 py-1 rounded-lg text-xs font-semibold text-white bg-[#2787F5] hover:opacity-80">MAX</a>
-                    <a href={l.telegram ? `https://t.me/${l.telegram}` : `https://t.me/+7${l.phone}`} target="_blank" rel="noopener noreferrer"
-                      className="px-2 py-1 rounded-lg text-xs font-semibold text-white bg-[#229ED9] hover:opacity-80">TG</a>
-                    {l.email && <a href={`mailto:${l.email}`}
-                      className="px-2 py-1 rounded-lg text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200">Email</a>}
+                    {l.last_contacted_at && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        Последний контакт: {fmtDate(l.last_contacted_at)} · Попытки: {l.contact_attempts}
+                      </div>
+                    )}
+                    {l.next_followup_at && (
+                      <div className={`text-xs mt-1 ${isOverdue ? 'text-red-500 font-medium' : 'text-blue-500'}`}>
+                        Следующий контакт: {fmtDate(l.next_followup_at)}
+                      </div>
+                    )}
+                    {hasSummary && (
+                      <button
+                        onClick={() => setExpandedSummary(expandedSummary === l.id ? null : l.id)}
+                        className="mt-1.5 text-xs text-brand-500 hover:underline cursor-pointer">
+                        {expandedSummary === l.id ? '▲ Скрыть историю' : '▼ История переписки'}
+                      </button>
+                    )}
+                    {expandedSummary === l.id && l.conversation_summary && (
+                      <div className="mt-2 p-2 rounded-lg bg-blue-50 border border-blue-100 text-xs text-blue-900 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                        {l.conversation_summary}
+                      </div>
+                    )}
                   </div>
-                  <select value={l.stage} onChange={e => updateLeadStage(l.id, e.target.value)}
-                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 cursor-pointer">
-                    {Object.keys(LEAD_STAGE_LABELS).map(s => <option key={s} value={s}>{LEAD_STAGE_LABELS[s]}</option>)}
-                  </select>
+                  <div className="flex flex-col gap-2 items-end">
+                    <div className="flex gap-1 flex-wrap justify-end">
+                      <a href={`https://max.im/search?q=${l.phone}`} target="_blank" rel="noopener noreferrer"
+                        className="px-2 py-1 rounded-lg text-xs font-semibold text-white bg-[#2787F5] hover:opacity-80">MAX</a>
+                      <a href={l.telegram ? `https://t.me/${l.telegram}` : `https://t.me/+7${l.phone}`} target="_blank" rel="noopener noreferrer"
+                        className="px-2 py-1 rounded-lg text-xs font-semibold text-white bg-[#229ED9] hover:opacity-80">TG</a>
+                      {l.email && <a href={`mailto:${l.email}`}
+                        className="px-2 py-1 rounded-lg text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200">Email</a>}
+                      {isOverdue && (
+                        <button onClick={() => snoozeItem('lead', l.id)}
+                          className="px-2 py-1 rounded-lg text-xs font-semibold text-amber-700 bg-amber-100 hover:bg-amber-200 cursor-pointer">
+                          +24ч
+                        </button>
+                      )}
+                    </div>
+                    <select value={l.stage} onChange={e => updateLeadStage(l.id, e.target.value)}
+                      className="text-xs px-2 py-1 rounded-lg border border-gray-200 cursor-pointer">
+                      {Object.keys(LEAD_STAGE_LABELS).map(s => <option key={s} value={s}>{LEAD_STAGE_LABELS[s]}</option>)}
+                    </select>
+                  </div>
                 </div>
+                <input defaultValue={l.admin_notes || ''} placeholder="Заметка менеджера..."
+                  onBlur={e => updateLeadNotes(l.id, e.target.value)}
+                  className="mt-2 w-full text-xs px-2 py-1.5 rounded-lg border border-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500/30 text-gray-600" />
               </div>
-              <input defaultValue={l.admin_notes || ''} placeholder="Заметка менеджера..."
-                onBlur={e => updateLeadNotes(l.id, e.target.value)}
-                className="mt-2 w-full text-xs px-2 py-1.5 rounded-lg border border-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500/30 text-gray-600" />
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -2106,69 +2228,78 @@ function CrmFunnelTab({ pin }: { pin: string }) {
         <div className="space-y-3">
           {filteredProspects.length === 0 && !loading && (
             <p className="text-gray-400 text-sm text-center py-8">
-              Нет проспектов. Добавьте кандидатов с Авито через вкладку &ldquo;Добавить проспекта&rdquo;.
+              {searchQuery || filterStage ? 'Ничего не найдено.' : 'Нет проспектов. Добавьте кандидатов с Авито через вкладку «Добавить проспекта».'}
             </p>
           )}
-          {filteredProspects.map(p => (
-            <div key={p.id} className="bg-white rounded-2xl p-4 shadow-card border border-gray-100">
-              <div className="flex flex-wrap items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="font-bold text-gray-900">{p.name}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PROSPECT_STAGE_COLORS[p.stage] || 'bg-gray-100'}`}>
-                      {PROSPECT_STAGE_LABELS[p.stage] || p.stage}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-orange-50 text-orange-600">{p.source}</span>
-                  </div>
-                  {p.phone && <div className="text-sm text-gray-500">{p.phone} · {p.city === 'novosibirsk' ? 'Новосибирск' : 'Омск'}</div>}
-                  {p.specialties.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {p.specialties.map(s => <span key={s} className="px-1.5 py-0.5 rounded text-xs bg-brand-500/10 text-brand-600">{s}</span>)}
+          {filteredProspects.map(p => {
+            const isOverdue = !!p.next_followup_at && new Date(p.next_followup_at) <= now;
+            return (
+              <div key={p.id} className={`bg-white rounded-2xl p-4 shadow-card border ${isOverdue ? 'border-red-200' : 'border-gray-100'}`}>
+                <div className="flex flex-wrap items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-bold text-gray-900">{p.name}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PROSPECT_STAGE_COLORS[p.stage] || 'bg-gray-100'}`}>
+                        {PROSPECT_STAGE_LABELS[p.stage] || p.stage}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-orange-50 text-orange-600">{p.source}</span>
+                      {isOverdue && <span className="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-600 font-semibold">⚠ просрочено</span>}
                     </div>
-                  )}
-                  {p.last_contacted_at && (
-                    <div className="text-xs text-gray-400 mt-1">
-                      Контакт: {fmtDate(p.last_contacted_at)} · Попытки: {p.contact_attempts}
-                    </div>
-                  )}
-                  {p.next_followup_at && (
-                    <div className={`text-xs mt-1 ${new Date(p.next_followup_at) <= new Date() ? 'text-red-500 font-medium' : 'text-blue-500'}`}>
-                      Следующий контакт: {fmtDate(p.next_followup_at)}
-                      {new Date(p.next_followup_at) <= new Date() && ' ⚠ просрочено'}
-                    </div>
-                  )}
-                  {p.registered_at && <div className="text-xs text-green-600 mt-1">✅ Зарегистрирован: {fmtDate(p.registered_at)}</div>}
-                  {p.first_order_at && <div className="text-xs text-emerald-600">🏆 Первый заказ: {fmtDate(p.first_order_at)}</div>}
-                </div>
-                <div className="flex flex-col gap-2 items-end">
-                  <div className="flex gap-1 flex-wrap justify-end">
-                    {p.avito_profile_url && (
-                      <a href={p.avito_profile_url} target="_blank" rel="noopener noreferrer"
-                        className="px-2 py-1 rounded-lg text-xs font-semibold text-white bg-[#00AEFF] hover:opacity-80">Авито</a>
+                    {p.phone && <div className="text-sm text-gray-500">{p.phone} · {p.city === 'novosibirsk' ? 'Новосибирск' : 'Омск'}</div>}
+                    {p.specialties.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {p.specialties.map(s => <span key={s} className="px-1.5 py-0.5 rounded text-xs bg-brand-500/10 text-brand-600">{s}</span>)}
+                      </div>
                     )}
-                    {p.phone && <>
-                      <a href={`https://max.im/search?q=${p.phone}`} target="_blank" rel="noopener noreferrer"
-                        className="px-2 py-1 rounded-lg text-xs font-semibold text-white bg-[#2787F5] hover:opacity-80">MAX</a>
-                      <a href={`tel:+7${p.phone}`} className="px-2 py-1 rounded-lg text-xs font-semibold text-white bg-green-500 hover:opacity-80">Тел</a>
-                    </>}
+                    {p.last_contacted_at && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        Контакт: {fmtDate(p.last_contacted_at)} · Попытки: {p.contact_attempts}
+                      </div>
+                    )}
+                    {p.next_followup_at && (
+                      <div className={`text-xs mt-1 ${isOverdue ? 'text-red-500 font-medium' : 'text-blue-500'}`}>
+                        Следующий контакт: {fmtDate(p.next_followup_at)}
+                      </div>
+                    )}
+                    {p.registered_at && <div className="text-xs text-green-600 mt-1">✅ Зарегистрирован: {fmtDate(p.registered_at)}</div>}
+                    {p.first_order_at && <div className="text-xs text-emerald-600">🏆 Первый заказ: {fmtDate(p.first_order_at)}</div>}
                   </div>
-                  <select value={p.stage} onChange={e => updateProspectStage(p.id, e.target.value)}
-                    className="text-xs px-2 py-1 rounded-lg border border-gray-200 cursor-pointer">
-                    {Object.keys(PROSPECT_STAGE_LABELS).map(s => <option key={s} value={s}>{PROSPECT_STAGE_LABELS[s]}</option>)}
-                  </select>
+                  <div className="flex flex-col gap-2 items-end">
+                    <div className="flex gap-1 flex-wrap justify-end">
+                      {p.avito_profile_url && (
+                        <a href={p.avito_profile_url} target="_blank" rel="noopener noreferrer"
+                          className="px-2 py-1 rounded-lg text-xs font-semibold text-white bg-[#00AEFF] hover:opacity-80">Авито</a>
+                      )}
+                      {p.phone && <>
+                        <a href={`https://max.im/search?q=${p.phone}`} target="_blank" rel="noopener noreferrer"
+                          className="px-2 py-1 rounded-lg text-xs font-semibold text-white bg-[#2787F5] hover:opacity-80">MAX</a>
+                        <a href={`tel:+7${p.phone}`} className="px-2 py-1 rounded-lg text-xs font-semibold text-white bg-green-500 hover:opacity-80">Тел</a>
+                      </>}
+                      {isOverdue && (
+                        <button onClick={() => snoozeItem('prospect', p.id)}
+                          className="px-2 py-1 rounded-lg text-xs font-semibold text-amber-700 bg-amber-100 hover:bg-amber-200 cursor-pointer">
+                          +24ч
+                        </button>
+                      )}
+                    </div>
+                    <select value={p.stage} onChange={e => updateProspectStage(p.id, e.target.value)}
+                      className="text-xs px-2 py-1 rounded-lg border border-gray-200 cursor-pointer">
+                      {Object.keys(PROSPECT_STAGE_LABELS).map(s => <option key={s} value={s}>{PROSPECT_STAGE_LABELS[s]}</option>)}
+                    </select>
+                  </div>
                 </div>
+                {p.avito_message_draft && (
+                  <div className="mt-2 p-2 rounded-lg bg-orange-50 border border-orange-100">
+                    <p className="text-xs text-orange-700 font-medium mb-1">Текст для Авито:</p>
+                    <p className="text-xs text-orange-900 whitespace-pre-wrap">{p.avito_message_draft}</p>
+                  </div>
+                )}
+                <input defaultValue={p.admin_notes || ''} placeholder="Заметка менеджера..."
+                  onBlur={e => updateProspectNotes(p.id, e.target.value)}
+                  className="mt-2 w-full text-xs px-2 py-1.5 rounded-lg border border-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500/30 text-gray-600" />
               </div>
-              {p.avito_message_draft && (
-                <div className="mt-2 p-2 rounded-lg bg-orange-50 border border-orange-100">
-                  <p className="text-xs text-orange-700 font-medium mb-1">Текст для Авито:</p>
-                  <p className="text-xs text-orange-900 whitespace-pre-wrap">{p.avito_message_draft}</p>
-                </div>
-              )}
-              <input defaultValue={p.admin_notes || ''} placeholder="Заметка менеджера..."
-                onBlur={e => updateProspectNotes(p.id, e.target.value)}
-                className="mt-2 w-full text-xs px-2 py-1.5 rounded-lg border border-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500/30 text-gray-600" />
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

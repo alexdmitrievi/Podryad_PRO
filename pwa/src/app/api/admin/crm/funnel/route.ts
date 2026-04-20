@@ -22,17 +22,21 @@ export async function GET(req: NextRequest) {
 
   const db = getServiceClient();
 
+  const { searchParams } = new URL(req.url);
+  const limit = Math.min(Number(searchParams.get('limit') || 1000), 1000);
+  const offset = Number(searchParams.get('offset') || 0);
+
   const [leadsResult, prospectsResult] = await Promise.all([
     db
       .from('crm_lead_funnel')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(200),
+      .range(offset, offset + limit - 1),
     db
       .from('crm_executor_prospects')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(200),
+      .range(offset, offset + limit - 1),
   ]);
 
   if (leadsResult.error) {
@@ -90,6 +94,7 @@ export async function PUT(req: NextRequest) {
     id: number;
     stage?: string;
     admin_notes?: string;
+    next_followup_at?: string;
   };
 
   try {
@@ -98,7 +103,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { type, id, stage, admin_notes } = body;
+  const { type, id, stage, admin_notes, next_followup_at } = body;
   if (!type || !id) {
     return NextResponse.json({ error: 'type and id are required' }, { status: 400 });
   }
@@ -109,6 +114,7 @@ export async function PUT(req: NextRequest) {
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (stage !== undefined) updates.stage = stage;
   if (admin_notes !== undefined) updates.admin_notes = admin_notes;
+  if (next_followup_at !== undefined) updates.next_followup_at = next_followup_at;
 
   const { error } = await db.from(table).update(updates).eq('id', id);
   if (error) {
