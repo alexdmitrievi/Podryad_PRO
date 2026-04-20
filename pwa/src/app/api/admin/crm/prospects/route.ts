@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     .from('crm_executor_prospects')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(300);
+    .limit(1000);
 
   if (stage) {
     query = query.eq('stage', stage);
@@ -124,7 +124,7 @@ export async function PUT(req: NextRequest) {
   let body: {
     id: number;
     stage?: string;
-    phone?: string;
+    phone?: string | null;
     name?: string;
     admin_notes?: string;
     avito_message_draft?: string;
@@ -133,6 +133,7 @@ export async function PUT(req: NextRequest) {
     telegram_id?: string;
     email?: string;
     specialties?: string[];
+    next_followup_at?: string;
   };
 
   try {
@@ -149,7 +150,7 @@ export async function PUT(req: NextRequest) {
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
   if (body.stage !== undefined) updates.stage = body.stage;
-  if (body.phone !== undefined) updates.phone = body.phone.replace(/\D/g, '');
+  if (body.phone !== undefined && body.phone !== null) updates.phone = (body.phone as string).replace(/\D/g, '');
   if (body.name !== undefined) updates.name = body.name;
   if (body.admin_notes !== undefined) updates.admin_notes = body.admin_notes;
   if (body.avito_message_draft !== undefined) updates.avito_message_draft = body.avito_message_draft;
@@ -158,6 +159,7 @@ export async function PUT(req: NextRequest) {
   if (body.telegram_id !== undefined) updates.telegram_id = body.telegram_id;
   if (body.email !== undefined) updates.email = body.email;
   if (body.specialties !== undefined) updates.specialties = body.specialties;
+  if (body.next_followup_at !== undefined) updates.next_followup_at = body.next_followup_at;
 
   // If moving to contact_collected and we have a phone, fire invite webhook
   if (body.stage === 'contact_collected' || body.stage === 'invite_sent') {

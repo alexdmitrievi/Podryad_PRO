@@ -66,26 +66,26 @@ export async function POST(req: NextRequest) {
   const now = new Date().toISOString();
 
   if (event === 'order_created') {
-    // Update customer lead funnel
-    await db
+    const { error } = await db
       .from('crm_lead_funnel')
       .update({ stage: 'converted', converted_at: now, order_id: entity_id, updated_at: now })
       .eq('phone', cleanPhone)
       .neq('stage', 'converted');
+    if (error) console.error('CRM update-stage order_created:', error);
   } else if (event === 'contractor_registered') {
-    // Update executor prospect
-    await db
+    const { error } = await db
       .from('crm_executor_prospects')
       .update({ stage: 'registered', registered_at: now, contractor_id: entity_id, updated_at: now })
       .eq('phone', cleanPhone)
       .neq('stage', 'active');
+    if (error) console.error('CRM update-stage contractor_registered:', error);
   } else if (event === 'order_taken') {
-    // Mark executor as active
-    await db
+    const { error } = await db
       .from('crm_executor_prospects')
       .update({ stage: 'active', first_order_at: now, updated_at: now })
       .eq('phone', cleanPhone)
       .eq('stage', 'registered');
+    if (error) console.error('CRM update-stage order_taken:', error);
   }
 
   return NextResponse.json({ ok: true });
