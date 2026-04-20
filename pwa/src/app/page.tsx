@@ -82,6 +82,41 @@ function useReveal() {
   return ref;
 }
 
+/* ── per-card stagger reveal (mobile-first scroll animation) ── */
+
+function useStaggerReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const container = ref.current;
+    if (!container) return;
+    const items = Array.from(container.children) as HTMLElement[];
+    items.forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(28px)';
+      el.style.transition = 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1)';
+    });
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            const i = items.indexOf(el);
+            setTimeout(() => {
+              el.style.opacity = '1';
+              el.style.transform = 'translateY(0)';
+            }, i * 110);
+            obs.unobserve(el);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
+    );
+    items.forEach(el => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+  return ref;
+}
+
 /* ── count-up hook ──────────────────────────────────────────── */
 
 function useCountUp(target: number, duration = 1800) {
@@ -144,6 +179,7 @@ export default function HomePage() {
 
   /* scroll-reveal refs */
   const revServices = useReveal();
+  const revServiceCards = useStaggerReveal();
   const revSteps = useReveal();
   const revExecutors = useReveal();
   const revForm = useReveal();
@@ -292,17 +328,17 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="animate-fade-in flex flex-col sm:flex-row items-center justify-center gap-3" style={{ animationDelay: '0.45s' }}>
+          <div className="animate-fade-in w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 px-2 sm:px-0" style={{ animationDelay: '0.45s' }}>
             <a
               href="/order/new"
-              className="btn-shine group inline-flex items-center gap-2.5 bg-white text-brand-500 hover:text-brand-600 font-bold text-lg px-10 py-4 rounded-xl transition-all duration-300 hover:shadow-glow-hover btn-press cursor-pointer"
+              className="btn-shine group inline-flex items-center justify-center gap-2.5 bg-white text-brand-500 hover:text-brand-600 font-bold text-lg px-10 py-4 rounded-xl transition-all duration-300 hover:shadow-glow-hover btn-press cursor-pointer"
             >
               Разместить заказ
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1.5"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </a>
             <a
               href="#lead-form"
-              className="inline-flex items-center gap-2 text-white/60 hover:text-white/90 font-semibold text-sm px-6 py-4 rounded-xl transition-all duration-200 border border-white/10 hover:border-white/20 hover:bg-white/5 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 text-white font-semibold text-base px-10 py-4 rounded-xl transition-all duration-200 border-2 border-white/35 hover:border-white/65 hover:bg-white/10 active:scale-95 cursor-pointer"
             >
               Оставить заявку
             </a>
@@ -351,11 +387,11 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 stagger-grid">
+          <div ref={revServiceCards} className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Рабочая сила */}
             <Link
               href="/catalog/labor"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift card-accent-top cursor-pointer block"
+              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift card-accent-top cursor-pointer block active:scale-[0.98] transition-transform duration-150"
             >
               <div className="service-icon-wrap mb-6">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
@@ -386,7 +422,7 @@ export default function HomePage() {
             {/* Аренда техники */}
             <Link
               href="/catalog/equipment"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift card-accent-top cursor-pointer block"
+              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift card-accent-top cursor-pointer block active:scale-[0.98] transition-transform duration-150"
             >
               <div className="service-icon-wrap mb-6">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
@@ -415,7 +451,7 @@ export default function HomePage() {
             {/* Стройматериалы */}
             <Link
               href="/catalog/materials"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift card-accent-top cursor-pointer block"
+              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift card-accent-top cursor-pointer block active:scale-[0.98] transition-transform duration-150"
             >
               <div className="service-icon-wrap mb-6">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
@@ -968,29 +1004,29 @@ export default function HomePage() {
             {/* Brand */}
             <div>
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-brand-500/20 flex items-center justify-center ring-1 ring-white/10">
-                  <Image src="/logo.png" alt="Подряд PRO" width={20} height={20} className="rounded opacity-80" />
+                <div className="w-8 h-8 rounded-lg bg-brand-500/25 flex items-center justify-center ring-1 ring-white/15">
+                  <Image src="/logo.png" alt="Подряд PRO" width={20} height={20} className="rounded opacity-90" />
                 </div>
-                <span className="text-white/70 text-sm font-heading font-bold tracking-tight">Подряд PRO</span>
+                <span className="text-white/90 text-sm font-heading font-bold tracking-tight">Подряд PRO</span>
               </div>
-              <p className="text-white/30 text-xs leading-relaxed max-w-[200px]">
+              <p className="text-white/55 text-xs leading-relaxed max-w-[200px]">
                 Платформа строительных услуг Омска и Новосибирска
               </p>
               <div className="flex items-center gap-1.5 mt-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                <span className="text-white/30 text-xs">Сервис активен</span>
+                <span className="text-white/55 text-xs">Сервис активен</span>
               </div>
             </div>
 
             {/* Legal */}
             <div>
-              <p className="text-white/20 text-xs mb-1.5">ИП Жбанков А.Д.</p>
-              <p className="text-white/20 text-xs">ИНН 550516401202</p>
-              <div className="mt-4 inline-flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
+              <p className="text-white/55 text-xs mb-1.5">ИП Жбанков А.Д.</p>
+              <p className="text-white/55 text-xs">ИНН 550516401202</p>
+              <div className="mt-4 inline-flex items-center gap-1.5 bg-white/8 border border-white/15 rounded-lg px-3 py-1.5">
                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-green-400">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                 </svg>
-                <span className="text-white/40 text-[11px] font-medium">Эскроу-защита сделок</span>
+                <span className="text-white/65 text-[11px] font-medium">Эскроу-защита сделок</span>
               </div>
             </div>
 
@@ -998,19 +1034,19 @@ export default function HomePage() {
             <div className="flex flex-col gap-3 md:items-end">
               <Link
                 href="/privacy"
-                className="link-underline text-white/35 hover:text-white/65 text-sm transition-colors duration-200 w-fit"
+                className="link-underline text-white/65 hover:text-white/90 text-sm transition-colors duration-200 w-fit"
               >
                 Политика конфиденциальности
               </Link>
               <Link
                 href="/dashboard"
-                className="link-underline text-white/35 hover:text-white/65 text-sm transition-colors duration-200 w-fit"
+                className="link-underline text-white/65 hover:text-white/90 text-sm transition-colors duration-200 w-fit"
               >
                 Карта заказов
               </Link>
               <Link
                 href="/admin"
-                className="text-white/15 hover:text-white/40 text-xs transition-colors duration-200 w-fit mt-1"
+                className="text-white/35 hover:text-white/60 text-xs transition-colors duration-200 w-fit mt-1"
               >
                 Управление
               </Link>
@@ -1018,11 +1054,11 @@ export default function HomePage() {
           </div>
 
           {/* Bottom bar */}
-          <div className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-white/18 text-xs">
+          <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-white/50 text-xs">
               © {new Date().getFullYear()} Подряд PRO
             </p>
-            <p className="text-white/18 text-xs text-center sm:text-right">
+            <p className="text-white/50 text-xs text-center sm:text-right">
               Безопасные сделки для строительного бизнеса
             </p>
           </div>
