@@ -851,8 +851,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      </section>
-
       {/* ── 4. ДЛЯ ИСПОЛНИТЕЛЕЙ ────────────────────────────────── */}
       <section className="section-gradient relative py-16 sm:py-24 px-4 overflow-hidden">
         <div className="absolute inset-0 hero-grid opacity-50 pointer-events-none" />
