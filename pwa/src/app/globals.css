@@ -1087,21 +1087,27 @@
   color: #fff;
 }
 
-/* Active state: scroll-reveal on mobile (sticks after animation) */
+/* Spring animation (opacity/transform only) — fires on scroll-reveal */
 .service-icon-wrap.icon-revealed {
   animation: svc-icon-spring 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  background: linear-gradient(135deg, #2F5BFF 0%, #6C5CE7 100%);
-  box-shadow: 0 8px 24px rgba(47, 91, 255, 0.32);
-}
-.service-icon-wrap.icon-revealed svg {
-  color: #fff;
-}
-.service-icon-wrap.service-icon--amber.icon-revealed {
-  background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
-  box-shadow: 0 8px 24px rgba(251, 146, 60, 0.4);
 }
 
-/* Active state: hover on desktop */
+/* MOBILE (no hover): scroll-reveal triggers color highlight */
+@media (hover: none) {
+  .service-icon-wrap.icon-revealed {
+    background: linear-gradient(135deg, #2F5BFF 0%, #6C5CE7 100%);
+    box-shadow: 0 8px 24px rgba(47, 91, 255, 0.32);
+  }
+  .service-icon-wrap.icon-revealed svg {
+    color: #fff;
+  }
+  .service-icon-wrap.service-icon--amber.icon-revealed {
+    background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+    box-shadow: 0 8px 24px rgba(251, 146, 60, 0.4);
+  }
+}
+
+/* DESKTOP (pointer): highlight only on cursor hover */
 @media (hover: hover) {
   .group:hover .service-icon-wrap {
     background: linear-gradient(135deg, #2F5BFF 0%, #6C5CE7 100%);
