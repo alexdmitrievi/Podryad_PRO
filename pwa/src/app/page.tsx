@@ -101,10 +101,18 @@ function useStaggerReveal() {
           if (entry.isIntersecting) {
             const el = entry.target as HTMLElement;
             const i = items.indexOf(el);
+            const delay = i * 110;
             setTimeout(() => {
               el.style.opacity = '1';
               el.style.transform = 'translateY(0)';
-            }, i * 110);
+              // trigger icon spring after card starts revealing
+              const iconWrap = el.querySelector('.service-icon-wrap') as HTMLElement | null;
+              if (iconWrap) {
+                setTimeout(() => {
+                  iconWrap.classList.add('icon-revealed');
+                }, 120);
+              }
+            }, delay);
             obs.unobserve(el);
           }
         });
@@ -391,7 +399,7 @@ export default function HomePage() {
             {/* Рабочая сила */}
             <Link
               href="/catalog/labor"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift card-accent-top cursor-pointer block active:scale-[0.98] transition-transform duration-150"
+              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150"
             >
               <div className="service-icon-wrap mb-6">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
@@ -422,7 +430,7 @@ export default function HomePage() {
             {/* Аренда техники */}
             <Link
               href="/catalog/equipment"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift card-accent-top cursor-pointer block active:scale-[0.98] transition-transform duration-150"
+              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150"
             >
               <div className="service-icon-wrap mb-6">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
@@ -451,7 +459,7 @@ export default function HomePage() {
             {/* Стройматериалы */}
             <Link
               href="/catalog/materials"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift card-accent-top cursor-pointer block active:scale-[0.98] transition-transform duration-150"
+              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150"
             >
               <div className="service-icon-wrap mb-6">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
@@ -475,6 +483,120 @@ export default function HomePage() {
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
             </Link>
+
+            {/* Собственный парк техники — featured card */}
+            <Link
+              href="/equipment"
+              className="group md:col-span-3 relative overflow-hidden rounded-2xl cursor-pointer block active:scale-[0.995] transition-transform duration-150"
+              style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #1a2550 50%, #2d1b69 100%)' }}
+            >
+              {/* bg texture */}
+              <div className="absolute inset-0 hero-grid opacity-30 pointer-events-none" />
+              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-violet/25 blur-[80px] pointer-events-none" />
+              <div className="absolute bottom-0 left-1/3 w-48 h-48 rounded-full bg-brand-500/20 blur-[60px] pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10 p-7 sm:p-8">
+                {/* icon */}
+                <div className="service-icon-wrap flex-shrink-0 !mb-0 !bg-white/10 group-hover:!bg-white/20">
+                  <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+                  </svg>
+                </div>
+
+                {/* text */}
+                <div className="flex-1 min-w-0">
+                  <div className="inline-flex items-center gap-1.5 bg-green-500/20 border border-green-500/30 rounded-full px-2.5 py-0.5 mb-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-dot flex-shrink-0" />
+                    <span className="text-green-300 text-[10px] font-bold uppercase tracking-wide">Собственный парк</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-white mb-1.5 font-heading leading-tight">
+                    Аренда спецтехники на&nbsp;<span className="text-gradient">20% дешевле</span> рынка
+                  </h3>
+                  <p className="text-white/55 text-sm leading-relaxed max-w-lg">
+                    Без посредников — Подряд PRO владеет собственным парком. Экскаваторы, самосвалы, автокраны — с оператором или без.
+                  </p>
+                </div>
+
+                {/* chips */}
+                <div className="flex flex-wrap md:flex-nowrap gap-2 flex-shrink-0">
+                  {[
+                    { v: '−20%', l: 'к рынку' },
+                    { v: '⚡', l: 'от 4 ч' },
+                    { v: '👷', l: 'с оператором' },
+                    { v: '🛡', l: 'эскроу' },
+                  ].map((c) => (
+                    <div key={c.l} className="flex flex-col items-center bg-white/[0.07] border border-white/10 rounded-xl px-3.5 py-2.5 min-w-[72px]">
+                      <span className="text-white font-extrabold text-sm font-heading">{c.v}</span>
+                      <span className="text-white/40 text-[10px] mt-0.5">{c.l}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* arrow */}
+                <div className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors duration-300 flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="text-white transition-transform duration-300 group-hover:translate-x-1">
+                    <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          {/* ── Выгодно от Подряд PRO ── */}
+          <div className="mt-12">
+            <div className="text-center mb-8">
+              <span className="eyebrow text-brand-500 mb-3 block">Преимущества</span>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
+                Выгодно от Подряд PRO
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                {
+                  icon: (
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>
+                    </svg>
+                  ),
+                  color: '#2F5BFF',
+                  bg: 'rgba(47,91,255,0.08)',
+                  title: 'Безопасная оплата',
+                  desc: 'Деньги холдируются до подтверждения — никакого риска для заказчика',
+                },
+                {
+                  icon: (
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                    </svg>
+                  ),
+                  color: '#10B981',
+                  bg: 'rgba(16,185,129,0.08)',
+                  title: '0 ₽ для исполнителей',
+                  desc: 'Платформа полностью бесплатна — никаких комиссий и подписок',
+                },
+                {
+                  icon: (
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                  ),
+                  color: '#6C5CE7',
+                  bg: 'rgba(108,92,231,0.08)',
+                  title: 'Гарантия качества',
+                  desc: 'Проверенные исполнители, рейтинг и отзывы после каждого заказа',
+                },
+              ].map((item) => (
+                <div key={item.title} className="flex items-start gap-4 bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-card transition-shadow duration-300">
+                  <div className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: item.bg, color: item.color }}>
+                    {item.icon}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-[#1a1a2e] dark:text-white text-sm mb-1 font-heading">{item.title}</h4>
+                    <p className="text-gray-500 dark:text-dark-muted text-xs leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -603,134 +725,6 @@ export default function HomePage() {
 
       {/* ── 3.5. КОМБО-СКИДКА ─────────────────────────────────── */}
       <ComboOfferBanner />
-
-      {/* ── 3.7. НАША ТЕХНИКА — promo block ────────────────────── */}
-      <section className="relative py-16 sm:py-24 px-4 overflow-hidden bg-gradient-to-br from-brand-900 via-[#1a2550] to-[#2d1b69]">
-        {/* Background effects */}
-        <div className="absolute inset-0 hero-grid opacity-40 pointer-events-none" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-violet/20 blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-brand-500/20 blur-[100px] pointer-events-none" />
-        <div className="absolute inset-0 noise-overlay pointer-events-none" />
-
-        <div className="relative z-10 max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left — text */}
-            <div>
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-2 mb-6">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse-dot flex-shrink-0" />
-                <span className="text-white/80 text-xs font-semibold tracking-wide uppercase">Собственный парк техники</span>
-              </div>
-
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-[1.1] mb-5 font-heading tracking-tight">
-                Аренда техники
-                <br />
-                <span className="text-gradient">на 20% дешевле</span>
-                <br />
-                рынка
-              </h2>
-
-              <p className="text-white/60 text-base sm:text-lg mb-8 leading-relaxed max-w-md">
-                Подряд PRO владеет собственным парком спецтехники. Без посредников — вы
-                получаете прямую скидку&nbsp;20% и гарантию надёжности.
-              </p>
-
-              {/* Key benefits */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-                {[
-                  { icon: '🏷', title: '−20% к рынку', desc: 'Без наценки посредников' },
-                  { icon: '👷', title: 'Опытный оператор', desc: 'В комплекте по запросу' },
-                  { icon: '⚡', title: 'Выезд от 4 часов', desc: 'Минимальная аренда' },
-                  { icon: '🛡', title: 'Гарантия сделки', desc: 'Эскроу-защита оплаты' },
-                ].map((b) => (
-                  <div key={b.title} className="flex items-start gap-3 bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3.5 hover:bg-white/[0.09] transition-colors duration-200">
-                    <span className="text-xl flex-shrink-0 mt-0.5">{b.icon}</span>
-                    <div>
-                      <div className="text-white font-semibold text-sm">{b.title}</div>
-                      <div className="text-white/45 text-xs mt-0.5">{b.desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link
-                  href="/equipment"
-                  className="btn-shine group inline-flex items-center justify-center gap-2.5 bg-white text-brand-900 hover:text-brand-700 font-bold text-base px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-glow-hover btn-press cursor-pointer"
-                >
-                  Смотреть технику
-                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1.5"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </Link>
-                <a
-                  href="#lead-form"
-                  className="inline-flex items-center justify-center gap-2 text-white/60 hover:text-white/90 font-semibold text-sm px-6 py-4 rounded-xl transition-all duration-200 border border-white/10 hover:border-white/20 hover:bg-white/5 cursor-pointer"
-                >
-                  Оставить заявку
-                </a>
-              </div>
-            </div>
-
-            {/* Right — savings calculator */}
-            <div className="lg:pl-6">
-              <div className="bg-white/[0.07] backdrop-blur-xl border border-white/[0.12] rounded-2xl p-6 sm:p-8 shadow-hero">
-                <div className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-5">
-                  Пример экономии
-                </div>
-
-                {/* Calculator row */}
-                {[
-                  { name: 'Экскаватор 20 т', days: '5 дней', market: 25000, ours: 20000 },
-                  { name: 'Самосвал 15 т', days: '3 дня', market: 18000, ours: 14400 },
-                  { name: 'Автокран 25 т', days: '1 день', market: 35000, ours: 28000 },
-                ].map((row) => (
-                  <div key={row.name} className="flex items-center justify-between py-3.5 border-b border-white/[0.07] last:border-0">
-                    <div>
-                      <div className="text-white font-semibold text-sm">{row.name}</div>
-                      <div className="text-white/35 text-xs mt-0.5">{row.days}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-2 justify-end">
-                        <span className="text-white/30 text-xs line-through">
-                          {row.market.toLocaleString('ru-RU')} ₽
-                        </span>
-                        <span className="bg-green-500/20 text-green-400 text-[10px] font-bold px-1.5 py-0.5 rounded-md">
-                          −20%
-                        </span>
-                      </div>
-                      <div className="text-white font-bold text-base mt-0.5">
-                        {row.ours.toLocaleString('ru-RU')} ₽
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Total savings highlight */}
-                <div className="mt-5 bg-gradient-to-r from-brand-500/20 to-violet/20 border border-brand-500/30 rounded-xl p-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-white/60 text-xs mb-0.5">Ваша экономия на 3 позициях</div>
-                    <div className="text-white font-extrabold text-xl font-heading">
-                      {(
-                        (25000 - 20000) + (18000 - 14400) + (35000 - 28000)
-                      ).toLocaleString('ru-RU')} ₽
-                    </div>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-brand-500/30 flex items-center justify-center flex-shrink-0">
-                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-400" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-                    </svg>
-                  </div>
-                </div>
-
-                <Link
-                  href="/equipment"
-                  className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm py-3.5 rounded-xl transition-all duration-200 hover:shadow-glow cursor-pointer"
-                >
-                  Посмотреть весь парк →
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ── 4. ДЛЯ ИСПОЛНИТЕЛЕЙ ────────────────────────────────── */}
       <section className="section-gradient relative py-16 sm:py-24 px-4 overflow-hidden">
