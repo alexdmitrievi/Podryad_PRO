@@ -94,6 +94,23 @@ function useStaggerReveal() {
       el.style.transform = 'translateY(28px)';
       el.style.transition = 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1)';
     });
+
+    // Icon highlight is gated on the user actually scrolling — otherwise
+    // a short hero would fire IntersectionObserver on mount and the
+    // icons would look "highlighted by default" on mobile.
+    let hasScrolled = false;
+    const pendingIcons = new Set<HTMLElement>();
+    const revealIcon = (iconWrap: HTMLElement) => {
+      setTimeout(() => iconWrap.classList.add('icon-revealed'), 120);
+    };
+    const onScroll = () => {
+      hasScrolled = true;
+      window.removeEventListener('scroll', onScroll);
+      pendingIcons.forEach(revealIcon);
+      pendingIcons.clear();
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
@@ -104,12 +121,10 @@ function useStaggerReveal() {
             setTimeout(() => {
               el.style.opacity = '1';
               el.style.transform = 'translateY(0)';
-              // trigger icon spring after card starts revealing
               const iconWrap = el.querySelector('.service-icon-wrap') as HTMLElement | null;
               if (iconWrap) {
-                setTimeout(() => {
-                  iconWrap.classList.add('icon-revealed');
-                }, 120);
+                if (hasScrolled) revealIcon(iconWrap);
+                else pendingIcons.add(iconWrap);
               }
             }, delay);
             obs.unobserve(el);
@@ -119,7 +134,10 @@ function useStaggerReveal() {
       { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
     );
     items.forEach(el => obs.observe(el));
-    return () => obs.disconnect();
+    return () => {
+      obs.disconnect();
+      window.removeEventListener('scroll', onScroll);
+    };
   }, []);
   return ref;
 }
