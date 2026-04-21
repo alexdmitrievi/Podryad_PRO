@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import ComboOfferBanner from '@/components/landing/ComboOfferBanner';
 import PhoneInput, { isValidPhone } from '@/components/ui/PhoneInput';
 import Spinner from '@/components/ui/Spinner';
 
@@ -657,9 +656,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* ── 3.5. КОМБО-СКИДКА ─────────────────────────────────── */}
-      <ComboOfferBanner />
 
       {/* ── 4. ДЛЯ ИСПОЛНИТЕЛЕЙ ────────────────────────────────── */}
       <section className="section-gradient relative py-16 sm:py-24 px-4 overflow-hidden">
