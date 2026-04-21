@@ -278,10 +278,10 @@ function Legend() {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const legend = L.control({ position: 'bottomleft' });
-    legend.onAdd = () => {
-      const div = L.DomUtil.create('div');
-      div.innerHTML = `
+    const LegendControl = L.Control.extend({
+      onAdd: () => {
+        const div = L.DomUtil.create('div');
+        div.innerHTML = `
         <div style="background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.12);padding:8px 12px;font-family:system-ui,sans-serif;">
           <div style="display:flex;gap:12px;align-items:center;font-size:11px;font-weight:600;color:#6B7280;">
             <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#2F5BFF;display:inline-block;"></span>Рабочие</span>
@@ -291,10 +291,12 @@ function Legend() {
           </div>
         </div>
       `;
-      containerRef.current = div;
-      L.DomEvent.disableClickPropagation(div);
-      return div;
-    };
+        containerRef.current = div;
+        L.DomEvent.disableClickPropagation(div);
+        return div;
+      },
+    });
+    const legend = new LegendControl({ position: 'bottomleft' });
     legend.addTo(map);
     return () => { legend.remove(); };
   }, [map]);
