@@ -505,8 +505,8 @@ export default function HomePage() {
               </div>
 
               <div className="relative z-[1] flex flex-col h-full">
-                <div className="service-icon-wrap mb-5 !bg-white/10 group-hover:!bg-gradient-to-br group-hover:!from-amber-400 group-hover:!to-orange-500 transition-all">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                <div className="service-icon-wrap service-icon--amber mb-5">
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                   </svg>
                 </div>
