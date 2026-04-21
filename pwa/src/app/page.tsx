@@ -101,17 +101,18 @@ function useStaggerReveal() {
           if (entry.isIntersecting) {
             const el = entry.target as HTMLElement;
             const i = items.indexOf(el);
+            const delay = i * 110;
             setTimeout(() => {
               el.style.opacity = '1';
               el.style.transform = 'translateY(0)';
-              // Icon spring pop — fires after card fades in
-              const iconEl = el.querySelector('[data-service-icon]') as HTMLElement | null;
-              if (iconEl) {
-                requestAnimationFrame(() => {
-                  iconEl.style.animation = `svc-icon-spring 0.7s cubic-bezier(0.34,1.56,0.64,1) ${i * 60 + 200}ms both`;
-                });
+              // trigger icon spring after card starts revealing
+              const iconWrap = el.querySelector('.service-icon-wrap') as HTMLElement | null;
+              if (iconWrap) {
+                setTimeout(() => {
+                  iconWrap.classList.add('icon-revealed');
+                }, 120);
               }
-            }, i * 110);
+            }, delay);
             obs.unobserve(el);
           }
         });
@@ -265,11 +266,8 @@ export default function HomePage() {
 
       {/* ── 1. HERO ─────────────────────────────────────────────── */}
       <section
-        className="section-gradient relative py-16 sm:py-24 px-4 overflow-hidden"
+        className="section-gradient hero-grid relative py-16 sm:py-24 px-4 overflow-hidden"
       >
-        {/* Grid overlay (must be on a child div, not on section — otherwise overwrites section-gradient) */}
-        <div className="absolute inset-0 hero-grid opacity-60 pointer-events-none" />
-
         {/* Animated floating orbs */}
         <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-violet/20 blur-[120px] pointer-events-none orb-1" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-brand-500/25 blur-[100px] pointer-events-none orb-2" />
@@ -320,7 +318,7 @@ export default function HomePage() {
 
           {/* Stats card */}
           <div
-            className="inline-flex items-center gap-6 sm:gap-12 bg-white/[0.07] backdrop-blur-2xl border border-white/[0.11] rounded-2xl px-6 sm:px-10 py-4 sm:py-5 mb-8 animate-fade-in shadow-hero"
+            className="inline-flex items-center gap-8 sm:gap-14 bg-white/[0.07] backdrop-blur-2xl border border-white/[0.11] rounded-2xl px-8 sm:px-10 py-5 mb-8 animate-fade-in shadow-hero"
             style={{ animationDelay: '0.3s' }}
           >
             <div className="text-center">
@@ -370,7 +368,7 @@ export default function HomePage() {
       <section className="py-14 sm:py-18 px-4 bg-surface dark:bg-dark-bg">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8">
-            <span className="eyebrow text-brand-500 mb-4">Карта заказов</span>
+            <span className="eyebrow text-brand-500 mb-4 block">Карта заказов</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
               Заказы прямо сейчас
             </h2>
@@ -387,44 +385,24 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 2. УСЛУГИ ── 3 карточки + Наша техника + Выгодно ──── */}
+      {/* ── 2. УСЛУГИ — 3 карточки ──────────────────────────────── */}
       <section className="py-16 sm:py-20 px-4 bg-white dark:bg-dark-bg">
-        {/* Keyframe for icon spring animation */}
-        <style>{`
-          @keyframes svc-icon-spring {
-            0%   { transform: scale(0.35) rotate(-18deg); opacity: 0; }
-            55%  { transform: scale(1.22) rotate(8deg);  opacity: 1; }
-            75%  { transform: scale(0.93) rotate(-4deg); }
-            100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
-          }
-          .svc-icon-glow {
-            transition: box-shadow 0.35s ease, transform 0.35s ease;
-          }
-          .group:hover .svc-icon-glow,
-          .group:active .svc-icon-glow {
-            box-shadow: 0 0 0 6px rgba(47,91,255,0.12), 0 4px 16px rgba(47,91,255,0.2);
-            transform: translateY(-2px) scale(1.06);
-          }
-        `}</style>
-
         <div ref={revServices} className="max-w-6xl mx-auto reveal">
           <div className="text-center mb-12">
-            <span className="eyebrow text-brand-500 mb-4">Услуги</span>
+            <span className="eyebrow text-brand-500 mb-4 block">Услуги</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
               Что мы предлагаем
             </h2>
           </div>
 
-          {/* 3 service cards */}
-          <div ref={revServiceCards} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
+          <div ref={revServiceCards} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Рабочая сила */}
             <Link
               href="/catalog/labor"
               className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150"
             >
-              <div data-service-icon className="service-icon-wrap svc-icon-glow mb-6">
-                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500">
+              <div className="service-icon-wrap mb-6">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
@@ -454,13 +432,13 @@ export default function HomePage() {
               href="/catalog/equipment"
               className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150"
             >
-              <div data-service-icon className="service-icon-wrap svc-icon-glow mb-6">
-                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500">
+              <div className="service-icon-wrap mb-6">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Аренда спецтехники</h3>
+              <h3 className="text-xl font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Аренда техники</h3>
               <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">От тяжёлой до садовой</p>
               <ul className="space-y-2.5 text-sm mb-5">
                 {(equipment.length > 0 ? equipment : FALLBACK_EQUIPMENT).slice(0, 4).map((l) => (
@@ -483,8 +461,8 @@ export default function HomePage() {
               href="/catalog/materials"
               className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150"
             >
-              <div data-service-icon className="service-icon-wrap svc-icon-glow mb-6">
-                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500">
+              <div className="service-icon-wrap mb-6">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
@@ -505,95 +483,52 @@ export default function HomePage() {
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
             </Link>
-          </div>
 
-          {/* ── Наша техника — featured card (spans full width) ─── */}
-          <Link
-            href="/equipment"
-            className="group mt-6 block rounded-2xl overflow-hidden cursor-pointer active:scale-[0.99] transition-transform duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
-          >
-            <div className="relative bg-gradient-to-br from-brand-900 via-[#1a2550] to-[#2d1b69] p-6 sm:p-8 overflow-hidden">
-              {/* BG glows */}
-              <div className="absolute top-0 right-0 w-[300px] h-[300px] rounded-full bg-violet/20 blur-[80px] pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-[250px] h-[200px] rounded-full bg-brand-500/20 blur-[60px] pointer-events-none" />
-              <div className="absolute inset-0 hero-grid opacity-20 pointer-events-none" />
+            {/* Выгодно от Подряд PRO — featured как 4-я карточка */}
+            <Link
+              href="/own-park"
+              className="group relative overflow-hidden rounded-2xl p-7 sm:p-8 card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150 text-white"
+              style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2d1b69 100%)' }}
+            >
+              {/* bg accents */}
+              <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-violet/25 blur-[60px] pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-brand-500/25 blur-[50px] pointer-events-none" />
 
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-10">
-                {/* Left */}
-                <div className="flex-1 min-w-0">
-                  <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-4">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    <span className="text-white/80 text-xs font-semibold tracking-wide">Собственный парк техники</span>
-                  </div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-2 font-heading leading-tight">
-                    Аренда техники{' '}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-300 to-emerald-400">−20% от рынка</span>
-                  </h3>
-                  <p className="text-white/60 text-sm leading-relaxed max-w-md">
-                    Наш автопарк без посредников. Экскаваторы, краны, самосвалы — с оператором или без.
-                    Прямая скидка 20% гарантирована.
-                  </p>
+              {/* Ribbon — "Выгодно" */}
+              <div className="absolute top-4 right-4 z-10 inline-flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1a2e] text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-lg tracking-wide uppercase">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                </svg>
+                −20%
+              </div>
+
+              <div className="relative z-[1]">
+                <div className="service-icon-wrap mb-6 !bg-white/10 group-hover:!bg-gradient-to-br group-hover:!from-amber-400 group-hover:!to-orange-500 transition-all">
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                  </svg>
                 </div>
-
-                {/* Right — benefit chips + CTA */}
-                <div className="flex-shrink-0 flex flex-col gap-3 sm:min-w-[220px]">
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { e: '🏷', t: '−20% к рынку' },
-                      { e: '👷', t: 'С оператором' },
-                      { e: '⚡', t: 'Выезд от 4 ч' },
-                      { e: '🛡', t: 'Эскроу-защита' },
-                    ].map((b) => (
-                      <div key={b.t} className="flex items-center gap-1.5 bg-white/8 border border-white/10 rounded-xl px-3 py-2">
-                        <span className="text-sm flex-shrink-0">{b.e}</span>
-                        <span className="text-white/80 text-xs font-medium leading-tight">{b.t}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-center gap-2 bg-white group-hover:bg-brand-50 text-brand-900 font-bold px-6 py-3 rounded-xl text-sm transition-colors duration-200">
-                    Смотреть технику
-                    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1.5">
-                      <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
+                <h3 className="text-xl font-bold text-white mb-1 font-heading">Выгодно от Подряд PRO</h3>
+                <p className="text-white/60 text-xs mb-4 font-medium">Собственный парк &middot; без посредников</p>
+                <ul className="space-y-2.5 text-sm mb-5">
+                  {[
+                    { label: 'Техника', price: '−20% к рынку' },
+                    { label: 'Рабочая сила', price: 'свои бригады' },
+                    { label: 'Материалы', price: 'прямые поставки' },
+                    { label: 'Эскроу-защита', price: 'в каждой сделке' },
+                  ].map((row) => (
+                    <li key={row.label} className="flex justify-between items-center">
+                      <span className="text-white/80">{row.label}</span>
+                      <span className="text-amber-300 text-xs font-semibold whitespace-nowrap">{row.price}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300">
+                  <span>Смотреть предложения</span>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
-            </div>
-          </Link>
-        </div>
-      </section>
-
-      {/* ── 2.3. ВЫГОДНО ОТ ПОДРЯД PRO ─────────────────────────── */}
-      <section className="py-14 sm:py-18 px-4 bg-surface dark:bg-dark-bg">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <span className="eyebrow text-brand-500 mb-4">Платформа</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
-              Выгодно от Подряд PRO
-            </h2>
-            <p className="text-gray-500 dark:text-dark-muted mt-2 text-sm max-w-md mx-auto">
-              Условия, которые работают на вас — каждый раз
-            </p>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[
-              { icon: '🔒', title: 'Эскроу-защита', desc: 'Деньги хранятся у нас до подтверждения работы' },
-              { icon: '⚡', title: 'Ответ за 15 минут', desc: 'Перезвоним и подберём исполнителя сами' },
-              { icon: '0 ₽', title: 'Без комиссий', desc: 'Платформа бесплатна для исполнителей' },
-              { icon: '✓', title: 'Проверенная база', desc: '200+ исполнителей с оценками и отзывами' },
-              { icon: '🗺', title: 'Карта заказов', desc: 'Видим все заказы в реальном времени' },
-              { icon: '🏷', title: 'Скидка −20%', desc: 'На аренду собственной техники Подряд PRO' },
-            ].map((b, i) => (
-              <div
-                key={b.title}
-                className="bg-white dark:bg-dark-card rounded-2xl p-5 shadow-card border border-gray-100 dark:border-dark-border hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
-                style={{ animationDelay: `${i * 60}ms` }}
-              >
-                <div className="text-2xl mb-3 select-none">{b.icon}</div>
-                <h4 className="font-bold text-gray-900 dark:text-white text-sm mb-1 font-heading">{b.title}</h4>
-                <p className="text-xs text-gray-500 dark:text-dark-muted leading-relaxed">{b.desc}</p>
-              </div>
-            ))}
+            </Link>
           </div>
         </div>
       </section>
@@ -601,7 +536,7 @@ export default function HomePage() {
       {/* ── 2.5. СОЗДАТЬ ЗАКАЗ — CTA ────────────────────────────── */}
       <section className="cta-bg py-16 sm:py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <span className="eyebrow text-brand-500 mb-4">Начать работу</span>
+          <span className="eyebrow text-brand-500 mb-4 block">Начать работу</span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
             Разместите заказ прямо сейчас
           </h2>
@@ -646,7 +581,7 @@ export default function HomePage() {
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-violet/10 blur-[100px] pointer-events-none" />
         <div ref={revSteps} className="relative z-10 max-w-5xl mx-auto reveal">
           <div className="text-center mb-14">
-            <span className="eyebrow text-brand-400 mb-4">Как это работает</span>
+            <span className="eyebrow text-brand-400 mb-4 block">Как это работает</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading tracking-tight">
               Безопасная сделка
             </h2>
@@ -654,7 +589,7 @@ export default function HomePage() {
               Деньги хранятся у нас до подтверждения работы — никакого риска
             </p>
           </div>
-          <div className="relative grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6 md:gap-8">
+          <div className="relative grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
             {/* Connecting line (desktop) */}
             <div className="hidden md:block absolute top-7 left-[12.5%] right-[12.5%] h-px">
               <div className="w-full h-full bg-gradient-to-r from-brand-500/20 via-white/30 to-brand-500/20" />
@@ -723,140 +658,12 @@ export default function HomePage() {
       {/* ── 3.5. КОМБО-СКИДКА ─────────────────────────────────── */}
       <ComboOfferBanner />
 
-      {/* ── (own-equipment promo moved into services section) ── */}
-      <section className="hidden">
-        {/* Background effects */}
-        <div className="absolute inset-0 hero-grid opacity-40 pointer-events-none" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-violet/20 blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-brand-500/20 blur-[100px] pointer-events-none" />
-        <div className="absolute inset-0 noise-overlay pointer-events-none" />
-
-        <div className="relative z-10 max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left — text */}
-            <div>
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-2 mb-6">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse-dot flex-shrink-0" />
-                <span className="text-white/80 text-xs font-semibold tracking-wide uppercase">Собственный парк техники</span>
-              </div>
-
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-[1.1] mb-5 font-heading tracking-tight">
-                Аренда техники
-                <br />
-                <span className="text-gradient">на 20% дешевле</span>
-                <br />
-                рынка
-              </h2>
-
-              <p className="text-white/60 text-base sm:text-lg mb-8 leading-relaxed max-w-md">
-                Подряд PRO владеет собственным парком спецтехники. Без посредников — вы
-                получаете прямую скидку&nbsp;20% и гарантию надёжности.
-              </p>
-
-              {/* Key benefits */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-                {[
-                  { icon: '🏷', title: '−20% к рынку', desc: 'Без наценки посредников' },
-                  { icon: '👷', title: 'Опытный оператор', desc: 'В комплекте по запросу' },
-                  { icon: '⚡', title: 'Выезд от 4 часов', desc: 'Минимальная аренда' },
-                  { icon: '🛡', title: 'Гарантия сделки', desc: 'Эскроу-защита оплаты' },
-                ].map((b) => (
-                  <div key={b.title} className="flex items-start gap-3 bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3.5 hover:bg-white/[0.09] transition-colors duration-200">
-                    <span className="text-xl flex-shrink-0 mt-0.5">{b.icon}</span>
-                    <div>
-                      <div className="text-white font-semibold text-sm">{b.title}</div>
-                      <div className="text-white/45 text-xs mt-0.5">{b.desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link
-                  href="/equipment"
-                  className="btn-shine group inline-flex items-center justify-center gap-2.5 bg-white text-brand-900 hover:text-brand-700 font-bold text-base px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-glow-hover btn-press cursor-pointer"
-                >
-                  Смотреть технику
-                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1.5"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </Link>
-                <a
-                  href="#lead-form"
-                  className="inline-flex items-center justify-center gap-2 text-white/60 hover:text-white/90 font-semibold text-sm px-6 py-4 rounded-xl transition-all duration-200 border border-white/10 hover:border-white/20 hover:bg-white/5 cursor-pointer"
-                >
-                  Оставить заявку
-                </a>
-              </div>
-            </div>
-
-            {/* Right — savings calculator */}
-            <div className="lg:pl-6">
-              <div className="bg-white/[0.07] backdrop-blur-xl border border-white/[0.12] rounded-2xl p-6 sm:p-8 shadow-hero">
-                <div className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-5">
-                  Пример экономии
-                </div>
-
-                {/* Calculator row */}
-                {[
-                  { name: 'Экскаватор 20 т', days: '5 дней', market: 25000, ours: 20000 },
-                  { name: 'Самосвал 15 т', days: '3 дня', market: 18000, ours: 14400 },
-                  { name: 'Автокран 25 т', days: '1 день', market: 35000, ours: 28000 },
-                ].map((row) => (
-                  <div key={row.name} className="flex items-center justify-between py-3.5 border-b border-white/[0.07] last:border-0">
-                    <div>
-                      <div className="text-white font-semibold text-sm">{row.name}</div>
-                      <div className="text-white/35 text-xs mt-0.5">{row.days}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-2 justify-end">
-                        <span className="text-white/30 text-xs line-through">
-                          {row.market.toLocaleString('ru-RU')} ₽
-                        </span>
-                        <span className="bg-green-500/20 text-green-400 text-[10px] font-bold px-1.5 py-0.5 rounded-md">
-                          −20%
-                        </span>
-                      </div>
-                      <div className="text-white font-bold text-base mt-0.5">
-                        {row.ours.toLocaleString('ru-RU')} ₽
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Total savings highlight */}
-                <div className="mt-5 bg-gradient-to-r from-brand-500/20 to-violet/20 border border-brand-500/30 rounded-xl p-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-white/60 text-xs mb-0.5">Ваша экономия на 3 позициях</div>
-                    <div className="text-white font-extrabold text-xl font-heading">
-                      {(
-                        (25000 - 20000) + (18000 - 14400) + (35000 - 28000)
-                      ).toLocaleString('ru-RU')} ₽
-                    </div>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-brand-500/30 flex items-center justify-center flex-shrink-0">
-                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-400" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-                    </svg>
-                  </div>
-                </div>
-
-                <Link
-                  href="/equipment"
-                  className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm py-3.5 rounded-xl transition-all duration-200 hover:shadow-glow cursor-pointer"
-                >
-                  Посмотреть весь парк →
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── 4. ДЛЯ ИСПОЛНИТЕЛЕЙ ────────────────────────────────── */}
       <section className="section-gradient relative py-16 sm:py-24 px-4 overflow-hidden">
         <div className="absolute inset-0 hero-grid opacity-50 pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full bg-brand-500/10 blur-[120px] pointer-events-none" />
         <div ref={revExecutors} className="relative z-10 max-w-3xl mx-auto text-center reveal">
-          <span className="eyebrow text-white/60 mb-4">Партнёрам</span>
+          <span className="eyebrow text-white/60 mb-4 block">Партнёрам</span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-4 font-heading tracking-tight">
             Для исполнителей
           </h2>
@@ -904,7 +711,7 @@ export default function HomePage() {
       <section id="lead-form" className="py-16 sm:py-20 px-4 bg-surface dark:bg-dark-bg">
         <div ref={revForm} className="max-w-lg mx-auto reveal">
           <div className="text-center mb-10">
-            <span className="eyebrow text-brand-500 mb-4">Связаться</span>
+            <span className="eyebrow text-brand-500 mb-4 block">Связаться</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
               Оставить заявку
             </h2>
