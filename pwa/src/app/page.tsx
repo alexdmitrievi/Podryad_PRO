@@ -395,7 +395,7 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div ref={revServiceCards} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div ref={revServiceCards} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Рабочая сила */}
             <Link
               href="/catalog/labor"
@@ -484,119 +484,51 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Собственный парк техники — featured card */}
+            {/* Выгодно от Подряд PRO — featured как 4-я карточка */}
             <Link
-              href="/equipment"
-              className="group md:col-span-3 relative overflow-hidden rounded-2xl cursor-pointer block active:scale-[0.995] transition-transform duration-150"
-              style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #1a2550 50%, #2d1b69 100%)' }}
+              href="/own-park"
+              className="group relative overflow-hidden rounded-2xl p-7 sm:p-8 card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150 text-white"
+              style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2d1b69 100%)' }}
             >
-              {/* bg texture */}
-              <div className="absolute inset-0 hero-grid opacity-30 pointer-events-none" />
-              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-violet/25 blur-[80px] pointer-events-none" />
-              <div className="absolute bottom-0 left-1/3 w-48 h-48 rounded-full bg-brand-500/20 blur-[60px] pointer-events-none" />
+              {/* bg accents */}
+              <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-violet/25 blur-[60px] pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-brand-500/25 blur-[50px] pointer-events-none" />
 
-              <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10 p-7 sm:p-8">
-                {/* icon */}
-                <div className="service-icon-wrap flex-shrink-0 !mb-0 !bg-white/10 group-hover:!bg-white/20">
-                  <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+              {/* Ribbon — "Выгодно" */}
+              <div className="absolute top-4 right-4 z-10 inline-flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1a2e] text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-lg tracking-wide uppercase">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                </svg>
+                −20%
+              </div>
+
+              <div className="relative z-[1]">
+                <div className="service-icon-wrap mb-6 !bg-white/10 group-hover:!bg-gradient-to-br group-hover:!from-amber-400 group-hover:!to-orange-500 transition-all">
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                   </svg>
                 </div>
-
-                {/* text */}
-                <div className="flex-1 min-w-0">
-                  <div className="inline-flex items-center gap-1.5 bg-green-500/20 border border-green-500/30 rounded-full px-2.5 py-0.5 mb-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-dot flex-shrink-0" />
-                    <span className="text-green-300 text-[10px] font-bold uppercase tracking-wide">Собственный парк</span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-white mb-1.5 font-heading leading-tight">
-                    Аренда спецтехники на&nbsp;<span className="text-gradient">20% дешевле</span> рынка
-                  </h3>
-                  <p className="text-white/55 text-sm leading-relaxed max-w-lg">
-                    Без посредников — Подряд PRO владеет собственным парком. Экскаваторы, самосвалы, автокраны — с оператором или без.
-                  </p>
-                </div>
-
-                {/* chips */}
-                <div className="flex flex-wrap md:flex-nowrap gap-2 flex-shrink-0">
+                <h3 className="text-xl font-bold text-white mb-1 font-heading">Выгодно от Подряд PRO</h3>
+                <p className="text-white/60 text-xs mb-4 font-medium">Собственный парк &middot; без посредников</p>
+                <ul className="space-y-2.5 text-sm mb-5">
                   {[
-                    { v: '−20%', l: 'к рынку' },
-                    { v: '⚡', l: 'от 4 ч' },
-                    { v: '👷', l: 'с оператором' },
-                    { v: '🛡', l: 'эскроу' },
-                  ].map((c) => (
-                    <div key={c.l} className="flex flex-col items-center bg-white/[0.07] border border-white/10 rounded-xl px-3.5 py-2.5 min-w-[72px]">
-                      <span className="text-white font-extrabold text-sm font-heading">{c.v}</span>
-                      <span className="text-white/40 text-[10px] mt-0.5">{c.l}</span>
-                    </div>
+                    { label: 'Техника', price: '−20% к рынку' },
+                    { label: 'Рабочая сила', price: 'свои бригады' },
+                    { label: 'Материалы', price: 'прямые поставки' },
+                    { label: 'Эскроу-защита', price: 'в каждой сделке' },
+                  ].map((row) => (
+                    <li key={row.label} className="flex justify-between items-center">
+                      <span className="text-white/80">{row.label}</span>
+                      <span className="text-amber-300 text-xs font-semibold whitespace-nowrap">{row.price}</span>
+                    </li>
                   ))}
-                </div>
-
-                {/* arrow */}
-                <div className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors duration-300 flex-shrink-0">
-                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="text-white transition-transform duration-300 group-hover:translate-x-1">
-                    <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                </ul>
+                <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300">
+                  <span>Смотреть предложения</span>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
             </Link>
-          </div>
-
-          {/* ── Выгодно от Подряд PRO ── */}
-          <div className="mt-12">
-            <div className="text-center mb-8">
-              <span className="eyebrow text-brand-500 mb-3 block">Преимущества</span>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
-                Выгодно от Подряд PRO
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                {
-                  icon: (
-                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>
-                    </svg>
-                  ),
-                  color: '#2F5BFF',
-                  bg: 'rgba(47,91,255,0.08)',
-                  title: 'Безопасная оплата',
-                  desc: 'Деньги холдируются до подтверждения — никакого риска для заказчика',
-                },
-                {
-                  icon: (
-                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-                    </svg>
-                  ),
-                  color: '#10B981',
-                  bg: 'rgba(16,185,129,0.08)',
-                  title: '0 ₽ для исполнителей',
-                  desc: 'Платформа полностью бесплатна — никаких комиссий и подписок',
-                },
-                {
-                  icon: (
-                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                    </svg>
-                  ),
-                  color: '#6C5CE7',
-                  bg: 'rgba(108,92,231,0.08)',
-                  title: 'Гарантия качества',
-                  desc: 'Проверенные исполнители, рейтинг и отзывы после каждого заказа',
-                },
-              ].map((item) => (
-                <div key={item.title} className="flex items-start gap-4 bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-card transition-shadow duration-300">
-                  <div className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: item.bg, color: item.color }}>
-                    {item.icon}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-[#1a1a2e] dark:text-white text-sm mb-1 font-heading">{item.title}</h4>
-                    <p className="text-gray-500 dark:text-dark-muted text-xs leading-relaxed">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>

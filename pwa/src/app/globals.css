@@ -81,6 +81,10 @@
   padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
 }
 
+/* Hide scrollbar (horizontal tabs) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Leaflet fix for Next.js */
 .leaflet-container {
   width: 100%;
