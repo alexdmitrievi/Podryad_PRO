@@ -33,18 +33,18 @@ const CITY_LABELS: Record<City, string> = {
 };
 
 const FALLBACK_EQUIPMENT: Listing[] = [
-  { listing_id: 'f-1', title: 'Экскаватор-погрузчик', display_price: 2500, price_unit: 'час' },
-  { listing_id: 'f-2', title: 'Мини-погрузчик', display_price: 1800, price_unit: 'час' },
-  { listing_id: 'f-3', title: 'Виброплита', display_price: 800, price_unit: 'сутки' },
-  { listing_id: 'f-4', title: 'Бензопила / кусторез', display_price: 500, price_unit: 'сутки' },
-  { listing_id: 'f-5', title: 'Газонокосилка', display_price: 400, price_unit: 'сутки' },
+  { listing_id: 'f-1', title: 'Экскаватор', display_price: 2500, price_unit: 'ч' },
+  { listing_id: 'f-2', title: 'Погрузчик', display_price: 1800, price_unit: 'ч' },
+  { listing_id: 'f-3', title: 'Виброплита', display_price: 800, price_unit: 'сут' },
+  { listing_id: 'f-4', title: 'Бензопила', display_price: 500, price_unit: 'сут' },
+  { listing_id: 'f-5', title: 'Газонокосилка', display_price: 400, price_unit: 'сут' },
 ];
 
 const FALLBACK_MATERIALS: Listing[] = [
-  { listing_id: 'f-m1', title: 'Бетон М300 В22.5', display_price: 5200, price_unit: 'м³' },
-  { listing_id: 'f-m2', title: 'Щебень фр. 5-20', display_price: 1800, price_unit: 'тонна' },
-  { listing_id: 'f-m3', title: 'Песок мытый', display_price: 900, price_unit: 'тонна' },
-  { listing_id: 'f-m4', title: 'Битум БНД 60/90', display_price: 32000, price_unit: 'тонна' },
+  { listing_id: 'f-m1', title: 'Бетон М300', display_price: 5200, price_unit: 'м³' },
+  { listing_id: 'f-m2', title: 'Щебень', display_price: 1800, price_unit: 'т' },
+  { listing_id: 'f-m3', title: 'Песок', display_price: 900, price_unit: 'т' },
+  { listing_id: 'f-m4', title: 'Битум', display_price: 32000, price_unit: 'т' },
 ];
 
 /* ── helpers ─────────────────────────────────────────────────── */
@@ -402,29 +402,29 @@ export default function HomePage() {
             {/* Рабочая сила */}
             <Link
               href="/catalog/labor"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150"
+              className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150"
             >
-              <div className="service-icon-wrap mb-6">
+              <div className="service-icon-wrap mb-5">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Рабочая сила</h3>
+              <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Рабочая сила</h3>
               <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">Бригады от 2 до 15 человек</p>
-              <ul className="space-y-2.5 text-sm mb-5">
+              <ul className="space-y-2.5 text-sm mb-5 flex-1">
                 {[
                   { label: 'Грузчики', price: 'от 350 ₽/ч' },
                   { label: 'Разнорабочие', price: 'от 300 ₽/ч' },
                   { label: 'Благоустройство', price: 'от 250 ₽/ч' },
-                  { label: 'Строители / ремонт', price: 'от 500 ₽/ч' },
+                  { label: 'Ремонт', price: 'от 500 ₽/ч' },
                 ].map((row) => (
-                  <li key={row.label} className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-dark-text">{row.label}</span>
-                    <span className="price-label">{row.price}</span>
+                  <li key={row.label} className="flex justify-between items-center gap-2">
+                    <span className="text-gray-600 dark:text-dark-text truncate">{row.label}</span>
+                    <span className="price-label whitespace-nowrap">{row.price}</span>
                   </li>
                 ))}
               </ul>
-              <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300">
+              <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
                 <span>Смотреть каталог</span>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
@@ -433,27 +433,27 @@ export default function HomePage() {
             {/* Аренда техники */}
             <Link
               href="/catalog/equipment"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150"
+              className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150"
             >
-              <div className="service-icon-wrap mb-6">
+              <div className="service-icon-wrap mb-5">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Аренда техники</h3>
+              <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Аренда техники</h3>
               <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">От тяжёлой до садовой</p>
-              <ul className="space-y-2.5 text-sm mb-5">
+              <ul className="space-y-2.5 text-sm mb-5 flex-1">
                 {(equipment.length > 0 ? equipment : FALLBACK_EQUIPMENT).slice(0, 4).map((l) => (
-                  <li key={l.listing_id} className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-dark-text truncate mr-2">{l.title}</span>
+                  <li key={l.listing_id} className="flex justify-between items-center gap-2">
+                    <span className="text-gray-600 dark:text-dark-text truncate">{l.title}</span>
                     <span className="price-label whitespace-nowrap">
                       {l.display_price.toLocaleString('ru-RU')} ₽/{l.price_unit}
                     </span>
                   </li>
                 ))}
               </ul>
-              <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300">
+              <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
                 <span>Смотреть каталог</span>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
@@ -462,26 +462,26 @@ export default function HomePage() {
             {/* Стройматериалы */}
             <Link
               href="/catalog/materials"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-7 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150"
+              className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150"
             >
-              <div className="service-icon-wrap mb-6">
+              <div className="service-icon-wrap mb-5">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Стройматериалы</h3>
+              <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Стройматериалы</h3>
               <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">Доставка по городу</p>
-              <ul className="space-y-2.5 text-sm mb-5">
+              <ul className="space-y-2.5 text-sm mb-5 flex-1">
                 {(materials.length > 0 ? materials : FALLBACK_MATERIALS).slice(0, 4).map((l) => (
-                  <li key={l.listing_id} className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-dark-text truncate mr-2">{l.title}</span>
+                  <li key={l.listing_id} className="flex justify-between items-center gap-2">
+                    <span className="text-gray-600 dark:text-dark-text truncate">{l.title}</span>
                     <span className="price-label whitespace-nowrap">
                       {l.display_price.toLocaleString('ru-RU')} ₽/{l.price_unit}
                     </span>
                   </li>
                 ))}
               </ul>
-              <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300">
+              <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
                 <span>Смотреть каталог</span>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
@@ -490,43 +490,43 @@ export default function HomePage() {
             {/* Выгодно от Подряд PRO — featured как 4-я карточка */}
             <Link
               href="/own-park"
-              className="group relative overflow-hidden rounded-2xl p-7 sm:p-8 card-lift cursor-pointer block active:scale-[0.98] transition-transform duration-150 text-white"
+              className="group relative overflow-hidden rounded-2xl p-6 card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 text-white"
               style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2d1b69 100%)' }}
             >
               {/* bg accents */}
               <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-violet/25 blur-[60px] pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-brand-500/25 blur-[50px] pointer-events-none" />
 
-              {/* Ribbon — "Выгодно" */}
-              <div className="absolute top-4 right-4 z-10 inline-flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1a2e] text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-lg tracking-wide uppercase">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+              {/* Ribbon — "−20%" */}
+              <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1a2e] text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg tracking-wide">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
                 </svg>
                 −20%
               </div>
 
-              <div className="relative z-[1]">
-                <div className="service-icon-wrap mb-6 !bg-white/10 group-hover:!bg-gradient-to-br group-hover:!from-amber-400 group-hover:!to-orange-500 transition-all">
+              <div className="relative z-[1] flex flex-col h-full">
+                <div className="service-icon-wrap mb-5 !bg-white/10 group-hover:!bg-gradient-to-br group-hover:!from-amber-400 group-hover:!to-orange-500 transition-all">
                   <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="text-white">
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-1 font-heading">Выгодно от Подряд PRO</h3>
-                <p className="text-white/60 text-xs mb-4 font-medium">Собственный парк &middot; без посредников</p>
-                <ul className="space-y-2.5 text-sm mb-5">
+                <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">Выгодно<br/>от Подряд PRO</h3>
+                <p className="text-white/60 text-xs mb-4 font-medium">Собственный парк</p>
+                <ul className="space-y-2.5 text-sm mb-5 flex-1">
                   {[
-                    { label: 'Техника', price: '−20% к рынку' },
-                    { label: 'Рабочая сила', price: 'свои бригады' },
-                    { label: 'Материалы', price: 'прямые поставки' },
-                    { label: 'Эскроу-защита', price: 'в каждой сделке' },
+                    { label: 'Техника', price: '−20%' },
+                    { label: 'Рабочие', price: 'свои' },
+                    { label: 'Материалы', price: 'напрямую' },
+                    { label: 'Эскроу', price: 'всегда' },
                   ].map((row) => (
-                    <li key={row.label} className="flex justify-between items-center">
-                      <span className="text-white/80">{row.label}</span>
+                    <li key={row.label} className="flex justify-between items-center gap-2">
+                      <span className="text-white/80 truncate">{row.label}</span>
                       <span className="text-amber-300 text-xs font-semibold whitespace-nowrap">{row.price}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300">
+                <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
                   <span>Смотреть предложения</span>
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
