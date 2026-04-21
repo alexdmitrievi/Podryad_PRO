@@ -95,23 +95,31 @@ function useStaggerReveal() {
       el.style.transition = 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1)';
     });
 
-    // Icon highlight is gated on the user actually scrolling — otherwise
-    // a short hero would fire IntersectionObserver on mount and the
-    // icons would look "highlighted by default" on mobile.
-    let hasScrolled = false;
-    const pendingIcons = new Set<HTMLElement>();
-    const revealIcon = (iconWrap: HTMLElement) => {
-      setTimeout(() => iconWrap.classList.add('icon-revealed'), 120);
+    const highlightIcon = (el: HTMLElement) => {
+      const iconWrap = el.querySelector('.service-icon-wrap') as HTMLElement | null;
+      if (iconWrap) iconWrap.classList.add('icon-revealed');
     };
+
+    // Icon highlight waits for the first user scroll — otherwise a short
+    // hero would fire IntersectionObserver on mount and icons would look
+    // "highlighted by default" on mobile.
+    let hasScrolled = false;
+    const pendingIcons: HTMLElement[] = [];
     const onScroll = () => {
       hasScrolled = true;
       window.removeEventListener('scroll', onScroll);
-      pendingIcons.forEach(revealIcon);
-      pendingIcons.clear();
+      // Reveal any cards that were already in zone before the first scroll,
+      // staggered so they don't all light up at once.
+      pendingIcons.forEach((el, i) => {
+        setTimeout(() => highlightIcon(el), i * 180);
+      });
+      pendingIcons.length = 0;
     };
     window.addEventListener('scroll', onScroll, { passive: true });
 
-    const obs = new IntersectionObserver(
+    // Observer 1: card fade-in — triggers as soon as a sliver of the card
+    // is visible so the whole grid reveals smoothly on entry.
+    const cardObs = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
@@ -121,21 +129,42 @@ function useStaggerReveal() {
             setTimeout(() => {
               el.style.opacity = '1';
               el.style.transform = 'translateY(0)';
-              const iconWrap = el.querySelector('.service-icon-wrap') as HTMLElement | null;
-              if (iconWrap) {
-                if (hasScrolled) revealIcon(iconWrap);
-                else pendingIcons.add(iconWrap);
-              }
             }, delay);
-            obs.unobserve(el);
+            cardObs.unobserve(el);
           }
         });
       },
       { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
     );
-    items.forEach(el => obs.observe(el));
+
+    // Observer 2: icon highlight — fires only when the card is in the
+    // centre zone of the viewport, so on mobile (1-col grid) icons light
+    // up one-by-one as each card scrolls past the middle.
+    const iconObs = new IntersectionObserver(
+      (entries) => {
+        const incoming = entries
+          .filter(e => e.isIntersecting)
+          .map(e => e.target as HTMLElement)
+          .sort((a, b) => items.indexOf(a) - items.indexOf(b));
+        incoming.forEach((el, i) => {
+          if (hasScrolled) {
+            setTimeout(() => highlightIcon(el), i * 180);
+          } else {
+            pendingIcons.push(el);
+          }
+          iconObs.unobserve(el);
+        });
+      },
+      { threshold: 0, rootMargin: '-30% 0px -25% 0px' },
+    );
+
+    items.forEach(el => {
+      cardObs.observe(el);
+      iconObs.observe(el);
+    });
     return () => {
-      obs.disconnect();
+      cardObs.disconnect();
+      iconObs.disconnect();
       window.removeEventListener('scroll', onScroll);
     };
   }, []);
