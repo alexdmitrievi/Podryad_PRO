@@ -95,11 +95,6 @@ function useStaggerReveal() {
       el.style.transition = 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1)';
     });
 
-    const highlightIcon = (el: HTMLElement) => {
-      const iconWrap = el.querySelector('.service-icon-wrap') as HTMLElement | null;
-      if (iconWrap) iconWrap.classList.add('icon-revealed');
-    };
-
     // Icon highlight waits for the first user scroll — otherwise a short
     // hero would fire IntersectionObserver on mount and icons would look
     // "highlighted by default" on mobile.
@@ -108,10 +103,10 @@ function useStaggerReveal() {
     const onScroll = () => {
       hasScrolled = true;
       window.removeEventListener('scroll', onScroll);
-      // Reveal any cards that were already in zone before the first scroll,
-      // staggered so they don't all light up at once.
-      pendingIcons.forEach((el, i) => {
-        setTimeout(() => highlightIcon(el), i * 180);
+      // Reveal any icons that were already in the band before the first
+      // scroll, staggered so they don't all light up at once.
+      pendingIcons.forEach((iconWrap, i) => {
+        setTimeout(() => iconWrap.classList.add('icon-revealed'), i * 180);
       });
       pendingIcons.length = 0;
     };
@@ -137,30 +132,31 @@ function useStaggerReveal() {
       { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
     );
 
-    // Observer 2: icon highlight — fires only when the card is in the
-    // centre zone of the viewport, so on mobile (1-col grid) icons light
-    // up one-by-one as each card scrolls past the middle.
+    // Observer 2: icon highlight — observes the icon element directly
+    // and fires only when it is fully inside a narrow central band of
+    // the viewport. On a mobile 1-col grid icons sit ~500px apart, so
+    // only one icon can be inside the band at a time — they light up
+    // strictly one-by-one as the user scrolls.
     const iconObs = new IntersectionObserver(
       (entries) => {
-        const incoming = entries
-          .filter(e => e.isIntersecting)
-          .map(e => e.target as HTMLElement)
-          .sort((a, b) => items.indexOf(a) - items.indexOf(b));
-        incoming.forEach((el, i) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          const iconWrap = entry.target as HTMLElement;
+          iconObs.unobserve(iconWrap);
           if (hasScrolled) {
-            setTimeout(() => highlightIcon(el), i * 180);
+            iconWrap.classList.add('icon-revealed');
           } else {
-            pendingIcons.push(el);
+            pendingIcons.push(iconWrap);
           }
-          iconObs.unobserve(el);
         });
       },
-      { threshold: 0, rootMargin: '-30% 0px -25% 0px' },
+      { threshold: 1, rootMargin: '-40% 0px -40% 0px' },
     );
 
     items.forEach(el => {
       cardObs.observe(el);
-      iconObs.observe(el);
+      const iconWrap = el.querySelector('.service-icon-wrap') as HTMLElement | null;
+      if (iconWrap) iconObs.observe(iconWrap);
     });
     return () => {
       cardObs.disconnect();
