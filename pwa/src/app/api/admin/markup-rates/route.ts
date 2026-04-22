@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 
+function verifyPin(pin: string): boolean {
+  const adminPin = process.env.ADMIN_PIN;
+  if (!adminPin) return false;
+  const a = Buffer.from(pin);
+  const b = Buffer.from(adminPin);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 export async function GET(req: NextRequest) {
+  const pin = req.headers.get('x-admin-pin') || '';
+  if (!verifyPin(pin)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const db = getServiceClient();
   const { data, error } = await db
     .from('markup_rates')
@@ -18,6 +32,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const pin = req.headers.get('x-admin-pin') || '';
+  if (!verifyPin(pin)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   let body: { id?: number; markup_percent?: number; rates?: { id: number; markup_percent: number }[] };
   try {
     body = await req.json();

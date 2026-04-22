@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createContractor } from '@/lib/db';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 /** Strip all non-digit characters from a phone string and return only digits. */
 function stripPhone(raw: string): string {
@@ -7,6 +8,14 @@ function stripPhone(raw: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
+    || req.headers.get('x-real-ip')
+    || 'unknown';
+  const rl = checkRateLimit(`contractors:${ip}`, 5, 60 * 60 * 1000);
+  if (rl.limited) {
+    return NextResponse.json({ error: 'too_many_requests' }, { status: 429 });
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();

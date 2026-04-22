@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 interface ResponseBody {
   order_id: string;
@@ -14,6 +15,14 @@ interface ResponseBody {
  * Responses go to admin for review, NOT to the customer.
  */
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
+    || req.headers.get('x-real-ip')
+    || 'unknown';
+  const rl = checkRateLimit(`respond:${ip}`, 15, 60 * 60 * 1000);
+  if (rl.limited) {
+    return NextResponse.json({ error: 'too_many_requests' }, { status: 429 });
+  }
+
   let body: ResponseBody;
   try {
     body = await req.json();

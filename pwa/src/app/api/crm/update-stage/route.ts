@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+
+function verifySecret(secret: string): boolean {
+  const expected = process.env.CRM_WEBHOOK_SECRET;
+  if (!expected) return false;
+  const a = Buffer.from(secret);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 /**
  * POST /api/crm/update-stage
  * Internal webhook called from the app when a conversion event happens.
- * Protected by a shared secret, NOT admin PIN.
+ * Protected by a shared secret (CRM_WEBHOOK_SECRET), NOT admin PIN.
  *
  * Body:
  * {
  *   event: 'order_created' | 'contractor_registered' | 'order_taken',
  *   phone: string,
- *   entity_id?: string,  // order ID or contractor ID
+ *   entity_id?: string,
  *   entity_type?: string,
  *   secret: string,
  * }
@@ -30,9 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  // Validate secret
-  const expectedSecret = process.env.CRM_WEBHOOK_SECRET;
-  if (!expectedSecret || body.secret !== expectedSecret) {
+  if (!verifySecret(body.secret ?? '')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -50,12 +57,7 @@ export async function POST(req: NextRequest) {
     fetch(n8nWebhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event,
-        phone: cleanPhone,
-        entity_id,
-        entity_type,
-      }),
+      body: JSON.stringify({ event, phone: cleanPhone, entity_id, entity_type }),
     }).catch((err) => {
       console.error('CRM conversion n8n webhook error:', err);
     });
