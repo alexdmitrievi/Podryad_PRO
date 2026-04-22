@@ -221,6 +221,7 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [orderItem, setOrderItem] = useState<CatalogItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [categoryImage, setCategoryImage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -229,6 +230,14 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
       const { category: cat } = await params;
       if (cancelled) return;
       setCategory(cat);
+
+      // Fetch hero image for this category (non-blocking)
+      fetch('/api/site-images')
+        .then((r) => r.json())
+        .then((d) => {
+          if (!cancelled) setCategoryImage(d.images?.[`category.${cat}`] ?? null);
+        })
+        .catch(() => {});
 
       const meta = CATEGORY_META[cat];
       if (!meta) {
@@ -322,11 +331,23 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
       </nav>
 
       {/* Header */}
-      <section
-        className="section-gradient py-14 sm:py-16 px-4"
-      >
-        <div className="max-w-6xl mx-auto text-center">
-          <span className="text-4xl mb-4 block">{meta.icon}</span>
+      <section className="relative section-gradient py-14 sm:py-16 px-4 overflow-hidden">
+        {categoryImage && (
+          <>
+            <Image
+              src={categoryImage}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover absolute inset-0"
+              aria-hidden
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1E2A5A]/85 to-[#2d1b69]/80 pointer-events-none" />
+          </>
+        )}
+        <div className="relative z-[1] max-w-6xl mx-auto text-center">
+          {!categoryImage && <span className="text-4xl mb-4 block">{meta.icon}</span>}
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading mb-3">
             {meta.title}
           </h1>

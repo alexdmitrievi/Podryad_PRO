@@ -145,7 +145,7 @@ interface ContactEntry {
   source: string;
 }
 
-type TabId = 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'crm' | 'analytics' | 'documents' | 'own-equipment';
+type TabId = 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'crm' | 'analytics' | 'documents' | 'own-equipment' | 'hero-images';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "crm", label: "CRM Воронка", icon: TrendingUp },
@@ -153,6 +153,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "analytics", label: "Аналитика", icon: Activity },
   { id: "orders", label: "Заказы", icon: ShoppingBag },
   { id: "listings", label: "Позиции", icon: Package },
+  { id: "hero-images", label: "Медиа", icon: ImagePlus },
   { id: "contractors", label: "Исполнители", icon: UserPlus },
   { id: "customers", label: "Заказчики", icon: Users },
   { id: "leads", label: "Заявки", icon: FileText },
@@ -1151,6 +1152,7 @@ function ListingsTab({ pin }: { pin: string }) {
     price: '',
     price_unit: '₽/м³',
   });
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
 
   const loadListings = async () => {
     setError(''); setLoading(true);
@@ -1173,8 +1175,17 @@ function ListingsTab({ pin }: { pin: string }) {
       });
       const data = await res.json();
       if (res.ok) {
+        // Upload pending photo if one was selected
+        if (pendingPhoto && data.listing_id) {
+          const fd = new FormData();
+          fd.append('pin', pin);
+          fd.append('listing_id', data.listing_id);
+          fd.append('file', pendingPhoto);
+          await fetch('/api/admin/upload', { method: 'POST', body: fd }).catch(() => {});
+        }
         setShowModal(false);
         setForm({ listing_type: 'material', category_slug: 'concrete', title: '', price: '', price_unit: '₽/м³' });
+        setPendingPhoto(null);
         loadListings();
       } else { setError(data.error || 'Ошибка создания'); }
     } catch { setError('Ошибка соединения'); }
@@ -1285,7 +1296,7 @@ function ListingsTab({ pin }: { pin: string }) {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card w-full max-w-md p-6 relative">
-            <button onClick={() => setShowModal(false)}
+            <button onClick={() => { setShowModal(false); setPendingPhoto(null); }}
               className="absolute top-4 right-4 cursor-pointer text-gray-400 hover:text-gray-600 transition-colors">
               <X className="w-5 h-5" />
             </button>
@@ -1335,6 +1346,23 @@ function ListingsTab({ pin }: { pin: string }) {
                   </select>
                 </div>
               </div>
+              {/* Optional photo upload */}
+              <div>
+                <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Фото <span className="text-gray-400">(необязательно)</span></label>
+                <label className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-300 dark:border-dark-border cursor-pointer hover:border-brand-500 transition-colors">
+                  <Camera className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <span className="text-sm text-gray-500 truncate">
+                    {pendingPhoto ? pendingPhoto.name : 'Выбрать фото...'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={e => setPendingPhoto(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+              </div>
+
               <button type="submit" disabled={saving}
                 className="mt-2 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
                 {saving ? 'Создание...' : 'Создать'}
@@ -3360,11 +3388,164 @@ function DocumentsTab({ pin }: { pin: string }) {
   );
 }
 
+/* ── Hero Images Tab ─────────────────────────────────────────── */
+
+const HERO_SLOTS: { slug: string; label: string; hint: string }[] = [
+  { slug: 'hero.labor',       label: 'Рабочая сила',          hint: 'Карточка на главной странице' },
+  { slug: 'hero.equipment',   label: 'Аренда техники',         hint: 'Карточка на главной странице' },
+  { slug: 'hero.materials',   label: 'Стройматериалы',         hint: 'Карточка на главной странице' },
+  { slug: 'hero.combo',       label: 'Выгодно от Подряд PRO', hint: 'Карточка на главной (фон)' },
+  { slug: 'category.labor',   label: 'Баннер: Рабочая сила',   hint: '/catalog/labor — шапка страницы' },
+  { slug: 'category.equipment', label: 'Баннер: Аренда техники', hint: '/catalog/equipment — шапка' },
+  { slug: 'category.materials', label: 'Баннер: Стройматериалы', hint: '/catalog/materials — шапка' },
+];
+
+function HeroImagesTab({ pin }: { pin: string }) {
+  const [images, setImages] = useState<Record<string, string | null>>({});
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [msg, setMsg] = useState('');
+  const [err, setErr] = useState('');
+
+  const flash = (text: string, isErr = false) => {
+    if (isErr) { setErr(text); setTimeout(() => setErr(''), 4000); }
+    else { setMsg(text); setTimeout(() => setMsg(''), 3000); }
+  };
+
+  const loadImages = useCallback(async () => {
+    try {
+      const res = await fetch('/api/site-images');
+      const d = await res.json();
+      setImages(d.images ?? {});
+    } catch { /* non-critical */ }
+  }, []);
+
+  useEffect(() => { loadImages(); }, [loadImages]);
+
+  const handleUpload = async (slug: string, file: File) => {
+    setUploading(slug);
+    try {
+      const fd = new FormData();
+      fd.append('pin', pin);
+      fd.append('slug', slug);
+      fd.append('file', file);
+      const res = await fetch('/api/admin/site-images', { method: 'POST', body: fd });
+      const d = await res.json();
+      if (res.ok) {
+        setImages(prev => ({ ...prev, [slug]: d.url }));
+        flash('Фото загружено');
+      } else {
+        flash(d.error || 'Ошибка загрузки', true);
+      }
+    } catch {
+      flash('Ошибка соединения', true);
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleDelete = async (slug: string) => {
+    setDeleting(slug);
+    try {
+      const res = await fetch(`/api/admin/site-images?slug=${encodeURIComponent(slug)}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-pin': pin },
+      });
+      if (res.ok) {
+        setImages(prev => ({ ...prev, [slug]: null }));
+        flash('Фото удалено');
+      } else {
+        const d = await res.json();
+        flash(d.error || 'Ошибка удаления', true);
+      }
+    } catch {
+      flash('Ошибка соединения', true);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Медиа / Hero-картинки</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Загрузите фото для карточек на главной и заголовков страниц каталога. Формат: JPG, PNG, WebP. Макс. 5 МБ. Рекомендуемое соотношение сторон 16:9.</p>
+      </div>
+      {msg && <p className="text-green-600 text-sm">{msg}</p>}
+      {err && <p className="text-red-500 text-sm">{err}</p>}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {HERO_SLOTS.map(slot => {
+          const url = images[slot.slug] ?? null;
+          const isUploading = uploading === slot.slug;
+          const isDeleting = deleting === slot.slug;
+
+          return (
+            <div key={slot.slug} className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border overflow-hidden">
+              {/* Preview */}
+              <div className="relative w-full aspect-[16/9] bg-gray-100 dark:bg-dark-border">
+                {url ? (
+                  <img
+                    src={url}
+                    alt={slot.label}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full gap-2">
+                    <ImagePlus className="w-8 h-8 text-gray-300 dark:text-gray-600" />
+                    <span className="text-xs text-gray-400">Нет фото</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Info + controls */}
+              <div className="p-4">
+                <p className="font-semibold text-sm text-gray-900 dark:text-white mb-0.5">{slot.label}</p>
+                <p className="text-xs text-gray-400 mb-3">{slot.hint}</p>
+                <div className="flex gap-2">
+                  <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold cursor-pointer transition-colors">
+                    {isUploading ? (
+                      <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Загрузка...</>
+                    ) : (
+                      <><Upload className="w-3.5 h-3.5" />{url ? 'Заменить' : 'Загрузить'}</>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/avif"
+                      className="hidden"
+                      disabled={isUploading || isDeleting}
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUpload(slot.slug, f);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                  {url && (
+                    <button
+                      onClick={() => handleDelete(slot.slug)}
+                      disabled={isUploading || isDeleting}
+                      className="px-3 py-2 rounded-xl bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold cursor-pointer transition-colors disabled:opacity-50 flex items-center gap-1"
+                    >
+                      {isDeleting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      Удалить
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function getInitialTab(): TabId {
   if (typeof window === 'undefined') return 'listings';
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab');
-  const validTabs: TabId[] = ['listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'crm', 'analytics', 'documents', 'own-equipment'];
+  const validTabs: TabId[] = ['listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'crm', 'analytics', 'documents', 'own-equipment', 'hero-images'];
   if (tab && validTabs.includes(tab as TabId)) return tab as TabId;
   return 'listings';
 }
@@ -3427,6 +3608,7 @@ export default function AdminPage() {
           {activeTab === 'crm' && <CrmFunnelTab pin={pin} />}
           {activeTab === 'analytics' && <AnalyticsTab pin={pin} />}
           {activeTab === 'listings' && <ListingsTab pin={pin} />}
+          {activeTab === 'hero-images' && <HeroImagesTab pin={pin} />}
           {activeTab === 'contractors' && <ContractorsTab pin={pin} />}
           {activeTab === 'customers' && <CustomersTab pin={pin} />}
           {activeTab === 'leads' && <LeadsTab pin={pin} />}

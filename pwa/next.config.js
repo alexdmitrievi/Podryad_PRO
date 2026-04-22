@@ -12,6 +12,16 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
+  images: {
+    remotePatterns: [
+      {
+        // Supabase Storage — both listing-images and site-images buckets
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
   async headers() {
     return [
       {

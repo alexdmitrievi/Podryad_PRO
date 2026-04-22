@@ -59,6 +59,19 @@ function useFetchListings(type: string) {
   return items;
 }
 
+/* ── site-wide hero images (admin-managed) ───────────────────── */
+
+function useSiteImages() {
+  const [images, setImages] = useState<Record<string, string | null>>({});
+  useEffect(() => {
+    fetch('/api/site-images')
+      .then((r) => r.json())
+      .then((d) => setImages(d.images ?? {}))
+      .catch(() => {});
+  }, []);
+  return images;
+}
+
 /* ── scroll-reveal hook ─────────────────────────────────────── */
 
 function useReveal() {
@@ -212,6 +225,7 @@ function useCountUp(target: number, duration = 1800) {
 export default function HomePage() {
   const equipment = useFetchListings('equipment_rental');
   const materials = useFetchListings('material');
+  const siteImages = useSiteImages();
 
   /* form state */
   const [category, setCategory] = useState<WorkType>('labor');
@@ -444,88 +458,133 @@ export default function HomePage() {
             {/* Рабочая сила */}
             <Link
               href="/catalog/labor"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150"
+              className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
-              <div className="service-icon-wrap mb-5">
-                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Рабочая сила</h3>
-              <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">Бригады от 2 до 15 человек</p>
-              <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                {[
-                  { label: 'Грузчики', price: 'от 350 ₽/ч' },
-                  { label: 'Разнорабочие', price: 'от 300 ₽/ч' },
-                  { label: 'Благоустройство', price: 'от 250 ₽/ч' },
-                  { label: 'Ремонт', price: 'от 500 ₽/ч' },
-                ].map((row) => (
-                  <li key={row.label} className="flex justify-between items-center gap-2">
-                    <span className="text-gray-600 dark:text-dark-text truncate">{row.label}</span>
-                    <span className="price-label whitespace-nowrap">{row.price}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
-                <span>Смотреть каталог</span>
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              {siteImages['hero.labor'] ? (
+                <div className="relative w-full aspect-[16/9] bg-gray-100 dark:bg-dark-border">
+                  <Image
+                    src={siteImages['hero.labor']}
+                    alt="Рабочая сила"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                </div>
+              ) : null}
+              <div className="p-6 flex flex-col flex-1">
+                {!siteImages['hero.labor'] && (
+                  <div className="service-icon-wrap mb-5">
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                )}
+                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Рабочая сила</h3>
+                <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">Бригады от 2 до 15 человек</p>
+                <ul className="space-y-2.5 text-sm mb-5 flex-1">
+                  {[
+                    { label: 'Грузчики', price: 'от 350 ₽/ч' },
+                    { label: 'Разнорабочие', price: 'от 300 ₽/ч' },
+                    { label: 'Благоустройство', price: 'от 250 ₽/ч' },
+                    { label: 'Ремонт', price: 'от 500 ₽/ч' },
+                  ].map((row) => (
+                    <li key={row.label} className="flex justify-between items-center gap-2">
+                      <span className="text-gray-600 dark:text-dark-text truncate">{row.label}</span>
+                      <span className="price-label whitespace-nowrap">{row.price}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
+                  <span>Смотреть каталог</span>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
               </div>
             </Link>
 
             {/* Аренда техники */}
             <Link
               href="/catalog/equipment"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150"
+              className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
-              <div className="service-icon-wrap mb-5">
-                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Аренда техники</h3>
-              <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">От тяжёлой до садовой</p>
-              <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                {(equipment.length > 0 ? equipment : FALLBACK_EQUIPMENT).slice(0, 4).map((l) => (
-                  <li key={l.listing_id} className="flex justify-between items-center gap-2">
-                    <span className="text-gray-600 dark:text-dark-text truncate">{l.title}</span>
-                    <span className="price-label whitespace-nowrap">
-                      {l.display_price.toLocaleString('ru-RU')} ₽/{l.price_unit}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
-                <span>Смотреть каталог</span>
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              {siteImages['hero.equipment'] ? (
+                <div className="relative w-full aspect-[16/9] bg-gray-100 dark:bg-dark-border">
+                  <Image
+                    src={siteImages['hero.equipment']}
+                    alt="Аренда техники"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                </div>
+              ) : null}
+              <div className="p-6 flex flex-col flex-1">
+                {!siteImages['hero.equipment'] && (
+                  <div className="service-icon-wrap mb-5">
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                )}
+                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Аренда техники</h3>
+                <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">От тяжёлой до садовой</p>
+                <ul className="space-y-2.5 text-sm mb-5 flex-1">
+                  {(equipment.length > 0 ? equipment : FALLBACK_EQUIPMENT).slice(0, 4).map((l) => (
+                    <li key={l.listing_id} className="flex justify-between items-center gap-2">
+                      <span className="text-gray-600 dark:text-dark-text truncate">{l.title}</span>
+                      <span className="price-label whitespace-nowrap">
+                        {l.display_price.toLocaleString('ru-RU')} ₽/{l.price_unit}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
+                  <span>Смотреть каталог</span>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
               </div>
             </Link>
 
             {/* Стройматериалы */}
             <Link
               href="/catalog/materials"
-              className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150"
+              className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
-              <div className="service-icon-wrap mb-5">
-                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Стройматериалы</h3>
-              <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">Доставка по городу</p>
-              <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                {(materials.length > 0 ? materials : FALLBACK_MATERIALS).slice(0, 4).map((l) => (
-                  <li key={l.listing_id} className="flex justify-between items-center gap-2">
-                    <span className="text-gray-600 dark:text-dark-text truncate">{l.title}</span>
-                    <span className="price-label whitespace-nowrap">
-                      {l.display_price.toLocaleString('ru-RU')} ₽/{l.price_unit}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
-                <span>Смотреть каталог</span>
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              {siteImages['hero.materials'] ? (
+                <div className="relative w-full aspect-[16/9] bg-gray-100 dark:bg-dark-border">
+                  <Image
+                    src={siteImages['hero.materials']}
+                    alt="Стройматериалы"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                </div>
+              ) : null}
+              <div className="p-6 flex flex-col flex-1">
+                {!siteImages['hero.materials'] && (
+                  <div className="service-icon-wrap mb-5">
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                )}
+                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Стройматериалы</h3>
+                <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">Доставка по городу</p>
+                <ul className="space-y-2.5 text-sm mb-5 flex-1">
+                  {(materials.length > 0 ? materials : FALLBACK_MATERIALS).slice(0, 4).map((l) => (
+                    <li key={l.listing_id} className="flex justify-between items-center gap-2">
+                      <span className="text-gray-600 dark:text-dark-text truncate">{l.title}</span>
+                      <span className="price-label whitespace-nowrap">
+                        {l.display_price.toLocaleString('ru-RU')} ₽/{l.price_unit}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
+                  <span>Смотреть каталог</span>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
               </div>
             </Link>
 
@@ -535,6 +594,22 @@ export default function HomePage() {
               className="group relative overflow-hidden rounded-2xl p-6 card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 text-white"
               style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2d1b69 100%)' }}
             >
+              {/* Admin-uploaded background photo (optional) */}
+              {siteImages['hero.combo'] && (
+                <>
+                  <Image
+                    src={siteImages['hero.combo']}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover absolute inset-0 transition-transform duration-500 group-hover:scale-[1.03]"
+                    aria-hidden
+                  />
+                  {/* Dark gradient overlay — preserves contrast for white text */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#1E2A5A]/90 via-[#1E2A5A]/75 to-[#2d1b69]/90 pointer-events-none" />
+                </>
+              )}
+
               {/* bg accents */}
               <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-violet/25 blur-[60px] pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-brand-500/25 blur-[50px] pointer-events-none" />
