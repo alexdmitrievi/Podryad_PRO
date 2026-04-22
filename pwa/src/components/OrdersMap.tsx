@@ -28,12 +28,18 @@ const WORK_TYPE_ICONS: Record<string, string> = {
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  pending:      { label: 'Новый',             color: 'bg-gray-100 text-gray-600'    },
-  priced:       { label: 'В обработке',       color: 'bg-amber-100 text-amber-700'  },
-  payment_sent: { label: 'В обработке',       color: 'bg-amber-100 text-amber-700'  },
-  paid:         { label: 'Оплачен',           color: 'bg-blue-100 text-blue-700'    },
-  in_progress:  { label: 'В работе',          color: 'bg-green-100 text-green-700'  },
-  published:    { label: 'Ищем исполнителя',  color: 'bg-brand-50 text-brand-600'   },
+  pending:      { label: 'Новый',             color: 'bg-gray-100 text-gray-600'     },
+  priced:       { label: 'В обработке',       color: 'bg-amber-100 text-amber-700'   },
+  payment_sent: { label: 'В обработке',       color: 'bg-amber-100 text-amber-700'   },
+  paid:         { label: 'Оплачен',           color: 'bg-blue-100 text-blue-700'     },
+  in_progress:  { label: 'В работе',          color: 'bg-green-100 text-green-700'   },
+  published:    { label: 'Ищем исполнителя',  color: 'bg-brand-50 text-brand-600'    },
+  confirming:   { label: 'Подтверждение',     color: 'bg-purple-100 text-purple-700' },
+  disputed:     { label: 'Спор',              color: 'bg-red-100 text-red-700'       },
+  done:         { label: 'Выполнен',          color: 'bg-green-100 text-green-700'   },
+  completed:    { label: 'Завершён',          color: 'bg-green-100 text-green-700'   },
+  cancelled:    { label: 'Отменён',           color: 'bg-gray-100 text-gray-500'     },
+  closed:       { label: 'Архив',             color: 'bg-gray-100 text-gray-400'     },
 };
 
 /* ── City bounding boxes for filtering ───────────────────────── */

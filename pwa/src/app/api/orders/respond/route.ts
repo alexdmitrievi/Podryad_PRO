@@ -49,7 +49,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Fire-and-forget n8n webhook for admin notification
-  const webhookUrl = process.env.N8N_LEADS_WEBHOOK_URL;
+  // Uses dedicated executor-response webhook; falls back to leads webhook so
+  // at least one notification always fires.
+  const webhookUrl =
+    process.env.N8N_EXECUTOR_RESPONSE_WEBHOOK_URL || process.env.N8N_LEADS_WEBHOOK_URL;
   if (webhookUrl) {
     fetch(webhookUrl, {
       method: 'POST',

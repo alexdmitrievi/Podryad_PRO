@@ -4,19 +4,25 @@
 Next.js 15 App Router, Supabase (PostgreSQL), Tailwind CSS, ЮKassa, n8n webhooks, OpenAI GPT-4o
 
 ## Бизнес-модель
-Скрытая наценка. Заказчик видит display_price. Исполнитель получает base_price (100%). Площадка бесплатна для исполнителей.
+Скрытая наценка. Заказчик видит display_price. Исполнитель получает supplier_payout (≈ base_price). Площадка бесплатна для исполнителей. Платёжный шлюз (ЮKassa) удалён в апреле 2026 — используется ручная оркестрация (СБП, счёт, наличные).
 
 ## Flow
 1. Заказчик → лендинг → заявка (форма 152-ФЗ) → POST /api/leads → n8n → MAX
-2. Мы создаём заказ в Supabase → ссылка на оплату /order/[id]/pay → ЮKassa эскроу
-3. Деньги холдируются → работа → обе стороны подтверждают /order/[id]/confirm
-4. capture + выплата (yookassa_payout / manual_transfer / cash)
+2. Мы создаём заказ в Supabase → admin оценивает → payment_status = invoice_sent
+3. Заказчик оплачивает вручную (СБП / счёт) → admin ставит payment_status = paid
+4. Работа выполняется → обе стороны подтверждают /api/orders/[id]/confirm → status = confirming
+5. Admin выплачивает исполнителю (СБП/наличные) → executor_payout_status = paid → status = completed
+
+## Статусы заказа
+pending → priced → payment_sent → paid → in_progress → confirming → completed
+                                                        ↘ disputed ↗ (admin решает через PATCH /dispute)
+cancelled (отмена), published (в ленте), closed (архив), done (устаревший алиас completed)
 
 ## API маршруты
 - `/api/leads` — публичная форма, POST, создаёт лид + геокод через Nominatim
-- `/api/orders` — создание заказа через старую форму
+- `/api/orders` — создание заказа через старую форму (устаревший)
 - `/api/orders/create` — создание заказа через новые формы (рабочие / техника)
-- `/api/orders/public` — GET, публичная лента заказов для дашборда исполнителей
+- `/api/orders/public` — GET, публичная лента заказов для карты исполнителей
 - `/api/orders/respond` — POST, отклик исполнителя на заказ
 - `/api/orders/my` — GET, заказы заказчика по access_token
 - `/api/orders/[id]/confirm` — POST, подтверждение выполнения (обе стороны)
@@ -24,10 +30,7 @@ Next.js 15 App Router, Supabase (PostgreSQL), Tailwind CSS, ЮKassa, n8n webhook
 - `/api/contractors` — POST, регистрация исполнителя
 - `/api/catalog-orders` — POST, заказ из каталога
 - `/api/listings/public` — GET, публичный каталог товаров/услуг
-- `/api/payments/create-escrow` — POST, создание эскроу платежа
-- `/api/payments/callback` — POST, вебхук от ЮKassa
-- `/api/my/recover` — POST, восстановление ссылки по телефону
-- `/api/cron/capture-expired` — POST, авто-capture просроченных эскроу
+- `/api/my/recover` — POST, восстановление ссылки по телефону (rate-limited: 3 req/10 min)
 - `/api/admin/*` — все админские эндпоинты, защищены PIN через x-admin-pin header
 
 ## Правила

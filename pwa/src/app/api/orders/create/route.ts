@@ -70,11 +70,18 @@ export async function POST(req: NextRequest) {
       customer_id: digits,
       customer_phone: digits,
       address,
+      // Legacy columns (schema.sql) — kept for WF-07 partial index
       lat,
       lon,
+      // Migration-011 columns — used by public map and admin CRM
+      address_lat: lat,
+      address_lng: lon,
       yandex_link: yandexLink,
       work_type,
+      // Legacy column
       people,
+      // Migration-011 column — used by /api/orders/public
+      people_count: people,
       hours: unit === 'hour' ? quantity : unit === 'shift' ? quantity * 8 : quantity,
       time: new Date().toISOString(),
       payment_text: `${rate} ₽/${unit} × ${quantity} × ${people} чел.`,
@@ -143,9 +150,12 @@ export async function POST(req: NextRequest) {
       address,
       lat,
       lon,
+      address_lat: lat,
+      address_lng: lon,
       yandex_link: yandexLink,
       work_type: 'equipment',
       people: 0,
+      people_count: 0,
       hours: rentalUnit === 'hour' ? quantity : rentalUnit === 'shift' ? quantity * 8 : quantity * 24,
       time: new Date().toISOString(),
       payment_text: `${equipment_type} × ${quantity} ${rentalUnit}${with_operator ? ' (с оператором)' : ''}`,

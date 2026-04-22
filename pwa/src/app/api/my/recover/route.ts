@@ -8,6 +8,22 @@ function stripPhone(raw: string): string {
 
 const SUCCESS_MESSAGE = 'Если номер зарегистрирован, ссылка будет отправлена';
 
+// Rate limit: max 3 recover attempts per phone per 10 min
+const recoverAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_ATTEMPTS = 3;
+const WINDOW_MS = 10 * 60 * 1000;
+
+function isRateLimited(phone: string): boolean {
+  const now = Date.now();
+  const entry = recoverAttempts.get(phone);
+  if (!entry || now > entry.resetAt) {
+    recoverAttempts.set(phone, { count: 1, resetAt: now + WINDOW_MS });
+    return false;
+  }
+  entry.count++;
+  return entry.count > MAX_ATTEMPTS;
+}
+
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
   try {
@@ -22,6 +38,11 @@ export async function POST(req: NextRequest) {
   const digits = stripPhone(String(phone ?? ''));
   if (digits.length < 10) {
     return NextResponse.json({ error: 'invalid_phone' }, { status: 422 });
+  }
+
+  // Rate limit by phone to prevent messenger spam
+  if (isRateLimited(digits)) {
+    return NextResponse.json({ ok: true, message: SUCCESS_MESSAGE }); // silent 200 — don't hint rate limit
   }
 
   // Look up customer_tokens by phone
