@@ -61,14 +61,55 @@ export async function PUT(
   }
 
   const supabase = getServiceClient();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('orders')
     .update(updates)
-    .eq('order_id', orderId);
+    .eq('order_id', orderId)
+    .select('order_id, customer_phone, customer_name, work_type, display_price, customer_total, supplier_payout, executor_phone, address')
+    .single();
 
   if (error) {
     console.error('payment-status PUT:', error);
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
+  }
+
+  // Fire-and-forget webhooks on state transitions
+  if (payment_status === 'paid') {
+    const url = process.env.N8N_PAYMENT_HELD_WEBHOOK_URL;
+    if (url) {
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'payment_held',
+          order_id: orderId,
+          customer_phone: updated?.customer_phone,
+          customer_name: updated?.customer_name,
+          work_type: updated?.work_type,
+          amount: updated?.display_price ?? updated?.customer_total,
+          address: updated?.address,
+          paid_at: updates.payment_paid_at,
+        }),
+      }).catch((err) => console.error('n8n payment_held webhook error (non-blocking):', err));
+    }
+  }
+
+  if (executor_payout_status === 'paid') {
+    const url = process.env.N8N_PAYOUT_WEBHOOK_URL;
+    if (url) {
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'executor_payout_paid',
+          order_id: orderId,
+          executor_phone: updated?.executor_phone,
+          work_type: updated?.work_type,
+          payout_amount: updated?.supplier_payout,
+          paid_at: updates.executor_payout_at,
+        }),
+      }).catch((err) => console.error('n8n payout webhook error (non-blocking):', err));
+    }
   }
 
   return NextResponse.json({ ok: true });

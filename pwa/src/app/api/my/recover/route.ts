@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 /** Strip all non-digit characters from a phone string and return only digits. */
 function stripPhone(raw: string): string {
@@ -7,22 +8,6 @@ function stripPhone(raw: string): string {
 }
 
 const SUCCESS_MESSAGE = 'Если номер зарегистрирован, ссылка будет отправлена';
-
-// Rate limit: max 3 recover attempts per phone per 10 min
-const recoverAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 3;
-const WINDOW_MS = 10 * 60 * 1000;
-
-function isRateLimited(phone: string): boolean {
-  const now = Date.now();
-  const entry = recoverAttempts.get(phone);
-  if (!entry || now > entry.resetAt) {
-    recoverAttempts.set(phone, { count: 1, resetAt: now + WINDOW_MS });
-    return false;
-  }
-  entry.count++;
-  return entry.count > MAX_ATTEMPTS;
-}
 
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
@@ -40,8 +25,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_phone' }, { status: 422 });
   }
 
-  // Rate limit by phone to prevent messenger spam
-  if (isRateLimited(digits)) {
+  // Rate limit by phone to prevent messenger spam: 3 per 10 min
+  const rl = await checkRateLimit(`recover:${digits}`, 3, 10 * 60 * 1000);
+  if (rl.limited) {
     return NextResponse.json({ ok: true, message: SUCCESS_MESSAGE }); // silent 200 — don't hint rate limit
   }
 

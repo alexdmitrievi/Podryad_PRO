@@ -54,6 +54,23 @@ export async function POST(
     // Update order status to 'disputed'
     await updateOrder(id, { status: 'disputed' });
 
+    // Fire-and-forget: admin notification on dispute opened
+    const openedUrl = process.env.N8N_DISPUTE_OPENED_WEBHOOK_URL;
+    if (openedUrl) {
+      fetch(openedUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'dispute_opened',
+          order_id: id,
+          dispute_id: (dispute as Record<string, unknown>).id,
+          initiated_by: initiatedBy,
+          reason: reason.trim(),
+          description: typeof description === 'string' ? description : null,
+        }),
+      }).catch((err) => console.error('n8n dispute_opened webhook error (non-blocking):', err));
+    }
+
     return NextResponse.json(
       { disputeId: (dispute as Record<string, unknown>).id, status: 'disputed' },
       { status: 201 }
@@ -120,10 +137,29 @@ export async function PATCH(
       await updateOrder(id, { status: 'completed' });
     }
 
+    const resolvedAt = new Date().toISOString();
     await updateDispute(String(pendingDispute.id), {
       resolution,
-      resolved_at: new Date().toISOString(),
+      resolved_at: resolvedAt,
     });
+
+    // Fire-and-forget: notify both sides when dispute is resolved
+    const resolvedUrl = process.env.N8N_DISPUTE_RESOLVED_WEBHOOK_URL;
+    if (resolvedUrl) {
+      fetch(resolvedUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'dispute_resolved',
+          order_id: id,
+          dispute_id: pendingDispute.id,
+          resolution,
+          resolved_at: resolvedAt,
+          customer_phone: (order as Record<string, unknown>).customer_phone,
+          executor_phone: (order as Record<string, unknown>).executor_phone,
+        }),
+      }).catch((err) => console.error('n8n dispute_resolved webhook error (non-blocking):', err));
+    }
 
     return NextResponse.json({ ok: true, resolution });
   } catch (error) {

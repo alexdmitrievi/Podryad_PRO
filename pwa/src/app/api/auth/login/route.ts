@@ -6,7 +6,7 @@ import { checkRateLimit, resetRateLimit } from '@/lib/rate-limit';
 export async function POST(req: NextRequest) {
   try {
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-    const rl = checkRateLimit(`login:${clientIp}`, 5, 15 * 60 * 1000);
+    const rl = await checkRateLimit(`login:${clientIp}`, 5, 15 * 60 * 1000);
     if (rl.limited) {
       return NextResponse.json(
         { error: 'Слишком много попыток. Повторите через 15 минут.' },
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Successful login — reset rate limit
-    resetRateLimit(`login:${clientIp}`);
+    await resetRateLimit(`login:${clientIp}`);
 
     const token = await createSessionToken({ sub: customer.id, phone: customer.phone, name: customer.name });
     await setSessionCookie(token);
