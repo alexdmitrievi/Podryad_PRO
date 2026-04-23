@@ -1092,16 +1092,18 @@
   animation: svc-icon-spring 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* MOBILE (no hover): scroll-reveal triggers color highlight */
+/* MOBILE (no hover): transient highlight while icon is in the scroll band.
+   Class is toggled by IntersectionObserver — add on enter, remove on exit,
+   so only the card currently in view lights up (like desktop hover). */
 @media (hover: none) {
-  .service-icon-wrap.icon-revealed {
+  .service-icon-wrap.icon-active {
     background: linear-gradient(135deg, #2F5BFF 0%, #6C5CE7 100%);
     box-shadow: 0 8px 24px rgba(47, 91, 255, 0.32);
   }
-  .service-icon-wrap.icon-revealed svg {
+  .service-icon-wrap.icon-active svg {
     color: #fff;
   }
-  .service-icon-wrap.service-icon--amber.icon-revealed {
+  .service-icon-wrap.service-icon--amber.icon-active {
     background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
     box-shadow: 0 8px 24px rgba(251, 146, 60, 0.4);
   }

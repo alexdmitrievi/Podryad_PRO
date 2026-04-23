@@ -116,10 +116,8 @@ function useStaggerReveal() {
     const onScroll = () => {
       hasScrolled = true;
       window.removeEventListener('scroll', onScroll);
-      // Reveal any icons that were already in the band before the first
-      // scroll, staggered so they don't all light up at once.
       pendingIcons.forEach((iconWrap, i) => {
-        setTimeout(() => iconWrap.classList.add('icon-revealed'), i * 180);
+        setTimeout(() => iconWrap.classList.add('icon-revealed', 'icon-active'), i * 180);
       });
       pendingIcons.length = 0;
     };
@@ -145,21 +143,23 @@ function useStaggerReveal() {
       { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
     );
 
-    // Observer 2: icon highlight — observes the icon element directly
-    // and fires only when it is fully inside a narrow central band of
-    // the viewport. On a mobile 1-col grid icons sit ~500px apart, so
-    // only one icon can be inside the band at a time — they light up
-    // strictly one-by-one as the user scrolls.
+    // Observer 2: icon highlight — toggles `icon-active` based on whether
+    // the icon is inside a narrow central band of the viewport. Add on
+    // enter, remove on exit, so only the currently-centered icon lights
+    // up (mirroring desktop hover behaviour). `icon-revealed` is also
+    // added on first entry to play the spring animation once.
     const iconObs = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
-          if (!entry.isIntersecting) return;
           const iconWrap = entry.target as HTMLElement;
-          iconObs.unobserve(iconWrap);
-          if (hasScrolled) {
-            iconWrap.classList.add('icon-revealed');
+          if (entry.isIntersecting) {
+            if (hasScrolled) {
+              iconWrap.classList.add('icon-revealed', 'icon-active');
+            } else {
+              if (!pendingIcons.includes(iconWrap)) pendingIcons.push(iconWrap);
+            }
           } else {
-            pendingIcons.push(iconWrap);
+            iconWrap.classList.remove('icon-active');
           }
         });
       },
@@ -463,7 +463,7 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div ref={revServiceCards} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div ref={revServiceCards} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
             {/* Рабочая сила */}
             <Link
               href="/catalog/labor"
@@ -658,6 +658,57 @@ export default function HomePage() {
                 </div>
               </div>
             </Link>
+
+            {/* ИИ-сотрудник — 5-я карточка */}
+            <button
+              type="button"
+              onClick={() => setAiAgentModalOpen(true)}
+              className="group relative overflow-hidden rounded-2xl p-6 card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 text-white text-left"
+              style={{ background: 'linear-gradient(135deg, #6C5CE7 0%, #2F5BFF 100%)' }}
+            >
+              {/* bg accents */}
+              <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/15 blur-[60px] pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-[#1E2A5A]/40 blur-[50px] pointer-events-none" />
+
+              {/* Ribbon — NEW */}
+              <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 bg-white text-[#2F5BFF] text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg tracking-wide">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                </svg>
+                NEW
+              </div>
+
+              <div className="relative z-[1] flex flex-col h-full">
+                <div className="service-icon-wrap mb-5" style={{ background: 'rgba(255,255,255,0.18)' }}>
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="12" rx="2"/>
+                    <path d="M8 20h8"/>
+                    <path d="M12 16v4"/>
+                    <circle cx="9" cy="10" r="1" fill="#fff"/>
+                    <circle cx="15" cy="10" r="1" fill="#fff"/>
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">ИИ-сотрудник</h3>
+                <p className="text-white/65 text-xs mb-4 font-medium">Автоматизация 24/7</p>
+                <ul className="space-y-2.5 text-sm mb-5 flex-1">
+                  {[
+                    { label: 'Работает', price: '24/7' },
+                    { label: 'Ответы', price: 'мгновенно' },
+                    { label: 'Цена', price: '×10 дешевле' },
+                    { label: 'Запуск', price: 'за 1 день' },
+                  ].map((row) => (
+                    <li key={row.label} className="flex justify-between items-center gap-2">
+                      <span className="text-white/85 truncate">{row.label}</span>
+                      <span className="text-[#FF6B35] text-xs font-semibold whitespace-nowrap" style={{ textShadow: '0 0 12px rgba(255,107,53,0.4)' }}>{row.price}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center gap-1.5 text-white font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
+                  <span>Заказать ИИ-агента</span>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
       </section>
@@ -834,18 +885,18 @@ export default function HomePage() {
       </section>
 
       {/* ── AI AGENT SECTION ─────────────────────────────────────── */}
-      <section className="relative py-20 sm:py-28 px-4 overflow-hidden bg-[#080812]">
-        {/* Background effects */}
+      <section id="ai-agent" className="relative py-20 sm:py-28 px-4 overflow-hidden bg-dark-bg">
+        {/* Background effects (brand orbs) */}
         <div className="absolute inset-0 hero-grid opacity-25 pointer-events-none" />
-        <div className="absolute top-[-15%] left-[-8%] w-[600px] h-[600px] rounded-full bg-violet/15 blur-[130px] pointer-events-none" />
+        <div className="absolute top-[-15%] left-[-8%] w-[600px] h-[600px] rounded-full bg-[#6C5CE7]/15 blur-[130px] pointer-events-none" />
         <div className="absolute bottom-[-15%] right-[-8%] w-[500px] h-[500px] rounded-full bg-brand-500/15 blur-[120px] pointer-events-none" />
-        <div className="absolute top-[35%] left-[45%] w-[350px] h-[350px] rounded-full bg-violet/8 blur-[90px] pointer-events-none" />
+        <div className="absolute top-[35%] left-[45%] w-[350px] h-[350px] rounded-full bg-[#6C5CE7]/10 blur-[90px] pointer-events-none" />
 
         <div ref={revAiAgent} className="relative z-10 max-w-6xl mx-auto reveal">
           {/* Header */}
           <div className="text-center mb-14">
-            <span className="inline-flex items-center gap-2 bg-violet/15 border border-violet/25 text-violet-300 text-[11px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
+            <span className="inline-flex items-center gap-2 bg-[#6C5CE7]/15 border border-[#6C5CE7]/30 text-[#a29bfe] text-[11px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#a29bfe] animate-pulse flex-shrink-0" />
               ИИ-автоматизация для бизнеса
             </span>
             <h2 className="text-3xl sm:text-[2.75rem] md:text-5xl font-extrabold text-white font-heading tracking-tight mb-5 leading-[1.08]">
@@ -868,8 +919,8 @@ export default function HomePage() {
                     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                   </svg>
                 ),
-                color: 'text-violet-400',
-                bg: 'bg-violet/15',
+                color: 'text-[#a29bfe]',
+                bg: 'bg-[#6C5CE7]/20',
                 title: 'Работает 24/7',
                 desc: 'Принимает заявки и отвечает клиентам в любое время — ночью, в выходные и в праздники',
               },
@@ -879,8 +930,8 @@ export default function HomePage() {
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                   </svg>
                 ),
-                color: 'text-amber-400',
-                bg: 'bg-amber-500/15',
+                color: 'text-[#FF8F65]',
+                bg: 'bg-[#FF6B35]/20',
                 title: 'Мгновенные ответы',
                 desc: 'Отвечает в мессенджерах за секунды, пока конкуренты заставляют клиентов ждать часами',
               },
@@ -890,8 +941,8 @@ export default function HomePage() {
                     <path d="M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-3"/><path d="M9 15h3l8.5-8.5a1.5 1.5 0 00-3-3L9 12v3z"/>
                   </svg>
                 ),
-                color: 'text-brand-400',
-                bg: 'bg-brand-500/15',
+                color: 'text-brand-300',
+                bg: 'bg-brand-500/20',
                 title: 'Расчёт смет',
                 desc: 'Автоматически рассчитывает стоимость работ по запросу и отправляет готовое предложение',
               },
@@ -901,8 +952,8 @@ export default function HomePage() {
                     <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v3l2 2"/>
                   </svg>
                 ),
-                color: 'text-green-400',
-                bg: 'bg-green-500/15',
+                color: 'text-emerald-300',
+                bg: 'bg-emerald-500/20',
                 title: 'Квалификация лидов',
                 desc: 'Определяет горячих клиентов, задаёт уточняющие вопросы и передаёт менеджеру готовый лид',
               },
@@ -912,8 +963,8 @@ export default function HomePage() {
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
                   </svg>
                 ),
-                color: 'text-pink-400',
-                bg: 'bg-pink-500/15',
+                color: 'text-[#a29bfe]',
+                bg: 'bg-[#6C5CE7]/20',
                 title: 'CRM-автоматизация',
                 desc: 'Follow-up напоминания, дожим сделок, реактивация «заснувших» клиентов — без участия человека',
               },
@@ -923,8 +974,8 @@ export default function HomePage() {
                     <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
                   </svg>
                 ),
-                color: 'text-cyan-400',
-                bg: 'bg-cyan-500/15',
+                color: 'text-[#FF8F65]',
+                bg: 'bg-[#FF6B35]/20',
                 title: 'Аналитика в реальном времени',
                 desc: 'Ежедневные отчёты: выручка, конверсия, активность — всё в Telegram или MAX',
               },
@@ -934,8 +985,8 @@ export default function HomePage() {
                     <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
                   </svg>
                 ),
-                color: 'text-blue-400',
-                bg: 'bg-blue-500/15',
+                color: 'text-brand-300',
+                bg: 'bg-brand-500/20',
                 title: 'Мультиканальность',
                 desc: 'Работает в MAX, Telegram и Авито одновременно — единая точка управления всеми диалогами',
               },
@@ -945,8 +996,8 @@ export default function HomePage() {
                     <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
                   </svg>
                 ),
-                color: 'text-emerald-400',
-                bg: 'bg-emerald-500/15',
+                color: 'text-emerald-300',
+                bg: 'bg-emerald-500/20',
                 title: 'В 10–20 раз дешевле',
                 desc: 'Стоимость ИИ-сотрудника в разы ниже зарплаты штатного специалиста при большей производительности',
               },
@@ -956,8 +1007,8 @@ export default function HomePage() {
                     <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
                   </svg>
                 ),
-                color: 'text-violet-400',
-                bg: 'bg-violet/15',
+                color: 'text-[#a29bfe]',
+                bg: 'bg-[#6C5CE7]/20',
                 title: 'Запуск за 1 день',
                 desc: 'Настраиваем, обучаем на вашем бизнесе и запускаем ИИ-агента за один рабочий день',
               },
@@ -967,8 +1018,8 @@ export default function HomePage() {
                     <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
                   </svg>
                 ),
-                color: 'text-amber-400',
-                bg: 'bg-amber-500/15',
+                color: 'text-[#FF8F65]',
+                bg: 'bg-[#FF6B35]/20',
                 title: 'Интеграции с платформами',
                 desc: 'Подключаем к Авито, Яндекс.Услугам, 1С, Битрикс24 и любым другим системам вашего бизнеса',
               },
@@ -978,8 +1029,8 @@ export default function HomePage() {
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                   </svg>
                 ),
-                color: 'text-brand-400',
-                bg: 'bg-brand-500/15',
+                color: 'text-brand-300',
+                bg: 'bg-brand-500/20',
                 title: 'Масштабирование без найма',
                 desc: 'Обрабатывает тысячи диалогов одновременно — никакого выгорания и текучки персонала',
               },
@@ -989,8 +1040,8 @@ export default function HomePage() {
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                   </svg>
                 ),
-                color: 'text-green-400',
-                bg: 'bg-green-500/15',
+                color: 'text-emerald-300',
+                bg: 'bg-emerald-500/20',
                 title: 'Обучен на вашем бизнесе',
                 desc: 'Знает ваш прайс, процессы, ответы на типовые вопросы и стиль общения вашей команды',
               },
@@ -1071,11 +1122,11 @@ export default function HomePage() {
                 {/* MAX */}
                 <a
                   href="tel:+79620546601"
-                  className="group flex items-center gap-4 bg-white/[0.05] border border-white/[0.09] hover:border-[#4287f5]/50 hover:bg-[#4287f5]/10 rounded-2xl px-5 py-4 transition-all duration-200 cursor-pointer"
+                  className="group flex items-center gap-4 bg-white/[0.05] border border-white/[0.09] hover:border-[#2787F5]/50 hover:bg-[#2787F5]/10 rounded-2xl px-5 py-4 transition-all duration-200 cursor-pointer"
                 >
-                  <div className="w-11 h-11 rounded-xl bg-[#4287f5]/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-11 h-11 rounded-xl bg-[#2787F5]/20 flex items-center justify-center flex-shrink-0">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <rect width="24" height="24" rx="7" fill="#4287f5"/>
+                      <rect width="24" height="24" rx="7" fill="#2787F5"/>
                       <path d="M12 6.5C8.963 6.5 6.5 8.963 6.5 12S8.963 17.5 12 17.5 17.5 15.037 17.5 12 15.037 6.5 12 6.5zm0 2c1.53 0 2.9.672 3.84 1.74l-7.08 2.99A3.476 3.476 0 018.5 12c0-1.933 1.567-3.5 3.5-3.5zm0 7c-1.53 0-2.9-.672-3.84-1.74l7.08-2.99c.165.39.26.816.26 1.23 0 1.933-1.567 3.5-3.5 3.5z" fill="white"/>
                     </svg>
                   </div>
@@ -1083,7 +1134,7 @@ export default function HomePage() {
                     <div className="text-white font-bold text-sm">MAX</div>
                     <div className="text-white/40 text-xs mt-0.5">+7 (962) 054-66-01</div>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="text-white/25 group-hover:text-[#4287f5] group-hover:translate-x-0.5 transition-all flex-shrink-0">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="text-white/25 group-hover:text-[#2787F5] group-hover:translate-x-0.5 transition-all flex-shrink-0">
                     <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </a>
