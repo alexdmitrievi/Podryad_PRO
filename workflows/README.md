@@ -1,6 +1,6 @@
 # n8n Workflows — Подряд PRO
 
-12 рабочих воркфлоу для автоматизации платформы. Все используют Supabase (PostgreSQL) + Telegram + MAX.
+14 рабочих воркфлоу для автоматизации платформы. Все используют Supabase (PostgreSQL) + Telegram + MAX.
 
 ## Активные воркфлоу
 
@@ -9,15 +9,17 @@
 | 06 | `06-daily-analytics.json` | Cron 20:00 МСК | Дневная аналитика → отчёт админу в Telegram |
 | 07 | `07-max-crosspost.json` | Cron каждые 2 мин | Кросс-пост оплаченных заказов в MAX-канал |
 | 11 | `11-lead-notification.json` | Webhook `/lead-notification` | Уведомление о новой заявке с лендинга |
-| 12 | `12-payment-held.json` | Webhook `/payment-held` | Уведомление об эскроу-холде (YooKassa) |
-| 13 | `13-payout-reminder.json` | Webhook `/payout-notification` | Напоминание о ручной выплате |
+| 12 | `12-payment-held.json` | Webhook `/payment-held` | Уведомление админу: платёж удержан (escrow) |
+| 13 | `13-payout-notification.json` | Webhook `/payout-notification` | Уведомление: выплата исполнителю оформлена |
 | 14 | `14-order-created.json` | Webhook `/order-created` | Уведомление о новом заказе из PWA |
 | 15 | `15-contractor-registered.json` | Webhook `/contractor-registered` | Уведомление о новом исполнителе |
 | 16 | `16-send-dashboard-link.json` | Webhook `/send-dashboard-link` | Отправка ссылки на дашборд заказчику |
-| 17 | `17-send-payment-link.json` | Webhook `/send-payment-link` | Отправка ссылки на оплату заказчику |
+| 17 | `17-send-invoice.json` | Webhook `/send-payment-link` | Отправка ссылки на оплату заказчику |
 | 18 | `18-customer-lead-nurture.json` | Webhook `/crm-lead-nurture` | **RAG** CRM-агент заказчиков: nurture-цепочка (welcome → 2ч → 24ч → 3дн) с RAG-контекстом + email |
 | 19 | `19-executor-avito-nurture.json` | Cron каждые 6 ч | **RAG** CRM-агент исполнителей: Авито-рекрутинг с RAG-контекстом + email-инвайты |
 | 20 | `20-crm-conversion-tracker.json` | Webhook `/crm-conversion` | Трекер конверсий CRM: обновляет стадии воронки при order/contractor событиях |
+| 21 | `21-dispute-opened.json` | Webhook `/dispute-opened` | Уведомление админу: открыт новый спор |
+| 22 | `22-dispute-resolved.json` | Webhook `/dispute-resolved` | Уведомление всех сторон: спор разрешён |
 
 ## ENV-переменные (n8n)
 
@@ -49,24 +51,29 @@ N8N_CRM_LEAD_NURTURE_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/crm-lead-
 N8N_CRM_CONVERSION_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/crm-conversion
 N8N_CRM_PROSPECT_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/crm-prospect
 CRM_WEBHOOK_SECRET=your-secret-here
+
+# Dispute webhooks (workflows 21-22)
+N8N_DISPUTE_OPENED_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/dispute-opened
+N8N_DISPUTE_RESOLVED_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/dispute-resolved
 ```
 
 ## Карта подключений (PWA API → Workflow)
 
 ```
-/api/leads           → 11 (lead-notification) + 18 (crm-lead-nurture)
-/api/orders          → 14 (order-created)
-/api/orders/create   → 11 (lead-notification)
-/api/orders/respond  → 11 (lead-notification)
-/api/orders/confirm  → 13 (payout-reminder)
-/api/catalog-orders  → 11 (lead-notification)
-/api/payments/callback → 12 (payment-held)
-/api/contractors     → 15 (contractor-registered) + 20 (crm-conversion)
-/api/my/recover      → 16 (send-dashboard-link)
-/api/admin/orders/send-link → 17 (send-payment-link)
-/api/crm/update-stage → 20 (crm-conversion)
-/api/admin/crm/prospects → 20 (crm-conversion)
-Cron (n8n)           → 06 (analytics), 07 (max-crosspost), 19 (avito-nurture)
+/api/leads                              → 11 (lead-notification) + 18 (crm-lead-nurture)
+/api/orders                             → 14 (order-created)
+/api/orders/create                      → 11 (lead-notification)
+/api/orders/respond                     → 11 (lead-notification)
+/api/orders/[id]/dispute (POST)         → 21 (dispute-opened)
+/api/orders/[id]/dispute (PATCH)        → 22 (dispute-resolved)
+/api/catalog-orders                     → 11 (lead-notification)
+/api/admin/orders/[id]/payment-status   → 12 (payment-held) + 13 (payout-notification)
+/api/contractors                        → 15 (contractor-registered) + 20 (crm-conversion)
+/api/my/recover                         → 16 (send-dashboard-link)
+/api/admin/orders/send-link             → 17 (send-payment-link)
+/api/crm/update-stage                   → 20 (crm-conversion)
+/api/admin/crm/prospects                → 20 (crm-conversion)
+Cron (n8n)                              → 06 (analytics), 07 (max-crosspost), 19 (avito-nurture)
 ```
 
 ## RAG-архитектура (workflows 18, 19)

@@ -1,0 +1,109 @@
+{
+  "name": "Подряд PRO — 22 Dispute Resolved",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dispute-resolved",
+        "options": { "responseMode": "onReceived" }
+      },
+      "id": "drs-wh-001",
+      "name": "Webhook Dispute Resolved",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "podryad-dispute-resolved"
+    },
+    {
+      "parameters": {
+        "jsCode": "const root = $('Webhook Dispute Resolved').first().json;\nconst b = root.body || root;\nconst RESOLUTION_LABELS = { refund_full: 'Полный возврат заказчику', release_payment: 'Выплата исполнителю' };\nconst order_id = String(b.order_id || '—');\nconst dispute_id = String(b.dispute_id || '—');\nconst resolution = String(b.resolution || '');\nconst resolution_label = RESOLUTION_LABELS[resolution] || resolution || 'не указано';\nconst resolved_at = String(b.resolved_at || new Date().toISOString());\nconst customer_phone = String(b.customer_phone || '—');\nconst executor_phone = String(b.executor_phone || '—');\n\n// Сообщение админу: полный контекст\nconst adminText = `\\u2705 *Спор решён*\\n\\n\\uD83C\\uDD94 Заказ: ${order_id}\\n\\uD83D\\uDD16 Спор: ${dispute_id}\\n\\u2696\\uFE0F Решение: ${resolution_label}\\n\\uD83D\\uDCDE Заказчик: ${customer_phone}\\n\\uD83D\\uDCDE Исполнитель: ${executor_phone}\\n\\uD83D\\uDD52 Время: ${resolved_at}\\n\\n\\u26A1 Свяжитесь с обеими сторонами для исполнения решения.`;\n\n// Сообщение заказчику (если refund_full — хорошая новость)\nconst customerText = resolution === 'refund_full'\n  ? `\\u2705 *Спор по заказу ${order_id} разрешён в вашу пользу*\\n\\nАдминистратор принял решение о полном возврате средств. Мы свяжемся с вами для уточнения реквизитов.`\n  : `\\u2139\\uFE0F *Спор по заказу ${order_id} закрыт*\\n\\nАдминистратор принял решение о выплате исполнителю. Если у вас остались вопросы — ответьте на это сообщение.`;\n\n// Сообщение исполнителю\nconst executorText = resolution === 'release_payment'\n  ? `\\u2705 *Спор по заказу ${order_id} разрешён в вашу пользу*\\n\\nВыплата будет переведена в течение рабочего дня.`\n  : `\\u2139\\uFE0F *Спор по заказу ${order_id} закрыт*\\n\\nАдминистратор принял решение о возврате средств заказчику. Свяжитесь с поддержкой для уточнения деталей.`;\n\nreturn [{ json: { adminText, customerText, executorText, customer_phone, executor_phone } }];"
+      },
+      "id": "drs-parse-002",
+      "name": "Build Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: $json.adminText, parse_mode: 'Markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "drs-tg-admin-003",
+      "name": "Notify Admin TG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.MAX_API_BASE || 'https://botapi.max.ru' }}/messages?chat_id={{ $env.MAX_ADMIN_USER_ID }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=access_token=\"{{ $env.MAX_BOT_TOKEN }}\"" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.adminText, format: 'markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "drs-max-admin-004",
+      "name": "Notify Admin MAX",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {},
+      "id": "drs-error-005",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🚨 *ОШИБКА в Dispute Resolved*\n\nNode: ' + $json.execution.error.node.name + '\nОшибка: ' + $json.execution.error.message, parse_mode: 'Markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "drs-error-notify-006",
+      "name": "Notify Admin Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 600]
+    }
+  ],
+  "connections": {
+    "Webhook Dispute Resolved": {
+      "main": [[{ "node": "Build Messages", "type": "main", "index": 0 }]]
+    },
+    "Build Messages": {
+      "main": [
+        [
+          { "node": "Notify Admin TG", "type": "main", "index": 0 },
+          { "node": "Notify Admin MAX", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [[{ "node": "Notify Admin Error", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "versionId": "podryad-22-dispute-resolved-v1",
+  "meta": { "instanceId": "podryad-pro" },
+  "tags": [{ "name": "podryad-pro" }, { "name": "disputes" }, { "name": "notification" }]
+}
