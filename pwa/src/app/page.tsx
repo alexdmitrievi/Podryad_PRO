@@ -142,7 +142,17 @@ function useStaggerReveal() {
     // viewport focus band to avoid rapid toggling near boundaries.
     const iconEls: HTMLElement[] = [];
     const iconRatio = new WeakMap<HTMLElement, number>();
-    const applyIconHighlight = () => {
+    let activeIcon: HTMLElement | null = null;
+
+    // Hysteresis thresholds:
+    // - ON: icon becomes active only with a confident visibility ratio
+    // - OFF: active icon is released only after it leaves the focus band enough
+    // This prevents rapid toggling when scrolling near observer boundaries.
+    const ICON_ON_THRESHOLD = 0.55;
+    const ICON_OFF_THRESHOLD = 0.32;
+    const ICON_SWITCH_DELTA = 0.15;
+
+    const getBestCandidate = () => {
       let bestIcon: HTMLElement | null = null;
       let bestRatio = 0;
 
@@ -154,9 +164,34 @@ function useStaggerReveal() {
         }
       });
 
+      return { bestIcon, bestRatio };
+    };
+
+    const applyIconHighlight = () => {
+      const { bestIcon, bestRatio } = getBestCandidate();
+
+      if (activeIcon) {
+        const activeRatio = iconRatio.get(activeIcon) ?? 0;
+
+        if (activeRatio < ICON_OFF_THRESHOLD) {
+          activeIcon = null;
+        } else if (
+          bestIcon &&
+          bestIcon !== activeIcon &&
+          bestRatio >= ICON_ON_THRESHOLD &&
+          bestRatio - activeRatio >= ICON_SWITCH_DELTA
+        ) {
+          activeIcon = bestIcon;
+        }
+      }
+
+      if (!activeIcon && bestIcon && bestRatio >= ICON_ON_THRESHOLD) {
+        activeIcon = bestIcon;
+      }
+
       iconEls.forEach((icon) => icon.classList.remove('icon-revealed'));
-      if (bestIcon && bestRatio >= 0.45) {
-        bestIcon.classList.add('icon-revealed');
+      if (activeIcon) {
+        activeIcon.classList.add('icon-revealed');
       }
     };
 
@@ -166,6 +201,7 @@ function useStaggerReveal() {
           const iconWrap = entry.target as HTMLElement;
           iconRatio.set(iconWrap, entry.isIntersecting ? entry.intersectionRatio : 0);
           if (!hasScrolled) {
+            activeIcon = null;
             iconWrap.classList.remove('icon-revealed');
             return;
           }
