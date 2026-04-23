@@ -138,35 +138,54 @@ function useStaggerReveal() {
       { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
     );
 
-    // Observer 2: icon highlight — observes the icon element directly
-    // and toggles highlight only while the icon is inside a narrow
-    // central viewport band. On mobile this mirrors hover-like feedback
-    // during scroll and resets to default after the card is passed.
+    // Observer 2: icon highlight — keeps exactly one active icon in the
+    // viewport focus band to avoid rapid toggling near boundaries.
+    const iconEls: HTMLElement[] = [];
+    const iconRatio = new WeakMap<HTMLElement, number>();
+    const applyIconHighlight = () => {
+      let bestIcon: HTMLElement | null = null;
+      let bestRatio = 0;
+
+      iconEls.forEach((icon) => {
+        const ratio = iconRatio.get(icon) ?? 0;
+        if (ratio > bestRatio) {
+          bestRatio = ratio;
+          bestIcon = icon;
+        }
+      });
+
+      iconEls.forEach((icon) => icon.classList.remove('icon-revealed'));
+      if (bestIcon && bestRatio >= 0.45) {
+        bestIcon.classList.add('icon-revealed');
+      }
+    };
+
     const iconObs = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
           const iconWrap = entry.target as HTMLElement;
+          iconRatio.set(iconWrap, entry.isIntersecting ? entry.intersectionRatio : 0);
           if (!hasScrolled) {
             iconWrap.classList.remove('icon-revealed');
             return;
           }
-
-          if (entry.isIntersecting) {
-            iconWrap.classList.add('icon-revealed');
-          } else {
-            iconWrap.classList.remove('icon-revealed');
-          }
-
-          return;
         });
+
+        if (hasScrolled) applyIconHighlight();
       },
-      { threshold: 1, rootMargin: '-40% 0px -40% 0px' },
+      {
+        threshold: [0, 0.3, 0.45, 0.6, 0.8, 1],
+        rootMargin: '-28% 0px -28% 0px',
+      },
     );
 
     items.forEach(el => {
       cardObs.observe(el);
       const iconWrap = el.querySelector('.service-icon-wrap') as HTMLElement | null;
-      if (iconWrap) iconObs.observe(iconWrap);
+      if (iconWrap) {
+        iconEls.push(iconWrap);
+        iconObs.observe(iconWrap);
+      }
     });
     return () => {
       cardObs.disconnect();
