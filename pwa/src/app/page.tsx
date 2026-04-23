@@ -880,7 +880,7 @@ export default function HomePage() {
                   </span>
                 </div>
                 <h3 className="font-bold text-white text-base mb-2 font-heading">{step.title}</h3>
-                <p className="text-white/45 text-sm leading-relaxed group-hover:text-white/65 transition-colors duration-300">{step.desc}</p>
+                <p className="text-white/70 text-sm leading-relaxed group-hover:text-white/90 transition-colors duration-300">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -888,11 +888,12 @@ export default function HomePage() {
       </section>
 
       {/* ── 4. ДЛЯ ИСПОЛНИТЕЛЕЙ ────────────────────────────────── */}
-      <section className="section-gradient relative py-16 sm:py-24 px-4 overflow-hidden">
+      <section className="section-gradient-partners relative py-16 sm:py-24 px-4 overflow-hidden border-t border-white/10">
+        <div className="section-seam absolute -top-px inset-x-0 h-10 pointer-events-none" aria-hidden="true" />
         <div className="absolute inset-0 hero-grid opacity-50 pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full bg-brand-500/10 blur-[120px] pointer-events-none" />
         <div ref={revExecutors} className="relative z-10 max-w-3xl mx-auto text-center reveal">
-          <span className="eyebrow text-white/60 mb-4 block">Партнёрам</span>
+          <span className="eyebrow text-brand-300 mb-4 block">Партнёрам</span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-4 font-heading tracking-tight">
             Для исполнителей
           </h2>
@@ -903,14 +904,46 @@ export default function HomePage() {
           {/* Benefit pills */}
           <div className="flex flex-wrap justify-center gap-2.5 mb-10">
             {[
-              { icon: '0 ₽', label: 'Без комиссий' },
-              { icon: '✓', label: 'Прямые заказы' },
-              { icon: '🔒', label: 'Безопасные выплаты' },
-              { icon: '🗺', label: 'Карта заказов' },
-              { icon: '⚡', label: 'Быстрый отклик' },
+              {
+                icon: <span className="text-[11px] font-extrabold leading-none text-emerald-300">0 ₽</span>,
+                label: 'Без комиссий',
+              },
+              {
+                icon: (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                ),
+                label: 'Прямые заказы',
+              },
+              {
+                icon: (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
+                  </svg>
+                ),
+                label: 'Безопасные выплаты',
+              },
+              {
+                icon: (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 11c0 5 9 10 9 10s9-5 9-10a9 9 0 10-18 0z" />
+                    <circle cx="12" cy="11" r="3" />
+                  </svg>
+                ),
+                label: 'Карта заказов',
+              },
+              {
+                icon: (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" />
+                  </svg>
+                ),
+                label: 'Быстрый отклик',
+              },
             ].map((b) => (
               <div key={b.label} className="benefit-pill">
-                <span className="text-green-400 text-xs font-bold">{b.icon}</span>
+                <span className="text-emerald-300 text-xs font-bold inline-flex items-center justify-center leading-none">{b.icon}</span>
                 {b.label}
               </div>
             ))}

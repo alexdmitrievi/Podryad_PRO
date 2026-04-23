@@ -373,6 +373,14 @@
   background: linear-gradient(135deg, #1E2A5A 0%, #2F5BFF 60%, #6C5CE7 100%);
 }
 
+.section-gradient-partners {
+  background: linear-gradient(158deg, #14245a 0%, #1f3f9e 54%, #2F5BFF 100%);
+}
+
+.section-seam {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0));
+}
+
 /* ─── Success card ─── */
 
 .success-card {
