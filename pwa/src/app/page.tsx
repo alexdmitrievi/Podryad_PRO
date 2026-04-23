@@ -240,13 +240,22 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState(false);
+  const [aiAgentModalOpen, setAiAgentModalOpen] = useState(false);
 
   /* scroll-reveal refs */
   const revServices = useReveal();
   const revServiceCards = useStaggerReveal();
   const revSteps = useReveal();
   const revExecutors = useReveal();
+  const revAiAgent = useReveal();
   const revForm = useReveal();
+
+  useEffect(() => {
+    if (!aiAgentModalOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setAiAgentModalOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [aiAgentModalOpen]);
 
   /* count-up */
   const orders = useCountUp(500);
@@ -823,6 +832,313 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── AI AGENT SECTION ─────────────────────────────────────── */}
+      <section className="relative py-20 sm:py-28 px-4 overflow-hidden bg-[#080812]">
+        {/* Background effects */}
+        <div className="absolute inset-0 hero-grid opacity-25 pointer-events-none" />
+        <div className="absolute top-[-15%] left-[-8%] w-[600px] h-[600px] rounded-full bg-violet/15 blur-[130px] pointer-events-none" />
+        <div className="absolute bottom-[-15%] right-[-8%] w-[500px] h-[500px] rounded-full bg-brand-500/15 blur-[120px] pointer-events-none" />
+        <div className="absolute top-[35%] left-[45%] w-[350px] h-[350px] rounded-full bg-violet/8 blur-[90px] pointer-events-none" />
+
+        <div ref={revAiAgent} className="relative z-10 max-w-6xl mx-auto reveal">
+          {/* Header */}
+          <div className="text-center mb-14">
+            <span className="inline-flex items-center gap-2 bg-violet/15 border border-violet/25 text-violet-300 text-[11px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
+              ИИ-автоматизация для бизнеса
+            </span>
+            <h2 className="text-3xl sm:text-[2.75rem] md:text-5xl font-extrabold text-white font-heading tracking-tight mb-5 leading-[1.08]">
+              Сотрудник, который работает<br />
+              <span className="text-gradient">пока вы спите</span>
+            </h2>
+            <p className="text-white/50 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+              ИИ-агент автоматизирует продажи, переписку с клиентами и аналитику вашего предприятия.
+              <br className="hidden sm:block" />
+              Первый месяц окупается за счёт сокращения рутины на&nbsp;70%.
+            </p>
+          </div>
+
+          {/* Benefits grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-14">
+            {[
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                ),
+                color: 'text-violet-400',
+                bg: 'bg-violet/15',
+                title: 'Работает 24/7',
+                desc: 'Принимает заявки и отвечает клиентам в любое время — ночью, в выходные и в праздники',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                  </svg>
+                ),
+                color: 'text-amber-400',
+                bg: 'bg-amber-500/15',
+                title: 'Мгновенные ответы',
+                desc: 'Отвечает в мессенджерах за секунды, пока конкуренты заставляют клиентов ждать часами',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-3"/><path d="M9 15h3l8.5-8.5a1.5 1.5 0 00-3-3L9 12v3z"/>
+                  </svg>
+                ),
+                color: 'text-brand-400',
+                bg: 'bg-brand-500/15',
+                title: 'Расчёт смет',
+                desc: 'Автоматически рассчитывает стоимость работ по запросу и отправляет готовое предложение',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v3l2 2"/>
+                  </svg>
+                ),
+                color: 'text-green-400',
+                bg: 'bg-green-500/15',
+                title: 'Квалификация лидов',
+                desc: 'Определяет горячих клиентов, задаёт уточняющие вопросы и передаёт менеджеру готовый лид',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                ),
+                color: 'text-pink-400',
+                bg: 'bg-pink-500/15',
+                title: 'CRM-автоматизация',
+                desc: 'Follow-up напоминания, дожим сделок, реактивация «заснувших» клиентов — без участия человека',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                  </svg>
+                ),
+                color: 'text-cyan-400',
+                bg: 'bg-cyan-500/15',
+                title: 'Аналитика в реальном времени',
+                desc: 'Ежедневные отчёты: выручка, конверсия, активность — всё в Telegram или MAX',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+                  </svg>
+                ),
+                color: 'text-blue-400',
+                bg: 'bg-blue-500/15',
+                title: 'Мультиканальность',
+                desc: 'Работает в MAX, Telegram и Авито одновременно — единая точка управления всеми диалогами',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                  </svg>
+                ),
+                color: 'text-emerald-400',
+                bg: 'bg-emerald-500/15',
+                title: 'В 10–20 раз дешевле',
+                desc: 'Стоимость ИИ-сотрудника в разы ниже зарплаты штатного специалиста при большей производительности',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                ),
+                color: 'text-violet-400',
+                bg: 'bg-violet/15',
+                title: 'Запуск за 1 день',
+                desc: 'Настраиваем, обучаем на вашем бизнесе и запускаем ИИ-агента за один рабочий день',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                  </svg>
+                ),
+                color: 'text-amber-400',
+                bg: 'bg-amber-500/15',
+                title: 'Интеграции с платформами',
+                desc: 'Подключаем к Авито, Яндекс.Услугам, 1С, Битрикс24 и любым другим системам вашего бизнеса',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                  </svg>
+                ),
+                color: 'text-brand-400',
+                bg: 'bg-brand-500/15',
+                title: 'Масштабирование без найма',
+                desc: 'Обрабатывает тысячи диалогов одновременно — никакого выгорания и текучки персонала',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                ),
+                color: 'text-green-400',
+                bg: 'bg-green-500/15',
+                title: 'Обучен на вашем бизнесе',
+                desc: 'Знает ваш прайс, процессы, ответы на типовые вопросы и стиль общения вашей команды',
+              },
+            ].map((benefit) => (
+              <div
+                key={benefit.title}
+                className="group bg-white/[0.04] border border-white/[0.07] rounded-2xl p-6 hover:bg-white/[0.08] hover:border-white/[0.14] transition-all duration-300"
+              >
+                <div className={`w-10 h-10 rounded-xl ${benefit.bg} flex items-center justify-center mb-4 ${benefit.color}`}>
+                  {benefit.icon}
+                </div>
+                <h3 className="text-white font-bold text-[15px] mb-2 font-heading leading-snug">{benefit.title}</h3>
+                <p className="text-white/40 text-sm leading-relaxed group-hover:text-white/58 transition-colors duration-300">{benefit.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="text-center">
+            <button
+              onClick={() => setAiAgentModalOpen(true)}
+              className="btn-shine group inline-flex items-center gap-3 font-bold text-lg px-10 py-5 rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-white"
+              style={{ background: 'linear-gradient(135deg, #6C5CE7 0%, #2F5BFF 100%)', boxShadow: '0 0 0 0 rgba(108,92,231,0)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 50px rgba(108,92,231,0.45)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 0 0 rgba(108,92,231,0)'; }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 8h2m2 0h2m2 0h2"/>
+              </svg>
+              Заказать ИИ-сотрудника
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1.5">
+                <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <p className="text-white/25 text-sm mt-4 tracking-wide">
+              Консультация бесплатна&nbsp;&middot;&nbsp;Запуск за 1 рабочий день&nbsp;&middot;&nbsp;Любой бизнес
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── AI AGENT CONTACT MODAL ─────────────────────────────────── */}
+      {aiAgentModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setAiAgentModalOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+          <div
+            className="relative z-10 w-full sm:max-w-md animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-[#0d0d1a] border border-white/10 rounded-t-3xl sm:rounded-3xl p-7 sm:p-8 shadow-2xl">
+              {/* Close */}
+              <button
+                onClick={() => setAiAgentModalOpen(false)}
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/8 hover:bg-white/18 text-white/50 hover:text-white transition-all cursor-pointer"
+                aria-label="Закрыть"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+
+              {/* Header */}
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg, #6C5CE7 0%, #2F5BFF 100%)', boxShadow: '0 8px 32px rgba(108,92,231,0.4)' }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 8h2m2 0h2m2 0h2"/>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-extrabold text-white font-heading mb-1.5">Заказать ИИ-сотрудника</h3>
+                <p className="text-white/45 text-sm">Выберите удобный способ связи — ответим сегодня</p>
+              </div>
+
+              {/* Contact options */}
+              <div className="space-y-3">
+                {/* MAX */}
+                <a
+                  href="https://max.im/podryad_pro"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-4 bg-white/[0.05] border border-white/[0.09] hover:border-[#4287f5]/50 hover:bg-[#4287f5]/10 rounded-2xl px-5 py-4 transition-all duration-200 cursor-pointer"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-[#4287f5]/20 flex items-center justify-center flex-shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <rect width="24" height="24" rx="7" fill="#4287f5"/>
+                      <path d="M12 6.5C8.963 6.5 6.5 8.963 6.5 12S8.963 17.5 12 17.5 17.5 15.037 17.5 12 15.037 6.5 12 6.5zm0 2c1.53 0 2.9.672 3.84 1.74l-7.08 2.99A3.476 3.476 0 018.5 12c0-1.933 1.567-3.5 3.5-3.5zm0 7c-1.53 0-2.9-.672-3.84-1.74l7.08-2.99c.165.39.26.816.26 1.23 0 1.933-1.567 3.5-3.5 3.5z" fill="white"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-bold text-sm">MAX</div>
+                    <div className="text-white/40 text-xs mt-0.5">Основной канал — отвечаем быстро</div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="text-white/25 group-hover:text-[#4287f5] group-hover:translate-x-0.5 transition-all flex-shrink-0">
+                    <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </a>
+
+                {/* Telegram */}
+                <a
+                  href="https://t.me/podryad_pro"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-4 bg-white/[0.05] border border-white/[0.09] hover:border-[#2AABEE]/50 hover:bg-[#2AABEE]/10 rounded-2xl px-5 py-4 transition-all duration-200 cursor-pointer"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-[#2AABEE]/20 flex items-center justify-center flex-shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <rect width="24" height="24" rx="7" fill="#2AABEE"/>
+                      <path d="M17.5 6.5l-11 4.3 3.8 1.2 1.4 4.5 2.2-2.2 3.2 2.4 0.4-10.2z" fill="white"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-bold text-sm">Telegram</div>
+                    <div className="text-white/40 text-xs mt-0.5">Пишите в любое время суток</div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="text-white/25 group-hover:text-[#2AABEE] group-hover:translate-x-0.5 transition-all flex-shrink-0">
+                    <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </a>
+
+                {/* Phone */}
+                <a
+                  href="tel:+73812999999"
+                  className="group flex items-center gap-4 bg-white/[0.05] border border-white/[0.09] hover:border-green-500/50 hover:bg-green-500/10 rounded-2xl px-5 py-4 transition-all duration-200 cursor-pointer"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.9 10.82a19.79 19.79 0 01-3.07-8.63A2 2 0 012.82 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.09 7.91a16 16 0 006 6l.98-.98a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-bold text-sm">Позвонить</div>
+                    <div className="text-white/40 text-xs mt-0.5">+7 (381) 299-99-99</div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="text-white/25 group-hover:text-green-400 group-hover:translate-x-0.5 transition-all flex-shrink-0">
+                    <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </a>
+              </div>
+
+              <p className="text-white/20 text-xs text-center mt-6 leading-relaxed">
+                Консультация бесплатна&nbsp;&middot;&nbsp;Разработаем решение под ваш бизнес
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── 5. ФОРМА ЗАЯВКИ ─────────────────────────────────────── */}
       <section id="lead-form" className="py-16 sm:py-20 px-4 bg-surface dark:bg-dark-bg">
