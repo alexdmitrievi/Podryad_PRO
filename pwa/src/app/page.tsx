@@ -1070,9 +1070,7 @@ export default function HomePage() {
               <div className="space-y-3">
                 {/* MAX */}
                 <a
-                  href="https://max.im/podryad_pro"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="tel:+79620546601"
                   className="group flex items-center gap-4 bg-white/[0.05] border border-white/[0.09] hover:border-[#4287f5]/50 hover:bg-[#4287f5]/10 rounded-2xl px-5 py-4 transition-all duration-200 cursor-pointer"
                 >
                   <div className="w-11 h-11 rounded-xl bg-[#4287f5]/20 flex items-center justify-center flex-shrink-0">
@@ -1083,7 +1081,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-white font-bold text-sm">MAX</div>
-                    <div className="text-white/40 text-xs mt-0.5">Основной канал — отвечаем быстро</div>
+                    <div className="text-white/40 text-xs mt-0.5">+7 (962) 054-66-01</div>
                   </div>
                   <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="text-white/25 group-hover:text-[#4287f5] group-hover:translate-x-0.5 transition-all flex-shrink-0">
                     <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1092,7 +1090,7 @@ export default function HomePage() {
 
                 {/* Telegram */}
                 <a
-                  href="https://t.me/podryad_pro"
+                  href="https://t.me/zhbankov_alex"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex items-center gap-4 bg-white/[0.05] border border-white/[0.09] hover:border-[#2AABEE]/50 hover:bg-[#2AABEE]/10 rounded-2xl px-5 py-4 transition-all duration-200 cursor-pointer"
@@ -1105,7 +1103,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-white font-bold text-sm">Telegram</div>
-                    <div className="text-white/40 text-xs mt-0.5">Пишите в любое время суток</div>
+                    <div className="text-white/40 text-xs mt-0.5">@zhbankov_alex</div>
                   </div>
                   <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="text-white/25 group-hover:text-[#2AABEE] group-hover:translate-x-0.5 transition-all flex-shrink-0">
                     <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1114,7 +1112,7 @@ export default function HomePage() {
 
                 {/* Phone */}
                 <a
-                  href="tel:+73812999999"
+                  href="tel:+79620546601"
                   className="group flex items-center gap-4 bg-white/[0.05] border border-white/[0.09] hover:border-green-500/50 hover:bg-green-500/10 rounded-2xl px-5 py-4 transition-all duration-200 cursor-pointer"
                 >
                   <div className="w-11 h-11 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
@@ -1124,9 +1122,28 @@ export default function HomePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-white font-bold text-sm">Позвонить</div>
-                    <div className="text-white/40 text-xs mt-0.5">+7 (381) 299-99-99</div>
+                    <div className="text-white/40 text-xs mt-0.5">+7 (962) 054-66-01</div>
                   </div>
                   <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="text-white/25 group-hover:text-green-400 group-hover:translate-x-0.5 transition-all flex-shrink-0">
+                    <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </a>
+
+                {/* Email */}
+                <a
+                  href="mailto:ipzhbankov@yandex.ru"
+                  className="group flex items-center gap-4 bg-white/[0.05] border border-white/[0.09] hover:border-orange-500/50 hover:bg-orange-500/10 rounded-2xl px-5 py-4 transition-all duration-200 cursor-pointer"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-bold text-sm">Email</div>
+                    <div className="text-white/40 text-xs mt-0.5 truncate">ipzhbankov@yandex.ru</div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="text-white/25 group-hover:text-orange-400 group-hover:translate-x-0.5 transition-all flex-shrink-0">
                     <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </a>
