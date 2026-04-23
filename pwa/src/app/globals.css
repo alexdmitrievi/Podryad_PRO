@@ -732,6 +732,7 @@
 
 .card-lift {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
+  touch-action: manipulation;
 }
 
 @media (hover: hover) {
@@ -801,6 +802,13 @@
   .btn-animated-gradient {
     animation: none;
     background: #ffffff;
+  }
+
+  .service-icon-wrap,
+  .service-icon-wrap svg,
+  .service-icon-wrap.icon-revealed {
+    animation: none !important;
+    transition: none !important;
   }
 }
 
@@ -1092,9 +1100,8 @@
   animation: svc-icon-spring 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* MOBILE (no hover): scroll-reveal triggers color highlight — the
-   class is added once on first entry and stays, so the card keeps the
-   highlight after the user scrolls past (no blinking). */
+/* MOBILE (no hover): scroll-in-view toggles color highlight while
+   the icon is in the viewport focus band, then returns to default. */
 @media (hover: none) {
   .service-icon-wrap.icon-revealed {
     background: linear-gradient(135deg, #2F5BFF 0%, #6C5CE7 100%);

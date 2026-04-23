@@ -112,14 +112,9 @@ function useStaggerReveal() {
     // hero would fire IntersectionObserver on mount and icons would look
     // "highlighted by default" on mobile.
     let hasScrolled = false;
-    const pendingIcons: HTMLElement[] = [];
     const onScroll = () => {
       hasScrolled = true;
       window.removeEventListener('scroll', onScroll);
-      pendingIcons.forEach((iconWrap, i) => {
-        setTimeout(() => iconWrap.classList.add('icon-revealed'), i * 180);
-      });
-      pendingIcons.length = 0;
     };
     window.addEventListener('scroll', onScroll, { passive: true });
 
@@ -144,22 +139,25 @@ function useStaggerReveal() {
     );
 
     // Observer 2: icon highlight — observes the icon element directly
-    // and fires only when it is fully inside a narrow central band of
-    // the viewport. On a mobile 1-col grid icons sit ~500px apart, so
-    // only one icon can be inside the band at a time — they light up
-    // strictly one-by-one as the user scrolls. The class is added once
-    // and persists (no blinking when the card scrolls out of band).
+    // and toggles highlight only while the icon is inside a narrow
+    // central viewport band. On mobile this mirrors hover-like feedback
+    // during scroll and resets to default after the card is passed.
     const iconObs = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
-          if (!entry.isIntersecting) return;
           const iconWrap = entry.target as HTMLElement;
-          iconObs.unobserve(iconWrap);
-          if (hasScrolled) {
+          if (!hasScrolled) {
+            iconWrap.classList.remove('icon-revealed');
+            return;
+          }
+
+          if (entry.isIntersecting) {
             iconWrap.classList.add('icon-revealed');
           } else {
-            pendingIcons.push(iconWrap);
+            iconWrap.classList.remove('icon-revealed');
           }
+
+          return;
         });
       },
       { threshold: 1, rootMargin: '-40% 0px -40% 0px' },
@@ -481,13 +479,13 @@ export default function HomePage() {
               <div className="p-6 flex flex-col flex-1">
                 {!siteImages['hero.labor'] && (
                   <div className="service-icon-wrap mb-5">
-                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
                 )}
                 <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Рабочая сила</h3>
-                <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">Бригады от 2 до 15 человек</p>
+                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Бригады от 2 до 15 человек</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
                   {[
                     { label: 'Грузчики', price: 'от 350 ₽/ч' },
@@ -496,14 +494,14 @@ export default function HomePage() {
                     { label: 'Ремонт', price: 'от 500 ₽/ч' },
                   ].map((row) => (
                     <li key={row.label} className="flex justify-between items-center gap-2">
-                      <span className="text-gray-600 dark:text-dark-text truncate">{row.label}</span>
+                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0">{row.label}</span>
                       <span className="price-label whitespace-nowrap">{row.price}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
+                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
                   <span>Смотреть каталог</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
             </Link>
@@ -527,27 +525,27 @@ export default function HomePage() {
               <div className="p-6 flex flex-col flex-1">
                 {!siteImages['hero.equipment'] && (
                   <div className="service-icon-wrap mb-5">
-                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
                 )}
                 <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Аренда техники</h3>
-                <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">От тяжёлой до садовой</p>
+                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">От тяжёлой до садовой</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
                   {(equipment.length > 0 ? equipment : FALLBACK_EQUIPMENT).slice(0, 4).map((l) => (
                     <li key={l.listing_id} className="flex justify-between items-center gap-2">
-                      <span className="text-gray-600 dark:text-dark-text truncate">{l.title}</span>
+                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0">{l.title}</span>
                       <span className="price-label whitespace-nowrap">
                         {l.display_price.toLocaleString('ru-RU')} ₽/{l.price_unit}
                       </span>
                     </li>
                   ))}
                 </ul>
-                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
+                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
                   <span>Смотреть каталог</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
             </Link>
@@ -571,26 +569,26 @@ export default function HomePage() {
               <div className="p-6 flex flex-col flex-1">
                 {!siteImages['hero.materials'] && (
                   <div className="service-icon-wrap mb-5">
-                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300">
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                   </div>
                 )}
                 <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Стройматериалы</h3>
-                <p className="text-gray-400 dark:text-dark-muted text-xs mb-4 font-medium">Доставка по городу</p>
+                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Доставка по городу</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
                   {(materials.length > 0 ? materials : FALLBACK_MATERIALS).slice(0, 4).map((l) => (
                     <li key={l.listing_id} className="flex justify-between items-center gap-2">
-                      <span className="text-gray-600 dark:text-dark-text truncate">{l.title}</span>
+                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0">{l.title}</span>
                       <span className="price-label whitespace-nowrap">
                         {l.display_price.toLocaleString('ru-RU')} ₽/{l.price_unit}
                       </span>
                     </li>
                   ))}
                 </ul>
-                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
+                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
                   <span>Смотреть каталог</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
             </Link>
@@ -623,7 +621,7 @@ export default function HomePage() {
 
               {/* Ribbon — "−20%" */}
               <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1a2e] text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg tracking-wide">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
                 </svg>
                 −20%
@@ -631,12 +629,12 @@ export default function HomePage() {
 
               <div className="relative z-[1] flex flex-col h-full">
                 <div className="service-icon-wrap service-icon--amber mb-5">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                   </svg>
                 </div>
                 <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">Выгодно<br/>от Подряд PRO</h3>
-                <p className="text-white/60 text-xs mb-4 font-medium">Собственный парк</p>
+                <p className="text-white/80 text-xs mb-4 font-medium">Собственный парк</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
                   {[
                     { label: 'Техника', price: '−20%' },
@@ -645,14 +643,14 @@ export default function HomePage() {
                     { label: 'Эскроу', price: 'всегда' },
                   ].map((row) => (
                     <li key={row.label} className="flex justify-between items-center gap-2">
-                      <span className="text-white/80 truncate">{row.label}</span>
+                      <span className="text-white/90 truncate min-w-0">{row.label}</span>
                       <span className="text-amber-300 text-xs font-semibold whitespace-nowrap">{row.price}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
+                <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
                   <span>Смотреть предложения</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
             </Link>
@@ -661,6 +659,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setAiAgentModalOpen(true)}
+              aria-label="Заказать ИИ-агента"
               className="group relative overflow-hidden rounded-2xl p-6 card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 text-white text-left"
               style={{ background: 'linear-gradient(135deg, #6C5CE7 0%, #2F5BFF 100%)' }}
             >
@@ -670,15 +669,15 @@ export default function HomePage() {
 
               {/* Ribbon — NEW */}
               <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 bg-white text-[#2F5BFF] text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg tracking-wide">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
                 </svg>
-                NEW
+                НОВИНКА
               </div>
 
               <div className="relative z-[1] flex flex-col h-full">
                 <div className="service-icon-wrap service-icon--amber mb-5">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <rect x="3" y="4" width="18" height="12" rx="2"/>
                     <path d="M8 20h8"/>
                     <path d="M12 16v4"/>
@@ -687,7 +686,7 @@ export default function HomePage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">ИИ-сотрудник</h3>
-                <p className="text-white/65 text-xs mb-4 font-medium">Автоматизация 24/7</p>
+                <p className="text-white/80 text-xs mb-4 font-medium">Автоматизация 24/7</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
                   {[
                     { label: 'Работает', price: '24/7' },
@@ -696,14 +695,14 @@ export default function HomePage() {
                     { label: 'Запуск', price: 'за 1 день' },
                   ].map((row) => (
                     <li key={row.label} className="flex justify-between items-center gap-2">
-                      <span className="text-white/85 truncate">{row.label}</span>
-                      <span className="text-[#FF6B35] text-xs font-semibold whitespace-nowrap" style={{ textShadow: '0 0 12px rgba(255,107,53,0.4)' }}>{row.price}</span>
+                      <span className="text-white/85 truncate min-w-0">{row.label}</span>
+                      <span className="text-[#FFB347] text-xs font-semibold whitespace-nowrap" style={{ textShadow: '0 0 10px rgba(255,179,71,0.35)' }}>{row.price}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="flex items-center gap-1.5 text-white font-semibold text-sm group-hover:gap-2.5 transition-all duration-300 mt-auto">
+                <div className="flex items-center gap-1.5 text-white font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
                   <span>Заказать ИИ-агента</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
             </button>
