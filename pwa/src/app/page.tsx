@@ -117,7 +117,7 @@ function useStaggerReveal() {
       hasScrolled = true;
       window.removeEventListener('scroll', onScroll);
       pendingIcons.forEach((iconWrap, i) => {
-        setTimeout(() => iconWrap.classList.add('icon-revealed', 'icon-active'), i * 180);
+        setTimeout(() => iconWrap.classList.add('icon-revealed'), i * 180);
       });
       pendingIcons.length = 0;
     };
@@ -143,23 +143,22 @@ function useStaggerReveal() {
       { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
     );
 
-    // Observer 2: icon highlight — toggles `icon-active` based on whether
-    // the icon is inside a narrow central band of the viewport. Add on
-    // enter, remove on exit, so only the currently-centered icon lights
-    // up (mirroring desktop hover behaviour). `icon-revealed` is also
-    // added on first entry to play the spring animation once.
+    // Observer 2: icon highlight — observes the icon element directly
+    // and fires only when it is fully inside a narrow central band of
+    // the viewport. On a mobile 1-col grid icons sit ~500px apart, so
+    // only one icon can be inside the band at a time — they light up
+    // strictly one-by-one as the user scrolls. The class is added once
+    // and persists (no blinking when the card scrolls out of band).
     const iconObs = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
           const iconWrap = entry.target as HTMLElement;
-          if (entry.isIntersecting) {
-            if (hasScrolled) {
-              iconWrap.classList.add('icon-revealed', 'icon-active');
-            } else {
-              if (!pendingIcons.includes(iconWrap)) pendingIcons.push(iconWrap);
-            }
+          iconObs.unobserve(iconWrap);
+          if (hasScrolled) {
+            iconWrap.classList.add('icon-revealed');
           } else {
-            iconWrap.classList.remove('icon-active');
+            pendingIcons.push(iconWrap);
           }
         });
       },
@@ -678,13 +677,13 @@ export default function HomePage() {
               </div>
 
               <div className="relative z-[1] flex flex-col h-full">
-                <div className="service-icon-wrap mb-5" style={{ background: 'rgba(255,255,255,0.18)' }}>
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <div className="service-icon-wrap service-icon--amber mb-5">
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="4" width="18" height="12" rx="2"/>
                     <path d="M8 20h8"/>
                     <path d="M12 16v4"/>
-                    <circle cx="9" cy="10" r="1" fill="#fff"/>
-                    <circle cx="15" cy="10" r="1" fill="#fff"/>
+                    <circle cx="9" cy="10" r="1" fill="currentColor"/>
+                    <circle cx="15" cy="10" r="1" fill="currentColor"/>
                   </svg>
                 </div>
                 <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">ИИ-сотрудник</h3>
