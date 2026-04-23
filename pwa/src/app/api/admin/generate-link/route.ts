@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 
+function verifyPin(pin: string): boolean {
+  const adminPin = process.env.ADMIN_PIN;
+  if (!adminPin) return false;
+  const a = Buffer.from(pin);
+  const b = Buffer.from(adminPin);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 export async function POST(req: NextRequest) {
+  const pin = req.headers.get('x-admin-pin') || '';
+  if (!verifyPin(pin)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   let body: { name?: string; phone?: string };
   try {
     body = await req.json();
