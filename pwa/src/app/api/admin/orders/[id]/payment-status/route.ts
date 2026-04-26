@@ -65,13 +65,19 @@ export async function PUT(
     .from('orders')
     .update(updates)
     .eq('order_id', orderId)
-    .select('order_id, customer_phone, customer_name, work_type, display_price, customer_total, supplier_payout, executor_phone, address')
+    .select('order_id, customer_phone, customer_name, work_type, display_price, customer_total, supplier_payout, address, contractor:contractors(phone)')
     .single();
 
   if (error) {
     console.error('payment-status PUT:', error);
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
+
+  // Supabase возвращает join либо как массив, либо как объект — нормализуем.
+  const contractorRel = (updated as Record<string, unknown> | null)?.contractor;
+  const executorPhone = Array.isArray(contractorRel)
+    ? (contractorRel[0] as { phone?: string } | undefined)?.phone
+    : (contractorRel as { phone?: string } | null | undefined)?.phone;
 
   // Fire-and-forget webhooks on state transitions
   if (payment_status === 'paid') {
@@ -103,7 +109,7 @@ export async function PUT(
         body: JSON.stringify({
           event: 'executor_payout_paid',
           order_id: orderId,
-          executor_phone: updated?.executor_phone,
+          executor_phone: executorPhone ?? null,
           work_type: updated?.work_type,
           payout_amount: updated?.supplier_payout,
           paid_at: updates.executor_payout_at,

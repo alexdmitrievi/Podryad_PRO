@@ -31,8 +31,7 @@ describe('OpenAIClient', () => {
 
       await client.chat({
         channel: 'telegram',
-        user_id: 'test',
-        text: 'Привет',
+        message: 'Привет',
         history: [],
       });
 
@@ -56,8 +55,7 @@ describe('OpenAIClient', () => {
 
       const response = await client.chat({
         channel: 'max',
-        user_id: 'test',
-        text: 'Привет',
+        message: 'Привет',
         history: [],
       });
 

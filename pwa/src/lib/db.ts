@@ -3,6 +3,22 @@ import { getServiceClient } from './supabase';
 
 const db = () => getServiceClient();
 
+/**
+ * Маппинг legacy-статусов из исходной schema.sql в новый lifecycle (мигр. 020/023).
+ * Старые строки могут содержать `done`/`closed`/`published` — переводим к ближайшему
+ * семантическому эквиваленту, чтобы UI (Badge, типы) не падали.
+ */
+const LEGACY_STATUS_MAP: Record<string, Order['status']> = {
+  done: 'completed',
+  closed: 'completed',
+  published: 'paid',
+};
+
+function normalizeStatus(raw: unknown): Order['status'] {
+  const s = String(raw ?? 'pending');
+  return (LEGACY_STATUS_MAP[s] ?? s) as Order['status'];
+}
+
 /** Приводит строку из Supabase к типу Order (order_id в БД — TEXT). */
 export function orderFromDb(row: Record<string, unknown>): Order {
   const oid = row.order_id;
@@ -20,7 +36,7 @@ export function orderFromDb(row: Record<string, unknown>): Order {
     hours: Number(row.hours) || 0,
     work_type: String(row.work_type ?? ''),
     comment: row.comment != null ? String(row.comment) : undefined,
-    status: row.status as Order['status'],
+    status: normalizeStatus(row.status),
     executor_id: row.executor_id != null ? String(row.executor_id) : undefined,
     message_id: row.message_id != null ? String(row.message_id) : undefined,
     created_at: row.created_at != null ? String(row.created_at) : '',
@@ -53,7 +69,7 @@ export async function getActiveOrders() {
   const { data, error } = await db()
     .from('orders')
     .select('*')
-    .in('status', ['pending', 'priced', 'payment_sent', 'paid', 'in_progress'])
+    .in('status', ['pending', 'priced', 'payment_sent', 'paid', 'in_progress', 'confirming'])
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data || [];

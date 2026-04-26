@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
-import { getOrderById, updateOrder, createDispute, getDisputesByOrder, updateDispute } from '@/lib/db';
+import { getOrderById, updateOrder, createDispute, getDisputesByOrder, updateDispute, getContractorById } from '@/lib/db';
 
 export async function POST(
   req: Request,
@@ -143,6 +143,16 @@ export async function PATCH(
       resolved_at: resolvedAt,
     });
 
+    // executor_phone хранится в contractors, не в orders. Подтянем по contractor_id.
+    const contractorId = (order as Record<string, unknown>).contractor_id;
+    let executorPhone: string | null = null;
+    if (typeof contractorId === 'string' && contractorId) {
+      try {
+        const contractor = await getContractorById(contractorId);
+        executorPhone = (contractor as Record<string, unknown> | null)?.phone as string ?? null;
+      } catch { /* контрактор может быть удалён — оставим null */ }
+    }
+
     // Fire-and-forget: notify both sides when dispute is resolved
     const resolvedUrl = process.env.N8N_DISPUTE_RESOLVED_WEBHOOK_URL;
     if (resolvedUrl) {
@@ -156,7 +166,7 @@ export async function PATCH(
           resolution,
           resolved_at: resolvedAt,
           customer_phone: (order as Record<string, unknown>).customer_phone,
-          executor_phone: (order as Record<string, unknown>).executor_phone,
+          executor_phone: executorPhone,
         }),
       }).catch((err) => console.error('n8n dispute_resolved webhook error (non-blocking):', err));
     }
