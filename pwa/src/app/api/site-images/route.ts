@@ -8,7 +8,7 @@ import { getServiceClient } from '@/lib/supabase';
  *
  * Response: { images: { [slug: string]: string | null } }
  */
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const db = getServiceClient();
