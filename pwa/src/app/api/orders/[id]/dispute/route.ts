@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getOrderById, updateOrder, createDispute, getDisputesByOrder, updateDispute } from '@/lib/db';
 import { getServiceClient } from '@/lib/supabase';
+import { enqueueJob } from '@/lib/job-queue';
 
 async function resolveExecutorPhone(
   contractorId?: string | null,
@@ -84,21 +85,25 @@ export async function POST(
     // Update order status to 'disputed'
     await updateOrder(id, { status: 'disputed' });
 
-    // Fire-and-forget: admin notification on dispute opened
-    const openedUrl = process.env.N8N_DISPUTE_OPENED_WEBHOOK_URL;
-    if (openedUrl) {
-      fetch(openedUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+    try {
+      await enqueueJob({
+        queueName: 'disputes',
+        jobType: 'dispute.opened',
+        dedupeKey: `dispute.opened:${id}:${String((dispute as Record<string, unknown>).id)}`,
+        payload: {
           event: 'dispute_opened',
           order_id: id,
           dispute_id: (dispute as Record<string, unknown>).id,
           initiated_by: initiatedBy,
           reason: reason.trim(),
           description: typeof description === 'string' ? description : null,
-        }),
-      }).catch((err) => console.error('n8n dispute_opened webhook error (non-blocking):', err));
+        },
+        sourceTable: 'disputes',
+        sourceId: String((dispute as Record<string, unknown>).id),
+        createdBy: 'api/orders/dispute:post',
+      });
+    } catch (error) {
+      console.error('enqueue dispute.opened failed (non-blocking):', error);
     }
 
     return NextResponse.json(
@@ -182,13 +187,12 @@ export async function PATCH(
         : null,
     );
 
-    // Fire-and-forget: notify both sides when dispute is resolved
-    const resolvedUrl = process.env.N8N_DISPUTE_RESOLVED_WEBHOOK_URL;
-    if (resolvedUrl) {
-      fetch(resolvedUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+    try {
+      await enqueueJob({
+        queueName: 'disputes',
+        jobType: 'dispute.resolved',
+        dedupeKey: `dispute.resolved:${id}:${String(pendingDispute.id)}:${resolution}`,
+        payload: {
           event: 'dispute_resolved',
           order_id: id,
           dispute_id: pendingDispute.id,
@@ -196,8 +200,13 @@ export async function PATCH(
           resolved_at: resolvedAt,
           customer_phone: (order as Record<string, unknown>).customer_phone,
           executor_phone: executorPhone,
-        }),
-      }).catch((err) => console.error('n8n dispute_resolved webhook error (non-blocking):', err));
+        },
+        sourceTable: 'disputes',
+        sourceId: String(pendingDispute.id),
+        createdBy: 'api/orders/dispute:patch',
+      });
+    } catch (error) {
+      console.error('enqueue dispute.resolved failed (non-blocking):', error);
     }
 
     return NextResponse.json({ ok: true, resolution });

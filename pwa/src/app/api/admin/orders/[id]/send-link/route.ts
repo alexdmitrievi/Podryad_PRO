@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { getOrCreateCustomerToken } from '@/lib/db';
+import { enqueueJob } from '@/lib/job-queue';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -64,23 +65,25 @@ export async function POST(
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 
-  // Fire-and-forget n8n webhook
-  const webhookUrl = process.env.N8N_SEND_PAYMENT_LINK_WEBHOOK_URL;
-  if (webhookUrl) {
-    fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+  try {
+    await enqueueJob({
+      queueName: 'customer',
+      jobType: 'customer.send_payment_link',
+      dedupeKey: `customer.send_payment_link:${orderId}:${access_token}`,
+      payload: {
         order_id: orderId,
         phone: order.customer_phone,
         access_token,
         preferred_contact: order.preferred_contact ?? null,
         messenger_id: messenger_id ?? null,
         display_price: order.display_price ?? null,
-      }),
-    }).catch((err) => {
-      console.error(`n8n webhook fire-and-forget failed for order ${orderId}:`, err);
+      },
+      sourceTable: 'orders',
+      sourceId: orderId,
+      createdBy: 'api/admin/orders/send-link',
     });
+  } catch (error) {
+    console.error(`enqueue customer.send_payment_link failed for order ${orderId} (non-blocking):`, error);
   }
 
   return NextResponse.json({ ok: true, access_token });

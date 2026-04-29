@@ -80,6 +80,34 @@ N8N_DISPUTE_RESOLVED_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/dispute-r
 Cron (n8n)                              → 06 (analytics), 07 (max-crosspost), 19 (avito-nurture)
 ```
 
+## Целевая карта миграции (n8n → Vercel + Supabase job_queue)
+
+| # | Текущий workflow | Целевой `queue_name / job_type` | Кто ставит job | Что делает handler |
+|---|------------------|----------------------------------|----------------|--------------------|
+| 06 | `06-daily-analytics.json` | `analytics / analytics.daily_admin_report` | Vercel Cron (`20:00 MSK`) | Собирает дневную аналитику и отправляет админский отчёт |
+| 07 | `07-max-crosspost.json` | `marketplace / marketplace.max_crosspost_paid_orders` | Vercel Cron (`*/2 * * * *`) | Ищет оплаченные заказы без MAX-публикации и постит их в канал |
+| 11 | `11-lead-notification.json` | `notifications / notify.lead_created` и `notifications / notify.executor_response_received` | `/api/leads`, `/api/orders/create`, `/api/catalog-orders`, `/api/orders/respond` | Разделяет текущий смешанный webhook на отдельные уведомления по лидам и откликам исполнителей |
+| 12 | `12-payment-held.json` | `notifications / notify.payment_held` | `/api/admin/orders/[id]/payment-status` | Уведомляет админа об удержании платежа |
+| 13 | `13-payout-notification.json` | `notifications / notify.payout_initiated` | `/api/admin/orders/[id]/payment-status` | Уведомляет о запуске выплаты исполнителю |
+| 14 | `14-order-created.json` | `notifications / notify.order_created` | `/api/orders` | Уведомляет о новом заказе из PWA |
+| 15 | `15-contractor-registered.json` | `notifications / notify.contractor_registered` | `/api/contractors` | Уведомляет о новом исполнителе |
+| 16 | `16-send-dashboard-link.json` | `customer / customer.send_dashboard_link` | `/api/my/recover` | Отправляет заказчику ссылку на `/my/{token}` |
+| 17 | `17-send-invoice.json` | `customer / customer.send_invoice` | `/api/admin/orders/[id]/send-invoice` | Отправляет счёт / реквизиты клиенту |
+| 18 | `18-customer-lead-nurture.json` | `crm / crm.customer_nurture_step` | Lead/create handler enqueue-ит welcome + delayed jobs через `run_at` | Выполняет nurture-цепочку заказчика (`welcome`, `+2h`, `+24h`, `+72h`) с RAG-контекстом |
+| 19 | `19-executor-avito-nurture.json` | `crm / crm.executor_prospect_followup` | Prospect create/stage-change handler enqueue-ит follow-up jobs; опционально safety sweep cron раз в 6 часов | Ведёт цепочку касаний по исполнителям и инвайты в регистрацию |
+| 20 | `20-crm-conversion-tracker.json` | `crm / crm.conversion_event` | `/api/contractors`, `/api/crm/update-stage`, order/contractor domain events | Идемпотентно обновляет стадии CRM и связанные поля конверсии |
+| 21 | `21-dispute-opened.json` | `disputes / dispute.opened` | `/api/orders/[id]/dispute` (`POST`) | Уведомляет админа об открытом споре |
+| 22 | `22-dispute-resolved.json` | `disputes / dispute.resolved` | `/api/orders/[id]/dispute` (`PATCH`) | Уведомляет стороны о результате спора |
+| 23 | `23-send-payment-link.json` | `customer / customer.send_payment_link` | `/api/admin/orders/[id]/send-link` | Отправляет клиенту ссылку на оплату и статус заказа |
+| 24 | `24-crm-prospect-events.json` | `crm / crm.prospect_stage_event` | `/api/admin/crm/prospects` | Шлёт уведомления по ручному CRM-ведению prospect-ов и смене стадии |
+
+### Примечания к миграции
+
+- `06`, `07` и `19` больше не нуждаются в n8n Cron Trigger: их запускает Vercel Cron, а сама работа идёт через `job_queue`.
+- `11` намеренно разбит на два `job_type`, потому что лиды и отклики исполнителей имеют разную полезную нагрузку и разные шаблоны сообщений.
+- `18` и `19` лучше хранить как серию обычных delayed jobs с `run_at`, а не как длинный сценарий в одном workflow.
+- Весь критический side effect должен идти по схеме: `DB write -> enqueue job -> worker handler`, без прямого fire-and-forget `fetch()` во внешнюю автоматику.
+
 ## RAG-архитектура (workflows 18, 19)
 
 Оба CRM-агента используют **RAG** (Retrieval-Augmented Generation):

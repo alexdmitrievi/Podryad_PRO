@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { enqueueJob } from '@/lib/job-queue';
 
 async function resolveExecutorPhone(
   supabase: ReturnType<typeof getServiceClient>,
@@ -109,14 +110,13 @@ export async function PUT(
     updated?.executor_id != null ? String(updated.executor_id) : null,
   );
 
-  // Fire-and-forget webhooks on state transitions
   if (payment_status === 'paid') {
-    const url = process.env.N8N_PAYMENT_HELD_WEBHOOK_URL;
-    if (url) {
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+    try {
+      await enqueueJob({
+        queueName: 'notifications',
+        jobType: 'notify.payment_held',
+        dedupeKey: `notify.payment_held:${orderId}:${String(updates.payment_paid_at)}`,
+        payload: {
           event: 'payment_held',
           order_id: orderId,
           customer_phone: updated?.customer_phone,
@@ -125,26 +125,36 @@ export async function PUT(
           amount: updated?.display_price ?? updated?.customer_total,
           address: updated?.address,
           paid_at: updates.payment_paid_at,
-        }),
-      }).catch((err) => console.error('n8n payment_held webhook error (non-blocking):', err));
+        },
+        sourceTable: 'orders',
+        sourceId: orderId,
+        createdBy: 'api/admin/orders/payment-status',
+      });
+    } catch (error) {
+      console.error('enqueue notify.payment_held failed (non-blocking):', error);
     }
   }
 
   if (executor_payout_status === 'paid') {
-    const url = process.env.N8N_PAYOUT_WEBHOOK_URL;
-    if (url) {
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+    try {
+      await enqueueJob({
+        queueName: 'notifications',
+        jobType: 'notify.payout_initiated',
+        dedupeKey: `notify.payout_initiated:${orderId}:${String(updates.executor_payout_at)}`,
+        payload: {
           event: 'executor_payout_paid',
           order_id: orderId,
           executor_phone: executorPhone,
           work_type: updated?.work_type,
           payout_amount: updated?.supplier_payout,
           paid_at: updates.executor_payout_at,
-        }),
-      }).catch((err) => console.error('n8n payout webhook error (non-blocking):', err));
+        },
+        sourceTable: 'orders',
+        sourceId: orderId,
+        createdBy: 'api/admin/orders/payment-status',
+      });
+    } catch (error) {
+      console.error('enqueue notify.payout_initiated failed (non-blocking):', error);
     }
   }
 
