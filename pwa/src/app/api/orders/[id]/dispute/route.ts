@@ -1,6 +1,36 @@
 import { NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getOrderById, updateOrder, createDispute, getDisputesByOrder, updateDispute } from '@/lib/db';
+import { getServiceClient } from '@/lib/supabase';
+
+async function resolveExecutorPhone(
+  contractorId?: string | null,
+  executorId?: string | null,
+): Promise<string | null> {
+  if (contractorId) {
+    const { data: contractor } = await getServiceClient()
+      .from('contractors')
+      .select('phone')
+      .eq('id', contractorId)
+      .maybeSingle();
+
+    if (contractor?.phone) {
+      return String(contractor.phone);
+    }
+  }
+
+  if (!executorId) {
+    return null;
+  }
+
+  const rawExecutorId = String(executorId);
+  const regMatch = rawExecutorId.match(/^reg:(\d+)$/);
+  if (regMatch) {
+    return regMatch[1];
+  }
+
+  return /^\d{10,}$/.test(rawExecutorId) ? rawExecutorId : null;
+}
 
 export async function POST(
   req: Request,
@@ -143,6 +173,15 @@ export async function PATCH(
       resolved_at: resolvedAt,
     });
 
+    const executorPhone = await resolveExecutorPhone(
+      (order as Record<string, unknown>).contractor_id != null
+        ? String((order as Record<string, unknown>).contractor_id)
+        : null,
+      (order as Record<string, unknown>).executor_id != null
+        ? String((order as Record<string, unknown>).executor_id)
+        : null,
+    );
+
     // Fire-and-forget: notify both sides when dispute is resolved
     const resolvedUrl = process.env.N8N_DISPUTE_RESOLVED_WEBHOOK_URL;
     if (resolvedUrl) {
@@ -156,7 +195,7 @@ export async function PATCH(
           resolution,
           resolved_at: resolvedAt,
           customer_phone: (order as Record<string, unknown>).customer_phone,
-          executor_phone: (order as Record<string, unknown>).executor_phone,
+          executor_phone: executorPhone,
         }),
       }).catch((err) => console.error('n8n dispute_resolved webhook error (non-blocking):', err));
     }

@@ -1,25 +1,25 @@
 {
-  "name": "Подряд PRO — 16 Send Dashboard Link",
+  "name": "Подряд PRO — 23 Send Payment Link",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "send-dashboard-link",
+        "path": "send-payment-link",
         "options": { "responseMode": "onReceived" }
       },
-      "id": "dash-wh-001",
-      "name": "Webhook Dashboard",
+      "id": "spl-wh-001",
+      "name": "Webhook Payment Link",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [0, 300],
-      "webhookId": "podryad-send-dashboard-link"
+      "webhookId": "podryad-send-payment-link"
     },
     {
       "parameters": {
-        "jsCode": "const root = $('Webhook Dashboard').first().json;\nconst b = root.body || root;\nconst preferred_contact = String(b.preferred_contact || '').toLowerCase();\nconst accessToken = String(b.access_token || '');\nconst dashboard_url = accessToken\n  ? `https://podryad.pro/my/${accessToken}`\n  : String(b.dashboard_url || 'https://podryad.pro/my');\nconst messengerId = b.messenger_id || null;\nconst telegram_chat_id = (preferred_contact === 'telegram' && messengerId)\n  ? String(messengerId)\n  : (b.telegram_chat_id ? String(b.telegram_chat_id) : null);\nconst max_user_id = (preferred_contact === 'max' && messengerId)\n  ? String(messengerId)\n  : (b.max_user_id ? String(b.max_user_id) : null);\nconst name = String(b.name || 'Пользователь');\nreturn [{ json: { preferred_contact, dashboard_url, telegram_chat_id, max_user_id, name } }];"
+        "jsCode": "const root = $('Webhook Payment Link').first().json;\nconst b = root.body || root;\nconst preferred_contact = String(b.preferred_contact || '').toLowerCase();\nconst accessToken = String(b.access_token || '');\nconst orderId = String(b.order_id || '');\nconst amount = b.display_price != null ? Number(b.display_price).toLocaleString('ru-RU') + ' ₽' : null;\nconst dashboardUrl = accessToken ? `https://podryad.pro/my/${accessToken}` : 'https://podryad.pro/my';\nconst messengerId = b.messenger_id || null;\nconst telegram_chat_id = (preferred_contact === 'telegram' && messengerId)\n  ? String(messengerId)\n  : (b.telegram_chat_id ? String(b.telegram_chat_id) : null);\nconst max_user_id = (preferred_contact === 'max' && messengerId)\n  ? String(messengerId)\n  : (b.max_user_id ? String(b.max_user_id) : null);\nconst amountLine = amount ? `\\n💰 Сумма: ${amount}` : '';\nconst orderLine = orderId ? `\\n🧾 Заказ: ${orderId}` : '';\nconst customerText = `💳 *Заказ готов к оплате*${orderLine}${amountLine}\\n\\n🔗 Личный кабинет: ${dashboardUrl}\\n\\nЕсли реквизиты СБП или счёт уже отправлены менеджером, после оплаты просто ответьте на это сообщение.`;\nreturn [{ json: { preferred_contact, dashboardUrl, customerText, telegram_chat_id, max_user_id, orderId } }];"
       },
-      "id": "dash-parse-002",
-      "name": "Parse Payload",
+      "id": "spl-build-002",
+      "name": "Build Payment Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [240, 300]
@@ -35,10 +35,10 @@
           ]
         }
       },
-      "id": "dash-switch-003",
+      "id": "spl-route-max-003",
       "name": "Route MAX?",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [480, 300]
     },
     {
@@ -52,10 +52,10 @@
           ]
         }
       },
-      "id": "dash-if-telegram-010",
+      "id": "spl-route-telegram-004",
       "name": "Route Telegram?",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [740, 520]
     },
     {
@@ -64,10 +64,10 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: $json.telegram_chat_id || Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '📊 Ваш личный кабинет готов!\\n\\n🔗 ' + $json.dashboard_url, parse_mode: 'Markdown' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: $json.telegram_chat_id || Number($env.TELEGRAM_ADMIN_CHAT_ID), text: $json.customerText, parse_mode: 'Markdown' }) }}",
         "options": { "timeout": 10000 }
       },
-      "id": "dash-tg-send-004",
+      "id": "spl-tg-005",
       "name": "Send via Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -86,10 +86,10 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ text: '📊 Ваш личный кабинет готов!\\n\\n🔗 ' + $json.dashboard_url, format: 'markdown' }) }}",
+        "jsonBody": "={{ JSON.stringify({ text: $json.customerText, format: 'markdown' }) }}",
         "options": { "timeout": 10000 }
       },
-      "id": "dash-max-send-006",
+      "id": "spl-max-006",
       "name": "Send via MAX",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -101,10 +101,10 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '📋 *Ручная отправка ссылки*\\n\\nИсполнитель: ' + $json.name + '\\nКонтакт: ' + $json.preferred_contact + '\\nСсылка: ' + $json.dashboard_url + '\\n\\nОтправьте ссылку вручную!', parse_mode: 'Markdown' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '📋 *Ручная отправка платёжной ссылки*\\n\\nЗаказ: ' + ($json.orderId || '—') + '\\nСсылка: ' + $json.dashboardUrl + '\\n\\nОтправьте клиенту ссылку вручную.', parse_mode: 'Markdown' }) }}",
         "options": { "timeout": 10000 }
       },
-      "id": "dash-manual-007",
+      "id": "spl-manual-007",
       "name": "Notify Admin Manual",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -112,7 +112,7 @@
     },
     {
       "parameters": {},
-      "id": "dash-error-008",
+      "id": "spl-error-008",
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
@@ -124,10 +124,10 @@
         "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🚨 *ОШИБКА в Send Dashboard Link*\\n\\nNode: ' + $json.execution.error.node.name + '\\nОшибка: ' + $json.execution.error.message, parse_mode: 'Markdown' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🚨 *ОШИБКА в Send Payment Link*\\n\\nNode: ' + $json.execution.error.node.name + '\\nОшибка: ' + $json.execution.error.message, parse_mode: 'Markdown' }) }}",
         "options": { "timeout": 10000 }
       },
-      "id": "dash-error-notify-009",
+      "id": "spl-error-notify-009",
       "name": "Notify Admin Error",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -135,13 +135,11 @@
     }
   ],
   "connections": {
-    "Webhook Dashboard": {
-      "main": [[{ "node": "Parse Payload", "type": "main", "index": 0 }]]
+    "Webhook Payment Link": {
+      "main": [[{ "node": "Build Payment Message", "type": "main", "index": 0 }]]
     },
-    "Parse Payload": {
-      "main": [
-        [{ "node": "Route MAX?", "type": "main", "index": 0 }]
-      ]
+    "Build Payment Message": {
+      "main": [[{ "node": "Route MAX?", "type": "main", "index": 0 }]]
     },
     "Route MAX?": {
       "main": [
@@ -161,5 +159,5 @@
   },
   "active": false,
   "settings": { "executionOrder": "v1" },
-  "tags": [{ "name": "podryad-pro" }, { "name": "contractors" }, { "name": "dashboard" }]
+  "tags": [{ "name": "podryad-pro" }, { "name": "payments" }, { "name": "customer" }]
 }

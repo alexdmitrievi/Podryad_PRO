@@ -147,6 +147,12 @@ export async function PUT(req: NextRequest) {
   }
 
   const db = getServiceClient();
+  const { data: existingProspect } = await db
+    .from('crm_executor_prospects')
+    .select('id, stage, phone, name, city, specialties, source, max_id, telegram_id, email, next_followup_at')
+    .eq('id', body.id)
+    .maybeSingle();
+
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
   if (body.stage !== undefined) updates.stage = body.stage;
@@ -161,34 +167,31 @@ export async function PUT(req: NextRequest) {
   if (body.specialties !== undefined) updates.specialties = body.specialties;
   if (body.next_followup_at !== undefined) updates.next_followup_at = body.next_followup_at;
 
-  // If moving to contact_collected and we have a phone, fire invite webhook
-  if (body.stage === 'contact_collected' || body.stage === 'invite_sent') {
-    const n8nConvWebhook = process.env.N8N_CRM_CONVERSION_WEBHOOK_URL;
-    if (n8nConvWebhook) {
-      const { data: existing } = await db
-        .from('crm_executor_prospects')
-        .select('phone')
-        .eq('id', body.id)
-        .single();
-      if (existing?.phone) {
-        fetch(n8nConvWebhook, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event: 'prospect_stage_updated',
-            phone: existing.phone,
-            new_stage: body.stage,
-            entity_id: String(body.id),
-          }),
-        }).catch(() => { /* non-blocking */ });
-      }
-    }
-  }
-
   const { error } = await db.from('crm_executor_prospects').update(updates).eq('id', body.id);
   if (error) {
     console.error('PUT /api/admin/crm/prospects:', error);
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  }
+
+  const prospectWebhook = process.env.N8N_CRM_PROSPECT_WEBHOOK_URL;
+  const stageChanged = body.stage !== undefined && body.stage !== existingProspect?.stage;
+  const mergedProspect = {
+    ...existingProspect,
+    ...updates,
+    id: body.id,
+    phone: typeof updates.phone === 'string' ? updates.phone : existingProspect?.phone ?? null,
+  };
+
+  if (prospectWebhook && stageChanged) {
+    fetch(prospectWebhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'prospect_stage_updated',
+        previous_stage: existingProspect?.stage ?? null,
+        prospect: mergedProspect,
+      }),
+    }).catch(() => { /* non-blocking */ });
   }
 
   return NextResponse.json({ ok: true });

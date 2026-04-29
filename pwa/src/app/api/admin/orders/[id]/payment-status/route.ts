@@ -2,6 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 
+async function resolveExecutorPhone(
+  supabase: ReturnType<typeof getServiceClient>,
+  contractorId?: string | null,
+  executorId?: string | null,
+): Promise<string | null> {
+  if (contractorId) {
+    const { data: contractor } = await supabase
+      .from('contractors')
+      .select('phone')
+      .eq('id', contractorId)
+      .maybeSingle();
+
+    if (contractor?.phone) {
+      return String(contractor.phone);
+    }
+  }
+
+  if (!executorId) {
+    return null;
+  }
+
+  const rawExecutorId = String(executorId);
+  const regMatch = rawExecutorId.match(/^reg:(\d+)$/);
+  if (regMatch) {
+    return regMatch[1];
+  }
+
+  return /^\d{10,}$/.test(rawExecutorId) ? rawExecutorId : null;
+}
+
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
   if (!adminPin) return false;
@@ -65,13 +95,19 @@ export async function PUT(
     .from('orders')
     .update(updates)
     .eq('order_id', orderId)
-    .select('order_id, customer_phone, customer_name, work_type, display_price, customer_total, supplier_payout, executor_phone, address')
+    .select('order_id, customer_phone, customer_name, work_type, display_price, customer_total, supplier_payout, contractor_id, executor_id, address')
     .single();
 
   if (error) {
     console.error('payment-status PUT:', error);
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
+
+  const executorPhone = await resolveExecutorPhone(
+    supabase,
+    updated?.contractor_id != null ? String(updated.contractor_id) : null,
+    updated?.executor_id != null ? String(updated.executor_id) : null,
+  );
 
   // Fire-and-forget webhooks on state transitions
   if (payment_status === 'paid') {
@@ -103,7 +139,7 @@ export async function PUT(
         body: JSON.stringify({
           event: 'executor_payout_paid',
           order_id: orderId,
-          executor_phone: updated?.executor_phone,
+          executor_phone: executorPhone,
           work_type: updated?.work_type,
           payout_amount: updated?.supplier_payout,
           paid_at: updates.executor_payout_at,

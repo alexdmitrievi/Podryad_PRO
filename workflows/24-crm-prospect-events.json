@@ -1,0 +1,107 @@
+{
+  "name": "Подряд PRO — 24 CRM Prospect Events",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "crm-prospect",
+        "options": { "responseMode": "onReceived" }
+      },
+      "id": "cpe-wh-001",
+      "name": "Webhook Prospect",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "podryad-crm-prospect"
+    },
+    {
+      "parameters": {
+        "jsCode": "const root = $('Webhook Prospect').first().json;\nconst b = root.body || root;\nconst action = String(b.action || 'prospect_event');\nconst prospect = b.prospect || {};\nconst previousStage = String(b.previous_stage || '');\nconst name = String(prospect.name || 'Без имени');\nconst phone = String(prospect.phone || '—');\nconst city = String(prospect.city || '—');\nconst source = String(prospect.source || '—');\nconst stage = String(prospect.stage || '—');\nconst specialties = Array.isArray(prospect.specialties)\n  ? prospect.specialties.join(', ')\n  : String(prospect.specialties || '—');\n\nlet text;\nif (action === 'prospect_added') {\n  text = `🆕 *CRM — новый prospect*\\n\\n👷 ${name}\\n📞 ${phone}\\n🏙 ${city}\\n🔧 ${specialties}\\n📍 Источник: ${source}\\n📌 Стадия: ${stage}`;\n} else if (action === 'prospect_stage_updated') {\n  text = `🔄 *CRM — обновление prospect*\\n\\n👷 ${name}\\n📞 ${phone}\\n📌 Стадия: ${previousStage || '—'} → ${stage}\\n🏙 ${city}\\n🔧 ${specialties}`;\n} else {\n  text = `ℹ️ *CRM — событие prospect*\\n\\n👷 ${name}\\n📞 ${phone}\\n📌 Action: ${action}\\n📍 Источник: ${source}`;\n}\n\nreturn [{ json: { text } }];"
+      },
+      "id": "cpe-build-002",
+      "name": "Build Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: $json.text, parse_mode: 'Markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "cpe-tg-003",
+      "name": "Notify Admin TG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.MAX_API_BASE || 'https://botapi.max.ru' }}/messages?chat_id={{ $env.MAX_ADMIN_USER_ID }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=access_token=\"{{ $env.MAX_BOT_TOKEN }}\"" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.text, format: 'markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "cpe-max-004",
+      "name": "Notify Admin MAX",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {},
+      "id": "cpe-error-005",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($env.TELEGRAM_ADMIN_CHAT_ID), text: '🚨 *ОШИБКА в CRM Prospect Events*\\n\\nNode: ' + $json.execution.error.node.name + '\\nОшибка: ' + $json.execution.error.message, parse_mode: 'Markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "cpe-error-notify-006",
+      "name": "Notify Admin Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 600]
+    }
+  ],
+  "connections": {
+    "Webhook Prospect": {
+      "main": [[{ "node": "Build Message", "type": "main", "index": 0 }]]
+    },
+    "Build Message": {
+      "main": [
+        [
+          { "node": "Notify Admin TG", "type": "main", "index": 0 },
+          { "node": "Notify Admin MAX", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [[{ "node": "Notify Admin Error", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "podryad-pro" }, { "name": "crm" }, { "name": "prospects" }]
+}

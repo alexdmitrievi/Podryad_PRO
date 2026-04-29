@@ -1,6 +1,6 @@
 # n8n Workflows — Подряд PRO
 
-14 рабочих воркфлоу для автоматизации платформы. Все используют Supabase (PostgreSQL) + Telegram + MAX.
+16 рабочих воркфлоу для автоматизации платформы. Все используют Supabase (PostgreSQL) + Telegram + MAX.
 
 ## Активные воркфлоу
 
@@ -14,12 +14,14 @@
 | 14 | `14-order-created.json` | Webhook `/order-created` | Уведомление о новом заказе из PWA |
 | 15 | `15-contractor-registered.json` | Webhook `/contractor-registered` | Уведомление о новом исполнителе |
 | 16 | `16-send-dashboard-link.json` | Webhook `/send-dashboard-link` | Отправка ссылки на дашборд заказчику |
-| 17 | `17-send-invoice.json` | Webhook `/send-payment-link` | Отправка ссылки на оплату заказчику |
+| 17 | `17-send-invoice.json` | Webhook `/send-invoice` | Отправка счёта / реквизитов заказчику |
 | 18 | `18-customer-lead-nurture.json` | Webhook `/crm-lead-nurture` | **RAG** CRM-агент заказчиков: nurture-цепочка (welcome → 2ч → 24ч → 3дн) с RAG-контекстом + email |
 | 19 | `19-executor-avito-nurture.json` | Cron каждые 6 ч | **RAG** CRM-агент исполнителей: Авито-рекрутинг с RAG-контекстом + email-инвайты |
 | 20 | `20-crm-conversion-tracker.json` | Webhook `/crm-conversion` | Трекер конверсий CRM: обновляет стадии воронки при order/contractor событиях |
 | 21 | `21-dispute-opened.json` | Webhook `/dispute-opened` | Уведомление админу: открыт новый спор |
 | 22 | `22-dispute-resolved.json` | Webhook `/dispute-resolved` | Уведомление всех сторон: спор разрешён |
+| 23 | `23-send-payment-link.json` | Webhook `/send-payment-link` | Отправка клиенту ссылки в личный кабинет для оплаты и статуса заказа |
+| 24 | `24-crm-prospect-events.json` | Webhook `/crm-prospect` | Уведомления по ручному CRM-ведению prospect-ов (добавление и смена стадии) |
 
 ## ENV-переменные (n8n)
 
@@ -50,6 +52,7 @@ N8N_PAYMENT_HELD_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/payment-held
 N8N_CRM_LEAD_NURTURE_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/crm-lead-nurture
 N8N_CRM_CONVERSION_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/crm-conversion
 N8N_CRM_PROSPECT_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/crm-prospect
+N8N_SEND_INVOICE_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/send-invoice
 CRM_WEBHOOK_SECRET=your-secret-here
 
 # Dispute webhooks (workflows 21-22)
@@ -70,9 +73,10 @@ N8N_DISPUTE_RESOLVED_WEBHOOK_URL=https://astra55.app.n8n.cloud/webhook/dispute-r
 /api/admin/orders/[id]/payment-status   → 12 (payment-held) + 13 (payout-notification)
 /api/contractors                        → 15 (contractor-registered) + 20 (crm-conversion)
 /api/my/recover                         → 16 (send-dashboard-link)
-/api/admin/orders/send-link             → 17 (send-payment-link)
+/api/admin/orders/[id]/send-invoice     → 17 (send-invoice)
+/api/admin/orders/[id]/send-link        → 23 (send-payment-link)
 /api/crm/update-stage                   → 20 (crm-conversion)
-/api/admin/crm/prospects                → 20 (crm-conversion)
+/api/admin/crm/prospects                → 24 (crm-prospect)
 Cron (n8n)                              → 06 (analytics), 07 (max-crosspost), 19 (avito-nurture)
 ```
 

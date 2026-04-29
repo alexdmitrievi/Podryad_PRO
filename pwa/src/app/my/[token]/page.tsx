@@ -143,10 +143,10 @@ function OrderCard({ order }: { order: Order }) {
         <div className="flex gap-2">
           {isPayment && (
             <Link
-              href={`/order/${order.id}/pay`}
+              href={`/order/${order.id}/status`}
               className="inline-flex items-center px-3 py-1.5 rounded-xl bg-amber-500 text-white text-xs font-semibold cursor-pointer hover:bg-amber-600 transition-colors duration-150"
             >
-              Оплатить
+              Статус оплаты
             </Link>
           )}
           {isInProgress && (

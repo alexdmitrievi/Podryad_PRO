@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
   // Map to safe public fields only — NEVER expose base_price, markup_percent,
   // supplier_payout, platform_margin, worker_rate, client_rate
   const orders = (rawOrders as Record<string, unknown>[]).map((o) => ({
+    id: o.order_id,
     order_id: o.order_id,
     order_number: o.order_number,
     work_type: o.work_type,
