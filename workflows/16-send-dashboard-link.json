@@ -26,46 +26,37 @@
     },
     {
       "parameters": {
-        "rules": {
-          "values": [
+        "conditions": {
+          "string": [
             {
-              "conditions": {
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.preferred_contact }}",
-                    "rightValue": "telegram",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ]
-              },
-              "renameOutput": true,
-              "outputKey": "telegram"
-            },
-            {
-              "conditions": {
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.preferred_contact }}",
-                    "rightValue": "max",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ]
-              },
-              "renameOutput": true,
-              "outputKey": "max"
+              "value1": "={{ $json.preferred_contact }}",
+              "value2": "max"
             }
-          ],
-          "fallbackOutput": {
-            "fallbackOutputIndex": 2
-          }
-        },
-        "options": {}
+          ]
+        }
       },
       "id": "dash-switch-003",
-      "name": "Route by Contact",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
+      "name": "Route MAX?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
       "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.preferred_contact }}",
+              "value2": "telegram"
+            }
+          ]
+        }
+      },
+      "id": "dash-if-telegram-010",
+      "name": "Route Telegram?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [740, 520]
     },
     {
       "parameters": {
@@ -149,13 +140,18 @@
     },
     "Parse Payload": {
       "main": [
-        [{ "node": "Route by Contact", "type": "main", "index": 0 }]
+        [{ "node": "Route MAX?", "type": "main", "index": 0 }]
       ]
     },
-    "Route by Contact": {
+    "Route MAX?": {
+      "main": [
+        [{ "node": "Send via MAX", "type": "main", "index": 0 }],
+        [{ "node": "Route Telegram?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Route Telegram?": {
       "main": [
         [{ "node": "Send via Telegram", "type": "main", "index": 0 }],
-        [{ "node": "Send via MAX", "type": "main", "index": 0 }],
         [{ "node": "Notify Admin Manual", "type": "main", "index": 0 }]
       ]
     },
@@ -164,8 +160,6 @@
     }
   },
   "active": false,
-  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
-  "versionId": "podryad-16-send-dashboard-link-v2",
-  "meta": { "instanceId": "podryad-pro" },
+  "settings": { "executionOrder": "v1" },
   "tags": [{ "name": "podryad-pro" }, { "name": "contractors" }, { "name": "dashboard" }]
 }

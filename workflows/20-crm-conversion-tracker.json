@@ -26,19 +26,45 @@
     },
     {
       "parameters": {
-        "rules": {
-          "rules": [
-            { "conditions": { "conditions": [{ "leftValue": "={{ $json.isCustomerConversion }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "customer" },
-            { "conditions": { "conditions": [{ "leftValue": "={{ $json.isExecutorRegistration }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "executor_registered" },
-            { "conditions": { "conditions": [{ "leftValue": "={{ $json.isExecutorActive }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "executor_active" }
+        "conditions": {
+          "boolean": [
+            { "value1": "={{ $json.isCustomerConversion }}", "value2": true }
           ]
         }
       },
-      "id": "cct-route-003",
-      "name": "Route by Event Type",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3,
-      "position": [480, 300]
+      "id": "cct-route-003a",
+      "name": "Route Customer?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            { "value1": "={{ $json.isExecutorRegistration }}", "value2": true }
+          ]
+        }
+      },
+      "id": "cct-route-003b",
+      "name": "Route Executor Reg?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [480, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            { "value1": "={{ $json.isExecutorActive }}", "value2": true }
+          ]
+        }
+      },
+      "id": "cct-route-003c",
+      "name": "Route Executor Active?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [480, 600]
     },
     {
       "parameters": {
@@ -183,12 +209,23 @@
   ],
   "connections": {
     "Webhook: CRM Conversion": { "main": [[{ "node": "Parse Event", "type": "main", "index": 0 }]] },
-    "Parse Event": { "main": [[{ "node": "Route by Event Type", "type": "main", "index": 0 }]] },
-    "Route by Event Type": {
+    "Parse Event": { "main": [[{ "node": "Route Customer?", "type": "main", "index": 0 }]] },
+    "Route Customer?": {
       "main": [
         [{ "node": "Mark Lead as Converted", "type": "main", "index": 0 }],
+        [{ "node": "Route Executor Reg?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Route Executor Reg?": {
+      "main": [
         [{ "node": "Mark Prospect as Registered", "type": "main", "index": 0 }],
-        [{ "node": "Mark Prospect as Active", "type": "main", "index": 0 }]
+        [{ "node": "Route Executor Active?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Route Executor Active?": {
+      "main": [
+        [{ "node": "Mark Prospect as Active", "type": "main", "index": 0 }],
+        []
       ]
     },
     "Mark Lead as Converted": { "main": [[{ "node": "Notify: Customer Converted", "type": "main", "index": 0 }]] },
