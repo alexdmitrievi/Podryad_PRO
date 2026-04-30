@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { enqueueJob } from '@/lib/job-queue';
 
 interface LeadBody {
   phone: string;
@@ -100,29 +101,18 @@ export async function POST(req: NextRequest) {
     lat, lon,
   };
 
-  // Fire-and-forget: n8n lead notification (existing)
-  const webhookUrl = process.env.N8N_LEADS_WEBHOOK_URL;
-  if (webhookUrl) {
-    fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(leadPayload),
-    }).catch((err) => {
-      console.error('n8n lead webhook error (non-blocking):', err);
-    });
-  }
+  void enqueueJob({
+    queueName: 'notifications',
+    jobType: 'notify.lead_created',
+    dedupeKey: `notify.lead_created:${leadId ?? digits}`,
+    payload: leadPayload,
+    sourceTable: 'leads',
+    sourceId: leadId != null ? String(leadId) : undefined,
+  }).catch((err) => {
+    console.error('enqueueJob notify.lead_created error (non-blocking):', err);
+  });
 
-  // Fire-and-forget: CRM nurture agent (new) — starts the customer conversion pipeline
-  const crmNurtureUrl = process.env.N8N_CRM_LEAD_NURTURE_WEBHOOK_URL;
-  if (crmNurtureUrl) {
-    fetch(crmNurtureUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(leadPayload),
-    }).catch((err) => {
-      console.error('n8n CRM nurture webhook error (non-blocking):', err);
-    });
-  }
+  // TODO workflow-18: enqueue crm.customer_nurture_step (welcome + delayed follow-up jobs)
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }

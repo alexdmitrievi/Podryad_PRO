@@ -51,19 +51,7 @@ export async function POST(req: NextRequest) {
 
   const cleanPhone = phone.replace(/\D/g, '');
 
-  // Fire-and-forget to n8n conversion tracker
-  const n8nWebhook = process.env.N8N_CRM_CONVERSION_WEBHOOK_URL;
-  if (n8nWebhook) {
-    fetch(n8nWebhook, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event, phone: cleanPhone, entity_id, entity_type }),
-    }).catch((err) => {
-      console.error('CRM conversion n8n webhook error:', err);
-    });
-  }
-
-  // Also update Supabase directly for immediate consistency
+  // Update Supabase directly for immediate consistency
   const db = getServiceClient();
   const now = new Date().toISOString();
 

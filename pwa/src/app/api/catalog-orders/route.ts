@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { enqueueJob } from '@/lib/job-queue';
 
 interface CatalogOrderBody {
   item_id: string;
@@ -67,26 +68,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
-  // Fire-and-forget webhook to n8n
-  const webhookUrl = process.env.N8N_LEADS_WEBHOOK_URL;
-  if (webhookUrl) {
-    fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone,
-        work_type,
-        city: 'omsk',
-        comment,
-        source: 'catalog',
-        contact_method,
-        contact_value: contact_value.trim(),
-        item_title,
-      }),
-    }).catch((err) => {
-      console.error('n8n catalog-order webhook error (non-blocking):', err);
-    });
-  }
+  void enqueueJob({
+    queueName: 'notifications',
+    jobType: 'notify.lead_created',
+    dedupeKey: `notify.lead_created:catalog:${phone}:${Date.now()}`,
+    payload: {
+      phone,
+      work_type,
+      city: 'omsk',
+      comment,
+      source: 'catalog',
+      contact_method,
+      contact_value: contact_value.trim(),
+      item_title,
+    },
+  }).catch((err) => {
+    console.error('enqueueJob notify.lead_created catalog error (non-blocking):', err);
+  });
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }

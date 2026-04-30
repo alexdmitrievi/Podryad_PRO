@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { enqueueJob } from '@/lib/job-queue';
 
 interface ResponseBody {
   order_id: string;
@@ -57,27 +58,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
-  // Fire-and-forget n8n webhook for admin notification
-  // Uses dedicated executor-response webhook; falls back to leads webhook so
-  // at least one notification always fires.
-  const webhookUrl =
-    process.env.N8N_EXECUTOR_RESPONSE_WEBHOOK_URL || process.env.N8N_LEADS_WEBHOOK_URL;
-  if (webhookUrl) {
-    fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'executor_response',
-        order_id,
-        name: name.trim(),
-        phone: digits,
-        comment: comment?.trim(),
-        price,
-      }),
-    }).catch((err) => {
-      console.error('n8n executor response webhook error (non-blocking):', err);
-    });
-  }
+  void enqueueJob({
+    queueName: 'notifications',
+    jobType: 'notify.executor_response_received',
+    dedupeKey: `notify.executor_response_received:${order_id}:${digits}`,
+    payload: {
+      type: 'executor_response',
+      order_id,
+      name: name.trim(),
+      phone: digits,
+      comment: comment?.trim(),
+      price,
+    },
+  }).catch((err) => {
+    console.error('enqueueJob notify.executor_response_received error (non-blocking):', err);
+  });
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }

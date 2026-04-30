@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { enqueueJob } from '@/lib/job-queue';
 
 interface LaborOrderBody {
   type: 'labor';
@@ -117,29 +118,29 @@ export async function POST(req: NextRequest) {
       });
     } catch { /* non-critical */ }
 
-    // n8n webhook
-    const webhookUrl = process.env.N8N_LEADS_WEBHOOK_URL;
-    if (webhookUrl) {
-      fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'new_order',
-          order_type: 'labor',
-          work_type,
-          people,
-          rate,
-          unit,
-          quantity,
-          address,
-          lat,
-          lon,
-          phone: digits,
-          comment,
-          customer_total: customerTotal,
-        }),
-      }).catch(() => {});
-    }
+    // enqueue lead notification
+    void enqueueJob({
+      queueName: 'notifications',
+      jobType: 'notify.lead_created',
+      dedupeKey: `notify.lead_created:labor:${orderData.order_id}`,
+      payload: {
+        type: 'new_order',
+        order_type: 'labor',
+        work_type,
+        people,
+        rate,
+        unit,
+        quantity,
+        address,
+        lat,
+        lon,
+        phone: digits,
+        comment,
+        customer_total: customerTotal,
+      },
+      sourceTable: 'orders',
+      sourceId: orderData.order_id,
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true, order_id: orderData.order_id }, { status: 201 });
   }
@@ -189,27 +190,27 @@ export async function POST(req: NextRequest) {
       });
     } catch { /* non-critical */ }
 
-    // n8n webhook
-    const webhookUrl = process.env.N8N_LEADS_WEBHOOK_URL;
-    if (webhookUrl) {
-      fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'new_order',
-          order_type: 'rental',
-          equipment_type,
-          with_operator,
-          unit: rentalUnit,
-          quantity,
-          address,
-          lat,
-          lon,
-          phone: digits,
-          comment,
-        }),
-      }).catch(() => {});
-    }
+    // enqueue lead notification
+    void enqueueJob({
+      queueName: 'notifications',
+      jobType: 'notify.lead_created',
+      dedupeKey: `notify.lead_created:rental:${orderData.order_id}`,
+      payload: {
+        type: 'new_order',
+        order_type: 'rental',
+        equipment_type,
+        with_operator,
+        unit: rentalUnit,
+        quantity,
+        address,
+        lat,
+        lon,
+        phone: digits,
+        comment,
+      },
+      sourceTable: 'orders',
+      sourceId: orderData.order_id,
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true, order_id: orderData.order_id }, { status: 201 });
   }

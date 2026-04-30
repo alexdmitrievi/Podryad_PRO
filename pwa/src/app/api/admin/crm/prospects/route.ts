@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { enqueueJob } from '@/lib/job-queue';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -99,16 +100,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 
-  // Fire n8n conversion tracking webhook if prospect has phone
-  const n8nWebhook = process.env.N8N_CRM_PROSPECT_WEBHOOK_URL;
-  if (n8nWebhook && body.phone) {
-    fetch(n8nWebhook, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+  // Fire-and-forget: notify admin about new prospect
+  if (body.phone) {
+    void enqueueJob({
+      queueName: 'crm',
+      jobType: 'crm.prospect_stage_event',
+      dedupeKey: `crm.prospect_stage_event:prospect_added:${data.id}`,
+      payload: {
         action: 'prospect_added',
         prospect: data,
-      }),
+      },
     }).catch(() => { /* non-blocking */ });
   }
 
@@ -173,7 +174,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 
-  const prospectWebhook = process.env.N8N_CRM_PROSPECT_WEBHOOK_URL;
   const stageChanged = body.stage !== undefined && body.stage !== existingProspect?.stage;
   const mergedProspect = {
     ...existingProspect,
@@ -182,15 +182,16 @@ export async function PUT(req: NextRequest) {
     phone: typeof updates.phone === 'string' ? updates.phone : existingProspect?.phone ?? null,
   };
 
-  if (prospectWebhook && stageChanged) {
-    fetch(prospectWebhook, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+  if (stageChanged) {
+    void enqueueJob({
+      queueName: 'crm',
+      jobType: 'crm.prospect_stage_event',
+      dedupeKey: `crm.prospect_stage_event:stage_updated:${body.id}:${body.stage}`,
+      payload: {
         action: 'prospect_stage_updated',
         previous_stage: existingProspect?.stage ?? null,
         prospect: mergedProspect,
-      }),
+      },
     }).catch(() => { /* non-blocking */ });
   }
 

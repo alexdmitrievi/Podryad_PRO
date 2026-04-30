@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { enqueueJob } from '@/lib/job-queue';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -57,23 +58,30 @@ export async function POST(
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
-  // Fire-and-forget n8n webhook
-  const webhookUrl = process.env.N8N_SEND_INVOICE_WEBHOOK_URL;
-  if (webhookUrl) {
-    fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        order_id: orderId,
-        order_number: order.order_number ?? orderId,
-        customer_type: customerType,
-        amount: order.display_price ?? null,
-        customer_name: order.customer_name ?? null,
-        customer_phone: order.customer_phone ?? null,
-        preferred_contact: order.preferred_contact ?? null,
-      }),
-    }).catch(err => console.error('n8n send-invoice webhook error:', err));
-  }
+  // Look up messenger_id for direct customer delivery
+  const { data: tokenRow } = await supabase
+    .from('customer_tokens')
+    .select('messenger_id, preferred_contact')
+    .eq('phone', order.customer_phone)
+    .maybeSingle();
+
+  void enqueueJob({
+    queueName: 'customer',
+    jobType: 'customer.send_invoice',
+    dedupeKey: `customer.send_invoice:${orderId}:${customerType}`,
+    payload: {
+      order_id: orderId,
+      order_number: order.order_number ?? orderId,
+      customer_type: customerType,
+      amount: order.display_price ?? null,
+      customer_name: order.customer_name ?? null,
+      customer_phone: order.customer_phone ?? null,
+      preferred_contact: tokenRow?.preferred_contact ?? order.preferred_contact ?? null,
+      messenger_id: tokenRow?.messenger_id ?? null,
+    },
+    sourceTable: 'orders',
+    sourceId: orderId,
+  }).catch(err => console.error('enqueueJob customer.send_invoice error (non-blocking):', err));
 
   return NextResponse.json({ ok: true, customer_type: customerType });
 }

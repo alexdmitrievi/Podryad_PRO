@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createOrder, getOrCreateCustomerToken } from '@/lib/db';
+import { enqueueJob } from '@/lib/job-queue';
 
 /** Strip all non-digit characters from a phone string and return only digits. */
 function stripPhone(raw: string): string {
@@ -82,27 +83,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'token_error' }, { status: 500 });
   }
 
-  // Fire-and-forget webhook to n8n (never blocks response)
-  const webhookUrl = process.env.N8N_ORDER_CREATED_WEBHOOK_URL;
-  if (webhookUrl) {
-    fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        order_id: order.order_id,
-        work_type,
-        phone: digits,
-        customer_name,
-        city,
-        address,
-        work_date,
-        people_count,
-        hours,
-      }),
-    }).catch((err) => {
-      console.error('n8n order_created webhook error (non-blocking):', err);
-    });
-  }
+  void enqueueJob({
+    queueName: 'notifications',
+    jobType: 'notify.order_created',
+    dedupeKey: `notify.order_created:${order.order_id}`,
+    payload: {
+      order_id: order.order_id,
+      work_type,
+      phone: digits,
+      customer_name,
+      city,
+      address,
+      work_date,
+      people_count,
+      hours,
+    },
+    sourceTable: 'orders',
+    sourceId: order.order_id,
+  }).catch((err) => {
+    console.error('enqueueJob notify.order_created error (non-blocking):', err);
+  });
 
   return NextResponse.json(
     {

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createContractor } from '@/lib/db';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getServiceClient } from '@/lib/supabase';
+import { enqueueJob } from '@/lib/job-queue';
 
 /** Strip all non-digit characters from a phone string and return only digits. */
 function stripPhone(raw: string): string {
@@ -98,43 +100,39 @@ export async function POST(req: NextRequest) {
 
   const contractorId = (contractor as Record<string, unknown>).id as string;
 
-  // Fire-and-forget: n8n contractor registered notification (existing)
-  const webhookUrl = process.env.N8N_CONTRACTOR_REGISTERED_WEBHOOK_URL;
-  if (webhookUrl) {
-    fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contractor_id: contractorId,
-        name: String(name).trim(),
-        phone: digits,
-        city: cityStr,
-        specialties,
-        preferred_contact,
-        is_brigade: is_brigade === true,
-        crew_size: is_brigade === true && crew_size != null ? Number(crew_size) : undefined,
-      }),
-    }).catch((err) => {
-      console.error('n8n contractor_registered webhook error (non-blocking):', err);
-    });
-  }
+  void enqueueJob({
+    queueName: 'notifications',
+    jobType: 'notify.contractor_registered',
+    dedupeKey: `notify.contractor_registered:${contractorId}`,
+    payload: {
+      contractor_id: contractorId,
+      name: String(name).trim(),
+      phone: digits,
+      city: cityStr,
+      specialties,
+      preferred_contact,
+      is_brigade: is_brigade === true,
+      crew_size: is_brigade === true && crew_size != null ? Number(crew_size) : undefined,
+    },
+    sourceTable: 'contractors',
+    sourceId: contractorId,
+  }).catch((err) => {
+    console.error('enqueueJob notify.contractor_registered error (non-blocking):', err);
+  });
 
-  // Fire-and-forget: CRM conversion tracker — executor registered
-  const crmConversionUrl = process.env.N8N_CRM_CONVERSION_WEBHOOK_URL;
-  if (crmConversionUrl) {
-    fetch(crmConversionUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event: 'contractor_registered',
-        phone: digits,
-        entity_id: contractorId,
-        entity_type: 'contractor',
-      }),
-    }).catch((err) => {
-      console.error('n8n CRM conversion webhook error (non-blocking):', err);
-    });
-  }
+  // Update CRM executor prospect stage directly (idempotent)
+  void (async () => {
+    try {
+      const now = new Date().toISOString();
+      await getServiceClient()
+        .from('crm_executor_prospects')
+        .update({ stage: 'registered', registered_at: now, contractor_id: contractorId, updated_at: now })
+        .eq('phone', digits)
+        .neq('stage', 'active');
+    } catch (err) {
+      console.error('CRM contractor_registered stage update error (non-blocking):', err);
+    }
+  })();
 
   return NextResponse.json(
     { ok: true, contractor_id: contractorId },
