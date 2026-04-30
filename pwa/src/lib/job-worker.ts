@@ -126,11 +126,16 @@ function buildContractorRegisteredText(payload: JobPayload): string {
   return `🔧 *Новый исполнитель*\n\n🆔 ID: ${asString(payload.contractor_id, '—')}\n👤 Имя: ${asString(payload.name, '—')}\n📞 Телефон: ${asString(payload.phone, '—')}\n📍 Город: ${asString(payload.city, '—')}\n🛠️ Специализации: ${specialties}${brigadeLine}\n\n⚡ /admin → Исполнители`;
 }
 
+function getAppUrl(): string {
+  return (process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro').replace(/\/$/, '');
+}
+
 function buildDashboardLinkMessage(payload: JobPayload): { channel: Channel; chatId: string; text: string } | null {
   const preferredContact = asString(payload.preferred_contact).toLowerCase();
   const messengerId = asString(payload.messenger_id);
   const accessToken = asString(payload.access_token);
-  const dashboardUrl = accessToken ? `https://podryad.pro/my/${accessToken}` : 'https://podryad.pro/my';
+  const appUrl = getAppUrl();
+  const dashboardUrl = accessToken ? `${appUrl}/my/${accessToken}` : `${appUrl}/my`;
   const text = `🔗 *Ваш личный кабинет*\n\n${dashboardUrl}\n\nПросмотр заказа, статус оплаты и все детали — по ссылке выше.`;
   if (preferredContact === 'max' && messengerId) return { channel: 'max', chatId: messengerId, text };
   if (preferredContact === 'telegram' && messengerId) return { channel: 'telegram', chatId: messengerId, text };
@@ -164,7 +169,8 @@ function buildPaymentLinkMessage(payload: JobPayload): { channel: Channel; chatI
   const preferredContact = asString(payload.preferred_contact).toLowerCase();
   const messengerId = asString(payload.messenger_id);
   const accessToken = asString(payload.access_token);
-  const dashboardUrl = accessToken ? `https://podryad.pro/my/${accessToken}` : 'https://podryad.pro/my';
+  const appUrl = getAppUrl();
+  const dashboardUrl = accessToken ? `${appUrl}/my/${accessToken}` : `${appUrl}/my`;
   const amountLine = payload.display_price != null ? `\n💰 Сумма: ${formatAmount(payload.display_price)}` : '';
   const orderLine = payload.order_id != null ? `\n🧾 Заказ: ${asString(payload.order_id)}` : '';
   const text = `💳 *Заказ готов к оплате*${orderLine}${amountLine}\n\n🔗 Личный кабинет: ${dashboardUrl}\n\nЕсли реквизиты СБП или счёт уже отправлены менеджером, после оплаты просто ответьте на это сообщение.`;
@@ -212,7 +218,8 @@ export async function handleJob(job: Pick<JobQueueRow, 'id' | 'job_type' | 'payl
       if (!adminChatId) throw new Error('No admin channel configured for dashboard-link fallback');
       const phone = asString(job.payload.phone, '—');
       const accessToken = asString(job.payload.access_token);
-      const dashboardUrl = accessToken ? `https://podryad.pro/my/${accessToken}` : 'https://podryad.pro/my';
+      const appUrl = getAppUrl();
+      const dashboardUrl = accessToken ? `${appUrl}/my/${accessToken}` : `${appUrl}/my`;
       const manualText = `📋 *Ручная отправка ссылки на кабинет*\n\nТелефон: ${phone}\nСсылка: ${dashboardUrl}\n\nОтправьте клиенту ссылку вручную.`;
       await sendOrThrow([{ channel: 'telegram', chat_id: adminChatId, text: manualText }]);
       return { delivered: 1, manual: true };
@@ -260,7 +267,8 @@ export async function handleJob(job: Pick<JobQueueRow, 'id' | 'job_type' | 'payl
       }
 
       const accessToken = asString(job.payload.access_token);
-      const dashboardUrl = accessToken ? `https://podryad.pro/my/${accessToken}` : 'https://podryad.pro/my';
+      const appUrl = getAppUrl();
+      const dashboardUrl = accessToken ? `${appUrl}/my/${accessToken}` : `${appUrl}/my`;
       const manualText = `📋 *Ручная отправка платёжной ссылки*\n\nЗаказ: ${asString(job.payload.order_id, '—')}\nСсылка: ${dashboardUrl}\n\nОтправьте клиенту ссылку вручную.`;
       await sendOrThrow([{ channel: 'telegram', chat_id: adminChatId, text: manualText }]);
       return { delivered: 1, manual: true };
