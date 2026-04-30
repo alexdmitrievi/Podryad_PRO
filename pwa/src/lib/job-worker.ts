@@ -250,7 +250,7 @@ async function handleDailyAnalyticsReport(_payload: JobPayload): Promise<JobPayl
   todayStart.setUTCHours(0, 0, 0, 0);
   const since = todayStart.toISOString();
 
-  const [ordersRes, leadsRes, payoutsRes] = await Promise.all([
+  const [ordersRes, leadsRes, payoutsRes, queueStatsRes, cleanupRes] = await Promise.all([
     supabase.from('orders')
       .select('order_id, status, payment_status, customer_total, platform_margin')
       .gte('created_at', since),
@@ -261,6 +261,10 @@ async function handleDailyAnalyticsReport(_payload: JobPayload): Promise<JobPayl
       .select('supplier_payout')
       .gte('updated_at', since)
       .eq('executor_payout_status', 'paid'),
+    // Queue health stats
+    supabase.rpc('get_job_queue_stats'),
+    // Cleanup old completed/dead jobs (retain 30 days)
+    supabase.rpc('cleanup_job_queue', { retention_days: 30 }),
   ]);
 
   const orders = ordersRes.data ?? [];
@@ -273,7 +277,21 @@ async function handleDailyAnalyticsReport(_payload: JobPayload): Promise<JobPayl
   const revenue = orders.reduce((s, o) => s + (Number(o.platform_margin) || 0), 0);
   const payoutSum = payouts.reduce((s, o) => s + (Number(o.supplier_payout) || 0), 0);
 
+  // Queue stats
+  type QueueStat = { status: string; cnt: string | number };
+  const queueStats = (queueStatsRes.data ?? []) as QueueStat[];
+  const queueByStatus = Object.fromEntries(queueStats.map((r) => [r.status, Number(r.cnt)]));
+  const deadCount = queueByStatus['dead'] ?? 0;
+  const pendingCount = queueByStatus['pending'] ?? 0;
+  const cleanedCount = Number(cleanupRes.data ?? 0);
+
   const dateStr = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', timeZone: 'Asia/Omsk' });
+
+  const queueLine = deadCount > 0
+    ? `\n\n⚠️ *Очередь задач*\n🔴 Мёртвых задач: *${deadCount}* — требуется ревью\n📋 В очереди: *${pendingCount}*`
+    : `\n\n✅ *Очередь задач*: норма (pending: ${pendingCount})`;
+
+  const cleanupLine = cleanedCount > 0 ? `\n🗑 Очищено старых задач: ${cleanedCount}` : '';
 
   const text = `📊 *Дневной отчёт — ${dateStr}*\n\n` +
     `📥 Новых заказов: *${newOrders}*\n` +
@@ -281,10 +299,12 @@ async function handleDailyAnalyticsReport(_payload: JobPayload): Promise<JobPayl
     `📋 Новых лидов: *${leads.length}*\n\n` +
     `💰 GMV (оборот): *${gmv.toLocaleString('ru-RU')} ₽*\n` +
     `📈 Маржа платформы: *${revenue.toLocaleString('ru-RU')} ₽*\n` +
-    `💸 Выплачено исп-лям: *${payoutSum.toLocaleString('ru-RU')} ₽*`;
+    `💸 Выплачено исп-лям: *${payoutSum.toLocaleString('ru-RU')} ₽*` +
+    queueLine +
+    cleanupLine;
 
   const results = await sendOrThrow(getAdminMessages(text));
-  return { delivered: results.length };
+  return { delivered: results.length, dead_jobs: deadCount, cleaned: cleanedCount };
 }
 
 // ──────────────────────────────────────────────────────────
