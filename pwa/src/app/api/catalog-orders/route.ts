@@ -86,5 +86,19 @@ export async function POST(req: NextRequest) {
     console.error('enqueueJob notify.lead_created catalog error (non-blocking):', err);
   });
 
+  // Nurture chain — only for real phone contacts (Telegram contacts handled manually)
+  if (contact_method === 'phone') {
+    const catalogNow = Date.now();
+    for (const [stepKey, delay] of [['welcome', 0], ['followup_2h', 2], ['followup_24h', 24], ['followup_72h', 72]] as const) {
+      void enqueueJob({
+        queueName: 'crm',
+        jobType: 'crm.customer_nurture_step',
+        dedupeKey: `nurture:${stepKey}:catalog:${phone}`,
+        runAt: new Date(catalogNow + (delay as number) * 60 * 60 * 1000).toISOString(),
+        payload: { phone, work_type, step: stepKey, item_title },
+      }).catch(() => {});
+    }
+  }
+
   return NextResponse.json({ ok: true }, { status: 201 });
 }

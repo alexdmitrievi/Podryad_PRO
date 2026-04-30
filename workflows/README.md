@@ -22,12 +22,16 @@ n8n не используется.
 | `POST /api/my/recover` | `customer` | `customer.send_dashboard_link` |
 | `POST /api/admin/crm/prospects` | `crm` | `crm.prospect_stage_event` |
 | `PUT /api/admin/crm/prospects` | `crm` | `crm.prospect_stage_event` |
+| `POST /api/leads` + `POST /api/orders/create` + `POST /api/catalog-orders` | `crm` | `crm.customer_nurture_step` (×4 delayed) |
+| `GET /api/cron/analytics` (cron) | `analytics` | `analytics.daily_admin_report` |
 
 ## Vercel Cron
 
 | Расписание | Путь | Что делает |
 |---|---|---|
 | `* * * * *` (каждую минуту) | `/api/cron/jobs` | Забирает due-задачи из `job_queue` и выполняет их |
+| `0 17 * * *` (17:00 UTC = 20:00 МСК) | `/api/cron/analytics` | Ставит в очередь `analytics.daily_admin_report` |
+| `*/2 * * * *` (каждые 2 мин) | `/api/cron/crosspost` | Кросспостит оплаченные заказы в MAX-канал |
 
 ## Переменные окружения
 

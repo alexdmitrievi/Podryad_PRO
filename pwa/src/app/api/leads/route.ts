@@ -112,7 +112,35 @@ export async function POST(req: NextRequest) {
     console.error('enqueueJob notify.lead_created error (non-blocking):', err);
   });
 
-  // TODO workflow-18: enqueue crm.customer_nurture_step (welcome + delayed follow-up jobs)
+  // Nurture chain — 4 touch-points for the lead
+  const nurtureBase = {
+    queueName: 'crm',
+    jobType: 'crm.customer_nurture_step' as const,
+    payload: {
+      phone: digits,
+      work_type: work_type ?? '',
+      city: city ?? '',
+      name: name ?? '',
+      lead_id: leadId != null ? String(leadId) : undefined,
+    },
+  };
+  const now = Date.now();
+  const nurtureSteps: Array<{ step: string; runAt: string; dedupeKey: string }> = [
+    { step: 'welcome',      runAt: new Date(now).toISOString(),                         dedupeKey: `nurture:welcome:${leadId ?? digits}` },
+    { step: 'followup_2h',  runAt: new Date(now + 2  * 60 * 60 * 1000).toISOString(),  dedupeKey: `nurture:2h:${leadId ?? digits}` },
+    { step: 'followup_24h', runAt: new Date(now + 24 * 60 * 60 * 1000).toISOString(),  dedupeKey: `nurture:24h:${leadId ?? digits}` },
+    { step: 'followup_72h', runAt: new Date(now + 72 * 60 * 60 * 1000).toISOString(),  dedupeKey: `nurture:72h:${leadId ?? digits}` },
+  ];
+  for (const step of nurtureSteps) {
+    void enqueueJob({
+      ...nurtureBase,
+      dedupeKey: step.dedupeKey,
+      runAt: step.runAt,
+      payload: { ...nurtureBase.payload, step: step.step },
+    }).catch((err) => {
+      console.error(`enqueueJob nurture ${step.step} error (non-blocking):`, err);
+    });
+  }
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }

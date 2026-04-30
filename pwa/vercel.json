@@ -5,6 +5,14 @@
     {
       "path": "/api/cron/jobs",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/analytics",
+      "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/cron/crosspost",
+      "schedule": "*/2 * * * *"
     }
   ]
 }

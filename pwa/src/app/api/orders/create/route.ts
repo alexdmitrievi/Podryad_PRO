@@ -142,6 +142,19 @@ export async function POST(req: NextRequest) {
       sourceId: orderData.order_id,
     }).catch(() => {});
 
+    // Nurture chain for labor order customer
+    const laborNurturePayload = { phone: digits, work_type, lead_id: orderData.order_id };
+    const laborNow = Date.now();
+    for (const [stepKey, delay] of [['welcome', 0], ['followup_2h', 2], ['followup_24h', 24], ['followup_72h', 72]] as const) {
+      void enqueueJob({
+        queueName: 'crm',
+        jobType: 'crm.customer_nurture_step',
+        dedupeKey: `nurture:${stepKey}:${orderData.order_id}`,
+        runAt: new Date(laborNow + (delay as number) * 60 * 60 * 1000).toISOString(),
+        payload: { ...laborNurturePayload, step: stepKey },
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ ok: true, order_id: orderData.order_id }, { status: 201 });
   }
 
@@ -211,6 +224,19 @@ export async function POST(req: NextRequest) {
       sourceTable: 'orders',
       sourceId: orderData.order_id,
     }).catch(() => {});
+
+    // Nurture chain for rental order customer
+    const rentalNurturePayload = { phone: digits, work_type: 'equipment', lead_id: orderData.order_id };
+    const rentalNow = Date.now();
+    for (const [stepKey, delay] of [['welcome', 0], ['followup_2h', 2], ['followup_24h', 24], ['followup_72h', 72]] as const) {
+      void enqueueJob({
+        queueName: 'crm',
+        jobType: 'crm.customer_nurture_step',
+        dedupeKey: `nurture:${stepKey}:${orderData.order_id}`,
+        runAt: new Date(rentalNow + (delay as number) * 60 * 60 * 1000).toISOString(),
+        payload: { ...rentalNurturePayload, step: stepKey },
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ ok: true, order_id: orderData.order_id }, { status: 201 });
   }

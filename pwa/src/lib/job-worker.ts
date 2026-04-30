@@ -1,6 +1,7 @@
 import { getChannelRouter } from './channels';
 import type { Channel, NormalizedOutgoingMessage, SendResult } from './channels';
 import { completeJob, failJob, type JobPayload, type JobQueueRow } from './job-queue';
+import { getServiceClient } from './supabase';
 
 const WORK_TYPE_LABELS: Record<string, string> = {
   labor: 'Рабочие / бригада',
@@ -165,6 +166,185 @@ function buildProspectStageText(payload: JobPayload): string {
   return `🔄 *Prospect: смена стадии*\n\n🆔 ID: ${asString(prospect.id, '—')}\n👤 Имя: ${asString(prospect.name, '—')}\n📞 Телефон: ${asString(prospect.phone, '—')}\n\n${previousStage} → ${asString(prospect.stage, '—')}\n\n⚡ /admin → CRM → Prospects`;
 }
 
+// ──────────────────────────────────────────────────────────
+// Nurture chain helpers
+// ──────────────────────────────────────────────────────────
+
+const NURTURE_STEP_LABELS: Record<string, string> = {
+  welcome: 'Только что',
+  followup_2h: '2 часа назад',
+  followup_24h: '24 часа назад',
+  followup_72h: '72 часа назад',
+};
+
+function buildNurtureCustomerText(payload: JobPayload): string {
+  const step = asString(payload.step, 'welcome');
+  const workType = workTypeLabel(payload.work_type);
+  const appUrl = getAppUrl();
+  switch (step) {
+    case 'welcome':
+      return `👋 Спасибо за заявку!\n\nМы уже рассматриваем запрос на *${workType}*. Менеджер свяжется с вами в течение 15–20 минут.\n\n🔗 Следить за статусом: ${appUrl}`;
+    case 'followup_2h':
+      return `⏰ Мы подобрали исполнителей для вашего запроса на *${workType}*. Менеджер скоро выйдет на связь.\n\nЕсть вопросы? Напишите нам в ответ на это сообщение.`;
+    case 'followup_24h':
+      return `📋 Ваша заявка на *${workType}* всё ещё активна.\n\nХотите уточнить детали или назначить время? Просто ответьте на это сообщение.`;
+    case 'followup_72h':
+      return `🔔 Хотим убедиться, что вы получили помощь с *${workType}*.\n\nГотовы подобрать исполнителя прямо сейчас — ответьте на это сообщение.`;
+    default:
+      return `📋 Обновление по вашей заявке на *${workType}*. Свяжитесь с нами, если нужна помощь.`;
+  }
+}
+
+function buildNurtureAdminReminderText(payload: JobPayload): string {
+  const step = asString(payload.step, 'welcome');
+  const stepLabel = NURTURE_STEP_LABELS[step] || step;
+  const workType = workTypeLabel(payload.work_type);
+  const name = asString(payload.name);
+  const phone = asString(payload.phone, '—');
+  const nameLine = name ? `\n👤 Имя: ${name}` : '';
+  const stepEmoji: Record<string, string> = {
+    welcome: '🆕',
+    followup_2h: '⏰',
+    followup_24h: '📋',
+    followup_72h: '🔔',
+  };
+  const emoji = stepEmoji[step] || '📌';
+  return `${emoji} *Nurture: ${stepLabel}*\n\n📞 Телефон: ${phone}${nameLine}\n🔨 Тип работ: ${workType}\n\n👉 Свяжитесь с клиентом вручную (нет подключённого мессенджера).`;
+}
+
+async function handleNurtureStep(payload: JobPayload): Promise<JobPayload> {
+  const phone = asString(payload.phone);
+  if (!phone) throw new Error('crm.customer_nurture_step: missing phone in payload');
+
+  // Try to find customer's messenger
+  const supabase = getServiceClient();
+  const { data: token } = await supabase
+    .from('customer_tokens')
+    .select('messenger_id, preferred_contact')
+    .eq('phone', phone)
+    .maybeSingle();
+
+  const messengerId = token?.messenger_id as string | null;
+  const preferredContact = asString(token?.preferred_contact ?? '').toLowerCase();
+
+  if (messengerId && (preferredContact === 'telegram' || preferredContact === 'max')) {
+    const text = buildNurtureCustomerText(payload);
+    const channel: Channel = preferredContact === 'max' ? 'max' : 'telegram';
+    await sendOrThrow([{ channel, chat_id: messengerId, text }]);
+    return { delivered: 1, channel, step: payload.step };
+  }
+
+  // No messenger — send admin reminder
+  const reminderText = buildNurtureAdminReminderText(payload);
+  const results = await sendOrThrow(getAdminMessages(reminderText));
+  return { delivered: results.length, manual: true, step: payload.step };
+}
+
+// ──────────────────────────────────────────────────────────
+// Daily analytics report
+// ──────────────────────────────────────────────────────────
+
+async function handleDailyAnalyticsReport(_payload: JobPayload): Promise<JobPayload> {
+  const supabase = getServiceClient();
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const since = todayStart.toISOString();
+
+  const [ordersRes, leadsRes, payoutsRes] = await Promise.all([
+    supabase.from('orders')
+      .select('order_id, status, payment_status, customer_total, platform_margin')
+      .gte('created_at', since),
+    supabase.from('leads')
+      .select('id')
+      .gte('created_at', since),
+    supabase.from('orders')
+      .select('supplier_payout')
+      .gte('updated_at', since)
+      .eq('executor_payout_status', 'paid'),
+  ]);
+
+  const orders = ordersRes.data ?? [];
+  const leads = leadsRes.data ?? [];
+  const payouts = payoutsRes.data ?? [];
+
+  const newOrders = orders.length;
+  const paidOrders = orders.filter(o => o.payment_status === 'paid').length;
+  const gmv = orders.reduce((s, o) => s + (Number(o.customer_total) || 0), 0);
+  const revenue = orders.reduce((s, o) => s + (Number(o.platform_margin) || 0), 0);
+  const payoutSum = payouts.reduce((s, o) => s + (Number(o.supplier_payout) || 0), 0);
+
+  const dateStr = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', timeZone: 'Asia/Omsk' });
+
+  const text = `📊 *Дневной отчёт — ${dateStr}*\n\n` +
+    `📥 Новых заказов: *${newOrders}*\n` +
+    `✅ Оплаченных: *${paidOrders}*\n` +
+    `📋 Новых лидов: *${leads.length}*\n\n` +
+    `💰 GMV (оборот): *${gmv.toLocaleString('ru-RU')} ₽*\n` +
+    `📈 Маржа платформы: *${revenue.toLocaleString('ru-RU')} ₽*\n` +
+    `💸 Выплачено исп-лям: *${payoutSum.toLocaleString('ru-RU')} ₽*`;
+
+  const results = await sendOrThrow(getAdminMessages(text));
+  return { delivered: results.length };
+}
+
+// ──────────────────────────────────────────────────────────
+// MAX channel crosspost for paid orders
+// ──────────────────────────────────────────────────────────
+
+function buildCrosspostText(order: Record<string, unknown>): string {
+  const workType = workTypeLabel(order.work_type);
+  const address = asString(order.address, 'адрес не указан');
+  const amount = order.display_price ?? order.customer_total;
+  const amountLine = amount ? `\n💰 Бюджет: ${formatAmount(amount)}` : '';
+  const dateLine = order.work_date ? `\n📅 Дата: ${asString(order.work_date)}` : '';
+  const commentLine = order.comment ? `\n💬 ${asString(order.comment).slice(0, 200)}` : '';
+  const appUrl = getAppUrl();
+  return `🔨 *${workType}*\n\n📍 ${address}${dateLine}${amountLine}${commentLine}\n\n🔗 Подробнее и откликнуться: ${appUrl}/orders/public`;
+}
+
+export async function crosspostPaidOrdersToMax(batchSize = 5): Promise<{ posted: number; skipped: number }> {
+  const maxChannelId = process.env.MAX_CHANNEL_ID;
+  if (!maxChannelId) {
+    throw new Error('MAX_CHANNEL_ID is not configured');
+  }
+
+  const supabase = getServiceClient();
+  const { data: orders, error } = await supabase
+    .from('orders')
+    .select('order_id, work_type, address, work_date, display_price, customer_total, comment')
+    .eq('status', 'paid')
+    .is('max_crossposted_at', null)
+    .order('created_at', { ascending: true })
+    .limit(batchSize);
+
+  if (error) throw new Error(`crosspost query failed: ${error.message}`);
+  if (!orders || orders.length === 0) return { posted: 0, skipped: 0 };
+
+  const router = getChannelRouter();
+  let posted = 0;
+  let skipped = 0;
+
+  for (const order of orders) {
+    try {
+      const text = buildCrosspostText(order as Record<string, unknown>);
+      const result = await router.send({ channel: 'max', chat_id: maxChannelId, text });
+      if (result.success) {
+        await supabase
+          .from('orders')
+          .update({ max_crossposted_at: new Date().toISOString() })
+          .eq('order_id', order.order_id);
+        posted++;
+      } else {
+        skipped++;
+      }
+    } catch {
+      skipped++;
+    }
+  }
+
+  return { posted, skipped };
+}
+
 function buildPaymentLinkMessage(payload: JobPayload): { channel: Channel; chatId: string; text: string } | null {
   const preferredContact = asString(payload.preferred_contact).toLowerCase();
   const messengerId = asString(payload.messenger_id);
@@ -253,6 +433,12 @@ export async function handleJob(job: Pick<JobQueueRow, 'id' | 'job_type' | 'payl
 
     case 'notify.payout_initiated':
       return handleAdminBroadcast(buildPayoutText(job.payload));
+
+    case 'crm.customer_nurture_step':
+      return handleNurtureStep(job.payload);
+
+    case 'analytics.daily_admin_report':
+      return handleDailyAnalyticsReport(job.payload);
 
     case 'customer.send_payment_link': {
       const delivery = buildPaymentLinkMessage(job.payload);
