@@ -16,7 +16,14 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // CSRF: check Origin header for state-changing API requests
-  if (pathname.startsWith('/api/') && MUTATING_METHODS.has(req.method)) {
+  // Skip webhook endpoints — they come from external servers (Telegram, MAX, etc.)
+  if (
+    pathname.startsWith('/api/') &&
+    MUTATING_METHODS.has(req.method) &&
+    !pathname.startsWith('/api/telegram/webhook') &&
+    !pathname.startsWith('/api/max/webhook') &&
+    !pathname.startsWith('/api/payment/callback')
+  ) {
     const origin = req.headers.get('origin');
     const host = req.headers.get('host');
     if (origin && host) {
