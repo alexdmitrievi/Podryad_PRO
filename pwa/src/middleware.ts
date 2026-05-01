@@ -22,6 +22,7 @@ export function middleware(req: NextRequest) {
     MUTATING_METHODS.has(req.method) &&
     !pathname.startsWith('/api/telegram/webhook') &&
     !pathname.startsWith('/api/max/webhook') &&
+    !pathname.startsWith('/api/avito/webhook') &&
     !pathname.startsWith('/api/payment/callback')
   ) {
     const origin = req.headers.get('origin');

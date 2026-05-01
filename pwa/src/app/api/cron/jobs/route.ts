@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
+import crypto from 'crypto';
 import { claimJobs } from '@/lib/job-queue';
 import { processClaimedJobs } from '@/lib/job-worker';
 import { log } from '@/lib/logger';
@@ -19,7 +19,7 @@ function verifyWorkerSecret(req: NextRequest): boolean {
 
   const actual = Buffer.from(candidate);
   const expected = Buffer.from(secret);
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 }
 
 async function runWorker(req: NextRequest) {
