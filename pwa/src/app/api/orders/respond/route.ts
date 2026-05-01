@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 interface ResponseBody {
   order_id: string;
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (error) {
-    console.error('POST /api/orders/respond:', error);
+    log.error('POST /api/orders/respond', { error: String(error) });
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
       price,
     },
   }).catch((err) => {
-    console.error('enqueueJob notify.executor_response_received error (non-blocking):', err);
+    log.error('enqueueJob notify.executor_response_received error (non-blocking)', { error: String(err) });
   });
 
   return NextResponse.json({ ok: true }, { status: 201 });

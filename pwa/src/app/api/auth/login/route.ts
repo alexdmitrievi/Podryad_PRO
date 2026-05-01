@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { verifyPassword, createSessionToken, setSessionCookie } from '@/lib/customerAuth';
 import { checkRateLimit, resetRateLimit } from '@/lib/rate-limit';
+import { log } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, customer: { id: customer.id, name: customer.name } });
   } catch (err) {
-    console.error('Login error:', err);
+    log.error('Login error', { error: String(err) });
     return NextResponse.json({ error: 'Внутренняя ошибка' }, { status: 500 });
   }
 }

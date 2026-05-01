@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 const BUCKET = 'site-images';
 const MAX_SIZE = 5 * 1024 * 1024;
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
     .upload(path, buf, { contentType: file.type, upsert: false });
 
   if (uploadError) {
-    console.error('site-images upload error:', uploadError);
+    log.error('site-images upload error', { error: String(uploadError) });
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
   if (upsertError) {
     // Roll back the upload so we don't orphan the file
     await db.storage.from(BUCKET).remove([path]).catch(() => {});
-    console.error('site-images db upsert error:', upsertError);
+    log.error('site-images db upsert error', { error: String(upsertError) });
     return NextResponse.json({ error: upsertError.message }, { status: 500 });
   }
 
@@ -149,7 +150,7 @@ export async function DELETE(req: NextRequest) {
     .eq('slug', slug);
 
   if (error) {
-    console.error('site-images delete error:', error);
+    log.error('site-images delete error', { error: String(error) });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 /**
  * POST /api/payment/create
@@ -193,7 +194,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, payment_url, gateway_order_id });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error('POST /api/payment/create error:', message);
+    log.error('POST /api/payment/create error', { error: String(message) });
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }

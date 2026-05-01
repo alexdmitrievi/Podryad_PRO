@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { hashPassword, createSessionToken, setSessionCookie } from '@/lib/customerAuth';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { log } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error || !customer) {
-      console.error('Register error:', error);
+      log.error('Register error (db)', { error: String(error) });
       return NextResponse.json({ error: 'Ошибка регистрации' }, { status: 500 });
     }
 
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, customer: { id: customer.id, name: customer.name } });
   } catch (err) {
-    console.error('Register error:', err);
+    log.error('Register error', { error: String(err) });
     return NextResponse.json({ error: 'Внутренняя ошибка' }, { status: 500 });
   }
 }

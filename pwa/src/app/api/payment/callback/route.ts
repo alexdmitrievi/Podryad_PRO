@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 /**
  * POST /api/payment/callback
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
   if (gateway === 'tinkoff') {
     const password = process.env.TINKOFF_PASSWORD;
     if (!password) {
-      console.error('TINKOFF_PASSWORD not configured');
+      log.error('TINKOFF_PASSWORD not configured');
       return NextResponse.json({ error: 'Gateway misconfigured' }, { status: 500 });
     }
     if (!verifyTinkoff(bodyParsed, password)) {
@@ -162,7 +163,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!orderId) {
-    console.error('payment/callback: could not resolve order_id', event);
+    log.error('payment/callback: could not resolve order_id', { event: String(JSON.stringify(event)) });
     return NextResponse.json({ ok: true, skipped: true, reason: 'order_not_found' });
   }
 
@@ -174,7 +175,7 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   if (!order) {
-    console.error('payment/callback: order row missing', orderId);
+    log.error('payment/callback: order row missing', { orderId });
     return NextResponse.json({ ok: true, skipped: true, reason: 'order_row_missing' });
   }
 
@@ -197,7 +198,7 @@ export async function POST(req: NextRequest) {
     .eq('order_id', orderId);
 
   if (updateErr) {
-    console.error('payment/callback update error:', updateErr);
+    log.error('payment/callback update error', { error: String(updateErr) });
     // Return 500 so gateway retries (webhook has not been processed)
     return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
   }

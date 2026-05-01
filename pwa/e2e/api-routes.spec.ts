@@ -47,7 +47,7 @@ test.describe('POST /api/orders', () => {
 
   test('returns 400 when body is not valid JSON', async ({ request }) => {
     const response = await request.post('/api/orders', {
-      body: 'not-json',
+      data: 'not-json',
       headers: { 'Content-Type': 'application/json' },
     });
     expect(response.status()).toBe(400);
@@ -76,7 +76,7 @@ test.describe('POST /api/my/recover', () => {
 
   test('returns 400 when body is not valid JSON', async ({ request }) => {
     const response = await request.post('/api/my/recover', {
-      body: '{bad}',
+      data: '{bad}',
       headers: { 'Content-Type': 'application/json' },
     });
     expect(response.status()).toBe(400);
@@ -93,7 +93,7 @@ test.describe('POST /api/orders/respond', () => {
 
   test('returns 400 when body is not valid JSON', async ({ request }) => {
     const response = await request.post('/api/orders/respond', {
-      body: '{bad}',
+      data: '{bad}',
       headers: { 'Content-Type': 'application/json' },
     });
     expect(response.status()).toBe(400);

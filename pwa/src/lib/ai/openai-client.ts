@@ -1,5 +1,6 @@
 import { getLLMConfig, type LLMConfig } from './config';
 import type { AgentRequest, AgentResponse, ConversationMessage } from './types';
+import { log } from '@/lib/logger';
 
 const SYSTEM_PROMPT = `Ты — AI-ассистент сервиса «Подряд PRO», платформы для заказа рабочей силы, техники и стройматериалов.
 
@@ -65,7 +66,7 @@ export class OpenAIClient {
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error(`[OpenAIClient] API error ${res.status}:`, errorText);
+        log.error('[OpenAIClient] API error', { status: res.status, error: errorText });
         return this.fallbackResponse(`OpenAI API error: ${res.status}`, start);
       }
 
@@ -97,7 +98,7 @@ export class OpenAIClient {
       };
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      console.error('[OpenAIClient] Request failed:', errorMsg);
+      log.error('[OpenAIClient] Request failed', { error: errorMsg });
       return this.fallbackResponse(errorMsg, start);
     }
   }

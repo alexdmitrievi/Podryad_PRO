@@ -1,51 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
-
-const pinAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 15 * 60 * 1000; // 15 минут
-
-function isPinRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = pinAttempts.get(ip);
-  if (!entry || now > entry.resetAt) {
-    pinAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return false;
-  }
-  entry.count++;
-  return entry.count > MAX_ATTEMPTS;
-}
+import { verifyAdminPin } from '@/lib/auth';
+import { checkRateLimit, resetRateLimit } from '@/lib/rate-limit';
+import { writeAuditLog } from '@/lib/audit';
 
 export async function POST(req: NextRequest) {
   const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (isPinRateLimited(clientIp)) {
+  const ua = req.headers.get('user-agent') ?? undefined;
+
+  // Shared rate limiter (Upstash + in-memory fallback)
+  const rl = await checkRateLimit(`pin:${clientIp}`, 5, 15 * 60 * 1000);
+  if (rl.limited) {
     return NextResponse.json(
       { valid: false, error: 'Слишком много попыток. Повторите через 15 минут.' },
-      { status: 429 }
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } },
     );
-  }
-
-  const adminPin = process.env.ADMIN_PIN;
-  if (!adminPin) {
-    return NextResponse.json({ valid: false }, { status: 500 });
   }
 
   let body: { pin?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ valid: false }, { status: 400 });
+    return NextResponse.json({ valid: false, error: 'invalid_json' }, { status: 400 });
   }
 
   const pin = body.pin ?? '';
-  const valid =
-    pin.length === adminPin.length &&
-    crypto.timingSafeEqual(Buffer.from(pin), Buffer.from(adminPin));
+  const result = await verifyAdminPin(pin);
 
-  // При успехе сбрасываем счётчик
-  if (valid) {
-    pinAttempts.delete(clientIp);
+  if (result.valid) {
+    await resetRateLimit(`pin:${clientIp}`);
+    void writeAuditLog({
+      admin_id: result.adminId,
+      admin_username: result.username,
+      action: 'POST /api/admin/verify-pin',
+      endpoint: '/api/admin/verify-pin',
+      ip_address: clientIp,
+      user_agent: ua,
+      details: { success: true },
+    });
+    return NextResponse.json({ valid: true, admin: { id: result.adminId, username: result.username } });
   }
 
-  return NextResponse.json({ valid });
+  void writeAuditLog({
+    admin_id: undefined,
+    admin_username: undefined,
+    action: 'POST /api/admin/verify-pin (failed)',
+    endpoint: '/api/admin/verify-pin',
+    ip_address: clientIp,
+    user_agent: ua,
+    details: { success: false },
+  });
+
+  return NextResponse.json({ valid: false });
 }

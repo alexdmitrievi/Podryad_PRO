@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 interface ContactEntry {
   id: string;
@@ -144,7 +145,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ contacts });
   } catch (err) {
-    console.error('GET /api/admin/contacts:', err);
+    log.error('GET /api/admin/contacts', { error: String(err) });
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual, randomUUID } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 const DISCOUNT = 20; // always 20% for own equipment
 
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('GET /api/admin/own-equipment:', error);
+    log.error('GET /api/admin/own-equipment', { error: String(error) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
   return NextResponse.json({ ok: true, items: data || [] });
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    console.error('POST /api/admin/own-equipment:', error);
+    log.error('POST /api/admin/own-equipment', { error: String(error) });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   return NextResponse.json({ ok: true, item: data }, { status: 201 });
@@ -172,7 +173,7 @@ export async function PUT(req: NextRequest) {
     .eq('listing_type', 'own_equipment');
 
   if (error) {
-    console.error('PUT /api/admin/own-equipment:', error);
+    log.error('PUT /api/admin/own-equipment', { error: String(error) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
@@ -197,7 +198,7 @@ export async function DELETE(req: NextRequest) {
     .eq('listing_type', 'own_equipment');
 
   if (error) {
-    console.error('DELETE /api/admin/own-equipment:', error);
+    log.error('DELETE /api/admin/own-equipment', { error: String(error) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
   return NextResponse.json({ ok: true });

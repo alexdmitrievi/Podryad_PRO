@@ -1,5 +1,6 @@
 import { getServiceClient } from './supabase';
 import type { PushSubscriptionData } from './push';
+import { log } from '@/lib/logger';
 
 /** Нет SUPABASE_SERVICE_ROLE_KEY или клиент не создан. */
 export const PUSH_STORAGE_NOT_CONFIGURED = 'PUSH_STORAGE_NOT_CONFIGURED';
@@ -53,7 +54,7 @@ export async function savePushSubscription(
       { onConflict: 'endpoint' }
     );
   if (error) {
-    console.error('push_subscriptions upsert:', error);
+    log.error('push_subscriptions upsert', { error: String(error) });
     throw new Error('PUSHSUBS_WRITE_FAILED');
   }
 }
@@ -68,7 +69,7 @@ export async function findPushSubscriptions(
     .eq('user_id', userId)
     .eq('is_active', true);
   if (error) {
-    console.error('push_subscriptions read:', error);
+    log.error('push_subscriptions read', { error: String(error) });
     return [];
   }
   return (data || []).map((r) => rowToSubscription(r as Row));
@@ -86,7 +87,7 @@ export async function findPushSubscriptionsByPhone(
     .eq('phone', digits)
     .eq('is_active', true);
   if (error) {
-    console.error('push_subscriptions read:', error);
+    log.error('push_subscriptions read', { error: String(error) });
     return [];
   }
   return (data || []).map((r) => rowToSubscription(r as Row));
@@ -102,7 +103,7 @@ export async function findPushSubscriptionsByRole(
     .eq('role', role)
     .eq('is_active', true);
   if (error) {
-    console.error('push_subscriptions read:', error);
+    log.error('push_subscriptions read', { error: String(error) });
     return [];
   }
   return (data || []).map((r) => rowToSubscription(r as Row));
@@ -133,7 +134,7 @@ export async function listPushSubscriptionsForSend(filter: {
 
   const { data, error } = await query;
   if (error) {
-    console.error('push_subscriptions read:', error);
+    log.error('push_subscriptions read', { error: String(error) });
     return [];
   }
 
@@ -161,7 +162,7 @@ export async function deactivatePushSubscription(
     .eq('endpoint', endpoint)
     .eq('user_id', userId);
   if (error) {
-    console.error('push_subscriptions deactivate:', error);
+    log.error('push_subscriptions deactivate', { error: String(error) });
     throw new Error('PUSHSUBS_WRITE_FAILED');
   }
 }

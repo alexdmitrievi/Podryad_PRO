@@ -7,6 +7,7 @@ import type {
   ChannelMapper,
 } from './types';
 import { getMaxConfig, type ChannelConfig } from './config';
+import { log } from '@/lib/logger';
 
 /**
  * MAX Transport — sends messages through MAX Bot API (botapi.max.ru).
@@ -81,10 +82,10 @@ export class MaxTransport implements ChannelTransport {
         }
 
         lastError = `MAX API error: ${res.status} ${res.statusText}`;
-        console.error(`[MaxTransport] Attempt ${attempt + 1} failed:`, lastError);
+        log.error(`[MaxTransport] Attempt ${attempt + 1} failed`, { error: String(lastError) });
       } catch (err: unknown) {
         lastError = err instanceof Error ? err.message : String(err);
-        console.error(`[MaxTransport] Attempt ${attempt + 1} error:`, lastError);
+        log.error(`[MaxTransport] Attempt ${attempt + 1} error`, { error: String(lastError) });
       }
 
       if (attempt < this.config.maxRetries) {

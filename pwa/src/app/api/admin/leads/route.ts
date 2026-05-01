@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
     .limit(1000);
 
   if (error) {
-    console.error('GET /api/admin/leads:', error);
+    log.error('GET /api/admin/leads', { error: String(error) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 

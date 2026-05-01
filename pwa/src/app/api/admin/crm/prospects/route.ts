@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -96,7 +97,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    console.error('POST /api/admin/crm/prospects:', error);
+    log.error('POST /api/admin/crm/prospects', { error: String(error) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 
@@ -170,7 +171,7 @@ export async function PUT(req: NextRequest) {
 
   const { error } = await db.from('crm_executor_prospects').update(updates).eq('id', body.id);
   if (error) {
-    console.error('PUT /api/admin/crm/prospects:', error);
+    log.error('PUT /api/admin/crm/prospects', { error: String(error) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 

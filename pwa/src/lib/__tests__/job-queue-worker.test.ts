@@ -199,7 +199,8 @@ describe('failJob', () => {
     const job = { id: 'job-retry', attempts: 2, max_attempts: 8 };
     const state = await failJob(job, 'connection timeout');
     expect(state).toBe('retry');
-    const updateArg = update.mock.calls[0][0] as Record<string, unknown>;
+    expect(update).toHaveBeenCalled();
+    const updateArg = ((update.mock.calls as unknown as unknown[][])[0] ?? [])[0] as Record<string, unknown>;
     expect(updateArg.status).toBe('pending');
     expect(typeof updateArg.run_at).toBe('string');
     // run_at must be in the future
@@ -212,7 +213,8 @@ describe('failJob', () => {
     const job = { id: 'job-dead', attempts: 8, max_attempts: 8 };
     const state = await failJob(job, 'permanent failure');
     expect(state).toBe('dead');
-    const updateArg = update.mock.calls[0][0] as Record<string, unknown>;
+    expect(update).toHaveBeenCalled();
+    const updateArg = ((update.mock.calls as unknown as unknown[][])[0] ?? [])[0] as Record<string, unknown>;
     expect(updateArg.status).toBe('dead');
     expect(updateArg.last_error).toBe('permanent failure');
     expect('run_at' in updateArg).toBe(false);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 /**
  * Public listings API — returns only customer-safe fields.
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query;
   if (error) {
-    console.error('GET /api/listings/public:', error);
+    log.error('GET /api/listings/public', { error: String(error) });
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
 

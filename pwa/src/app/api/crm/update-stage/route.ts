@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 function verifySecret(secret: string): boolean {
   const expected = process.env.CRM_WEBHOOK_SECRET;
@@ -61,21 +62,21 @@ export async function POST(req: NextRequest) {
       .update({ stage: 'converted', converted_at: now, order_id: entity_id, updated_at: now })
       .eq('phone', cleanPhone)
       .neq('stage', 'converted');
-    if (error) console.error('CRM update-stage order_created:', error);
+    if (error) log.error('CRM update-stage order_created', { error: String(error) });
   } else if (event === 'contractor_registered') {
     const { error } = await db
       .from('crm_executor_prospects')
       .update({ stage: 'registered', registered_at: now, contractor_id: entity_id, updated_at: now })
       .eq('phone', cleanPhone)
       .neq('stage', 'active');
-    if (error) console.error('CRM update-stage contractor_registered:', error);
+    if (error) log.error('CRM update-stage contractor_registered', { error: String(error) });
   } else if (event === 'order_taken') {
     const { error } = await db
       .from('crm_executor_prospects')
       .update({ stage: 'active', first_order_at: now, updated_at: now })
       .eq('phone', cleanPhone)
       .eq('stage', 'registered');
-    if (error) console.error('CRM update-stage order_taken:', error);
+    if (error) log.error('CRM update-stage order_taken', { error: String(error) });
   }
 
   return NextResponse.json({ ok: true });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { getMarkupRate } from '@/lib/pricing';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -113,13 +114,13 @@ export async function PUT(
       .eq('order_id', orderId);
 
     if (error) {
-      console.error(`PUT /api/admin/orders/${orderId}:`, error);
+      log.error(`PUT /api/admin/orders/${orderId}`, { error: String(error) });
       return NextResponse.json({ error: 'DB error' }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error(`PUT /api/admin/orders/${orderId}:`, err);
+    log.error(`PUT /api/admin/orders/${orderId}`, { error: String(err) });
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

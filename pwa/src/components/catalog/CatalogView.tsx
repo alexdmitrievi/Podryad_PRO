@@ -5,6 +5,7 @@ import { Filter, SlidersHorizontal } from 'lucide-react';
 import CategoryTabs, { type CatalogType } from './CategoryTabs';
 import CatalogListingCard, { type CatalogListing } from './CatalogListingCard';
 import PriceCalculator from './PriceCalculator';
+import { log } from '@/lib/logger';
 
 const CITIES = [
   { value: 'all', label: 'Все города' },
@@ -46,7 +47,7 @@ export default function CatalogView({ type }: Props) {
       setTotal(data.total || 0);
       if (reset) setPage(1);
     } catch (e) {
-      console.error(e);
+      log.error('CatalogView error', { error: String(e) });
     } finally {
       setLoading(false);
     }

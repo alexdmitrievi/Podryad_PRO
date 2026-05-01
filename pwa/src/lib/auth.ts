@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
 import { getWorkerByTelegramId } from '@/lib/db';
+import { getServiceClient } from '@/lib/supabase';
 
 /** Нормализация телефона: 79001234567 */
 export function normalizePhone(raw: string): string {
@@ -95,6 +96,9 @@ export function verifySessionToken(token: string): string | null {
 export async function getTelegramIdFromSession(): Promise<string | null> {
   const token = await getSessionToken();
   if (!token) return null;
+  // Check revoke-list
+  const revoked = await isSessionRevoked(token);
+  if (revoked) return null;
   return verifySessionToken(token);
 }
 
@@ -177,6 +181,10 @@ export async function getSession(): Promise<PodryadSession | null> {
   const store = await cookies();
   const token = store.get('podryad_session')?.value;
   if (!token) return null;
+
+  // Check revoke-list before verifying signature (fast path if revoked)
+  const revoked = await isSessionRevoked(token);
+  if (revoked) return null;
 
   const parts = token.split('.');
   if (parts.length !== 3) return null;
@@ -339,4 +347,86 @@ export function verifyConfirmationToken(token: string): ConfirmationTokenPayload
   if (payload.role !== 'customer' && payload.role !== 'supplier') return null;
 
   return payload;
+}
+
+// ── SESSION REVOKE-LIST ────────────────────────────────────────────────────
+
+function jtiHash(token: string): string {
+  return crypto.createHash('sha256').update(token.slice(0, 64)).digest('hex');
+}
+
+/** Revoke a session token (JWT or legacy Telegram session). */
+export async function revokeSessionToken(token: string): Promise<boolean> {
+  try {
+    const client = getServiceClient();
+    const hash = jtiHash(token);
+    const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(); // 90 days
+    const { error } = await client.from('revoked_sessions').upsert({
+      jti_hash: hash,
+      expires_at: expiresAt,
+    });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/** Check if a session token has been revoked. Returns true if revoked. */
+export async function isSessionRevoked(token: string): Promise<boolean> {
+  try {
+    const client = getServiceClient();
+    const hash = jtiHash(token);
+    const { data, error } = await client
+      .from('revoked_sessions')
+      .select('jti_hash')
+      .eq('jti_hash', hash)
+      .maybeSingle();
+    if (error) return false; // fail open — if DB is down, allow session
+    return data !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** Verify admin PIN against DB admin_users table, fallback to env var. */
+export async function verifyAdminPin(
+  pin: string,
+): Promise<{ valid: boolean; adminId?: string; username?: string }> {
+  // Check DB admin_users first
+  try {
+    const client = getServiceClient();
+    const { data: admins, error } = await client
+      .from('admin_users')
+      .select('id, username, pin_hash')
+      .eq('is_active', true);
+
+    if (!error && admins && admins.length > 0) {
+      for (const admin of admins) {
+        if (verifyPassword(pin, admin.pin_hash)) {
+          // Update last_login
+          void client
+            .from('admin_users')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', admin.id);
+          return { valid: true, adminId: admin.id, username: admin.username };
+        }
+      }
+      return { valid: false };
+    }
+  } catch {
+    // DB not available — fall through to env var
+  }
+
+  // Fallback: single ADMIN_PIN env var
+  const adminPin = process.env.ADMIN_PIN;
+  if (adminPin) {
+    const { timingSafeEqual } = crypto;
+    const buf1 = Buffer.from(pin);
+    const buf2 = Buffer.from(adminPin);
+    if (buf1.length === buf2.length && timingSafeEqual(buf1, buf2)) {
+      return { valid: true, adminId: 'env', username: 'admin' };
+    }
+  }
+
+  return { valid: false };
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
     .select('listing_type, category, subcategory, markup_percent');
 
   if (ratesErr) {
-    console.error('POST /api/admin/recalculate-prices:', ratesErr);
+    log.error('POST /api/admin/recalculate-prices rates fetch error', { error: String(ratesErr) });
     return NextResponse.json({ error: 'Failed to fetch rates' }, { status: 500 });
   }
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     .eq('is_active', true);
 
   if (listErr) {
-    console.error('POST /api/admin/recalculate-prices:', listErr);
+    log.error('POST /api/admin/recalculate-prices listings fetch error', { error: String(listErr) });
     return NextResponse.json({ error: 'Failed to fetch listings' }, { status: 500 });
   }
 

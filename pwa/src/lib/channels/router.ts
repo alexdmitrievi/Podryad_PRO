@@ -11,6 +11,7 @@ import { TelegramTransport, TelegramMapper } from './telegram';
 import { MaxTransport, MaxMapper } from './max';
 import { AvitoTransport, AvitoMapper } from './avito';
 import { SUPPORTED_CHANNELS, isValidChannel } from './config';
+import { log } from '@/lib/logger';
 
 /**
  * ChannelRouter — unified dispatcher for all supported channels.
@@ -59,7 +60,7 @@ export class ChannelRouter {
     }
 
     const correlationId = `${message.channel}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    console.log(`[ChannelRouter] Sending message`, {
+    log.info(`[ChannelRouter] Sending message`, {
       correlation_id: correlationId,
       channel: message.channel,
       chat_id: message.chat_id,
@@ -68,7 +69,7 @@ export class ChannelRouter {
 
     const result = await transport.send(message);
 
-    console.log(`[ChannelRouter] Send result`, {
+    log.info(`[ChannelRouter] Send result`, {
       correlation_id: correlationId,
       channel: message.channel,
       success: result.success,

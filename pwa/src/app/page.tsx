@@ -6,6 +6,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import PhoneInput, { isValidPhone } from '@/components/ui/PhoneInput';
 import Spinner from '@/components/ui/Spinner';
+import AiChatWidget from '@/components/AiChatWidget';
 
 const LiveOrdersMap = dynamic(() => import('@/components/LiveOrdersMap'), { ssr: false });
 
@@ -1378,6 +1379,7 @@ export default function HomePage() {
         </div>
       </footer>
 
+      <AiChatWidget />
 
     </div>
   );

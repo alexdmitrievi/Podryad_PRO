@@ -1,4 +1,5 @@
 import webPush from 'web-push';
+import { log } from '@/lib/logger';
 
 // Инициализация (серверная сторона)
 const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
@@ -53,13 +54,10 @@ export async function sendPushNotification(
 
     // 410 Gone = подписка недействительна, нужно удалить
     if (statusCode === 410 || statusCode === 404) {
-      console.log(
-        'Push subscription expired:',
-        subscription.endpoint.slice(-20)
-      );
+      log.info('Push subscription expired', { endpointSuffix: subscription.endpoint.slice(-20) });
       return false; // Вызывающий код должен удалить подписку
     }
-    console.error('Push error:', message);
+    log.error('Push error', { error: message });
     return false;
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
     });
 
   if (uploadError) {
-    console.error('Upload error:', uploadError);
+    log.error('Upload error', { error: String(uploadError) });
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 

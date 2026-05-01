@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 /**
  * Public orders API — returns only customer-safe fields.
@@ -22,7 +23,7 @@ export async function GET() {
     .limit(100);
 
   if (error) {
-    console.error('GET /api/orders/public:', error);
+    log.error('GET /api/orders/public', { error: String(error) });
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
 

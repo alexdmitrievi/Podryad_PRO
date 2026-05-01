@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 /** Strip all non-digit characters from a phone string and return only digits. */
 function stripPhone(raw: string): string {
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
       action: 'recover',
     },
   }).catch((err) => {
-    console.error('enqueueJob customer.send_dashboard_link error (non-blocking):', err);
+    log.error('enqueueJob customer.send_dashboard_link error (non-blocking)', { error: String(err) });
   });
 
   return NextResponse.json({ ok: true, message: SUCCESS_MESSAGE });

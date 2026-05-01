@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 /**
  * GET /api/site-images
@@ -17,7 +18,7 @@ export async function GET() {
     .select('slug, image_url');
 
   if (error) {
-    console.error('GET /api/site-images:', error);
+    log.error('GET /api/site-images', { error: String(error) });
     return NextResponse.json({ images: {} }, { status: 200 });
   }
 

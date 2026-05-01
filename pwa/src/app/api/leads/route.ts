@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 interface LeadBody {
   phone: string;
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
   }).select('id').single();
 
   if (error) {
-    console.error('POST /api/leads:', error);
+    log.error('POST /api/leads', { error: String(error) });
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
     sourceTable: 'leads',
     sourceId: leadId != null ? String(leadId) : undefined,
   }).catch((err) => {
-    console.error('enqueueJob notify.lead_created error (non-blocking):', err);
+    log.error('enqueueJob notify.lead_created error (non-blocking)', { error: String(err) });
   });
 
   // Nurture chain — 4 touch-points for the lead
@@ -138,7 +139,7 @@ export async function POST(req: NextRequest) {
       runAt: step.runAt,
       payload: { ...nurtureBase.payload, step: step.step },
     }).catch((err) => {
-      console.error(`enqueueJob nurture ${step.step} error (non-blocking):`, err);
+      log.error(`enqueueJob nurture ${step.step} error (non-blocking)`, { error: String(err) });
     });
   }
 

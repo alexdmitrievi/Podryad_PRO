@@ -4,6 +4,9 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   skipWaiting: true,
   /** В dev отключаем плагин: иначе HMR и кэш SW часто дают __webpack_modules__[id] is not a function */
   disable: process.env.NODE_ENV === 'development',
+  fallbacks: {
+    document: '/offline',
+  },
 });
 
 /** @type {import('next').NextConfig} */

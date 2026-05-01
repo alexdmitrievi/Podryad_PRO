@@ -4,7 +4,7 @@
  * Email has been fully removed from the communication layer.
  */
 
-export type Channel = 'telegram' | 'max' | 'avito';
+export type Channel = 'telegram' | 'max' | 'avito' | 'web';
 
 export type IncomingEventType = 'message' | 'command' | 'callback' | 'system';
 

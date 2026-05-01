@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
     .limit(200);
 
   if (error) {
-    console.error('GET /api/admin/responses:', error);
+    log.error('GET /api/admin/responses', { error: String(error) });
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
@@ -62,7 +63,7 @@ export async function PUT(req: NextRequest) {
     .eq('id', body.id);
 
   if (error) {
-    console.error('PUT /api/admin/responses:', error);
+    log.error('PUT /api/admin/responses', { error: String(error) });
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 

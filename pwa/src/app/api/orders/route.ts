@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createOrder, getOrCreateCustomerToken } from '@/lib/db';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 /** Strip all non-digit characters from a phone string and return only digits. */
 function stripPhone(raw: string): string {
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
       customer_name: customer_name != null ? String(customer_name) : null,
     });
   } catch (err) {
-    console.error('POST /api/orders createOrder:', err);
+    log.error('POST /api/orders createOrder', { error: String(err) });
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
       preferred_contact != null ? String(preferred_contact) : undefined,
     );
   } catch (err) {
-    console.error('POST /api/orders getOrCreateCustomerToken:', err);
+    log.error('POST /api/orders getOrCreateCustomerToken', { error: String(err) });
     return NextResponse.json({ error: 'token_error' }, { status: 500 });
   }
 
@@ -99,16 +100,16 @@ export async function POST(req: NextRequest) {
       hours,
     },
     sourceTable: 'orders',
-    sourceId: order.order_id,
+    sourceId: String(order.order_id ?? ''),
   }).catch((err) => {
-    console.error('enqueueJob notify.order_created error (non-blocking):', err);
+    log.error('enqueueJob notify.order_created error (non-blocking)', { error: String(err) });
   });
 
   return NextResponse.json(
     {
       ok: true,
       order_id: order.order_id,
-      access_token: (tokenRow as Record<string, unknown>).access_token,
+      access_token: String((tokenRow as Record<string, unknown>).access_token ?? ''),
     },
     { status: 201 },
   );

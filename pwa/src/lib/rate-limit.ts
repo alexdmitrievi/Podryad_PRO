@@ -9,6 +9,8 @@
  * on Redis errors so a Redis outage cannot DoS the whole app.
  */
 
+import { log } from '@/lib/logger';
+
 const memoryStore = new Map<string, { count: number; resetAt: number }>();
 
 if (typeof setInterval !== 'undefined') {
@@ -97,7 +99,7 @@ export async function checkRateLimit(
         retryAfterMs: 0,
       };
     } catch (err) {
-      console.error('rate-limit Upstash fallback to in-memory:', err);
+      log.error('rate-limit Upstash fallback to in-memory', { error: String(err) });
     }
   }
   return checkInMemory(key, maxAttempts, windowMs);
@@ -134,7 +136,7 @@ export async function resetRateLimit(key: string): Promise<void> {
     try {
       await upstashCommand(['DEL', `rl:${key}`]);
     } catch (err) {
-      console.error('rate-limit reset Upstash error:', err);
+      log.error('rate-limit reset Upstash error', { error: String(err) });
     }
   }
   memoryStore.delete(key);

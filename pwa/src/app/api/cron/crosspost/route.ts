@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { crosspostPaidOrdersToMax } from '@/lib/job-worker';
+import { log } from '@/lib/logger';
 
 function verifyWorkerSecret(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error('crosspost cron error:', message);
+    log.error('crosspost cron error', { error: String(message) });
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

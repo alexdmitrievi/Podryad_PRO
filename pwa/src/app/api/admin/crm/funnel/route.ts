@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -40,10 +41,10 @@ export async function GET(req: NextRequest) {
   ]);
 
   if (leadsResult.error) {
-    console.error('CRM funnel leads error:', leadsResult.error);
+    log.error('CRM funnel leads error', { error: String(leadsResult.error) });
   }
   if (prospectsResult.error) {
-    console.error('CRM funnel prospects error:', prospectsResult.error);
+    log.error('CRM funnel prospects error', { error: String(prospectsResult.error) });
   }
 
   const leads = leadsResult.data || [];
@@ -118,7 +119,7 @@ export async function PUT(req: NextRequest) {
 
   const { error } = await db.from(table).update(updates).eq('id', id);
   if (error) {
-    console.error(`PUT /api/admin/crm/funnel [${table}]:`, error);
+    log.error(`PUT /api/admin/crm/funnel [${table}]`, { error: String(error) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 

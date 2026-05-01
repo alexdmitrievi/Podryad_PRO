@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual, randomUUID } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { getMarkupRate, applyMarkup } from '@/lib/pricing';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
     .limit(500);
 
   if (error) {
-    console.error('GET /api/admin/listings:', error);
+    log.error('GET /api/admin/listings', { error: String(error) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    console.error('POST /api/admin/listings:', error);
+    log.error('POST /api/admin/listings', { error: String(error) });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -142,7 +143,7 @@ export async function PUT(req: NextRequest) {
     .eq('listing_id', listing_id);
 
   if (error) {
-    console.error('PUT /api/admin/listings:', error);
+    log.error('PUT /api/admin/listings', { error: String(error) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 

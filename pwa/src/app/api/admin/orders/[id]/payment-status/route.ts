@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 async function resolveExecutorPhone(
   supabase: ReturnType<typeof getServiceClient>,
@@ -100,7 +101,7 @@ export async function PUT(
     .single();
 
   if (error) {
-    console.error('payment-status PUT:', error);
+    log.error('payment-status PUT', { error: String(error) });
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
@@ -131,7 +132,7 @@ export async function PUT(
         createdBy: 'api/admin/orders/payment-status',
       });
     } catch (error) {
-      console.error('enqueue notify.payment_held failed (non-blocking):', error);
+      log.error('enqueue notify.payment_held failed (non-blocking)', { error: String(error) });
     }
   }
 
@@ -154,7 +155,7 @@ export async function PUT(
         createdBy: 'api/admin/orders/payment-status',
       });
     } catch (error) {
-      console.error('enqueue notify.payout_initiated failed (non-blocking):', error);
+      log.error('enqueue notify.payout_initiated failed (non-blocking)', { error: String(error) });
     }
   }
 

@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'crypto';
 import { getOrderById, updateOrder, createDispute, getDisputesByOrder, updateDispute } from '@/lib/db';
 import { getServiceClient } from '@/lib/supabase';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 async function resolveExecutorPhone(
   contractorId?: string | null,
@@ -103,7 +104,7 @@ export async function POST(
         createdBy: 'api/orders/dispute:post',
       });
     } catch (error) {
-      console.error('enqueue dispute.opened failed (non-blocking):', error);
+      log.error('enqueue dispute.opened failed (non-blocking)', { error: String(error) });
     }
 
     return NextResponse.json(
@@ -111,7 +112,7 @@ export async function POST(
       { status: 201 }
     );
   } catch (error) {
-    console.error('POST /api/orders/[id]/dispute error:', error);
+    log.error('POST /api/orders/[id]/dispute error', { error: String(error) });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -206,12 +207,12 @@ export async function PATCH(
         createdBy: 'api/orders/dispute:patch',
       });
     } catch (error) {
-      console.error('enqueue dispute.resolved failed (non-blocking):', error);
+      log.error('enqueue dispute.resolved failed (non-blocking)', { error: String(error) });
     }
 
     return NextResponse.json({ ok: true, resolution });
   } catch (error) {
-    console.error('PATCH /api/orders/[id]/dispute error:', error);
+    log.error('PATCH /api/orders/[id]/dispute error', { error: String(error) });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

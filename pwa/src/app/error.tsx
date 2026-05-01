@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { log } from '@/lib/logger';
 
 function messageFromUnknown(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -22,7 +23,7 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('App route error:', error);
+    log.error('App route error', { error: String(error) });
   }, [error]);
 
   return (

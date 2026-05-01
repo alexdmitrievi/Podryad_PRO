@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error('POST /api/admin/generate-link:', error);
+      log.error('POST /api/admin/generate-link', { error: String(error) });
       return NextResponse.json({ error: 'Failed to create token' }, { status: 500 });
     }
     token = created.access_token;

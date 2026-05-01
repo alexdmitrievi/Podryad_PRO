@@ -3,6 +3,8 @@
  * All settings from environment variables — no hardcoded keys or model names.
  */
 
+import { log } from '@/lib/logger';
+
 export interface LLMConfig {
   apiKey: string;
   model: string;
@@ -15,7 +17,7 @@ export interface LLMConfig {
 export function getLLMConfig(): LLMConfig {
   const apiKey = process.env.OPENAI_API_KEY ?? '';
   if (!apiKey) {
-    console.warn('[LLMConfig] OPENAI_API_KEY is not set');
+    log.warn('[LLMConfig] OPENAI_API_KEY is not set');
   }
 
   return {

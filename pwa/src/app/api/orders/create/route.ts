@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 interface LaborOrderBody {
   type: 'labor';
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
 
     const { error } = await db.from('orders').insert(orderData);
     if (error) {
-      console.error('POST /api/orders/create (labor):', error);
+      log.error('POST /api/orders/create (labor)', { error: String(error) });
       return NextResponse.json({ error: 'db_error' }, { status: 500 });
     }
 
@@ -188,7 +189,7 @@ export async function POST(req: NextRequest) {
 
     const { error } = await db.from('orders').insert(orderData);
     if (error) {
-      console.error('POST /api/orders/create (rental):', error);
+      log.error('POST /api/orders/create (rental)', { error: String(error) });
       return NextResponse.json({ error: 'db_error' }, { status: 500 });
     }
 

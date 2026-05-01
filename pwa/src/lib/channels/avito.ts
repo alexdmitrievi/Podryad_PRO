@@ -7,6 +7,7 @@ import type {
   ChannelMapper,
 } from './types';
 import { getAvitoConfig, type ChannelConfig } from './config';
+import { log } from '@/lib/logger';
 
 /**
  * Avito Transport — sends messages through the Avito Messenger API.
@@ -70,10 +71,10 @@ export class AvitoTransport implements ChannelTransport {
         }
 
         lastError = `Avito API error: ${res.status} ${res.statusText}`;
-        console.error(`[AvitoTransport] Attempt ${attempt + 1} failed:`, lastError);
+        log.error(`[AvitoTransport] Attempt ${attempt + 1} failed`, { error: String(lastError) });
       } catch (err: unknown) {
         lastError = err instanceof Error ? err.message : String(err);
-        console.error(`[AvitoTransport] Attempt ${attempt + 1} error:`, lastError);
+        log.error(`[AvitoTransport] Attempt ${attempt + 1} error`, { error: String(lastError) });
       }
 
       if (attempt < this.config.maxRetries) {

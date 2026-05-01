@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { claimJobs } from '@/lib/job-queue';
 import { processClaimedJobs } from '@/lib/job-worker';
+import { log } from '@/lib/logger';
 
 function verifyWorkerSecret(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -50,7 +51,7 @@ async function runWorker(req: NextRequest) {
       ...processed,
     });
   } catch (error) {
-    console.error('GET /api/cron/jobs error:', error);
+    log.error('GET /api/cron/jobs error', { error: String(error) });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

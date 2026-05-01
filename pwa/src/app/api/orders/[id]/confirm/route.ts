@@ -4,6 +4,7 @@ import {
   getOrderById,
   updateOrder,
 } from '@/lib/db';
+import { log } from '@/lib/logger';
 
 export async function POST(
   req: Request,
@@ -90,7 +91,7 @@ export async function POST(
       bothConfirmed,
     });
   } catch (error) {
-    console.error('POST /api/orders/[id]/confirm error:', error);
+    log.error('POST /api/orders/[id]/confirm error', { error: String(error) });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

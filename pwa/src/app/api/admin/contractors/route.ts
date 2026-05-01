@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getContractors, updateContractor } from '@/lib/db';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
     const contractors = await getContractors();
     return NextResponse.json({ ok: true, contractors });
   } catch (err) {
-    console.error('GET /api/admin/contractors:', err);
+    log.error('GET /api/admin/contractors', { error: String(err) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 }
@@ -51,7 +52,7 @@ export async function PUT(req: NextRequest) {
     await updateContractor(id, updates);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error('PUT /api/admin/contractors:', err);
+    log.error('PUT /api/admin/contractors', { error: String(err) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 interface CatalogOrderBody {
   item_id: string;
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (error) {
-    console.error('POST /api/catalog-orders:', error);
+    log.error('POST /api/catalog-orders', { error: String(error) });
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
       item_title,
     },
   }).catch((err) => {
-    console.error('enqueueJob notify.lead_created catalog error (non-blocking):', err);
+    log.error('enqueueJob notify.lead_created catalog error (non-blocking)', { error: String(err) });
   });
 
   // Nurture chain — only for real phone contacts (Telegram contacts handled manually)

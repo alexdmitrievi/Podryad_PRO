@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { getOrCreateCustomerToken } from '@/lib/db';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -31,7 +32,7 @@ export async function POST(
     .single();
 
   if (orderError || !order) {
-    console.error(`POST /api/admin/orders/${orderId}/send-link: order not found`, orderError);
+    log.error(`POST /api/admin/orders/${orderId}/send-link: order not found`, { error: String(orderError) });
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
@@ -47,7 +48,7 @@ export async function POST(
       order.preferred_contact ?? undefined
     ) as Record<string, unknown>;
   } catch (err) {
-    console.error(`POST /api/admin/orders/${orderId}/send-link: token error`, err);
+    log.error(`POST /api/admin/orders/${orderId}/send-link: token error`, { error: String(err) });
     return NextResponse.json({ error: 'Token error' }, { status: 500 });
   }
 
@@ -61,7 +62,7 @@ export async function POST(
     .eq('order_id', orderId);
 
   if (updateError) {
-    console.error(`POST /api/admin/orders/${orderId}/send-link: update error`, updateError);
+    log.error(`POST /api/admin/orders/${orderId}/send-link: update error`, { error: String(updateError) });
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 
@@ -83,7 +84,7 @@ export async function POST(
       createdBy: 'api/admin/orders/send-link',
     });
   } catch (error) {
-    console.error(`enqueue customer.send_payment_link failed for order ${orderId} (non-blocking):`, error);
+    log.error(`enqueue customer.send_payment_link failed for order ${orderId} (non-blocking)`, { error: String(error) });
   }
 
   return NextResponse.json({ ok: true, access_token });

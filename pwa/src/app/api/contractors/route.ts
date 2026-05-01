@@ -3,6 +3,7 @@ import { createContractor } from '@/lib/db';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getServiceClient } from '@/lib/supabase';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 /** Strip all non-digit characters from a phone string and return only digits. */
 function stripPhone(raw: string): string {
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
       inn: inn != null ? String(inn) : undefined,
     });
   } catch (err) {
-    console.error('POST /api/contractors createContractor:', err);
+    log.error('POST /api/contractors createContractor', { error: String(err) });
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest) {
     sourceTable: 'contractors',
     sourceId: contractorId,
   }).catch((err) => {
-    console.error('enqueueJob notify.contractor_registered error (non-blocking):', err);
+    log.error('enqueueJob notify.contractor_registered error (non-blocking)', { error: String(err) });
   });
 
   // Update CRM executor prospect stage directly (idempotent)
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
         .eq('phone', digits)
         .neq('stage', 'active');
     } catch (err) {
-      console.error('CRM contractor_registered stage update error (non-blocking):', err);
+      log.error('CRM contractor_registered stage update error (non-blocking)', { error: String(err) });
     }
   })();
 

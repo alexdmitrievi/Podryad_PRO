@@ -7,6 +7,7 @@ import type {
   ChannelMapper,
 } from './types';
 import { getTelegramConfig, type ChannelConfig } from './config';
+import { log } from '@/lib/logger';
 
 /**
  * Telegram Transport — sends messages through the Telegram Bot API.
@@ -71,10 +72,10 @@ export class TelegramTransport implements ChannelTransport {
         }
 
         lastError = `Telegram API error: ${json.description ?? res.status}`;
-        console.error(`[TelegramTransport] Attempt ${attempt + 1} failed:`, lastError);
+        log.error(`[TelegramTransport] Attempt ${attempt + 1} failed`, { error: String(lastError) });
       } catch (err: unknown) {
         lastError = err instanceof Error ? err.message : String(err);
-        console.error(`[TelegramTransport] Attempt ${attempt + 1} error:`, lastError);
+        log.error(`[TelegramTransport] Attempt ${attempt + 1} error`, { error: String(lastError) });
       }
 
       // Exponential backoff

@@ -1,19 +1,21 @@
 'use client';
 
+import { log } from '@/lib/logger';
+
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    console.log('Push notifications not supported');
+    log.info('Push notifications not supported');
     return null;
   }
 
   try {
     const reg = await navigator.serviceWorker.register('/sw-push.js');
-    console.log('Push SW registered');
+    log.info('Push SW registered');
     return reg;
   } catch (error) {
-    console.error('SW registration failed:', error);
+    log.error('SW registration failed', { error: String(error) });
     return null;
   }
 }
@@ -35,7 +37,7 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
     });
     return subscription;
   } catch (error) {
-    console.error('Push subscription failed:', error);
+    log.error('Push subscription failed', { error: String(error) });
     return null;
   }
 }

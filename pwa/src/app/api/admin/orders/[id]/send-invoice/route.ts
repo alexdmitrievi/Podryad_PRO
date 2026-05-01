@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { enqueueJob } from '@/lib/job-queue';
+import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
   const adminPin = process.env.ADMIN_PIN;
@@ -54,7 +55,7 @@ export async function POST(
     .eq('order_id', orderId);
 
   if (updateError) {
-    console.error(`POST /api/admin/orders/${orderId}/send-invoice:`, updateError);
+    log.error(`POST /api/admin/orders/${orderId}/send-invoice`, { error: String(updateError) });
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
@@ -81,7 +82,7 @@ export async function POST(
     },
     sourceTable: 'orders',
     sourceId: orderId,
-  }).catch(err => console.error('enqueueJob customer.send_invoice error (non-blocking):', err));
+  }).catch(err => log.error('enqueueJob customer.send_invoice error (non-blocking)', { error: String(err) }));
 
   return NextResponse.json({ ok: true, customer_type: customerType });
 }
