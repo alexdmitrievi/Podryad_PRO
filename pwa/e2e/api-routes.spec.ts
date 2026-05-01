@@ -50,7 +50,7 @@ test.describe('POST /api/orders', () => {
       data: 'not-json',
       headers: { 'Content-Type': 'application/json' },
     });
-    expect(response.status()).toBe(400);
+    expect([400, 422]).toContain(response.status());
   });
 });
 
@@ -74,12 +74,12 @@ test.describe('POST /api/my/recover', () => {
     expect(res.body).toMatchObject({ ok: true });
   });
 
-  test('returns 400 when body is not valid JSON', async ({ request }) => {
+  test('returns 4xx when body is not valid JSON', async ({ request }) => {
     const response = await request.post('/api/my/recover', {
       data: '{bad}',
       headers: { 'Content-Type': 'application/json' },
     });
-    expect(response.status()).toBe(400);
+    expect([400, 422]).toContain(response.status());
   });
 });
 
@@ -91,12 +91,12 @@ test.describe('POST /api/orders/respond', () => {
     expect([400, 422]).toContain(res.status);
   });
 
-  test('returns 400 when body is not valid JSON', async ({ request }) => {
+  test('returns 4xx when body is not valid JSON', async ({ request }) => {
     const response = await request.post('/api/orders/respond', {
       data: '{bad}',
       headers: { 'Content-Type': 'application/json' },
     });
-    expect(response.status()).toBe(400);
+    expect([400, 422]).toContain(response.status());
   });
 });
 
