@@ -30,3 +30,5 @@ pwa/pwa.rar
 pwa/playwright-report/
 pwa/test-results/
 supabase/.temp/
+/pwa/coverage/
+supabase/combined_test_migrations.sql
