@@ -25,7 +25,9 @@ const START_TEXT = `Привет! Я — бот сервиса *Подряд PRO
 • Технику в аренду (от перфоратора до экскаватора)
 • Стройматериалы с доставкой
 
-Напишите, что вам нужно, или используйте /order для оформления заказа.`;
+Напишите, что вам нужно, или используйте кнопки ниже.`;
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
 
 export async function POST(req: NextRequest) {
   // 1. Security: validate webhook secret
@@ -116,6 +118,11 @@ async function processMessage(
           chat_id: chatId,
           user_id: userId,
           text: START_TEXT,
+          buttons: [
+            { type: 'url', text: '🚀 Создать заказ', url: `${APP_URL}/order/new` },
+            { type: 'url', text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` },
+            { type: 'url', text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` },
+          ],
         });
         return;
 
