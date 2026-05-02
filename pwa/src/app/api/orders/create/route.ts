@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
       status: 'pending',
       customer_total: customerTotal,
       client_rate: rate,
+      payout_method: null,
     };
 
     const { error } = await db.from('orders').insert(orderData);
@@ -185,6 +186,7 @@ export async function POST(req: NextRequest) {
       payment_text: `${equipment_type} × ${quantity} ${rentalUnit}${with_operator ? ' (с оператором)' : ''}`,
       comment: `Техника: ${equipment_type}${with_operator ? ', с оператором' : ', без оператора'}${comment ? ` | ${comment}` : ''}`,
       status: 'pending',
+      payout_method: null,
     };
 
     const { error } = await db.from('orders').insert(orderData);

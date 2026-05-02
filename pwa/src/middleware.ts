@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -12,11 +13,23 @@ function constantTimeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
-export function middleware(req: NextRequest) {
+const ADMIN_JWT_SECRET = () => new TextEncoder().encode(
+  process.env.SESSION_SECRET || 'fallback-admin-secret'
+);
+
+async function verifyAdminCookie(cookieValue: string): Promise<boolean> {
+  try {
+    const { payload } = await jwtVerify(cookieValue, ADMIN_JWT_SECRET());
+    return typeof payload.admin_id === 'string' && !!payload.admin_id;
+  } catch {
+    return false;
+  }
+}
+
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // CSRF: check Origin header for state-changing API requests
-  // Skip webhook endpoints — they come from external servers (Telegram, MAX, etc.)
   if (
     pathname.startsWith('/api/') &&
     MUTATING_METHODS.has(req.method) &&
@@ -39,14 +52,23 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // Protect admin API routes (except verify-pin which is the auth entry point)
-  if (pathname.startsWith('/api/admin') && !pathname.startsWith('/api/admin/verify-pin')) {
+  // Protect admin API routes
+  if (pathname.startsWith('/api/admin') && !pathname.startsWith('/api/admin/login') && !pathname.startsWith('/api/admin/verify-pin')) {
+    // 1. Try admin_session cookie (multi-admin JWT)
+    const adminCookie = req.cookies.get('admin_session')?.value;
+    if (adminCookie && await verifyAdminCookie(adminCookie)) {
+      return NextResponse.next();
+    }
+
+    // 2. Fallback: x-admin-pin header (legacy PIN)
     const pin = req.headers.get('x-admin-pin') ?? '';
     const adminPin = process.env.ADMIN_PIN;
 
-    if (!adminPin || !constantTimeEqual(pin, adminPin)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (adminPin && constantTimeEqual(pin, adminPin)) {
+      return NextResponse.next();
     }
+
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   return NextResponse.next();

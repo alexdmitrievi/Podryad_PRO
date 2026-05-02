@@ -17,6 +17,7 @@ export interface CustomerJWTPayload {
   sub: string;   // customer id
   phone: string;
   name: string;
+  role?: 'customer' | 'worker';
 }
 
 export interface CustomerProfile {
@@ -40,7 +41,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export async function createSessionToken(payload: CustomerJWTPayload): Promise<string> {
-  return new SignJWT({ phone: payload.phone, name: payload.name })
+  return new SignJWT({ phone: payload.phone, name: payload.name, role: payload.role ?? 'customer' })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(payload.sub)
     .setIssuedAt()
@@ -56,6 +57,7 @@ export async function verifySessionToken(token: string): Promise<CustomerJWTPayl
       sub: payload.sub,
       phone: payload.phone,
       name: typeof payload.name === 'string' ? payload.name : '',
+      role: (typeof payload.role === 'string' && (payload.role === 'customer' || payload.role === 'worker')) ? payload.role : undefined,
     };
   } catch {
     return null;

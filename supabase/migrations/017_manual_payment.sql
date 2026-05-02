@@ -56,7 +56,7 @@ ALTER TABLE orders ADD CONSTRAINT orders_payout_method_check
 
 -- Обновляем существующие записи с yookassa_payout → sbp
 UPDATE orders SET payout_method = 'sbp' WHERE payout_method = 'yookassa_payout';
-UPDATE orders SET payout_method = 'manual_transfer' WHERE payout_method NOT IN ('sbp', 'bank_transfer', 'cash') AND payout_method IS NOT NULL;
+UPDATE orders SET payout_method = NULL WHERE payout_method NOT IN ('sbp', 'bank_transfer', 'cash') AND payout_method IS NOT NULL;
 
 -- ── 5. Индексы ──
 

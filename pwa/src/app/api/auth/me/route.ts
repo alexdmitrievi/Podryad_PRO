@@ -18,7 +18,7 @@ export async function GET() {
     .maybeSingle();
 
   if (customer) {
-    return NextResponse.json({ customer });
+    return NextResponse.json({ customer: { ...customer, role: 'customer' } });
   }
 
   // Try workers table (executor)
@@ -43,6 +43,7 @@ export async function GET() {
         telegram_id: worker.telegram_id,
         rating: worker.rating,
         jobs_count: worker.jobs_count,
+        role: 'worker',
       },
     });
   }
@@ -65,6 +66,7 @@ export async function GET() {
       city: '',
       preferred_contact: null,
       created_at: '',
+      role: user.role,
     } : null,
   });
 }

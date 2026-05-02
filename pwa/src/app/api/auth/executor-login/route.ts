@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
       sub: rawPhone,
       phone: rawPhone,
       name: user.name || worker?.name || '',
+      role: 'worker',
     });
     await setSessionCookie(token);
 

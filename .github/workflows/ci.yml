@@ -29,7 +29,6 @@ jobs:
         run: |
           for f in ../supabase/migrations/*.sql; do
             echo "Checking $f..."
-            # Basic syntax check: ensure file starts with valid SQL
             head -1 "$f" | grep -qE '^(--|CREATE|ALTER|INSERT|DO|BEGIN|SET)' || (echo "ERROR: $f has invalid first line" && exit 1)
           done
           echo "All migrations validated"
@@ -46,10 +45,12 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY || 'placeholder' }}
           NEXT_PUBLIC_BOT_NAME: test_bot
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: placeholder
+          CUSTOMER_JWT_SECRET: ${{ secrets.STAGING_CUSTOMER_JWT_SECRET || 'placeholder' }}
+          SESSION_SECRET: ${{ secrets.STAGING_SESSION_SECRET || 'placeholder' }}
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -79,18 +80,22 @@ jobs:
       - name: Run API e2e tests
         run: npm run test:e2e:api
         env:
-          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY || 'placeholder' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY || 'placeholder' }}
           NEXT_PUBLIC_BOT_NAME: test_bot
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: placeholder
           CRON_SECRET: test-cron-secret-local
           NEXT_PUBLIC_APP_URL: http://localhost:3000
+          CUSTOMER_JWT_SECRET: ${{ secrets.STAGING_CUSTOMER_JWT_SECRET || 'placeholder' }}
+          SESSION_SECRET: ${{ secrets.STAGING_SESSION_SECRET || 'placeholder' }}
+          ADMIN_PIN: ${{ secrets.STAGING_ADMIN_PIN || '2407' }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
+          name: playwright-report-api
           path: pwa/playwright-report/
 
   e2e-browser:
@@ -118,12 +123,16 @@ jobs:
       - name: Run browser e2e tests
         run: npx playwright test --project='Mobile Chrome' --project='Desktop Chrome'
         env:
-          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY || 'placeholder' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY || 'placeholder' }}
           NEXT_PUBLIC_BOT_NAME: test_bot
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: placeholder
           CRON_SECRET: test-cron-secret-local
           NEXT_PUBLIC_APP_URL: http://localhost:3000
+          CUSTOMER_JWT_SECRET: ${{ secrets.STAGING_CUSTOMER_JWT_SECRET || 'placeholder' }}
+          SESSION_SECRET: ${{ secrets.STAGING_SESSION_SECRET || 'placeholder' }}
+          ADMIN_PIN: ${{ secrets.STAGING_ADMIN_PIN || '2407' }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -131,3 +140,26 @@ jobs:
         with:
           name: playwright-report-browser
           path: pwa/playwright-report/
+
+  # Only run on push to main (not PR)
+  deploy-production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: [lint-build-test, e2e-api, e2e-browser]
+    environment:
+      name: production
+      url: https://podryad.pro
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger Vercel production deploy
+        run: |
+          curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+
+      - name: Deployment status
+        run: |
+          echo "Production deployment triggered."
+          echo "Monitor: https://vercel.com/dashboard"
