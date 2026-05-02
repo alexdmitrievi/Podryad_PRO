@@ -121,7 +121,8 @@ export class TelegramMapper implements ChannelMapper {
     const data = raw as Record<string, unknown>;
     const cbq = data.callback_query as Record<string, unknown> | undefined;
     const message = (data.message ?? cbq?.message ?? {}) as Record<string, unknown>;
-    const from = (message.from ?? cbq?.from ?? {}) as Record<string, unknown>;
+    // For callbacks, use callback_query.from (the user who pressed), NOT message.from (the bot)
+    const from = (cbq?.from ?? message.from ?? {}) as Record<string, unknown>;
     const callbackQuery = cbq;
 
     let type: NormalizedIncomingEvent['type'] = 'message';

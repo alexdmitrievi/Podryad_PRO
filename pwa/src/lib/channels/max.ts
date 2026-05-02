@@ -138,10 +138,15 @@ export class MaxMapper implements ChannelMapper {
 
     let type: NormalizedIncomingEvent['type'] = 'message';
     let text = String(body.text ?? '');
+    let userId = String(sender.user_id ?? '');
+    let cId = String(recipient.chat_id ?? message.chat_id ?? '');
 
     if (callback) {
       type = 'callback';
       text = String(callback.payload ?? '');
+      // Callback has its own user_id and chat_id (not nested in message)
+      userId = String(callback.user_id ?? sender.user_id ?? '');
+      cId = String(callback.chat_id ?? recipient.chat_id ?? '');
     } else if (text.startsWith('/')) {
       type = 'command';
     }
@@ -149,8 +154,8 @@ export class MaxMapper implements ChannelMapper {
     return {
       channel: 'max',
       type,
-      user_id: String(sender.user_id ?? ''),
-      chat_id: String(recipient.chat_id ?? message.chat_id ?? ''),
+      user_id: userId,
+      chat_id: cId,
       text,
       payload: callback ? { callback_id: callback.callback_id } : undefined,
       timestamp: message.timestamp
