@@ -5,10 +5,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 export default function OfflinePage() {
-  const [isOnline, setIsOnline] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
-    setIsOnline(navigator.onLine);
     const go = () => setIsOnline(true);
     window.addEventListener('online', go);
     return () => window.removeEventListener('online', go);
