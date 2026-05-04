@@ -128,8 +128,7 @@ async function checkMax(config: ReturnType<typeof getMaxConfig>): Promise<BotHea
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 5000);
-    const res = await fetch(`${config.apiBase}/me`, {
-      headers: { Authorization: config.botToken },
+    const res = await fetch(`${config.apiBase}/me?access_token=${encodeURIComponent(config.botToken)}`, {
       signal: ctrl.signal,
     });
     clearTimeout(timer);
@@ -146,8 +145,7 @@ async function checkMax(config: ReturnType<typeof getMaxConfig>): Promise<BotHea
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 5000);
-    const res = await fetch(`${config.apiBase}/subscriptions`, {
-      headers: { Authorization: config.botToken },
+    const res = await fetch(`${config.apiBase}/subscriptions?access_token=${encodeURIComponent(config.botToken)}`, {
       signal: ctrl.signal,
     });
     clearTimeout(timer);

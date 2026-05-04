@@ -82,9 +82,7 @@ async function telegramSetWebhook() {
 async function maxGetMe() {
   if (!MAX_TOKEN) return { ok: false, error: 'MAX_BOT_TOKEN not set' };
   try {
-    const res = await fetch(`${MAX_API_BASE}/me`, {
-      headers: { Authorization: MAX_TOKEN },
-    });
+    const res = await fetch(`${MAX_API_BASE}/me?access_token=${encodeURIComponent(MAX_TOKEN)}`);
     const json = await res.json();
     return { ok: res.ok && !!json.user_id, ...json };
   } catch (e) {
@@ -95,9 +93,7 @@ async function maxGetMe() {
 async function maxGetWebhookInfo() {
   if (!MAX_TOKEN) return { ok: false, error: 'MAX_BOT_TOKEN not set' };
   try {
-    const res = await fetch(`${MAX_API_BASE}/subscriptions`, {
-      headers: { Authorization: MAX_TOKEN },
-    });
+    const res = await fetch(`${MAX_API_BASE}/subscriptions?access_token=${encodeURIComponent(MAX_TOKEN)}`);
     const json = await res.json();
     const subs = Array.isArray(json) ? json : (json.subscriptions ?? []);
     const sub = subs.find((s) => s.url);
@@ -115,11 +111,10 @@ async function maxSetWebhook() {
       update_types: ['message_created', 'bot_started', 'message_callback'],
     };
     if (MAX_SECRET) body.secret = MAX_SECRET;
-    const res = await fetch(`${MAX_API_BASE}/subscriptions`, {
+    const res = await fetch(`${MAX_API_BASE}/subscriptions?access_token=${encodeURIComponent(MAX_TOKEN)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: MAX_TOKEN,
       },
       body: JSON.stringify(body),
     });

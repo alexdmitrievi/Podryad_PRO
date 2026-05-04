@@ -27,7 +27,6 @@ export class MaxTransport implements ChannelTransport {
   private authHeaders(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
-      'Authorization': this.config.botToken,
     };
   }
 
@@ -38,6 +37,8 @@ export class MaxTransport implements ChannelTransport {
     if (!chatId) {
       return { success: false, channel: 'max', error: 'No chat_id provided', latency_ms: 0 };
     }
+
+    const url = `${this.config.apiBase}/messages?access_token=${encodeURIComponent(this.config.botToken)}`;
 
     const body: Record<string, unknown> = {
       chat_id: chatId,
@@ -67,7 +68,7 @@ export class MaxTransport implements ChannelTransport {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), this.config.timeout);
 
-        const res = await fetch(`${this.config.apiBase}/messages`, {
+        const res = await fetch(url, {
           method: 'POST',
           headers: this.authHeaders(),
           body: JSON.stringify(body),
@@ -104,8 +105,7 @@ export class MaxTransport implements ChannelTransport {
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(`${this.config.apiBase}/me`, {
-        headers: this.authHeaders(),
+      const res = await fetch(`${this.config.apiBase}/me?access_token=${encodeURIComponent(this.config.botToken)}`, {
         signal: controller.signal,
       });
       clearTimeout(timer);
