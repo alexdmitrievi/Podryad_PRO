@@ -4,7 +4,7 @@
   "crons": [
     {
       "path": "/api/cron/jobs",
-      "schedule": "* * * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/cron/analytics",
@@ -12,7 +12,7 @@
     },
     {
       "path": "/api/cron/crosspost",
-      "schedule": "*/2 * * * *"
+      "schedule": "0 10 * * *"
     }
   ]
 }
