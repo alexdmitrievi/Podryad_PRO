@@ -24,9 +24,11 @@ export class MaxTransport implements ChannelTransport {
     this.config = config ?? getMaxConfig();
   }
 
-  private authHeaders(): Record<string, string> {
+  private proxyHeaders(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
+      'X-Forward-To': this.config.apiBase,
+      'X-Auth-Token': this.config.botToken,
     };
   }
 
@@ -38,7 +40,16 @@ export class MaxTransport implements ChannelTransport {
       return { success: false, channel: 'max', error: 'No chat_id provided', latency_ms: 0 };
     }
 
-    const url = `${this.config.apiBase}/messages?access_token=${encodeURIComponent(this.config.botToken)}`;
+    // Use VPS proxy if MAX_API_PROXY is configured (Vercel can't reach .ru APIs)
+    const proxyBase = process.env.MAX_API_PROXY;
+    const apiBase = proxyBase || this.config.apiBase;
+    const url = proxyBase
+      ? `${proxyBase}/proxy/max/messages`
+      : `${this.config.apiBase}/messages?access_token=${encodeURIComponent(this.config.botToken)}`;
+
+    const headers: Record<string, string> = proxyBase
+      ? this.proxyHeaders()
+      : { 'Content-Type': 'application/json' };
 
     const body: Record<string, unknown> = {
       chat_id: chatId,
