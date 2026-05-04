@@ -22,7 +22,7 @@ const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TG_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 const MAX_TOKEN = process.env.MAX_BOT_TOKEN;
 const MAX_SECRET = process.env.MAX_WEBHOOK_SECRET;
-const MAX_API_BASE = process.env.MAX_API_BASE || 'https://botapi.max.ru';
+const MAX_API_BASE = process.env.MAX_API_BASE || 'https://platform-api.max.ru';
 
 const TELEGRAM_ONLY = process.argv.includes('--telegram-only');
 const MAX_ONLY = process.argv.includes('--max-only');
@@ -82,9 +82,11 @@ async function telegramSetWebhook() {
 async function maxGetMe() {
   if (!MAX_TOKEN) return { ok: false, error: 'MAX_BOT_TOKEN not set' };
   try {
-    const res = await fetch(`${MAX_API_BASE}/me?access_token=${MAX_TOKEN}`);
+    const res = await fetch(`${MAX_API_BASE}/me`, {
+      headers: { Authorization: MAX_TOKEN },
+    });
     const json = await res.json();
-    return { ok: !!json.ok, ...json };
+    return { ok: res.ok && !!json.user_id, ...json };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -93,9 +95,13 @@ async function maxGetMe() {
 async function maxGetWebhookInfo() {
   if (!MAX_TOKEN) return { ok: false, error: 'MAX_BOT_TOKEN not set' };
   try {
-    const res = await fetch(`${MAX_API_BASE}/webhook?access_token=${MAX_TOKEN}`);
+    const res = await fetch(`${MAX_API_BASE}/subscriptions`, {
+      headers: { Authorization: MAX_TOKEN },
+    });
     const json = await res.json();
-    return { ok: true, ...json };
+    const subs = Array.isArray(json) ? json : (json.subscriptions ?? []);
+    const sub = subs.find((s) => s.url);
+    return { ok: true, url: sub?.url, subscriptions: subs };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -106,14 +112,19 @@ async function maxSetWebhook() {
   try {
     const body = {
       url: `${BASE_URL}/api/max/webhook`,
+      update_types: ['message_created', 'bot_started', 'message_callback'],
     };
-    const res = await fetch(`${MAX_API_BASE}/webhook?access_token=${MAX_TOKEN}`, {
+    if (MAX_SECRET) body.secret = MAX_SECRET;
+    const res = await fetch(`${MAX_API_BASE}/subscriptions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: MAX_TOKEN,
+      },
       body: JSON.stringify(body),
     });
     const json = await res.json();
-    return { ok: true, ...json };
+    return { ok: res.ok, ...json };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -181,7 +192,7 @@ async function checkAll() {
         console.log('   ✅ Webhook configured correctly');
       }
     } else {
-      console.log(`⚠️  Could not check webhook status: ${maxWh.error || maxWh.description || 'Unknown'}`);
+      console.log(`⚠️  Could not check webhook status: ${maxWh.error || 'Unknown'}`);
     }
     console.log('');
   }
@@ -263,8 +274,8 @@ async function registerAll() {
           if (result.ok) {
             console.log(`   ✅ Webhook registered: ${BASE_URL}/api/max/webhook`);
           } else {
-            console.log(`   ⚠️  Registration may have failed — check MAX Developer portal`);
-            console.log(`      Response: ${JSON.stringify(result)}`);
+            console.log(`   ⚠️  Registration may have failed:`);
+            console.log(`      ${JSON.stringify(result)}`);
           }
 
           // Verify

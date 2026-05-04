@@ -128,30 +128,39 @@ async function checkMax(config: ReturnType<typeof getMaxConfig>): Promise<BotHea
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 5000);
-    const res = await fetch(`${config.apiBase}/me?access_token=${config.botToken}`, { signal: ctrl.signal });
+    const res = await fetch(`${config.apiBase}/me`, {
+      headers: { Authorization: config.botToken },
+      signal: ctrl.signal,
+    });
     clearTimeout(timer);
     const json = await res.json();
-    result.me = { ok: !!json.ok || !!json.name, username: json.name || json.username };
+    result.me = { ok: res.ok && (!!json.user_id || !!json.name), username: json.name || json.username };
     if (!result.me.ok) {
-      result.me.error = json.description || 'Unknown error';
+      result.me.error = json.message || json.description || `HTTP ${res.status}`;
     }
   } catch (err: unknown) {
     result.me = { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 
-  // Check webhook info
+  // Check webhook subscriptions
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 5000);
-    const res = await fetch(`${config.apiBase}/webhook?access_token=${config.botToken}`, { signal: ctrl.signal });
+    const res = await fetch(`${config.apiBase}/subscriptions`, {
+      headers: { Authorization: config.botToken },
+      signal: ctrl.signal,
+    });
     clearTimeout(timer);
     const json = await res.json();
+    // Response is an array or object with subscriptions
+    const subs = Array.isArray(json) ? json : (json.subscriptions ?? []);
+    const webhookSub = subs.find((s: { url?: string }) => s.url);
     result.webhook = {
-      ok: !!json.url,
-      url: json.url || undefined,
+      ok: !!webhookSub,
+      url: webhookSub?.url,
     };
-    if (!json.url) {
-      result.webhook.error = 'Webhook URL not set — register via MAX Developer portal or scripts/register-webhooks.mjs';
+    if (!webhookSub) {
+      result.webhook.error = 'Webhook URL not set — run npm run setup:webhooks';
     }
   } catch (err: unknown) {
     result.webhook = { ok: false, error: err instanceof Error ? err.message : String(err) };

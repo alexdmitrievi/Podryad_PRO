@@ -9,18 +9,12 @@ import type {
 import { getMaxConfig, type ChannelConfig } from './config';
 import { log } from '@/lib/logger';
 
-export function escapeMaxMarkdown(text: string): string {
-  return text.replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&');
-}
-
 /**
- * MAX Transport — sends messages through MAX Bot API (botapi.max.ru).
+ * MAX Transport — sends messages through MAX Bot API (platform-api.max.ru).
  *
- * MAX API specifics:
- * - Auth via query param: access_token="{TOKEN}"
- * - Messages endpoint: /messages?chat_id={ID}&access_token={TOKEN}
- * - Supports markdown format
- * - Supports inline keyboard attachments
+ * Auth: Authorization: <token> header
+ * Messages: POST /messages
+ * Health: GET /me
  */
 export class MaxTransport implements ChannelTransport {
   readonly channel = 'max' as const;
@@ -28,6 +22,13 @@ export class MaxTransport implements ChannelTransport {
 
   constructor(config?: ChannelConfig) {
     this.config = config ?? getMaxConfig();
+  }
+
+  private authHeaders(): Record<string, string> {
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': this.config.botToken,
+    };
   }
 
   async send(message: NormalizedOutgoingMessage): Promise<SendResult> {
@@ -38,14 +39,13 @@ export class MaxTransport implements ChannelTransport {
       return { success: false, channel: 'max', error: 'No chat_id provided', latency_ms: 0 };
     }
 
-    const url = `${this.config.apiBase}/messages?chat_id=${encodeURIComponent(chatId)}&access_token=${encodeURIComponent(this.config.botToken)}`;
-
     const body: Record<string, unknown> = {
+      chat_id: chatId,
       text: message.text,
       format: 'markdown',
     };
 
-    // MAX inline keyboard
+    // MAX inline keyboard — one button per row for good UX
     if (message.buttons?.length) {
       body.attachments = [
         {
@@ -67,16 +67,16 @@ export class MaxTransport implements ChannelTransport {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), this.config.timeout);
 
-        const res = await fetch(url, {
+        const res = await fetch(`${this.config.apiBase}/messages`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.authHeaders(),
           body: JSON.stringify(body),
           signal: controller.signal,
         });
         clearTimeout(timer);
 
+        const json = await res.json();
         if (res.ok) {
-          const json = await res.json();
           return {
             success: true,
             channel: 'max',
@@ -85,7 +85,7 @@ export class MaxTransport implements ChannelTransport {
           };
         }
 
-        lastError = `MAX API error: ${res.status} ${res.statusText}`;
+        lastError = `MAX API error: ${res.status} ${json.message ?? res.statusText}`;
         log.error(`[MaxTransport] Attempt ${attempt + 1} failed`, { error: String(lastError) });
       } catch (err: unknown) {
         lastError = err instanceof Error ? err.message : String(err);
@@ -102,10 +102,12 @@ export class MaxTransport implements ChannelTransport {
 
   async healthCheck(): Promise<ChannelHealth> {
     try {
-      const url = `${this.config.apiBase}/me?access_token=${encodeURIComponent(this.config.botToken)}`;
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(url, { signal: controller.signal });
+      const res = await fetch(`${this.config.apiBase}/me`, {
+        headers: this.authHeaders(),
+        signal: controller.signal,
+      });
       clearTimeout(timer);
       return {
         channel: 'max',
@@ -148,7 +150,6 @@ export class MaxMapper implements ChannelMapper {
     if (callback) {
       type = 'callback';
       text = String(callback.payload ?? '');
-      // Callback has its own user_id and chat_id (not nested in message)
       userId = String(callback.user_id ?? sender.user_id ?? '');
       cId = String(callback.chat_id ?? recipient.chat_id ?? '');
     } else if (text.startsWith('/')) {

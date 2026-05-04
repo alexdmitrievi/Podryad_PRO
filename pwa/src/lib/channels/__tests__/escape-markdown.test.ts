@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { escapeMarkdownV2 } from '../telegram';
-import { escapeMaxMarkdown } from '../max';
 
 describe('escapeMarkdownV2', () => {
   it('escapes special characters', () => {
@@ -48,13 +47,3 @@ describe('escapeMarkdownV2', () => {
   });
 });
 
-describe('escapeMaxMarkdown', () => {
-  it('behaves identically to escapeMarkdownV2', () => {
-    const input = 'Price: $100 [click](url) *bold* _italic_ ~strike~';
-    expect(escapeMaxMarkdown(input)).toBe(escapeMarkdownV2(input));
-  });
-
-  it('escapeMaxMarkdown works', () => {
-    expect(escapeMaxMarkdown('*text*')).toBe('\\*text\\*');
-  });
-});

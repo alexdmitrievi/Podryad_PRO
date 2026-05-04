@@ -37,7 +37,7 @@ export function getTelegramConfig(): ChannelConfig {
 export function getMaxConfig(): ChannelConfig {
   return {
     enabled: !!env('MAX_BOT_TOKEN'),
-    apiBase: env('MAX_API_BASE', 'https://botapi.max.ru'),
+    apiBase: env('MAX_API_BASE', 'https://platform-api.max.ru'),
     botToken: env('MAX_BOT_TOKEN'),
     defaultChatId: env('MAX_CHANNEL_ID'),
     timeout: envInt('MAX_TIMEOUT', 10000),
