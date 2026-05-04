@@ -39,7 +39,7 @@ export class TelegramTransport implements ChannelTransport {
     const body: Record<string, unknown> = {
       chat_id: chatId,
       text: message.text,
-      parse_mode: 'MarkdownV2',
+      parse_mode: message.parse_mode ?? 'Markdown',
     };
 
     // Inline keyboard — one button per row for better mobile UX

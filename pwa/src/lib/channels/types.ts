@@ -25,6 +25,7 @@ export interface NormalizedOutgoingMessage {
   chat_id: string;
   user_id?: string;
   text: string;
+  parse_mode?: 'MarkdownV2' | 'Markdown' | 'HTML';
   buttons?: MessageButton[];
   attachments?: Attachment[];
   reply_to?: string;

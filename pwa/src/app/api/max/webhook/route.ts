@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MaxMapper, escapeMaxMarkdown } from '@/lib/channels/max';
+import { MaxMapper } from '@/lib/channels/max';
 import { getChannelRouter } from '@/lib/channels';
 import { getOpenAIClient } from '@/lib/ai/openai-client';
 import { enqueueJob } from '@/lib/job-queue';
@@ -148,6 +148,7 @@ async function processMessage(
           chat_id: chatId,
           user_id: userId,
           text: START_TEXT,
+          parse_mode: 'Markdown',
           buttons: [
             { type: 'url', text: '🚀 Создать заказ', url: `${APP_URL}/order/new` },
             { type: 'url', text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` },
@@ -162,6 +163,7 @@ async function processMessage(
           chat_id: chatId,
           user_id: userId,
           text: HELP_TEXT,
+          parse_mode: 'Markdown',
         });
         return;
 
@@ -171,6 +173,7 @@ async function processMessage(
           chat_id: chatId,
           user_id: userId,
           text: '📋 *Оформление заказа*\n\nОпишите, что нужно сделать и где. Например:\n«Нужны 2 грузчика на завтра в 10:00, ул. Ленина 15, разгрузить фуру»\n\nЯ передам заказ администратору для расчёта стоимости.',
+          parse_mode: 'Markdown',
         });
         void enqueueJob({
           queueName: 'leads',
@@ -188,6 +191,7 @@ async function processMessage(
           chat_id: chatId,
           user_id: userId,
           text: '🔍 *Проверка статуса*\n\nЧтобы узнать статус заказа, укажите ваш номер телефона или номер заказа.\n\nИли перейдите в личный кабинет: Подряд PRO (' + APP_URL + '/my)',
+          parse_mode: 'Markdown',
         });
         return;
 
@@ -223,7 +227,7 @@ async function processMessage(
       channel: 'max',
       chat_id: chatId,
       user_id: userId,
-      text: escapeMaxMarkdown(aiResponse.text),
+      text: aiResponse.text,
     });
   } catch (err) {
     log.error('[MaxWebhook] AI or send failed', { error: String(err), user_id: userId });
@@ -231,7 +235,7 @@ async function processMessage(
       channel: 'max',
       chat_id: chatId,
       user_id: userId,
-      text: escapeMaxMarkdown('Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.'),
+      text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
     }).catch(() => {});
   }
 }
