@@ -84,8 +84,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // 6. Ack immediately — process in background
-  const responsePromise = processMessage(event, userId, chatId, updateId);
+  // 6. Process message: commands are awaited (fast), free-text runs in background
+  const isCommand = event.type === 'command';
+  if (isCommand) {
+    try {
+      await processMessage(event, userId, chatId, updateId);
+    } catch (err) {
+      log.error('[MaxWebhook] processMessage failed', { error: String(err), user_id: userId });
+    }
+  } else {
+    void processMessage(event, userId, chatId, updateId).catch((err) => {
+      log.error('[MaxWebhook] processMessage (free-text) failed', { error: String(err), user_id: userId });
+    });
+  }
 
   // 7. Enqueue CRM event (deduped by update_id)
   void enqueueJob({
@@ -102,10 +113,6 @@ export async function POST(req: NextRequest) {
     },
   }).catch((err) => {
     log.error('[MaxWebhook] enqueue failed', { error: String(err) });
-  });
-
-  void responsePromise.catch((err) => {
-    log.error('[MaxWebhook] processMessage failed', { error: String(err), user_id: userId });
   });
 
   return NextResponse.json({ ok: true });
