@@ -9,6 +9,10 @@ import type {
 import { getMaxConfig, type ChannelConfig } from './config';
 import { log } from '@/lib/logger';
 
+export function escapeMaxMarkdown(text: string): string {
+  return text.replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&');
+}
+
 /**
  * MAX Transport — sends messages through MAX Bot API (botapi.max.ru).
  *

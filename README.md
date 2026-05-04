@@ -39,10 +39,21 @@ podryad-pro/
 ### Шаг 2: Telegram бот
 
 1. Напиши [@BotFather](https://t.me/BotFather) → `/newbot`
-2. Сохрани токен бота
+2. Сохрани токен бота → `TELEGRAM_BOT_TOKEN`
 3. Создай канал для заказов, добавь бота как администратора
 4. Узнай ID канала (переслав пост из канала боту [@userinfobot](https://t.me/userinfobot))
-5. Узнай свой Telegram ID (тот же бот)
+5. Узнай свой Telegram ID (тот же бот) → `TELEGRAM_ADMIN_CHAT_ID`
+6. Сгенерируй секрет вебхука: `openssl rand -hex 32` → `TELEGRAM_WEBHOOK_SECRET`
+7. **Зарегистрируй вебхук:** `npm run setup:webhooks` (из папки `pwa/`)
+   - Или вручную через BotFather: `/setwebhook` → `{NEXT_PUBLIC_APP_URL}/api/telegram/webhook` → вставь `TELEGRAM_WEBHOOK_SECRET`
+   - Проверь статус: `npm run setup:webhooks:check`
+
+### Шаг 2.5: MAX Messenger бот
+
+1. Создай бота на [max.ru](https://max.ru) Developer Portal → скопируй access token → `MAX_BOT_TOKEN`
+2. Сгенерируй секрет вебхука: `openssl rand -hex 32` → `MAX_WEBHOOK_SECRET`
+3. Зарегистрируй вебхук через `npm run setup:webhooks` или вручную в Developer Portal
+4. Получи MAX channel ID → `MAX_CHANNEL_ID`
 
 ### Шаг 3: OpenAI
 

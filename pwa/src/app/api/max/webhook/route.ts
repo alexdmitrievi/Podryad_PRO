@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MaxMapper } from '@/lib/channels/max';
+import { MaxMapper, escapeMaxMarkdown } from '@/lib/channels/max';
 import { getChannelRouter } from '@/lib/channels';
 import { getOpenAIClient } from '@/lib/ai/openai-client';
 import { enqueueJob } from '@/lib/job-queue';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
+import { getMaxConfig } from '@/lib/channels/config';
+import { isDuplicateUpdate, extractMaxUpdateId } from '@/lib/channels/dedupe';
 
 const mapper = new MaxMapper();
 
@@ -30,10 +32,25 @@ const START_TEXT = `Привет! Я — бот сервиса *Подряд PRO
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
 
 export async function POST(req: NextRequest) {
-  // 1. Security: validate webhook secret header
+  // 1. Check channel is enabled
+  const config = getMaxConfig();
+  if (!config.enabled) {
+    log.error('[MaxWebhook] Channel disabled — MAX_BOT_TOKEN not configured');
+    return NextResponse.json({ error: 'Channel disabled' }, { status: 503 });
+  }
+
+  // 2. Security: webhook secret required in production, optional in dev
   const secret = req.headers.get('x-max-bot-api-secret-token');
   const expectedSecret = process.env.MAX_WEBHOOK_SECRET;
-  if (expectedSecret && secret !== expectedSecret) {
+  if (process.env.NODE_ENV === 'production') {
+    if (!expectedSecret) {
+      log.error('[MaxWebhook] MAX_WEBHOOK_SECRET not set in production');
+      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+    }
+    if (secret !== expectedSecret) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  } else if (expectedSecret && secret !== expectedSecret) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -44,7 +61,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  // 2. Normalize incoming event
+  // 3. Deduplicate by update_id
+  const rawBody = body as Record<string, unknown>;
+  const updateId = extractMaxUpdateId(rawBody);
+  if (isDuplicateUpdate(updateId)) {
+    return NextResponse.json({ ok: true, deduped: true });
+  }
+
+  // 4. Normalize incoming event
   const event = mapper.normalize(body);
   const userId = event.user_id;
   const chatId = event.chat_id;
@@ -53,21 +77,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // 3. Rate limit per user
+  // 5. Rate limit per user
   const rl = await checkRateLimit(`max:${userId}`, 10, 60_000);
   if (rl.limited) {
     log.warn('[MaxWebhook] Rate limited', { user_id: userId });
     return NextResponse.json({ ok: true });
   }
 
-  // 4. Ack immediately — process in background
-  const responsePromise = processMessage(event, userId, chatId);
+  // 6. Ack immediately — process in background
+  const responsePromise = processMessage(event, userId, chatId, updateId);
 
-  // 5. Enqueue CRM event
+  // 7. Enqueue CRM event (deduped by update_id)
   void enqueueJob({
     queueName: 'channels',
     jobType: 'channel.incoming_message',
-    dedupeKey: `max:${userId}:${Date.now()}`,
+    dedupeKey: `max:${updateId}`,
     payload: {
       channel: 'max',
       user_id: userId,
@@ -91,6 +115,7 @@ async function processMessage(
   event: ReturnType<typeof mapper.normalize>,
   userId: string,
   chatId: string,
+  updateId: string,
 ): Promise<void> {
   const router = getChannelRouter();
   const text = event.text.trim();
@@ -143,9 +168,11 @@ async function processMessage(
         void enqueueJob({
           queueName: 'leads',
           jobType: 'chat.lead_intent',
-          dedupeKey: `lead:max:${userId}:${Date.now()}`,
+          dedupeKey: `lead:max:${userId}:${updateId}`,
           payload: { user_id: userId, chat_id: chatId, channel: 'max', raw_text: args.join(' ') },
-        }).catch(() => {});
+        }).catch((err) => {
+          log.error('[MaxWebhook] lead enqueue failed', { error: String(err), user_id: userId });
+        });
         return;
 
       case '/status':
@@ -153,7 +180,7 @@ async function processMessage(
           channel: 'max',
           chat_id: chatId,
           user_id: userId,
-          text: '🔍 *Проверка статуса*\n\nЧтобы узнать статус заказа, укажите ваш номер телефона или номер заказа.\n\nИли перейдите в личный кабинет: Подряд PRO (' + (process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro') + '/my)',
+          text: '🔍 *Проверка статуса*\n\nЧтобы узнать статус заказа, укажите ваш номер телефона или номер заказа.\n\nИли перейдите в личный кабинет: Подряд PRO (' + APP_URL + '/my)',
         });
         return;
 
@@ -163,24 +190,41 @@ async function processMessage(
   }
 
   // Free-text → AI
-  const ai = getOpenAIClient();
-  const aiResponse = await ai.chat({
-    channel: 'max',
-    message: text,
-    history: [],
-    systemConstraints: [
-      'Город работы: Омск, Новосибирск',
-      'Ты помогаешь заказать рабочую силу, технику или стройматериалы',
-      'Если пользователь хочет заказ — предложи описать детали',
-      'Краткие ответы, 2-3 предложения максимум',
-      'Не выдумывай цены',
-    ],
-  });
+  const maxLen = 2000;
+  const trimmedText = text.length > maxLen ? text.slice(0, maxLen) : text;
+  if (text.length > maxLen) {
+    log.warn('[MaxWebhook] Message truncated', { user_id: userId, original_len: text.length });
+  }
 
-  await router.send({
-    channel: 'max',
-    chat_id: chatId,
-    user_id: userId,
-    text: aiResponse.text,
-  });
+  try {
+    const ai = getOpenAIClient();
+    const aiResponse = await ai.chat({
+      channel: 'max',
+      message: trimmedText,
+      history: [],
+      systemConstraints: [
+        'Город работы: Омск, Новосибирск',
+        'Ты помогаешь заказать рабочую силу, технику или стройматериалы',
+        'Если пользователь хочет заказ — предложи описать детали',
+        'Краткие ответы, 2-3 предложения максимум',
+        'Не выдумывай цены',
+        'Не используй markdown-разметку в ответах',
+      ],
+    });
+
+    await router.send({
+      channel: 'max',
+      chat_id: chatId,
+      user_id: userId,
+      text: escapeMaxMarkdown(aiResponse.text),
+    });
+  } catch (err) {
+    log.error('[MaxWebhook] AI or send failed', { error: String(err), user_id: userId });
+    await router.send({
+      channel: 'max',
+      chat_id: chatId,
+      user_id: userId,
+      text: escapeMaxMarkdown('Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.'),
+    }).catch(() => {});
+  }
 }

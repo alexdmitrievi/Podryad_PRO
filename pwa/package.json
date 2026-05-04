@@ -18,6 +18,9 @@
     "test:e2e:ui": "dotenv -e .env.test.local -- playwright test --ui",
     "test:e2e:api": "dotenv -e .env.test.local -- playwright test --project=API",
     "smoke": "npx tsx scripts/smoke-test.ts",
+    "setup:webhooks": "dotenv -e .env.local -- node ../scripts/register-webhooks.mjs",
+    "setup:webhooks:check": "dotenv -e .env.local -- node ../scripts/register-webhooks.mjs --check",
+    "setup:webhooks:dry": "dotenv -e .env.local -- node ../scripts/register-webhooks.mjs --dry-run --check",
     "typecheck": "npx tsc --noEmit"
   },
   "dependencies": {

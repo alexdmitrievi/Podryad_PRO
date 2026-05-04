@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TelegramMapper } from '@/lib/channels/telegram';
+import { TelegramMapper, escapeMarkdownV2 } from '@/lib/channels/telegram';
 import { getChannelRouter } from '@/lib/channels';
 import { getOpenAIClient } from '@/lib/ai/openai-client';
 import { enqueueJob } from '@/lib/job-queue';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
+import { getTelegramConfig } from '@/lib/channels/config';
+import { isDuplicateUpdate, extractTelegramUpdateId } from '@/lib/channels/dedupe';
 
 const mapper = new TelegramMapper();
 
@@ -30,10 +32,25 @@ const START_TEXT = `Привет! Я — бот сервиса *Подряд PRO
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
 
 export async function POST(req: NextRequest) {
-  // 1. Security: validate webhook secret
+  // 1. Check channel is enabled
+  const config = getTelegramConfig();
+  if (!config.enabled) {
+    log.error('[TelegramWebhook] Channel disabled — TELEGRAM_BOT_TOKEN not configured');
+    return NextResponse.json({ error: 'Channel disabled' }, { status: 503 });
+  }
+
+  // 2. Security: webhook secret required in production, optional in dev
   const secret = req.headers.get('x-telegram-bot-api-secret-token');
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (expectedSecret && secret !== expectedSecret) {
+  if (process.env.NODE_ENV === 'production') {
+    if (!expectedSecret) {
+      log.error('[TelegramWebhook] TELEGRAM_WEBHOOK_SECRET not set in production');
+      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+    }
+    if (secret !== expectedSecret) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  } else if (expectedSecret && secret !== expectedSecret) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -44,31 +61,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  // 2. Normalize incoming event
+  // 3. Deduplicate by update_id (Telegram guarantees at-least-once delivery)
+  const rawBody = body as Record<string, unknown>;
+  const updateId = extractTelegramUpdateId(rawBody);
+  if (isDuplicateUpdate(updateId)) {
+    return NextResponse.json({ ok: true, deduped: true });
+  }
+
+  // 4. Normalize incoming event
   const event = mapper.normalize(body);
   const userId = event.user_id;
   const chatId = event.chat_id;
 
   if (!chatId) {
-    // Some updates (e.g. edited_channel_post) don't have a chat — skip
     return NextResponse.json({ ok: true });
   }
 
-  // 3. Rate limit per user (10 messages / minute)
+  // 5. Rate limit per user (10 messages / minute)
   const rl = await checkRateLimit(`tg:${userId}`, 10, 60_000);
   if (rl.limited) {
     log.warn('[TelegramWebhook] Rate limited', { user_id: userId });
-    return NextResponse.json({ ok: true }); // silently ignore
+    return NextResponse.json({ ok: true });
   }
 
-  // 4. Ack immediately — processing continues in background
-  const responsePromise = processMessage(event, userId, chatId);
+  // 6. Ack immediately — processing continues in background
+  const responsePromise = processMessage(event, userId, chatId, updateId);
 
-  // 5. Enqueue CRM event (non-blocking)
+  // 7. Enqueue CRM event (non-blocking, deduped by update_id)
   void enqueueJob({
     queueName: 'channels',
     jobType: 'channel.incoming_message',
-    dedupeKey: `tg:${body && typeof body === 'object' && 'update_id' in body ? String((body as Record<string, unknown>).update_id) : Date.now().toString()}`,
+    dedupeKey: `tg:${updateId}`,
     payload: {
       channel: 'telegram',
       user_id: userId,
@@ -81,7 +104,6 @@ export async function POST(req: NextRequest) {
     log.error('[TelegramWebhook] enqueue failed', { error: String(err) });
   });
 
-  // Ensure response is sent even if processing fails
   void responsePromise.catch((err) => {
     log.error('[TelegramWebhook] processMessage failed', { error: String(err), user_id: userId });
   });
@@ -93,11 +115,12 @@ async function processMessage(
   event: ReturnType<typeof mapper.normalize>,
   userId: string,
   chatId: string,
+  updateId: string,
 ): Promise<void> {
   const router = getChannelRouter();
   const text = event.text.trim();
 
-  // Handle callbacks (inline button presses)
+  // Handle callbacks
   if (event.type === 'callback') {
     await router.send({
       channel: 'telegram',
@@ -142,13 +165,14 @@ async function processMessage(
           user_id: userId,
           text: '📋 *Оформление заказа*\n\nОпишите, что нужно сделать и где. Например:\n«Нужны 2 грузчика на завтра в 10:00, ул. Ленина 15, разгрузить фуру»\n\nЯ передам заказ администратору для расчёта стоимости.',
         });
-        // Enqueue as a lead
         void enqueueJob({
           queueName: 'leads',
           jobType: 'chat.lead_intent',
-          dedupeKey: `lead:${userId}:${Date.now()}`,
+          dedupeKey: `lead:tg:${userId}:${updateId}`,
           payload: { user_id: userId, chat_id: chatId, channel: 'telegram', raw_text: args.join(' ') },
-        }).catch(() => {});
+        }).catch((err) => {
+          log.error('[TelegramWebhook] lead enqueue failed', { error: String(err), user_id: userId });
+        });
         return;
 
       case '/status':
@@ -156,35 +180,51 @@ async function processMessage(
           channel: 'telegram',
           chat_id: chatId,
           user_id: userId,
-          text: '🔍 *Проверка статуса*\n\nЧтобы узнать статус заказа, укажите ваш номер телефона или номер заказа.\n\nИли перейдите в личный кабинет: [Подряд PRO](' + (process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro') + '/my)',
+          text: '🔍 *Проверка статуса*\n\nЧтобы узнать статус заказа, укажите ваш номер телефона или номер заказа.\n\nИли перейдите в личный кабинет: [Подряд PRO](' + APP_URL + '/my)',
         });
         return;
 
       default:
-        // Unknown command — treat as free text for AI
         break;
     }
   }
 
   // Free-text message → AI processing
-  const ai = getOpenAIClient();
-  const aiResponse = await ai.chat({
-    channel: 'telegram',
-    message: text,
-    history: [],
-    systemConstraints: [
-      'Город работы: Омск, Новосибирск',
-      'Ты помогаешь заказать рабочую силу, технику или стройматериалы',
-      'Если пользователь хочет заказ — предложи описать детали',
-      'Краткие ответы, 2-3 предложения максимум',
-      'Не выдумывай цены',
-    ],
-  });
+  const maxLen = 2000;
+  const trimmedText = text.length > maxLen ? text.slice(0, maxLen) : text;
+  if (text.length > maxLen) {
+    log.warn('[TelegramWebhook] Message truncated', { user_id: userId, original_len: text.length });
+  }
 
-  await router.send({
-    channel: 'telegram',
-    chat_id: chatId,
-    user_id: userId,
-    text: aiResponse.text,
-  });
+  try {
+    const ai = getOpenAIClient();
+    const aiResponse = await ai.chat({
+      channel: 'telegram',
+      message: trimmedText,
+      history: [],
+      systemConstraints: [
+        'Город работы: Омск, Новосибирск',
+        'Ты помогаешь заказать рабочую силу, технику или стройматериалы',
+        'Если пользователь хочет заказ — предложи описать детали',
+        'Краткие ответы, 2-3 предложения максимум',
+        'Не выдумывай цены',
+        'Не используй markdown-разметку в ответах',
+      ],
+    });
+
+    await router.send({
+      channel: 'telegram',
+      chat_id: chatId,
+      user_id: userId,
+      text: escapeMarkdownV2(aiResponse.text),
+    });
+  } catch (err) {
+    log.error('[TelegramWebhook] AI or send failed', { error: String(err), user_id: userId });
+    await router.send({
+      channel: 'telegram',
+      chat_id: chatId,
+      user_id: userId,
+      text: escapeMarkdownV2('Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.'),
+    }).catch(() => {});
+  }
 }

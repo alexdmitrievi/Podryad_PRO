@@ -131,3 +131,61 @@ CRON_SECRET
 | n8n / Docker | Admin |
 | Платежи / Банк | Admin (ручная сверка) |
 | MAX / Telegram каналы | Admin |
+
+## 8. Боты Telegram/MAX не отвечают
+
+**Симптомы:**
+- Бот читает сообщения, но не отвечает
+- Команды /start, /help не вызывают реакцию
+- Сообщения в Telegram/MAX остаются без ответа
+
+**Причины:**
+
+1. **Вебхук не зарегистрирован (самая частая)**
+   - Telegram: BotFather → `/setwebhook` → URL + secret_token
+   - MAX: Developer Portal → Webhooks → URL
+   - Проверить: `GET /api/health/bot` (покажет статус регистрации)
+   - Зарегистрировать: `npm run setup:webhooks`
+
+2. **TELEGRAM_WEBHOOK_SECRET не совпадает**
+   - Значение в BotFather должно совпадать с `TELEGRAM_WEBHOOK_SECRET` в Vercel env
+   - Если секрет задан в BotFather, но не задан в Vercel — вебхук принимает запросы без проверки (дыра)
+   - Если секреты отличаются — Telegram получает 403, вебхук не работает
+
+3. **NEXT_PUBLIC_APP_URL не совпадает с реальным URL**
+   - В `vercel.json` или `.env.local` → должно быть `https://podryad.pro`
+   - Если вебхук зарегистрирован на `http://localhost:3000` — продакшен бот не получит сообщения
+
+4. **Telegram API недоступен**
+   - Проверить: `curl https://api.telegram.org/bot{TOKEN}/getMe`
+   - Проверить статус: https://core.telegram.org/bots/api → статус API
+
+5. **OpenAI API не работает**
+   - Для команд `/start` и `/help` AI не нужен — если и они не работают, проблема в п.1
+   - Для свободных сообщений бот использует OpenAI → проверить `OPENAI_API_KEY`
+   - При ошибке AI бот возвращает fallback-сообщение, а не молчит
+
+6. **Vercel лямбда не обрабатывает POST**
+   - Проверить логи Vercel: Deployments → Functions → логи функции
+   - Искать ошибки: `processMessage failed`, `TelegramTransport`, `OpenAIClient`
+
+**Диагностика:**
+
+```bash
+# Проверка статуса ботов (без запуска PWA)
+curl https://podryad.pro/api/health/bot | jq .
+
+# Проверка Telegram вручную
+curl "https://api.telegram.org/bot{TOKEN}/getMe"
+curl "https://api.telegram.org/bot{TOKEN}/getWebhookInfo"
+
+# Локальная регистрация вебхуков
+cd pwa && npm run setup:webhooks:check
+cd pwa && npm run setup:webhooks:dry
+```
+
+**Восстановление:**
+1. `cd pwa && npm run setup:webhooks` — перерегистрирует вебхуки
+2. Проверить `curl https://podryad.pro/api/health/bot` — оба канала должны показывать `"ok": true`
+3. Отправить /start боту в Telegram — должен ответить
+4. Если не отвечает — смотреть логи Vercel: Deployments → Functions → `/api/telegram/webhook`

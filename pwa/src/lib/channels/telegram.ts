@@ -10,6 +10,14 @@ import { getTelegramConfig, type ChannelConfig } from './config';
 import { log } from '@/lib/logger';
 
 /**
+ * Escape text for Telegram MarkdownV2 parse mode.
+ * Characters that must be escaped: _ * [ ] ( ) ~ ` > # + - = | { } . !
+ */
+export function escapeMarkdownV2(text: string): string {
+  return text.replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&');
+}
+
+/**
  * Telegram Transport — sends messages through the Telegram Bot API.
  */
 export class TelegramTransport implements ChannelTransport {
@@ -31,19 +39,17 @@ export class TelegramTransport implements ChannelTransport {
     const body: Record<string, unknown> = {
       chat_id: chatId,
       text: message.text,
-      parse_mode: 'Markdown',
+      parse_mode: 'MarkdownV2',
     };
 
-    // Inline keyboard from buttons
+    // Inline keyboard — one button per row for better mobile UX
     if (message.buttons?.length) {
       body.reply_markup = {
-        inline_keyboard: [
-          message.buttons.map((btn) =>
-            btn.type === 'url'
-              ? { text: btn.text, url: btn.url }
-              : { text: btn.text, callback_data: btn.callback_data },
-          ),
-        ],
+        inline_keyboard: message.buttons.map((btn) => [
+          btn.type === 'url'
+            ? { text: btn.text, url: btn.url }
+            : { text: btn.text, callback_data: btn.callback_data },
+        ]),
       };
     }
 
@@ -78,7 +84,6 @@ export class TelegramTransport implements ChannelTransport {
         log.error(`[TelegramTransport] Attempt ${attempt + 1} error`, { error: String(lastError) });
       }
 
-      // Exponential backoff
       if (attempt < this.config.maxRetries) {
         await new Promise((r) => setTimeout(r, this.config.retryBaseDelay * 2 ** attempt));
       }
@@ -121,7 +126,6 @@ export class TelegramMapper implements ChannelMapper {
     const data = raw as Record<string, unknown>;
     const cbq = data.callback_query as Record<string, unknown> | undefined;
     const message = (data.message ?? cbq?.message ?? {}) as Record<string, unknown>;
-    // For callbacks, use callback_query.from (the user who pressed), NOT message.from (the bot)
     const from = (cbq?.from ?? message.from ?? {}) as Record<string, unknown>;
     const callbackQuery = cbq;
 
