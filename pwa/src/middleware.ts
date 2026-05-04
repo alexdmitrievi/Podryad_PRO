@@ -13,13 +13,22 @@ function constantTimeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
-const ADMIN_JWT_SECRET = () => new TextEncoder().encode(
-  process.env.SESSION_SECRET || 'fallback-admin-secret'
-);
+const ADMIN_JWT_SECRET = () => {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    // In production, SESSION_SECRET MUST be set
+    if (process.env.NODE_ENV === 'production') return null;
+    // In dev, use a dev-only fallback
+    return new TextEncoder().encode('dev-session-secret-not-for-production');
+  }
+  return new TextEncoder().encode(secret);
+};
 
 async function verifyAdminCookie(cookieValue: string): Promise<boolean> {
+  const secret = ADMIN_JWT_SECRET();
+  if (!secret) return false;
   try {
-    const { payload } = await jwtVerify(cookieValue, ADMIN_JWT_SECRET());
+    const { payload } = await jwtVerify(cookieValue, secret);
     return typeof payload.admin_id === 'string' && !!payload.admin_id;
   } catch {
     return false;

@@ -222,7 +222,7 @@ export async function getSession(): Promise<PodryadSession | null> {
 
   const uid = payload.sub ?? payload.user_id;
   if (!uid || typeof uid !== 'string') return null;
-  if (payload.role !== 'worker' && payload.role !== 'customer') return null;
+  if (payload.role !== 'worker' && payload.role !== 'customer' && payload.role !== 'supplier') return null;
 
   return { user_id: uid, role: payload.role };
 }

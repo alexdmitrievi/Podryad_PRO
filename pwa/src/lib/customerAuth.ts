@@ -4,12 +4,11 @@ import { cookies } from 'next/headers';
 import { getServiceClient } from './supabase';
 import { log } from '@/lib/logger';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.CUSTOMER_JWT_SECRET
-);
-if (!process.env.CUSTOMER_JWT_SECRET) {
-  log.error('FATAL: CUSTOMER_JWT_SECRET environment variable is not set');
+const rawSecret = process.env.CUSTOMER_JWT_SECRET;
+if (!rawSecret) {
+  throw new Error('FATAL: CUSTOMER_JWT_SECRET environment variable is not set');
 }
+const JWT_SECRET = new TextEncoder().encode(rawSecret);
 const COOKIE_NAME = 'customer_session';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 

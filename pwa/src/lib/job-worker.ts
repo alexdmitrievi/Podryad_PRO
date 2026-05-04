@@ -2,6 +2,7 @@ import { getChannelRouter } from './channels';
 import type { Channel, NormalizedOutgoingMessage, SendResult } from './channels';
 import { completeJob, failJob, type JobPayload, type JobQueueRow } from './job-queue';
 import { getServiceClient } from './supabase';
+import { log } from './logger';
 
 const WORK_TYPE_LABELS: Record<string, string> = {
   labor: 'Рабочие / бригада',
@@ -349,15 +350,17 @@ export async function crosspostPaidOrdersToMax(batchSize = 5): Promise<{ posted:
       const text = buildCrosspostText(order as Record<string, unknown>);
       const result = await router.send({ channel: 'max', chat_id: maxChannelId, text });
       if (result.success) {
-        await supabase
+        const { error: updateErr } = await supabase
           .from('orders')
           .update({ max_crossposted_at: new Date().toISOString() })
           .eq('order_id', order.order_id);
+        if (updateErr) log.error('[job-worker] crosspost: failed to update max_crossposted_at', { order_id: order.order_id, error: String(updateErr) });
         posted++;
       } else {
         skipped++;
       }
-    } catch {
+    } catch (err) {
+      log.error('[job-worker] crosspost: failed for order', { order_id: order.order_id, error: String(err) });
       skipped++;
     }
   }

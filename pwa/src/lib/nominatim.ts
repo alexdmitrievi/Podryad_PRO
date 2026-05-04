@@ -1,3 +1,5 @@
+import { log } from '@/lib/logger';
+
 const OMSK_DEFAULT = { lat: 54.9894, lon: 73.3667 };
 
 export async function geocode(address: string): Promise<{ lat: number; lon: number }> {
@@ -15,13 +17,17 @@ export async function geocode(address: string): Promise<{ lat: number; lon: numb
     });
 
     const data = await res.json();
-    if (!data[0]) return OMSK_DEFAULT;
+    if (!data[0]) {
+      log.warn('[Nominatim] No results, falling back to Omsk', { address });
+      return OMSK_DEFAULT;
+    }
 
     return {
       lat: parseFloat(data[0].lat),
       lon: parseFloat(data[0].lon),
     };
-  } catch {
+  } catch (err) {
+    log.error('[Nominatim] Geocoding failed, falling back to Omsk', { address, error: String(err) });
     return OMSK_DEFAULT;
   }
 }

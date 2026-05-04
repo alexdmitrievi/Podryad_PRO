@@ -13,13 +13,16 @@ import { log } from '@/lib/logger';
 
 const memoryStore = new Map<string, { count: number; resetAt: number }>();
 
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of memoryStore) {
-      if (now > entry.resetAt) memoryStore.delete(key);
-    }
-  }, 5 * 60 * 1000);
+let lastPrune = Date.now();
+
+function pruneMemoryStore(): void {
+  const now = Date.now();
+  // Prune at most once every 60 seconds
+  if (now - lastPrune < 60_000) return;
+  lastPrune = now;
+  for (const [key, entry] of memoryStore) {
+    if (now > entry.resetAt) memoryStore.delete(key);
+  }
 }
 
 function hasUpstash(): boolean {
@@ -111,6 +114,7 @@ function checkInMemory(
   windowMs: number,
 ): RateLimitResult {
   const now = Date.now();
+  pruneMemoryStore();
   const entry = memoryStore.get(key);
 
   if (!entry || now > entry.resetAt) {

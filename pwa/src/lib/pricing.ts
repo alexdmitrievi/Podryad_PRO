@@ -1,4 +1,5 @@
 import { type SupabaseClient } from '@supabase/supabase-js';
+import { log } from '@/lib/logger';
 
 const DEFAULT_MARKUP = 15;
 
@@ -40,7 +41,10 @@ export async function getMarkupRate(
       q = q.is('category', null);
     }
 
-    const { data } = await q.maybeSingle();
+    const { data, error } = await q.maybeSingle();
+    if (error) {
+      log.warn('[Pricing] DB error fetching markup, using default', { listingType, category: filter?.category, error: String(error) });
+    }
     if (data?.markup_percent != null) {
       return Number(data.markup_percent);
     }

@@ -31,7 +31,7 @@ export async function GET() {
     // Get orders where this executor is assigned
     const { data: assignedOrders } = await db
       .from('orders')
-      .select('order_id, order_number, work_type, address, status, payment_status, executor_payout_status, executor_payout_at, customer_total, supplier_payout, display_price, created_at')
+      .select('order_id, order_number, work_type, address, status, payment_status, executor_payout_status, executor_payout_at, supplier_payout, display_price, created_at')
       .eq('executor_id', worker?.telegram_id || `pwa:${phone}`)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -83,7 +83,6 @@ export async function GET() {
         payment_status: o.payment_status,
         executor_payout_status: o.executor_payout_status,
         executor_payout_at: o.executor_payout_at,
-        customer_total: o.customer_total,
         supplier_payout: o.supplier_payout,
         display_price: o.display_price,
         created_at: o.created_at,

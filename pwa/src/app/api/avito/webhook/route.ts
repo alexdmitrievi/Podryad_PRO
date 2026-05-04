@@ -58,14 +58,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // 4. Ack immediately — process in background
-  const responsePromise = processMessage(event, userId, chatId);
+  // 4. Process message: commands are awaited (fast), free-text runs in background
+  const isCommand = event.type === 'command';
+  if (isCommand) {
+    try { await processMessage(event, userId, chatId); } catch (err) {
+      log.error('[AvitoWebhook] processMessage failed', { error: String(err), user_id: userId });
+    }
+  } else {
+    void processMessage(event, userId, chatId).catch((err) => {
+      log.error('[AvitoWebhook] processMessage (free-text) failed', { error: String(err), user_id: userId });
+    });
+  }
 
   // 5. Enqueue CRM event
   void enqueueJob({
     queueName: 'channels',
     jobType: 'channel.incoming_message',
-    dedupeKey: `avito:${userId}:${Date.now()}`,
+    dedupeKey: `avito:${Date.now()}:${userId}`,
     payload: {
       channel: 'avito',
       user_id: userId,
@@ -76,10 +85,6 @@ export async function POST(req: NextRequest) {
     },
   }).catch((err) => {
     log.error('[AvitoWebhook] enqueue failed', { error: String(err) });
-  });
-
-  void responsePromise.catch((err) => {
-    log.error('[AvitoWebhook] processMessage failed', { error: String(err), user_id: userId });
   });
 
   return NextResponse.json({ ok: true });
