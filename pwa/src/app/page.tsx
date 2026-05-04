@@ -301,6 +301,7 @@ export default function HomePage() {
   const revSteps = useReveal();
   const revExecutors = useReveal();
   const revForm = useReveal();
+  const revTenders = useReveal();
 
   useEffect(() => {
     if (!aiAgentModalOpen) return;
@@ -1094,6 +1095,87 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* ── БЕСПЛАТНЫЕ ИНСТРУМЕНТЫ ДЛЯ БИЗНЕСА ────────────────────── */}
+      <section className="py-16 sm:py-20 px-4 bg-white dark:bg-dark-bg">
+        <div ref={revTenders} className="max-w-[1440px] mx-auto reveal">
+          <div className="text-center mb-12">
+            <span className="eyebrow text-accent mb-4 block">Бесплатные инструменты</span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
+              Для вашего бизнеса
+            </h2>
+            <p className="text-gray-500 dark:text-dark-muted text-sm max-w-lg mx-auto">
+              Дополнительные возможности платформы Подряд PRO
+            </p>
+          </div>
+
+          <div className="max-w-2xl mx-auto">
+            <a
+              href="https://www.tenderpars.ru/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block card-premium p-8 sm:p-10 hover:shadow-glow transition-all duration-500 cursor-pointer relative overflow-hidden"
+            >
+              {/* decorative gradient corner */}
+              <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full opacity-[0.07] group-hover:opacity-[0.12] transition-opacity duration-500" style={{ background: 'radial-gradient(circle, #2F5BFF 0%, #6C5CE7 100%)' }} />
+
+              <div className="relative flex flex-col sm:flex-row items-start gap-6">
+                {/* icon */}
+                <div className="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-105" style={{ background: 'linear-gradient(135deg, #EEF2FF 0%, #EDE9FE 100%)' }}>
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                  </svg>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  {/* free badge */}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-success-50 text-success-600 border border-green-200 mb-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse-dot"/>
+                    Бесплатно
+                  </span>
+
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-2 group-hover:text-brand-600 transition-colors">
+                    TenderPars
+                  </h3>
+                  <p className="text-gray-500 dark:text-dark-muted text-sm leading-relaxed mb-5">
+                    Найдите идеальный тендер, аукцион или вариант финансирования для вашего дела. Информация о социальном контракте, грантах и субсидиях — в одном месте.
+                  </p>
+
+                  {/* feature tags */}
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: 'Поиск тендеров', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
+                      { label: 'Аукционы', icon: 'M13 7l5 5m0 0l-5 5m5-5H6' },
+                      { label: 'Гранты', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+                      { label: 'Соц. контракт', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+                    ].map((f) => (
+                      <span key={f.label} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F7F9FC] dark:bg-dark-card border border-gray-100 dark:border-dark-border text-xs font-medium text-gray-600 dark:text-dark-muted">
+                        <svg className="w-3.5 h-3.5 text-brand-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d={f.icon}/>
+                        </svg>
+                        {f.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* arrow CTA */}
+                <div className="flex-shrink-0 self-center sm:self-start mt-4 sm:mt-0">
+                  <span className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold px-5 py-3 rounded-xl transition-all duration-300 group-hover:gap-3 whitespace-nowrap">
+                    Перейти
+                    <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                  </span>
+                </div>
+              </div>
+
+              {/* bottom subtle glow line */}
+              <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: 'linear-gradient(90deg, #2F5BFF, #6C5CE7, #FF6B35)' }}/>
+            </a>
+          </div>
+        </div>
+      </section>
 
       {/* ── 5. ФОРМА ЗАЯВКИ ─────────────────────────────────────── */}
       <section id="lead-form" className="py-16 sm:py-20 px-4 bg-surface dark:bg-dark-bg">

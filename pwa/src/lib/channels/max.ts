@@ -81,7 +81,7 @@ export class MaxTransport implements ChannelTransport {
 
         const res = await fetch(url, {
           method: 'POST',
-          headers: this.authHeaders(),
+          headers: headers,
           body: JSON.stringify(body),
           signal: controller.signal,
         });
