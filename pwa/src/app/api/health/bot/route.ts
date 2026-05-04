@@ -124,20 +124,15 @@ async function checkMax(config: ReturnType<typeof getMaxConfig>): Promise<BotHea
     return result;
   }
 
-  // Debug: include token fingerprint in response (safe — only length + first chars)
-  result.config = {
-    ...result.config,
-    tokenLen: config.botToken.length,
-    tokenPrefix: config.botToken.substring(0, 6),
-  } as BotHealth['config'];
-
-  // Check getMe
+  // Check getMe (note: may fail from Vercel US IP due to MAX geoblock)
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 5000);
-    const res = await fetch(`${config.apiBase}/me?access_token=${encodeURIComponent(config.botToken)}`, {
-      signal: ctrl.signal,
-    });
+    const proxyBase = process.env.MAX_API_PROXY;
+    const getMeUrl = proxyBase
+      ? `${proxyBase}/proxy/max/me?access_token=${encodeURIComponent(config.botToken)}`
+      : `${config.apiBase}/me?access_token=${encodeURIComponent(config.botToken)}`;
+    const res = await fetch(getMeUrl, { signal: ctrl.signal });
     clearTimeout(timer);
     const json = await res.json();
     result.me = { ok: res.ok && (!!json.user_id || !!json.name), username: json.name || json.username };
