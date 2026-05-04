@@ -302,6 +302,29 @@ export default function HomePage() {
   const revExecutors = useReveal();
   const revForm = useReveal();
   const revTenders = useReveal();
+  // Mobile: reveal service icon on scroll (like stagger-reveal cards)
+  useEffect(() => {
+    const container = revTenders.current;
+    if (!container) return;
+    const icon = container.querySelector('[data-service-icon]') as HTMLElement | null;
+    if (!icon) return;
+    let hasScrolled = false;
+    const onScroll = () => { hasScrolled = true; window.removeEventListener('scroll', onScroll); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && hasScrolled && entry.intersectionRatio > 0.45) {
+            icon.classList.add('icon-revealed');
+            obs.disconnect();
+          }
+        });
+      },
+      { threshold: [0.25, 0.45, 0.6] },
+    );
+    obs.observe(container);
+    return () => { obs.disconnect(); window.removeEventListener('scroll', onScroll); };
+  }, [revTenders]);
 
   useEffect(() => {
     if (!aiAgentModalOpen) return;
@@ -1114,7 +1137,7 @@ export default function HomePage() {
               className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
               <div className="p-6 flex flex-col flex-1">
-                <div className="service-icon-wrap mb-5">
+                <div className="service-icon-wrap mb-5" data-service-icon>
                   <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                     className="text-brand-500 transition-colors duration-300" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
