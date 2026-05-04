@@ -302,25 +302,38 @@ export default function HomePage() {
   const revExecutors = useReveal();
   const revForm = useReveal();
   const revTenders = useReveal();
-  // Mobile: reveal service icon on scroll (like stagger-reveal cards)
+  // Mobile: service icon highlight with hysteresis (match stagger-reveal cards exactly)
   useEffect(() => {
     const container = revTenders.current;
     if (!container) return;
     const icon = container.querySelector('[data-service-icon]') as HTMLElement | null;
     if (!icon) return;
+
     let hasScrolled = false;
+    let active = false;
+    const ON = 0.55;
+    const OFF = 0.32;
+
     const onScroll = () => { hasScrolled = true; window.removeEventListener('scroll', onScroll); };
     window.addEventListener('scroll', onScroll, { passive: true });
+
     const obs = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && hasScrolled && entry.intersectionRatio > 0.45) {
-            icon.classList.add('icon-revealed');
-            obs.disconnect();
-          }
-        });
+        const ratio = entries[0]?.intersectionRatio ?? 0;
+        if (!hasScrolled) {
+          icon.classList.remove('icon-revealed');
+          active = false;
+          return;
+        }
+        if (active && ratio < OFF) {
+          icon.classList.remove('icon-revealed');
+          active = false;
+        } else if (!active && ratio >= ON) {
+          icon.classList.add('icon-revealed');
+          active = true;
+        }
       },
-      { threshold: [0.25, 0.45, 0.6] },
+      { threshold: [0, 0.3, 0.45, 0.6, 0.8, 1], rootMargin: '-28% 0px -28% 0px' },
     );
     obs.observe(container);
     return () => { obs.disconnect(); window.removeEventListener('scroll', onScroll); };
