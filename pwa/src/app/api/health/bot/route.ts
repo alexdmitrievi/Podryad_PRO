@@ -124,6 +124,13 @@ async function checkMax(config: ReturnType<typeof getMaxConfig>): Promise<BotHea
     return result;
   }
 
+  // Debug: include token fingerprint in response (safe — only length + first chars)
+  result.config = {
+    ...result.config,
+    tokenLen: config.botToken.length,
+    tokenPrefix: config.botToken.substring(0, 6),
+  } as BotHealth['config'];
+
   // Check getMe
   try {
     const ctrl = new AbortController();
