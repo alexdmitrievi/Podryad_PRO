@@ -30,7 +30,8 @@ export default function InstallPrompt() {
     if (window.matchMedia('(display-mode: standalone)').matches) return;
 
     const { isIOS, isAndroid } = getPlatform();
-    if (!isIOS && !isAndroid) return;
+    // In production, only show on mobile. In dev, allow desktop for testing.
+    if (!isIOS && !isAndroid && process.env.NODE_ENV !== 'development') return;
 
     // Check dismissal
     try {
