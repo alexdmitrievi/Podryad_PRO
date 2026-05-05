@@ -32,6 +32,7 @@ export interface Order {
   payout_method?: string;
   customer_phone?: string;
   // Markup model fields
+  customer_total?: number;
   supplier_payout?: number;
   platform_margin?: number;
   order_number?: string;
