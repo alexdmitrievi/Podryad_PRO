@@ -17,21 +17,17 @@ function getPlatform(): { isIOS: boolean; isAndroid: boolean } {
 }
 
 /** Show banner after 3s delay OR after scrolling 300px — whichever comes first.
- *  Respects: standalone mode, dismissal cookie (30 days), prefers-reduced-motion.
- *  StrictMode-safe: uses ignore flag pattern so timer survives double-mount. */
+ *  Respects: standalone mode, dismissal cookie (30 days). */
 export default function InstallPrompt() {
   const [visible, setVisible] = useState(false);
   const [platform, setPlatform] = useState<{ isIOS: boolean; isAndroid: boolean }>({ isIOS: false, isAndroid: false });
 
   useEffect(() => {
-    let ignore = false;
-
     // Already in standalone PWA mode
     if (window.matchMedia('(display-mode: standalone)').matches) return;
 
     const { isIOS, isAndroid } = getPlatform();
-    // In production, only show on mobile. In dev, allow desktop for testing.
-    if (!isIOS && !isAndroid && process.env.NODE_ENV !== 'development') return;
+    if (!isIOS && !isAndroid) return;
 
     // Check dismissal
     try {
@@ -45,23 +41,14 @@ export default function InstallPrompt() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlatform({ isIOS, isAndroid });
 
-    const show = () => {
-      if (ignore) return;
-      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      setTimeout(() => { if (!ignore) setVisible(true); }, prefersReduced ? 0 : 100);
-    };
-
-    // Scroll trigger
-    const onScroll = () => { if (window.scrollY >= SHOW_SCROLL_PX) show(); };
+    const onScroll = () => { if (window.scrollY >= SHOW_SCROLL_PX) setVisible(true); };
     window.addEventListener('scroll', onScroll, { passive: true });
 
-    // Time fallback
-    const timer = setTimeout(show, SHOW_DELAY_MS);
+    const timer = window.setTimeout(() => setVisible(true), SHOW_DELAY_MS);
 
     return () => {
-      ignore = true;
       window.removeEventListener('scroll', onScroll);
-      clearTimeout(timer);
+      window.clearTimeout(timer);
     };
   }, []);
 
