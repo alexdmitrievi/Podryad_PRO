@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { X, Plus, MonitorSmartphone } from 'lucide-react';
 
 const STORAGE_KEY = 'podryad_install_prompt_dismissed';
 const DISMISS_DAYS = 30;
+const SHOW_DELAY_MS = 3000;
+const SHOW_SCROLL_PX = 300;
 
 function getPlatform(): { isIOS: boolean; isAndroid: boolean } {
   if (typeof navigator === 'undefined') return { isIOS: false, isAndroid: false };
@@ -14,11 +16,17 @@ function getPlatform(): { isIOS: boolean; isAndroid: boolean } {
   return { isIOS, isAndroid };
 }
 
+/** Show banner after 3s delay OR after scrolling 300px — whichever comes first.
+ *  Respects: standalone mode, dismissal cookie (30 days), prefers-reduced-motion. */
 export default function InstallPrompt() {
   const [visible, setVisible] = useState(false);
   const [platform, setPlatform] = useState<{ isIOS: boolean; isAndroid: boolean }>({ isIOS: false, isAndroid: false });
+  const [showDelay, setShowDelay] = useState(false);
+  const shownRef = useRef(false);
 
   useEffect(() => {
+    if (shownRef.current) return;
+
     // Already in standalone PWA mode
     if (window.matchMedia('(display-mode: standalone)').matches) return;
 
@@ -36,8 +44,30 @@ export default function InstallPrompt() {
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlatform({ isIOS, isAndroid });
-    setVisible(true);
+    shownRef.current = true;
+
+    const trigger = () => setShowDelay(true);
+
+    // Scroll trigger
+    const onScroll = () => { if (window.scrollY >= SHOW_SCROLL_PX) trigger(); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // Time fallback
+    const timer = setTimeout(trigger, SHOW_DELAY_MS);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      clearTimeout(timer);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!showDelay) return;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const delay = prefersReduced ? 0 : 100;
+    const timer = setTimeout(() => setVisible(true), delay);
+    return () => clearTimeout(timer);
+  }, [showDelay]);
 
   const handleDismiss = () => {
     try {

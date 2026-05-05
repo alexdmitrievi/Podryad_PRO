@@ -144,6 +144,14 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-bottom {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%      { opacity: 0.5; transform: scale(0.8); }
