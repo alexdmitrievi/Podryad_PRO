@@ -34,7 +34,9 @@ export default function InstallPrompt() {
       }
     } catch { /* ignore */ }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlatform({ isIOS, isAndroid });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVisible(true);
   }, []);
 
