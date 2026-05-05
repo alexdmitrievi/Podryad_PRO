@@ -1199,127 +1199,31 @@ export default function HomePage() {
 
       {/* ── УСТАНОВКА ПРИЛОЖЕНИЯ НА ГЛАВНЫЙ ЭКРАН ───────────────── */}
       <section className="py-16 sm:py-20 px-4 bg-surface dark:bg-dark-bg">
-        <div ref={revInstallApp} className="max-w-4xl mx-auto reveal">
-          <div className="text-center mb-10">
-            <span className="eyebrow text-brand-500 mb-4 block">Удобно</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
-              Установите приложение на главный экран
-            </h2>
-            <p className="text-gray-500 dark:text-dark-muted text-sm max-w-md mx-auto">
-              Добавьте иконку Подряд PRO на домашний экран телефона и&nbsp;заходите в&nbsp;один клик
-            </p>
+        <div ref={revInstallApp} className="max-w-lg mx-auto text-center reveal">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-violet flex items-center justify-center mx-auto mb-5 shadow-glow-hover">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* iOS */}
-            <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border p-6 sm:p-7 card-lift">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center flex-shrink-0">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2a7 7 0 017 7c0 2.38-1.19 4.74-2.77 6.53A13.96 13.96 0 0112 22a13.96 13.96 0 01-4.23-6.47C6.19 13.74 5 11.38 5 9a7 7 0 017-7z"/>
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-[#1a1a2e] dark:text-white font-heading">iPhone / iPad</p>
-                  <p className="text-xs text-gray-400 dark:text-dark-muted">Safari</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center text-xs font-extrabold font-heading">1</span>
-                  <div>
-                    <p className="text-sm font-medium text-[#1a1a2e] dark:text-white mb-0.5">Нажмите &laquo;Поделиться&raquo;</p>
-                    <p className="text-xs text-gray-500 dark:text-dark-muted">Квадратная кнопка со стрелкой вверх в&nbsp;нижней панели Safari</p>
-                    <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-dark-bg rounded-lg text-[11px] font-medium text-gray-500 dark:text-dark-muted">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
-                        <polyline points="16 6 12 2 8 6"/>
-                        <line x1="12" y1="2" x2="12" y2="15"/>
-                      </svg>
-                      <span>Поделиться</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center text-xs font-extrabold font-heading">2</span>
-                  <div>
-                    <p className="text-sm font-medium text-[#1a1a2e] dark:text-white mb-0.5">Выберите &laquo;На экран &laquo;Домой&raquo;&raquo;</p>
-                    <p className="text-xs text-gray-500 dark:text-dark-muted">Приложение появится на домашнем экране</p>
-                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-dark-bg rounded-lg text-[11px] font-medium text-gray-500 dark:text-dark-muted">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                      <span>На экран &laquo;Домой&raquo;</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs">✓</span>
-                  <div>
-                    <p className="text-sm font-medium text-[#1a1a2e] dark:text-white mb-0.5">Заходите по иконке</p>
-                    <p className="text-xs text-gray-500 dark:text-dark-muted">Приложение откроется как обычное,&nbsp;без строки браузера</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Android */}
-            <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border p-6 sm:p-7 card-lift">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center flex-shrink-0">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-                    <line x1="12" y1="18" x2="12.01" y2="18"/>
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-[#1a1a2e] dark:text-white font-heading">Android</p>
-                  <p className="text-xs text-gray-400 dark:text-dark-muted">Chrome / Яндекс</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center text-xs font-extrabold font-heading">1</span>
-                  <div>
-                    <p className="text-sm font-medium text-[#1a1a2e] dark:text-white mb-0.5">Нажмите &laquo;⋮&raquo; Меню</p>
-                    <p className="text-xs text-gray-500 dark:text-dark-muted">Три точки в правом верхнем углу браузера</p>
-                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-dark-bg rounded-lg text-[11px] font-medium text-gray-500 dark:text-dark-muted">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="6" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="18" cy="12" r="1.5" fill="currentColor"/>
-                      </svg>
-                      <span>Меню</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center text-xs font-extrabold font-heading">2</span>
-                  <div>
-                    <p className="text-sm font-medium text-[#1a1a2e] dark:text-white mb-0.5">Выберите &laquo;Установить приложение&raquo;</p>
-                    <p className="text-xs text-gray-500 dark:text-dark-muted">Или &laquo;Добавить на главный экран&raquo;</p>
-                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-dark-bg rounded-lg text-[11px] font-medium text-gray-500 dark:text-dark-muted">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                      <span>Установить приложение</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs">✓</span>
-                  <div>
-                    <p className="text-sm font-medium text-[#1a1a2e] dark:text-white mb-0.5">Заходите по иконке</p>
-                    <p className="text-xs text-gray-500 dark:text-dark-muted">Без запуска браузера,&nbsp;как обычное приложение</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-center text-xs text-gray-400 dark:text-dark-muted mt-8 max-w-md mx-auto leading-relaxed">
-            Это не установка из магазина&nbsp;&mdash; браузер просто добавляет ярлык сайта на&nbsp;домашний экран.
-            Безопасно, без разрешений, занимает минимум места.
+          <span className="eyebrow text-brand-500 mb-3 block">Удобно</span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
+            Установите приложение на главный экран
+          </h2>
+          <p className="text-gray-500 dark:text-dark-muted text-sm mb-7 max-w-sm mx-auto">
+            Добавьте иконку Подряд PRO на домашний экран телефона&nbsp;&mdash; и&nbsp;заходите в&nbsp;один клик, без браузера
+          </p>
+          <Link
+            href="/install"
+            className="btn-shine group inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold px-7 py-3.5 rounded-xl transition-all hover:shadow-glow-hover cursor-pointer btn-press"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+            </svg>
+            Как установить?
+          </Link>
+          <p className="text-center text-xs text-gray-400 dark:text-dark-muted mt-5">
+            Инструкция для iPhone и Android
           </p>
         </div>
       </section>
