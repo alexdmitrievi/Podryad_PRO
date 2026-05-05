@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Manrope, Space_Grotesk } from 'next/font/google';
 import DevUnregisterSW from '@/components/DevUnregisterSW';
-import InstallPrompt from '@/components/InstallPrompt';
 import ToastProvider from '@/components/ui/Toast';
 import './globals.css';
 
@@ -89,7 +88,6 @@ export default function RootLayout({
       <body className="bg-surface dark:bg-dark-bg text-[#2B2B2B] dark:text-dark-text font-sans antialiased transition-colors duration-300">
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-brand-500 focus:text-white focus:rounded-xl focus:text-sm focus:font-semibold">Перейти к контенту</a>
         <DevUnregisterSW />
-        <InstallPrompt />
         <ToastProvider />
         {children}
       </body>
