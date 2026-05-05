@@ -7,6 +7,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
 import { getTelegramConfig } from '@/lib/channels/config';
 import { isDuplicateUpdate, extractTelegramUpdateId } from '@/lib/channels/dedupe';
+import { linkMessengerAccount, getOrdersByMessengerId, formatOrderStatus } from '@/lib/channels/link';
 
 const mapper = new TelegramMapper();
 
@@ -16,7 +17,9 @@ const HELP_TEXT = `*Подряд PRO* — платформа для заказа
 /start — приветствие
 /help — справка
 /order — создать заказ
-/status — проверить статус заказа
+/status — статус ваших заказов
+/link — привязать аккаунт к номеру телефона
+/orders — актуальные заказы (для исполнителей)
 
 Просто напишите, что вам нужно — я помогу!`;
 
@@ -188,13 +191,74 @@ async function processMessage(
         return;
 
       case '/status':
+        const orders = await getOrdersByMessengerId({ channel: 'telegram', userId });
+        if (orders.length === 0) {
+          await router.send({
+            channel: 'telegram',
+            chat_id: chatId,
+            user_id: userId,
+            text: '🔍 *Проверка статуса*\n\nУ вас пока нет заказов, или ваш Telegram не привязан к аккаунту.\nОтправьте `/link ВАШ_ТЕЛЕФОН` для привязки.',
+            parse_mode: 'Markdown',
+          });
+        } else {
+          const lines = orders.slice(0, 5).map((o) => {
+            const num = o.order_number ? `#${o.order_number}` : `ID: ${String(o.order_id).slice(0, 8)}`;
+            return `• ${num} — ${formatOrderStatus(String(o.status ?? ''))}`;
+          });
+          await router.send({
+            channel: 'telegram',
+            chat_id: chatId,
+            user_id: userId,
+            text: `📋 *Ваши заказы*\n\n${lines.join('\n')}\n\nПодробнее: [Личный кабинет](${APP_URL}/my)`,
+            parse_mode: 'Markdown',
+          });
+        }
+        return;
+
+      case '/link': {
+        const phoneArg = args.join('').replace(/\s+/g, '');
+        const result = await linkMessengerAccount({ channel: 'telegram', userId, rawPhone: phoneArg });
         await router.send({
           channel: 'telegram',
           chat_id: chatId,
           user_id: userId,
-          text: '🔍 *Проверка статуса*\n\nЧтобы узнать статус заказа, укажите ваш номер телефона или номер заказа.\n\nИли перейдите в личный кабинет: [Подряд PRO](' + APP_URL + '/my)',
-          parse_mode: 'Markdown',
+          text: result.message,
+          parse_mode: result.ok ? undefined : undefined,
         });
+        return;
+      }
+
+      case '/orders':
+        // Browse available orders (for contractors)
+        const { data: pubOrders } = await (await import('@/lib/supabase')).getServiceClient()
+          .from('orders')
+          .select('order_id, order_number, work_type, display_price, city, created_at')
+          .in('status', ['published', 'pending'])
+          .order('created_at', { ascending: false })
+          .limit(5);
+        if (!pubOrders || pubOrders.length === 0) {
+          await router.send({
+            channel: 'telegram',
+            chat_id: chatId,
+            user_id: userId,
+            text: '📢 *Актуальные заказы*\n\nСейчас нет активных заказов. Загляните позже!',
+            parse_mode: 'Markdown',
+          });
+        } else {
+          const orderLines = pubOrders.map((o: Record<string, unknown>) => {
+            const num = o.order_number ? `#${o.order_number}` : `ID: ${String(o.order_id).slice(0, 8)}`;
+            const price = o.display_price ? `${o.display_price} ₽` : 'цена не указана';
+            const type = String(o.work_type ?? '');
+            return `• ${num} — ${type}, ${price}`;
+          });
+          await router.send({
+            channel: 'telegram',
+            chat_id: chatId,
+            user_id: userId,
+            text: `📢 *Актуальные заказы*\n\n${orderLines.join('\n')}\n\nОткликнуться: [Сайт](${APP_URL}/orders)`,
+            parse_mode: 'Markdown',
+          });
+        }
         return;
 
       default:

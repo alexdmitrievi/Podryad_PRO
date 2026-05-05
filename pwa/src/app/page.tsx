@@ -302,42 +302,55 @@ export default function HomePage() {
   const revExecutors = useReveal();
   const revForm = useReveal();
   const revTenders = useReveal();
-  const revInstallApp = useReveal();
-  // Mobile: service icon highlight with hysteresis (match stagger-reveal cards exactly)
+  // Mobile: service icon highlight with hysteresis for all cards in free-tools section
   useEffect(() => {
     const container = revTenders.current;
     if (!container) return;
-    const icon = container.querySelector('[data-service-icon]') as HTMLElement | null;
-    if (!icon) return;
+    const icons = container.querySelectorAll<HTMLElement>('[data-service-icon]');
+    if (icons.length === 0) return;
 
     let hasScrolled = false;
-    let active = false;
+    const activeStates = new Map<HTMLElement, boolean>();
     const ON = 0.55;
     const OFF = 0.32;
 
     const onScroll = () => { hasScrolled = true; window.removeEventListener('scroll', onScroll); };
     window.addEventListener('scroll', onScroll, { passive: true });
 
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const ratio = entries[0]?.intersectionRatio ?? 0;
-        if (!hasScrolled) {
-          icon.classList.remove('icon-revealed');
-          active = false;
-          return;
-        }
-        if (active && ratio < OFF) {
-          icon.classList.remove('icon-revealed');
-          active = false;
-        } else if (!active && ratio >= ON) {
-          icon.classList.add('icon-revealed');
-          active = true;
-        }
-      },
-      { threshold: [0, 0.3, 0.45, 0.6, 0.8, 1], rootMargin: '-28% 0px -28% 0px' },
-    );
-    obs.observe(container);
-    return () => { obs.disconnect(); window.removeEventListener('scroll', onScroll); };
+    const observers: IntersectionObserver[] = [];
+
+    icons.forEach((icon) => {
+      const card = icon.closest('[data-free-tool-card]') as HTMLElement | null;
+      const target = card ?? icon;
+      activeStates.set(icon, false);
+
+      const obs = new IntersectionObserver(
+        (entries) => {
+          const ratio = entries[0]?.intersectionRatio ?? 0;
+          let active = activeStates.get(icon) ?? false;
+          if (!hasScrolled) {
+            icon.classList.remove('icon-revealed');
+            activeStates.set(icon, false);
+            return;
+          }
+          if (active && ratio < OFF) {
+            icon.classList.remove('icon-revealed');
+            activeStates.set(icon, false);
+          } else if (!active && ratio >= ON) {
+            icon.classList.add('icon-revealed');
+            activeStates.set(icon, true);
+          }
+        },
+        { threshold: [0, 0.3, 0.45, 0.6, 0.8, 1], rootMargin: '-28% 0px -28% 0px' },
+      );
+      obs.observe(target);
+      observers.push(obs);
+    });
+
+    return () => {
+      observers.forEach((o) => o.disconnect());
+      window.removeEventListener('scroll', onScroll);
+    };
   }, [revTenders]);
 
   useEffect(() => {
@@ -1143,11 +1156,13 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div className="max-w-sm mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            {/* TenderPars card */}
             <a
               href="https://www.tenderpars.ru/"
               target="_blank"
               rel="noopener noreferrer"
+              data-free-tool-card
               className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
               <div className="p-6 flex flex-col flex-1">
@@ -1193,38 +1208,52 @@ export default function HomePage() {
                 </div>
               </div>
             </a>
-          </div>
-        </div>
-      </section>
 
-      {/* ── УСТАНОВКА ПРИЛОЖЕНИЯ НА ГЛАВНЫЙ ЭКРАН ───────────────── */}
-      <section className="py-16 sm:py-20 px-4 bg-surface dark:bg-dark-bg">
-        <div ref={revInstallApp} className="max-w-lg mx-auto text-center reveal">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-violet flex items-center justify-center mx-auto mb-5 shadow-glow-hover">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-              <line x1="12" y1="18" x2="12.01" y2="18"/>
-            </svg>
+            {/* Install PWA card — mobile only (hidden via CSS on desktop) */}
+            <div
+              data-free-tool-card
+              className="sm:hidden group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
+            >
+              <Link href="/install" className="p-6 flex flex-col flex-1">
+                <div className="service-icon-wrap mb-5" data-service-icon>
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    className="text-brand-500 transition-colors duration-300" aria-hidden="true">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" strokeWidth="1.8"/>
+                    <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth="2.5"/>
+                  </svg>
+                </div>
+
+                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">
+                  Установить приложение
+                </h3>
+                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">
+                  На главный экран &bull; в один клик
+                </p>
+
+                <ul className="space-y-2.5 text-sm mb-5 flex-1">
+                  <li className="flex justify-between items-center gap-2">
+                    <span className="text-gray-600 dark:text-dark-text truncate min-w-0">Быстрый доступ</span>
+                    <span className="price-label whitespace-nowrap">без браузера</span>
+                  </li>
+                  <li className="flex justify-between items-center gap-2">
+                    <span className="text-gray-600 dark:text-dark-text truncate min-w-0">Push-уведомления</span>
+                    <span className="price-label whitespace-nowrap">мгновенно</span>
+                  </li>
+                  <li className="flex justify-between items-center gap-2">
+                    <span className="text-gray-600 dark:text-dark-text truncate min-w-0">iPhone / Android</span>
+                    <span className="price-label whitespace-nowrap">подробно</span>
+                  </li>
+                </ul>
+
+                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
+                  <span>Как установить?</span>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              </Link>
+            </div>
           </div>
-          <span className="eyebrow text-brand-500 mb-3 block">Удобно</span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
-            Установите приложение на главный экран
-          </h2>
-          <p className="text-gray-500 dark:text-dark-muted text-sm mb-7 max-w-sm mx-auto">
-            Добавьте иконку Подряд PRO на домашний экран телефона&nbsp;&mdash; и&nbsp;заходите в&nbsp;один клик, без браузера
-          </p>
-          <Link
-            href="/install"
-            className="btn-shine group inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold px-7 py-3.5 rounded-xl transition-all hover:shadow-glow-hover cursor-pointer btn-press"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
-            </svg>
-            Как установить?
-          </Link>
-          <p className="text-center text-xs text-gray-400 dark:text-dark-muted mt-5">
-            Инструкция для iPhone и Android
-          </p>
         </div>
       </section>
 
