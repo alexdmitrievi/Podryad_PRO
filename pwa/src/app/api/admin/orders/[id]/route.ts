@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { getMarkupRate } from '@/lib/pricing';
+import { enqueueJob } from '@/lib/job-queue';
 import { log } from '@/lib/logger';
 
 function verifyPin(pin: string): boolean {
@@ -116,6 +117,28 @@ export async function PUT(
     if (error) {
       log.error(`PUT /api/admin/orders/${orderId}`, { error: String(error) });
       return NextResponse.json({ error: 'DB error' }, { status: 500 });
+    }
+
+    // Notify contractor when assigned (contractor_id set or updated)
+    if (contractor_id) {
+      const rawBody = body as Record<string, unknown>;
+      void enqueueJob({
+        queueName: 'notifications',
+        jobType: 'notify.order_assigned_to_contractor',
+        dedupeKey: `assign:${orderId}`,
+        payload: {
+          contractor_phone: contractor_id,
+          order_id: orderId,
+          order_number: rawBody.order_number,
+          work_type: rawBody.work_type,
+          display_price,
+          address: rawBody.address,
+          work_date: rawBody.work_date,
+          customer_phone: rawBody.customer_phone,
+        },
+      }).catch((err) => {
+        log.error(`PUT /api/admin/orders/${orderId} assign notify`, { error: String(err) });
+      });
     }
 
     return NextResponse.json({ ok: true });

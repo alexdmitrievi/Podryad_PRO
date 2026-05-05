@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { MaxMapper } from '@/lib/channels/max';
 import { getChannelRouter } from '@/lib/channels';
 import { getOpenAIClient } from '@/lib/ai/openai-client';
@@ -10,6 +11,16 @@ import { isDuplicateUpdate, extractMaxUpdateId } from '@/lib/channels/dedupe';
 import { linkMessengerAccount, getOrdersByMessengerId, formatOrderStatus } from '@/lib/channels/link';
 
 const mapper = new MaxMapper();
+
+/** Timing-safe string comparison for webhook secret validation. */
+function timingSafeSecretCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
+}
 
 const HELP_TEXT = `*Подряд PRO* — платформа для заказа рабочей силы, техники и стройматериалов в Омске и Новосибирске.
 
@@ -43,17 +54,17 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Security: webhook secret required in production, optional in dev
-  const secret = req.headers.get('x-max-bot-api-secret-token');
+  const secret = req.headers.get('x-max-bot-api-secret-token') ?? '';
   const expectedSecret = process.env.MAX_WEBHOOK_SECRET;
   if (process.env.NODE_ENV === 'production') {
     if (!expectedSecret) {
       log.error('[MaxWebhook] MAX_WEBHOOK_SECRET not set in production');
       return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
     }
-    if (secret !== expectedSecret) {
+    if (!timingSafeSecretCompare(secret, expectedSecret)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-  } else if (expectedSecret && secret !== expectedSecret) {
+  } else if (expectedSecret && !timingSafeSecretCompare(secret, expectedSecret)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

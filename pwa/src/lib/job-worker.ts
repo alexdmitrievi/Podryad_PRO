@@ -4,6 +4,11 @@ import { completeJob, failJob, type JobPayload, type JobQueueRow } from './job-q
 import { getServiceClient } from './supabase';
 import { log } from './logger';
 
+/** Escape Telegram legacy Markdown special characters in user-supplied text. */
+function escapeMd(text: string): string {
+  return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+}
+
 const WORK_TYPE_LABELS: Record<string, string> = {
   labor: 'Рабочие / бригада',
   equipment: 'Техника',
@@ -80,9 +85,9 @@ async function sendOrThrow(messages: NormalizedOutgoingMessage[]): Promise<SendR
 }
 
 function buildDisputeOpenedText(payload: JobPayload): string {
-  const description = asString(payload.description).slice(0, 1000);
+  const description = escapeMd(asString(payload.description).slice(0, 1000));
   const descriptionLine = description ? `\n💬 Описание: ${description}` : '';
-  return `⚠️ *Открыт новый спор!*\n\n🆔 Заказ: ${asString(payload.order_id, '—')}\n🔖 Спор: ${asString(payload.dispute_id, '—')}\n👤 Инициатор: ${INITIATOR_LABELS[asString(payload.initiated_by)] || asString(payload.initiated_by, 'не указан')}\n📋 Причина: ${asString(payload.reason, 'не указана').slice(0, 500)}${descriptionLine}\n\n⚡ Требуется решение в админке: /admin → Споры`;
+  return `⚠️ *Открыт новый спор!*\n\n🆔 Заказ: ${asString(payload.order_id, '—')}\n🔖 Спор: ${asString(payload.dispute_id, '—')}\n👤 Инициатор: ${INITIATOR_LABELS[asString(payload.initiated_by)] || asString(payload.initiated_by, 'не указан')}\n📋 Причина: ${escapeMd(asString(payload.reason, 'не указана').slice(0, 500))}${descriptionLine}\n\n⚡ Требуется решение в админке: /admin → Споры`;
 }
 
 function buildDisputeResolvedText(payload: JobPayload): string {
@@ -91,7 +96,7 @@ function buildDisputeResolvedText(payload: JobPayload): string {
 }
 
 function buildPaymentHeldText(payload: JobPayload): string {
-  return `💰 *Платёж удержан (escrow)*\n\n🆔 Заказ: ${asString(payload.order_id, '—')}\n👤 Клиент: ${asString(payload.customer_name, 'не указано')}\n📞 Тел: ${asString(payload.customer_phone, 'не указан')}\n🔨 Тип работ: ${workTypeLabel(payload.work_type)}\n📍 Адрес: ${asString(payload.address, 'не указан')}\n💵 Сумма: ${formatAmount(payload.amount)}\n🕒 Оплачено: ${asString(payload.paid_at, new Date().toISOString())}\n\n✅ Можно запускать работу.`;
+  return `💰 *Платёж удержан (escrow)*\n\n🆔 Заказ: ${asString(payload.order_id, '—')}\n👤 Клиент: ${escapeMd(asString(payload.customer_name, 'не указано'))}\n📞 Тел: ${asString(payload.customer_phone, 'не указан')}\n🔨 Тип работ: ${workTypeLabel(payload.work_type)}\n📍 Адрес: ${escapeMd(asString(payload.address, 'не указан'))}\n💵 Сумма: ${formatAmount(payload.amount)}\n🕒 Оплачено: ${asString(payload.paid_at, new Date().toISOString())}\n\n✅ Можно запускать работу.`;
 }
 
 function buildPayoutText(payload: JobPayload): string {
@@ -99,25 +104,25 @@ function buildPayoutText(payload: JobPayload): string {
 }
 
 function buildOrderCreatedText(payload: JobPayload): string {
-  const nameLine = payload.customer_name ? `\n👤 Клиент: ${asString(payload.customer_name)}` : '';
-  return `🆕 *Новый заказ*\n\n🆔 Заказ: ${asString(payload.order_id, '—')}\n📞 Телефон: ${asString(payload.phone, '—')}${nameLine}\n🔨 Тип работ: ${workTypeLabel(payload.work_type)}\n📍 Адрес: ${asString(payload.address, '—')}\n📅 Дата: ${asString(payload.work_date, '—')}\n\n⚡ /admin → Заказы`;
+  const nameLine = payload.customer_name ? `\n👤 Клиент: ${escapeMd(asString(payload.customer_name))}` : '';
+  return `🆕 *Новый заказ*\n\n🆔 Заказ: ${asString(payload.order_id, '—')}\n📞 Телефон: ${asString(payload.phone, '—')}${nameLine}\n🔨 Тип работ: ${workTypeLabel(payload.work_type)}\n📍 Адрес: ${escapeMd(asString(payload.address, '—'))}\n📅 Дата: ${asString(payload.work_date, '—')}\n\n⚡ /admin → Заказы`;
 }
 
 function buildLeadCreatedText(payload: JobPayload): string {
-  const nameLine = payload.name ? `\n👤 Имя: ${asString(payload.name)}` : '';
+  const nameLine = payload.name ? `\n👤 Имя: ${escapeMd(asString(payload.name))}` : '';
   const source = asString(payload.source, 'landing');
-  const comment = asString(payload.comment).slice(0, 400);
+  const comment = escapeMd(asString(payload.comment).slice(0, 400));
   const commentLine = comment ? `\n💬 ${comment}` : '';
   const orderType = asString((payload.order_type ?? payload.type ?? '') as string, '');
   const typeLabel = workTypeLabel(payload.work_type) || orderType || '—';
-  return `📥 *Новая заявка (${source})*\n\n📞 Телефон: ${asString(payload.phone, '—')}${nameLine}\n🔨 Тип: ${typeLabel}\n📍 Адрес: ${asString(payload.address, '—')}${commentLine}\n\n⚡ /admin → Лиды`;
+  return `📥 *Новая заявка (${source})*\n\n📞 Телефон: ${asString(payload.phone, '—')}${nameLine}\n🔨 Тип: ${typeLabel}\n📍 Адрес: ${escapeMd(asString(payload.address, '—'))}${commentLine}\n\n⚡ /admin → Лиды`;
 }
 
 function buildExecutorResponseText(payload: JobPayload): string {
-  const comment = asString(payload.comment).slice(0, 400);
+  const comment = escapeMd(asString(payload.comment).slice(0, 400));
   const commentLine = comment ? `\n💬 Комментарий: ${comment}` : '';
   const priceLine = payload.price != null ? `\n💰 Цена: ${formatAmount(payload.price)}` : '';
-  return `🤝 *Отклик исполнителя*\n\n🆔 Заказ: ${asString(payload.order_id, '—')}\n👤 Имя: ${asString(payload.name, '—')}\n📞 Телефон: ${asString(payload.phone, '—')}${priceLine}${commentLine}\n\n⚡ /admin → Заказы → Отклики`;
+  return `🤝 *Отклик исполнителя*\n\n🆔 Заказ: ${asString(payload.order_id, '—')}\n👤 Имя: ${escapeMd(asString(payload.name, '—'))}\n📞 Телефон: ${asString(payload.phone, '—')}${priceLine}${commentLine}\n\n⚡ /admin → Заказы → Отклики`;
 }
 
 function buildContractorRegisteredText(payload: JobPayload): string {
@@ -125,7 +130,7 @@ function buildContractorRegisteredText(payload: JobPayload): string {
     ? (payload.specialties as string[]).join(', ')
     : asString(payload.specialties, '—');
   const brigadeLine = payload.is_brigade ? `\n👥 Бригада: ${payload.crew_size ?? '?'} чел.` : '';
-  return `🔧 *Новый исполнитель*\n\n🆔 ID: ${asString(payload.contractor_id, '—')}\n👤 Имя: ${asString(payload.name, '—')}\n📞 Телефон: ${asString(payload.phone, '—')}\n📍 Город: ${asString(payload.city, '—')}\n🛠️ Специализации: ${specialties}${brigadeLine}\n\n⚡ /admin → Исполнители`;
+  return `🔧 *Новый исполнитель*\n\n🆔 ID: ${asString(payload.contractor_id, '—')}\n👤 Имя: ${escapeMd(asString(payload.name, '—'))}\n📞 Телефон: ${asString(payload.phone, '—')}\n📍 Город: ${escapeMd(asString(payload.city, '—'))}\n🛠️ Специализации: ${escapeMd(specialties)}${brigadeLine}\n\n⚡ /admin → Исполнители`;
 }
 
 function getAppUrl(): string {
@@ -161,10 +166,10 @@ function buildProspectStageText(payload: JobPayload): string {
   const action = asString(payload.action);
   const prospect = (payload.prospect as Record<string, unknown>) ?? {};
   if (action === 'prospect_added') {
-    return `👤 *Новый prospect*\n\n🆔 ID: ${asString(prospect.id, '—')}\n👤 Имя: ${asString(prospect.name, '—')}\n📞 Телефон: ${asString(prospect.phone, '—')}\n🏙️ Город: ${asString(prospect.city, '—')}\n📋 Стадия: ${asString(prospect.stage, '—')}\n\n⚡ /admin → CRM → Prospects`;
+    return `👤 *Новый prospect*\n\n🆔 ID: ${asString(prospect.id, '—')}\n👤 Имя: ${escapeMd(asString(prospect.name, '—'))}\n📞 Телефон: ${asString(prospect.phone, '—')}\n🏙️ Город: ${escapeMd(asString(prospect.city, '—'))}\n📋 Стадия: ${escapeMd(asString(prospect.stage, '—'))}\n\n⚡ /admin → CRM → Prospects`;
   }
   const previousStage = asString(payload.previous_stage, '—');
-  return `🔄 *Prospect: смена стадии*\n\n🆔 ID: ${asString(prospect.id, '—')}\n👤 Имя: ${asString(prospect.name, '—')}\n📞 Телефон: ${asString(prospect.phone, '—')}\n\n${previousStage} → ${asString(prospect.stage, '—')}\n\n⚡ /admin → CRM → Prospects`;
+  return `🔄 *Prospect: смена стадии*\n\n🆔 ID: ${asString(prospect.id, '—')}\n👤 Имя: ${escapeMd(asString(prospect.name, '—'))}\n📞 Телефон: ${asString(prospect.phone, '—')}\n\n${escapeMd(previousStage)} → ${escapeMd(asString(prospect.stage, '—'))}\n\n⚡ /admin → CRM → Prospects`;
 }
 
 // ──────────────────────────────────────────────────────────
@@ -389,6 +394,62 @@ function buildPaymentLinkMessage(payload: JobPayload): { channel: Channel; chatI
   return null;
 }
 
+// ──────────────────────────────────────────────────────────
+// Contractor notification helpers
+// ──────────────────────────────────────────────────────────
+
+function buildOrderAssignedToContractorText(payload: JobPayload): string {
+  const typeLabel = workTypeLabel(payload.work_type);
+  const priceLine = payload.display_price != null ? `\n💰 Цена: ${formatAmount(payload.display_price)}` : '';
+  const addressLine = payload.address ? `\n📍 ${escapeMd(asString(payload.address))}` : '';
+  return `🔔 *Вам назначен заказ*\n\n🆔 Заказ: #${asString(payload.order_number, asString(payload.order_id, '—'))}\n🔨 Тип работ: ${typeLabel}${priceLine}${addressLine}\n📅 Дата: ${asString(payload.work_date, 'уточняется')}\n\nСвяжитесь с заказчиком: ${asString(payload.customer_phone, '—')}`;
+}
+
+function buildContractorPayoutSentText(payload: JobPayload): string {
+  return `💰 *Выплата отправлена*\n\n🆔 Заказ: #${asString(payload.order_number, asString(payload.order_id, '—'))}\n💵 Сумма: ${formatAmount(payload.payout_amount)}\n🕒 Время: ${asString(payload.paid_at, new Date().toISOString())}\n\nСпасибо за работу с Подряд PRO!`;
+}
+
+async function handleContractorNotification(
+  payload: JobPayload,
+  buildText: (p: JobPayload) => string,
+): Promise<JobPayload> {
+  const phone = asString(payload.contractor_phone);
+  if (!phone) throw new Error('Contractor notification: missing contractor_phone');
+
+  const supabase = getServiceClient();
+  const { data: contractor } = await supabase
+    .from('contractors')
+    .select('telegram_id, max_id')
+    .eq('phone', phone)
+    .maybeSingle();
+
+  if (!contractor) {
+    // No contractor found — send admin reminder instead
+    const reminderText = `📋 *Уведомление не доставлено исполнителю*\n\n📞 Телефон: ${phone}\n📨 Тип: ${payload.job_type ?? 'unknown'}\n\nИсполнитель не привязал мессенджер.`;
+    await sendOrThrow(getAdminMessages(reminderText));
+    return { delivered: 0, manual: true };
+  }
+
+  const text = buildText(payload);
+  const messages: NormalizedOutgoingMessage[] = [];
+
+  if (contractor.telegram_id) {
+    messages.push({ channel: 'telegram', chat_id: String(contractor.telegram_id), text });
+  }
+  if (contractor.max_id) {
+    messages.push({ channel: 'max', chat_id: String(contractor.max_id), text });
+  }
+
+  if (messages.length === 0) {
+    const reminderText = `📋 *Уведомление не доставлено исполнителю*\n\n📞 Телефон: ${phone}\n📨 Тип: ${payload.job_type ?? 'unknown'}\n\nИсполнитель не привязал мессенджер.`;
+    await sendOrThrow(getAdminMessages(reminderText));
+    return { delivered: 0, manual: true };
+  }
+
+  const results = await sendOrThrow(messages);
+  return { delivered: results.length };
+}
+
 async function handleAdminBroadcast(text: string): Promise<JobPayload> {
   const results = await sendOrThrow(getAdminMessages(text));
   return { delivered: results.length };
@@ -462,6 +523,12 @@ export async function handleJob(job: Pick<JobQueueRow, 'id' | 'job_type' | 'payl
 
     case 'analytics.daily_admin_report':
       return handleDailyAnalyticsReport(job.payload);
+
+    case 'notify.order_assigned_to_contractor':
+      return handleContractorNotification(job.payload, buildOrderAssignedToContractorText);
+
+    case 'notify.contractor_payout_sent':
+      return handleContractorNotification(job.payload, buildContractorPayoutSentText);
 
     case 'customer.send_payment_link': {
       const delivery = buildPaymentLinkMessage(job.payload);

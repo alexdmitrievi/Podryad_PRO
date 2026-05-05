@@ -57,8 +57,8 @@ export function verifyTelegramAuth(params: {
 }
 
 export async function createSession(telegramId: string): Promise<string> {
-  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
-  if (!secret) throw new Error('SESSION_SECRET or TELEGRAM_BOT_TOKEN required');
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) throw new Error('SESSION_SECRET required');
   const payload = `${telegramId}.${Date.now()}`;
   const sig = createHmac('sha256', secret).update(payload).digest('hex');
   return `${payload}.${sig}`;
@@ -74,7 +74,7 @@ export function verifySessionToken(token: string): string | null {
   if (parts.length !== 3) return null;
 
   const [telegramId, ts, sig] = parts;
-  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  const secret = process.env.SESSION_SECRET;
   if (!secret) return null;
   const payload = `${telegramId}.${ts}`;
   const expectedSig = createHmac('sha256', secret).update(payload).digest('hex');
@@ -158,9 +158,9 @@ export function signPodryadSession(params: {
   role: 'worker' | 'customer' | 'supplier';
   maxAgeSec?: number;
 }): string {
-  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  const secret = process.env.SESSION_SECRET;
   if (!secret) {
-    throw new Error('SESSION_SECRET_OR_TELEGRAM_BOT_TOKEN_REQUIRED');
+    throw new Error('SESSION_SECRET required');
   }
 
   const exp = Math.floor(Date.now() / 1000) + (params.maxAgeSec ?? 60 * 60 * 24 * 30);
@@ -190,7 +190,7 @@ export async function getSession(): Promise<PodryadSession | null> {
   if (parts.length !== 3) return null;
 
   const [h64, p64, sig64] = parts;
-  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  const secret = process.env.SESSION_SECRET;
   if (!secret) return null;
 
   const signingInput = `${h64}.${p64}`;
@@ -281,9 +281,9 @@ export function signConfirmationToken(params: {
   role: 'customer' | 'supplier';
   phone: string;
 }): string {
-  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  const secret = process.env.SESSION_SECRET;
   if (!secret) {
-    throw new Error('SESSION_SECRET or TELEGRAM_BOT_TOKEN required');
+    throw new Error('SESSION_SECRET required');
   }
 
   const exp = Math.floor(Date.now() / 1000) + 86400; // 24 hours
@@ -310,7 +310,7 @@ export function verifyConfirmationToken(token: string): ConfirmationTokenPayload
   if (parts.length !== 3) return null;
 
   const [h64, p64, sig64] = parts;
-  const secret = process.env.SESSION_SECRET || process.env.TELEGRAM_BOT_TOKEN;
+  const secret = process.env.SESSION_SECRET;
   if (!secret) return null;
 
   const signingInput = `${h64}.${p64}`;

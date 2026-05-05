@@ -27,6 +27,7 @@ import { log } from '@/lib/logger';
 
 function verifyTinkoff(body: Record<string, unknown>, password: string): boolean {
   // Tinkoff concatenates sorted key=value pairs and hashes with SHA-256
+  // Secret (password) is used as the HMAC key
   const token = body['Token'] as string | undefined;
   if (!token) return false;
 
@@ -34,10 +35,8 @@ function verifyTinkoff(body: Record<string, unknown>, password: string): boolean
     .filter(([k]) => k !== 'Token' && k !== 'Receipt' && k !== 'DATA')
     .sort(([a], [b]) => a.localeCompare(b));
 
-  const str = filtered.map(([, v]) => String(v)).join('') + password;
-  // We include password at the end (Tinkoff spec: sorted values + password)
-  const strWithPass = filtered.map(([, v]) => String(v)).join('') + password;
-  const hash = createHmac('sha256', '').update(strWithPass).digest('hex');
+  const strWithPass = filtered.map(([, v]) => String(v)).join('');
+  const hash = createHmac('sha256', password).update(strWithPass).digest('hex');
   const tokenBuf = Buffer.from(token);
   const hashBuf = Buffer.from(hash);
   return tokenBuf.length === hashBuf.length && timingSafeEqual(tokenBuf, hashBuf);
@@ -116,7 +115,7 @@ export async function POST(req: NextRequest) {
   // ── YooKassa ─────────────────────────────────────────────────────────────
   else if (gateway === 'yookassa') {
     const secret = process.env.YOOKASSA_WEBHOOK_SECRET;
-    const sig = req.headers.get('x-b3-traceid') ?? req.headers.get('signature') ?? '';
+    const sig = req.headers.get('yookassa-signature') ?? req.headers.get('signature') ?? '';
     if (secret && sig && !verifyYooKassa(rawBody, sig, secret)) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }

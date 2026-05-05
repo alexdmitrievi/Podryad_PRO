@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
   // Update Supabase directly for immediate consistency
   const db = getServiceClient();
   const now = new Date().toISOString();
+  let dbError: string | null = null;
 
   if (event === 'order_created') {
     const { error } = await db
@@ -62,21 +63,25 @@ export async function POST(req: NextRequest) {
       .update({ stage: 'converted', converted_at: now, order_id: entity_id, updated_at: now })
       .eq('phone', cleanPhone)
       .neq('stage', 'converted');
-    if (error) log.error('CRM update-stage order_created', { error: String(error) });
+    if (error) { log.error('CRM update-stage order_created', { error: String(error) }); dbError = String(error); }
   } else if (event === 'contractor_registered') {
     const { error } = await db
       .from('crm_executor_prospects')
       .update({ stage: 'registered', registered_at: now, contractor_id: entity_id, updated_at: now })
       .eq('phone', cleanPhone)
       .neq('stage', 'active');
-    if (error) log.error('CRM update-stage contractor_registered', { error: String(error) });
+    if (error) { log.error('CRM update-stage contractor_registered', { error: String(error) }); dbError = String(error); }
   } else if (event === 'order_taken') {
     const { error } = await db
       .from('crm_executor_prospects')
       .update({ stage: 'active', first_order_at: now, updated_at: now })
       .eq('phone', cleanPhone)
       .eq('stage', 'registered');
-    if (error) log.error('CRM update-stage order_taken', { error: String(error) });
+    if (error) { log.error('CRM update-stage order_taken', { error: String(error) }); dbError = String(error); }
+  }
+
+  if (dbError) {
+    return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

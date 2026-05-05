@@ -97,7 +97,7 @@ export async function PUT(
     .from('orders')
     .update(updates)
     .eq('order_id', orderId)
-    .select('order_id, customer_phone, customer_name, work_type, display_price, customer_total, supplier_payout, contractor_id, executor_id, address')
+    .select('order_id, order_number, customer_phone, customer_name, work_type, display_price, customer_total, supplier_payout, contractor_id, executor_id, address')
     .single();
 
   if (error) {
@@ -156,6 +156,29 @@ export async function PUT(
       });
     } catch (error) {
       log.error('enqueue notify.payout_initiated failed (non-blocking)', { error: String(error) });
+    }
+
+    // Also notify the contractor directly
+    if (executorPhone) {
+      try {
+        await enqueueJob({
+          queueName: 'notifications',
+          jobType: 'notify.contractor_payout_sent',
+          dedupeKey: `contractor_payout:${orderId}`,
+          payload: {
+            contractor_phone: executorPhone,
+            order_id: orderId,
+            order_number: updated?.order_number,
+            payout_amount: updated?.supplier_payout,
+            paid_at: updates.executor_payout_at,
+          },
+          sourceTable: 'orders',
+          sourceId: orderId,
+          createdBy: 'api/admin/orders/payment-status',
+        });
+      } catch (error) {
+        log.error('enqueue notify.contractor_payout_sent failed (non-blocking)', { error: String(error) });
+      }
     }
   }
 

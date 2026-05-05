@@ -3,6 +3,8 @@ import { log } from '@/lib/logger';
 
 const db = () => getServiceClient();
 
+type MessengerChannel = 'telegram' | 'max' | 'avito';
+
 /** Normalize Russian phone number to digits only (e.g. "+7 962 123-45-67" → "79621234567") */
 function normalizePhone(raw: string): string {
   return raw.replace(/[^\d]/g, '');
@@ -18,7 +20,7 @@ function isValidPhone(digits: string): boolean {
  * Updates customer_tokens (messenger_id + preferred_contact) and contractors table.
  */
 export async function linkMessengerAccount(params: {
-  channel: 'telegram' | 'max';
+  channel: MessengerChannel;
   userId: string;
   rawPhone: string;
 }): Promise<{ ok: boolean; message: string }> {
@@ -32,9 +34,11 @@ export async function linkMessengerAccount(params: {
     };
   }
 
-  const channelLabel = channel === 'telegram' ? 'Telegram' : 'MAX';
+  const channelLabels: Record<MessengerChannel, string> = { telegram: 'Telegram', max: 'MAX', avito: 'Avito' };
+  const channelLabel = channelLabels[channel];
 
   try {
+
     // 1. Upsert customer_tokens — link messenger_id + set preferred_contact
     const { data: existingToken } = await db()
       .from('customer_tokens')
@@ -61,18 +65,21 @@ export async function linkMessengerAccount(params: {
     }
 
     // 2. Also update contractors table if this phone is a registered contractor
-    const idField = channel === 'telegram' ? 'telegram_id' : 'max_id';
-    const { data: contractor } = await db()
-      .from('contractors')
-      .select('id, phone')
-      .eq('phone', phone)
-      .maybeSingle();
-
-    if (contractor) {
-      await db()
+    const idFields: Record<MessengerChannel, string | null> = { telegram: 'telegram_id', max: 'max_id', avito: null };
+    const idField = idFields[channel];
+    if (idField) {
+      const { data: contractor } = await db()
         .from('contractors')
-        .update({ [idField]: userId })
-        .eq('phone', phone);
+        .select('id, phone')
+        .eq('phone', phone)
+        .maybeSingle();
+
+      if (contractor) {
+        await db()
+          .from('contractors')
+          .update({ [idField]: userId })
+          .eq('phone', phone);
+      }
     }
 
     log.info('[linkMessengerAccount] Linked', { channel, phone, user_id: userId });
@@ -94,7 +101,7 @@ export async function linkMessengerAccount(params: {
  * Checks customer_tokens.messenger_id and contractors.{telegram_id|max_id}.
  */
 export async function getPhoneByMessengerId(params: {
-  channel: 'telegram' | 'max';
+  channel: MessengerChannel;
   userId: string;
 }): Promise<string | null> {
   const { channel, userId } = params;
@@ -109,15 +116,17 @@ export async function getPhoneByMessengerId(params: {
 
     if (token?.phone) return String(token.phone);
 
-    // Check contractors table — channel-specific column
-    const idField = channel === 'telegram' ? 'telegram_id' : 'max_id';
-    const { data: contractor } = await db()
-      .from('contractors')
-      .select('phone')
-      .eq(idField, userId)
-      .maybeSingle();
+    // Check contractors table — channel-specific column (avito has no dedicated column)
+    if (channel !== 'avito') {
+      const idField = channel === 'telegram' ? 'telegram_id' : 'max_id';
+      const { data: contractor } = await db()
+        .from('contractors')
+        .select('phone')
+        .eq(idField, userId)
+        .maybeSingle();
 
-    if (contractor?.phone) return String(contractor.phone);
+      if (contractor?.phone) return String(contractor.phone);
+    }
 
     return null;
   } catch (err) {
@@ -130,7 +139,7 @@ export async function getPhoneByMessengerId(params: {
  * Get recent orders for a user identified by messenger ID.
  */
 export async function getOrdersByMessengerId(params: {
-  channel: 'telegram' | 'max';
+  channel: MessengerChannel;
   userId: string;
 }): Promise<Array<Record<string, unknown>>> {
   const phone = await getPhoneByMessengerId(params);
