@@ -302,6 +302,7 @@ export default function HomePage() {
   const revExecutors = useReveal();
   const revForm = useReveal();
   const revTenders = useReveal();
+  const revInstallApp = useReveal();
   // Mobile: service icon highlight with hysteresis (match stagger-reveal cards exactly)
   useEffect(() => {
     const container = revTenders.current;
@@ -1198,7 +1199,7 @@ export default function HomePage() {
 
       {/* ── УСТАНОВКА ПРИЛОЖЕНИЯ НА ГЛАВНЫЙ ЭКРАН ───────────────── */}
       <section className="py-16 sm:py-20 px-4 bg-surface dark:bg-dark-bg">
-        <div className="max-w-4xl mx-auto reveal">
+        <div ref={revInstallApp} className="max-w-4xl mx-auto reveal">
           <div className="text-center mb-10">
             <span className="eyebrow text-brand-500 mb-4 block">Удобно</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
