@@ -1211,8 +1211,9 @@ export default function HomePage() {
 
             {/* Install PWA card — mobile only (hidden via CSS on desktop) */}
             <div
+              id="install"
               data-free-tool-card
-              className="sm:hidden group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
+              className="sm:hidden group scroll-mt-24 bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
               <Link href="/install" className="p-6 flex flex-col flex-1">
                 <div className="service-icon-wrap mb-5" data-service-icon>
