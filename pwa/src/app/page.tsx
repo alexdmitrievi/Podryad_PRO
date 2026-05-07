@@ -380,22 +380,22 @@ export default function HomePage() {
           </p>
 
           {/* Stats card */}
-           <div
+            <div
             className="inline-grid grid-cols-[1fr_auto_1fr] items-center gap-0 bg-white/[0.07] backdrop-blur-2xl border border-white/[0.11] rounded-2xl px-8 sm:px-10 py-5 mb-8 animate-fade-in shadow-hero"
             style={{ animationDelay: '0.3s' }}
           >
-            <div className="text-center px-2">
-              <span ref={orders.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
+            <div className="flex flex-col items-center justify-center">
+              <span ref={orders.ref} className="text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {orders.value}+
               </span>
-              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">заказов</span>
+              <span className="text-white/45 text-[11px] uppercase tracking-widest font-medium mt-1.5 text-center min-h-[28px] flex items-center justify-center">заказов</span>
             </div>
             <div className="stats-divider mx-2" />
-            <div className="text-center px-2">
-              <span ref={contractors.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
+            <div className="flex flex-col items-center justify-center">
+              <span ref={contractors.ref} className="text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {contractors.value}+
               </span>
-              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">постоянных клиентов</span>
+              <span className="text-white/45 text-[11px] uppercase tracking-widest font-medium mt-1.5 text-center min-h-[28px] flex items-center justify-center">постоянных клиентов</span>
             </div>
           </div>
 
