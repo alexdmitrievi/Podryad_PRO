@@ -10,55 +10,19 @@ import AiChatWidget from '@/components/AiChatWidget';
 
 const LiveOrdersMap = dynamic(() => import('@/components/LiveOrdersMap'), { ssr: false });
 
-type WorkType = 'labor' | 'equipment' | 'materials';
+type WorkType = 'labor';
 type City = 'omsk' | 'novosibirsk';
 type Messenger = 'MAX' | 'Telegram' | 'Позвонить';
 
-interface Listing {
-  listing_id: string;
-  title: string;
-  display_price: number;
-  price_unit: string;
-}
 
 const CATEGORY_LABELS: Record<WorkType, string> = {
   labor: 'Рабочие',
-  equipment: 'Техника',
-  materials: 'Материалы',
 };
 
 const CITY_LABELS: Record<City, string> = {
   omsk: 'Омск',
   novosibirsk: 'Новосибирск',
 };
-
-const FALLBACK_EQUIPMENT: Listing[] = [
-  { listing_id: 'f-1', title: 'Экскаватор', display_price: 2500, price_unit: 'ч' },
-  { listing_id: 'f-2', title: 'Погрузчик', display_price: 1800, price_unit: 'ч' },
-  { listing_id: 'f-3', title: 'Виброплита', display_price: 800, price_unit: 'сут' },
-  { listing_id: 'f-4', title: 'Бензопила', display_price: 500, price_unit: 'сут' },
-  { listing_id: 'f-5', title: 'Газонокосилка', display_price: 400, price_unit: 'сут' },
-];
-
-const FALLBACK_MATERIALS: Listing[] = [
-  { listing_id: 'f-m1', title: 'Бетон М300', display_price: 5200, price_unit: 'м³' },
-  { listing_id: 'f-m2', title: 'Щебень', display_price: 1800, price_unit: 'т' },
-  { listing_id: 'f-m3', title: 'Песок', display_price: 900, price_unit: 'т' },
-  { listing_id: 'f-m4', title: 'Битум', display_price: 32000, price_unit: 'т' },
-];
-
-/* ── helpers ─────────────────────────────────────────────────── */
-
-function useFetchListings(type: string) {
-  const [items, setItems] = useState<Listing[]>([]);
-  useEffect(() => {
-    fetch(`/api/listings/public?type=${type}`)
-      .then((r) => r.json())
-      .then((d) => setItems(d.listings ?? []))
-      .catch(() => {});
-  }, [type]);
-  return items;
-}
 
 /* ── site-wide hero images (admin-managed) ───────────────────── */
 
@@ -276,14 +240,11 @@ function useCountUp(target: number, duration = 1800) {
 /* ── page ────────────────────────────────────────────────────── */
 
 export default function HomePage() {
-  const equipment = useFetchListings('equipment_rental');
-  const materials = useFetchListings('material');
   const siteImages = useSiteImages();
 
   /* form state */
   const [category, setCategory] = useState<WorkType>('labor');
   const [description, setDescription] = useState('');
-  const [equipmentName, setEquipmentName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState<City>('omsk');
@@ -301,57 +262,6 @@ export default function HomePage() {
   const revSteps = useReveal();
   const revExecutors = useReveal();
   const revForm = useReveal();
-  const revTenders = useReveal();
-  // Mobile: service icon highlight with hysteresis for all cards in free-tools section
-  useEffect(() => {
-    const container = revTenders.current;
-    if (!container) return;
-    const icons = container.querySelectorAll<HTMLElement>('[data-service-icon]');
-    if (icons.length === 0) return;
-
-    let hasScrolled = false;
-    const activeStates = new Map<HTMLElement, boolean>();
-    const ON = 0.55;
-    const OFF = 0.32;
-
-    const onScroll = () => { hasScrolled = true; window.removeEventListener('scroll', onScroll); };
-    window.addEventListener('scroll', onScroll, { passive: true });
-
-    const observers: IntersectionObserver[] = [];
-
-    icons.forEach((icon) => {
-      const card = icon.closest('[data-free-tool-card]') as HTMLElement | null;
-      const target = card ?? icon;
-      activeStates.set(icon, false);
-
-      const obs = new IntersectionObserver(
-        (entries) => {
-          const ratio = entries[0]?.intersectionRatio ?? 0;
-          let active = activeStates.get(icon) ?? false;
-          if (!hasScrolled) {
-            icon.classList.remove('icon-revealed');
-            activeStates.set(icon, false);
-            return;
-          }
-          if (active && ratio < OFF) {
-            icon.classList.remove('icon-revealed');
-            activeStates.set(icon, false);
-          } else if (!active && ratio >= ON) {
-            icon.classList.add('icon-revealed');
-            activeStates.set(icon, true);
-          }
-        },
-        { threshold: [0, 0.3, 0.45, 0.6, 0.8, 1], rootMargin: '-28% 0px -28% 0px' },
-      );
-      obs.observe(target);
-      observers.push(obs);
-    });
-
-    return () => {
-      observers.forEach((o) => o.disconnect());
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, [revTenders]);
 
   useEffect(() => {
     if (!aiAgentModalOpen) return;
@@ -388,7 +298,6 @@ export default function HomePage() {
           messenger,
           comment: [
             description,
-            equipmentName ? `Техника: ${equipmentName}` : '',
             `Мессенджер: ${messenger}`,
             address ? `Адрес: ${address}` : '',
           ].filter(Boolean).join(' | '),
@@ -613,88 +522,73 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Аренда техники */}
-            <Link
-              href="/catalog/equipment"
+            {/* TenderPars */}
+            <a
+              href="https://www.tenderpars.ru/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
-              {siteImages['hero.equipment'] ? (
-                <div className="relative w-full aspect-[16/9] bg-gray-100 dark:bg-dark-border">
-                  <Image
-                    src={siteImages['hero.equipment']}
-                    alt="Аренда техники"
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                  />
-                </div>
-              ) : null}
               <div className="p-6 flex flex-col flex-1">
-                {!siteImages['hero.equipment'] && (
-                  <div className="service-icon-wrap mb-5">
-                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                )}
-                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Аренда техники</h3>
-                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">От тяжёлой до садовой</p>
+                <div className="service-icon-wrap mb-5">
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    className="text-brand-500 transition-colors duration-300" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">TenderPars</h3>
+                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Тендеры · аукционы · гранты</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                  {(equipment.length > 0 ? equipment : FALLBACK_EQUIPMENT).slice(0, 4).map((l) => (
-                    <li key={l.listing_id} className="flex justify-between items-center gap-2">
-                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0">{l.title}</span>
-                      <span className="price-label whitespace-nowrap">
-                        {l.display_price.toLocaleString('ru-RU')} ₽/{l.price_unit}
-                      </span>
+                  {[
+                    { label: 'Поиск тендеров', price: '44-ФЗ / 223-ФЗ' },
+                    { label: 'Аукционы', price: 'все площадки' },
+                    { label: 'Гранты и субсидии', price: 'актуальные' },
+                    { label: 'Соц. контракт', price: 'подробно' },
+                  ].map((row) => (
+                    <li key={row.label} className="flex justify-between items-center gap-2">
+                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0">{row.label}</span>
+                      <span className="price-label whitespace-nowrap">{row.price}</span>
                     </li>
                   ))}
                 </ul>
                 <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
-                  <span>Смотреть каталог</span>
+                  <span>Перейти на TenderPars</span>
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
-            </Link>
+            </a>
 
-            {/* Стройматериалы */}
+            {/* Установить приложение */}
             <Link
-              href="/catalog/materials"
+              href="/install"
               className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
-              {siteImages['hero.materials'] ? (
-                <div className="relative w-full aspect-[16/9] bg-gray-100 dark:bg-dark-border">
-                  <Image
-                    src={siteImages['hero.materials']}
-                    alt="Стройматериалы"
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                  />
-                </div>
-              ) : null}
               <div className="p-6 flex flex-col flex-1">
-                {!siteImages['hero.materials'] && (
-                  <div className="service-icon-wrap mb-5">
-                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                  </div>
-                )}
-                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Стройматериалы</h3>
-                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Доставка по городу</p>
+                <div className="service-icon-wrap mb-5">
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    className="text-brand-500 transition-colors duration-300" aria-hidden="true">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" strokeWidth="1.8"/>
+                    <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth="2.5"/>
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Установить приложение</h3>
+                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">На главный экран · в один клик</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                  {(materials.length > 0 ? materials : FALLBACK_MATERIALS).slice(0, 4).map((l) => (
-                    <li key={l.listing_id} className="flex justify-between items-center gap-2">
-                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0">{l.title}</span>
-                      <span className="price-label whitespace-nowrap">
-                        {l.display_price.toLocaleString('ru-RU')} ₽/{l.price_unit}
-                      </span>
+                  {[
+                    { label: 'Быстрый доступ', price: 'без браузера' },
+                    { label: 'Push-уведомления', price: 'мгновенно' },
+                    { label: 'iPhone / Android', price: 'инструкция' },
+                    { label: 'Всегда под рукой', price: 'как приложение' },
+                  ].map((row) => (
+                    <li key={row.label} className="flex justify-between items-center gap-2">
+                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0">{row.label}</span>
+                      <span className="price-label whitespace-nowrap">{row.price}</span>
                     </li>
                   ))}
                 </ul>
                 <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
-                  <span>Смотреть каталог</span>
+                  <span>Как установить?</span>
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
@@ -836,18 +730,6 @@ export default function HomePage() {
                 <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
               </svg>
               Заказать рабочих
-              <svg width="15" height="15" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1">
-                <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </Link>
-            <Link
-              href="/order/new?type=equipment"
-              className="group inline-flex items-center justify-center gap-2 bg-white dark:bg-dark-card text-brand-500 border-2 border-brand-200 dark:border-brand-800 hover:border-brand-500 font-bold px-8 py-4 rounded-xl transition-all duration-300 hover:bg-brand-50 dark:hover:bg-brand-500/10 cursor-pointer min-w-[210px]"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
-              </svg>
-              Арендовать технику
               <svg width="15" height="15" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1">
                 <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -1146,118 +1028,6 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ── БЕСПЛАТНЫЕ ИНСТРУМЕНТЫ ДЛЯ БИЗНЕСА ────────────────────── */}
-      <section className="py-16 sm:py-20 px-4 bg-white dark:bg-dark-bg">
-        <div ref={revTenders} className="max-w-6xl mx-auto reveal">
-          <div className="text-center mb-12">
-            <span className="eyebrow text-brand-500 mb-4 block">Бесплатные инструменты</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
-              Для вашего бизнеса
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 max-w-sm mx-auto">
-            {/* TenderPars card */}
-            <a
-              href="https://www.tenderpars.ru/"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-free-tool-card
-              className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
-            >
-              <div className="p-6 flex flex-col flex-1">
-                <div className="service-icon-wrap mb-5" data-service-icon>
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    className="text-brand-500 transition-colors duration-300" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                  </svg>
-                </div>
-
-                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">
-                  TenderPars
-                </h3>
-                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">
-                  Тендеры &bull; аукционы &bull; гранты
-                </p>
-
-                <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                  <li className="flex justify-between items-center gap-2">
-                    <span className="text-gray-600 dark:text-dark-text truncate min-w-0">Поиск тендеров</span>
-                    <span className="price-label whitespace-nowrap">44-ФЗ / 223-ФЗ</span>
-                  </li>
-                  <li className="flex justify-between items-center gap-2">
-                    <span className="text-gray-600 dark:text-dark-text truncate min-w-0">Аукционы</span>
-                    <span className="price-label whitespace-nowrap">все площадки</span>
-                  </li>
-                  <li className="flex justify-between items-center gap-2">
-                    <span className="text-gray-600 dark:text-dark-text truncate min-w-0">Гранты и субсидии</span>
-                    <span className="price-label whitespace-nowrap">актуальные</span>
-                  </li>
-                  <li className="flex justify-between items-center gap-2">
-                    <span className="text-gray-600 dark:text-dark-text truncate min-w-0">Соц. контракт</span>
-                    <span className="price-label whitespace-nowrap">подробно</span>
-                  </li>
-                </ul>
-
-                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
-                  <span>Перейти на TenderPars</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-              </div>
-            </a>
-
-            {/* Install PWA card — mobile only (hidden via CSS on desktop) */}
-            <div
-              id="install"
-              data-free-tool-card
-              className="sm:hidden group scroll-mt-24 bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
-            >
-              <Link href="/install" className="p-6 flex flex-col flex-1">
-                <div className="service-icon-wrap mb-5" data-service-icon>
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    className="text-brand-500 transition-colors duration-300" aria-hidden="true">
-                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" strokeWidth="1.8"/>
-                    <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth="2.5"/>
-                  </svg>
-                </div>
-
-                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">
-                  Установить приложение
-                </h3>
-                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">
-                  На главный экран &bull; в один клик
-                </p>
-
-                <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                  <li className="flex justify-between items-center gap-2">
-                    <span className="text-gray-600 dark:text-dark-text truncate min-w-0">Быстрый доступ</span>
-                    <span className="price-label whitespace-nowrap">без браузера</span>
-                  </li>
-                  <li className="flex justify-between items-center gap-2">
-                    <span className="text-gray-600 dark:text-dark-text truncate min-w-0">Push-уведомления</span>
-                    <span className="price-label whitespace-nowrap">мгновенно</span>
-                  </li>
-                  <li className="flex justify-between items-center gap-2">
-                    <span className="text-gray-600 dark:text-dark-text truncate min-w-0">iPhone / Android</span>
-                    <span className="price-label whitespace-nowrap">подробно</span>
-                  </li>
-                </ul>
-
-                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
-                  <span>Как установить?</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── 5. ФОРМА ЗАЯВКИ ─────────────────────────────────────── */}
       <section id="lead-form" className="py-16 sm:py-20 px-4 bg-surface dark:bg-dark-bg">
         <div ref={revForm} className="max-w-lg mx-auto reveal">
@@ -1301,39 +1071,12 @@ export default function HomePage() {
                 <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
                   Категория
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['labor', 'equipment', 'materials'] as WorkType[]).map((wt) => (
-                    <button
-                      key={wt}
-                      type="button"
-                      onClick={() => setCategory(wt)}
-                      className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
-                        category === wt
-                          ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
-                          : 'bg-white dark:bg-dark-card text-gray-700 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-brand-500 hover:shadow-sm'
-                      }`}
-                    >
-                      {CATEGORY_LABELS[wt]}
-                    </button>
-                  ))}
+                <div className="inline-flex">
+                  <span className="min-h-[48px] py-2.5 px-4 rounded-xl text-sm font-semibold bg-brand-500 text-white border-brand-500 shadow-glow">
+                    Рабочие
+                  </span>
                 </div>
               </div>
-
-              {/* Наименование техники (только для категории Техника) */}
-              {category === 'equipment' && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
-                    Какая техника нужна?
-                  </label>
-                  <input
-                    type="text"
-                    value={equipmentName}
-                    onChange={(e) => setEquipmentName(e.target.value)}
-                    placeholder="Экскаватор, бульдозер, автокран..."
-                    className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
-                  />
-                </div>
-              )}
 
               {/* Описание */}
               <div>
@@ -1344,7 +1087,7 @@ export default function HomePage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
-                  placeholder={category === 'equipment' ? 'На какой срок, с оператором или без...' : 'Что нужно сделать...'}
+                  placeholder="Что нужно сделать..."
                   className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-shadow"
                 />
               </div>

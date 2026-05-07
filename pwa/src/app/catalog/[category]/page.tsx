@@ -40,8 +40,6 @@ const LABOR_SERVICES: CatalogItem[] = [
 
 const CATEGORY_META: Record<string, { title: string; subtitle: string; icon: string; apiType?: string }> = {
   labor: { title: 'Рабочая сила', subtitle: 'Бригады от 2 до 15 человек', icon: '👷' },
-  equipment: { title: 'Аренда техники', subtitle: 'От тяжёлой до садовой техники', icon: '🚜', apiType: 'equipment_rental' },
-  materials: { title: 'Стройматериалы', subtitle: 'Доставка по городу', icon: '📦', apiType: 'material' },
 };
 
 /* ── Order modal ──────────────────────────────────────────────── */

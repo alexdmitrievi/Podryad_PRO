@@ -15,18 +15,12 @@ interface MapOrder {
 
 const MARKER_COLORS: Record<string, string> = {
   labor: '#2F5BFF',
-  equipment: '#F59E0B',
-  materials: '#10B981',
   complex: '#8B5CF6',
-  rental: '#F59E0B',
 };
 
 const WORK_TYPE_LABELS: Record<string, string> = {
   labor: 'Рабочая сила',
-  equipment: 'Техника',
-  materials: 'Материалы',
   complex: 'Комплексный',
-  rental: 'Аренда техники',
 };
 
 function createPin(color: string) {

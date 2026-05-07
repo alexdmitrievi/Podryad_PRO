@@ -1311,8 +1311,6 @@ function ListingsTab({ pin }: { pin: string }) {
                     setForm(f => ({ ...f, listing_type: lt, category_slug: firstCat }));
                   }}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white">
-                  <option value="material">Стройматериалы</option>
-                  <option value="equipment_rental">Аренда техники</option>
                 </select>
               </div>
               <div>
@@ -3392,12 +3390,8 @@ function DocumentsTab({ pin }: { pin: string }) {
 
 const HERO_SLOTS: { slug: string; label: string; hint: string }[] = [
   { slug: 'hero.labor',       label: 'Рабочая сила',          hint: 'Карточка на главной странице' },
-  { slug: 'hero.equipment',   label: 'Аренда техники',         hint: 'Карточка на главной странице' },
-  { slug: 'hero.materials',   label: 'Стройматериалы',         hint: 'Карточка на главной странице' },
   { slug: 'hero.combo',       label: 'Выгодно от Подряд PRO', hint: 'Карточка на главной (фон)' },
   { slug: 'category.labor',   label: 'Баннер: Рабочая сила',   hint: '/catalog/labor — шапка страницы' },
-  { slug: 'category.equipment', label: 'Баннер: Аренда техники', hint: '/catalog/equipment — шапка' },
-  { slug: 'category.materials', label: 'Баннер: Стройматериалы', hint: '/catalog/materials — шапка' },
 ];
 
 function HeroImagesTab({ pin }: { pin: string }) {
