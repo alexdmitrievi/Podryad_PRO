@@ -382,7 +382,7 @@ export default function HomePage() {
           {/* Live badge */}
           <div className="live-badge mb-6 animate-fade-in inline-flex">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse-dot flex-shrink-0" />
-            Платформа для строительного бизнеса
+            Платформа для бизнеса и людей
           </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-[3.75rem] font-extrabold text-white leading-[1.08] mb-5 font-heading animate-fade-in tracking-tight">
@@ -412,7 +412,7 @@ export default function HomePage() {
               <span ref={contractors.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {contractors.value}+
               </span>
-              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">исполнителей</span>
+              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">постоянных клиентов</span>
             </div>
           </div>
 
@@ -476,6 +476,67 @@ export default function HomePage() {
           </div>
 
           <div ref={revServiceCards} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+            {/* Выгодно от Подряд PRO — карточка №1 */}
+            <Link
+              href="/own-park"
+              className="group relative overflow-hidden rounded-2xl p-6 card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 text-white"
+              style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2d1b69 100%)' }}
+            >
+              {/* Admin-uploaded background photo (optional) */}
+              {siteImages['hero.combo'] && (
+                <>
+                  <Image
+                    src={siteImages['hero.combo']}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover absolute inset-0 transition-transform duration-500 group-hover:scale-[1.03]"
+                    aria-hidden
+                  />
+                  {/* Dark gradient overlay — preserves contrast for white text */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#1E2A5A]/90 via-[#1E2A5A]/75 to-[#2d1b69]/90 pointer-events-none" />
+                </>
+              )}
+
+              {/* bg accents */}
+              <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-violet/25 blur-[60px] pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-brand-500/25 blur-[50px] pointer-events-none" />
+
+              {/* Ribbon — "−20%" */}
+              <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1a2e] text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg tracking-wide">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                </svg>
+                −20%
+              </div>
+
+              <div className="relative z-[1] flex flex-col h-full">
+                <div className="service-icon-wrap service-icon--amber mb-5">
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">Выгодно<br/>от Подряд PRO</h3>
+                <p className="text-white/80 text-xs mb-4 font-medium">Гарантия. Договор. Качество.</p>
+                <ul className="space-y-2.5 text-sm mb-5 flex-1">
+                  {[
+                    { label: 'Услуги', price: 'по запросу' },
+                    { label: 'Материалы', price: 'напрямую' },
+                    { label: 'Всё под ключ', price: 'с документами' },
+                  ].map((row) => (
+                    <li key={row.label} className="flex justify-between items-center gap-2">
+                      <span className="text-white/90 truncate min-w-0">{row.label}</span>
+                      <span className="text-amber-300 text-xs font-semibold whitespace-nowrap">{row.price}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
+                  <span>Смотреть предложения</span>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+              </div>
+            </Link>
+
             {/* Рабочая сила */}
             <Link
               href="/catalog/labor"
@@ -594,73 +655,11 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Выгодно от Подряд PRO — featured как 4-я карточка */}
-            <Link
-              href="/own-park"
-              className="group relative overflow-hidden rounded-2xl p-6 card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 text-white"
-              style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2d1b69 100%)' }}
-            >
-              {/* Admin-uploaded background photo (optional) */}
-              {siteImages['hero.combo'] && (
-                <>
-                  <Image
-                    src={siteImages['hero.combo']}
-                    alt=""
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover absolute inset-0 transition-transform duration-500 group-hover:scale-[1.03]"
-                    aria-hidden
-                  />
-                  {/* Dark gradient overlay — preserves contrast for white text */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#1E2A5A]/90 via-[#1E2A5A]/75 to-[#2d1b69]/90 pointer-events-none" />
-                </>
-              )}
-
-              {/* bg accents */}
-              <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-violet/25 blur-[60px] pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-brand-500/25 blur-[50px] pointer-events-none" />
-
-              {/* Ribbon — "−20%" */}
-              <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1a2e] text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg tracking-wide">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                </svg>
-                −20%
-              </div>
-
-              <div className="relative z-[1] flex flex-col h-full">
-                <div className="service-icon-wrap service-icon--amber mb-5">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">Выгодно<br/>от Подряд PRO</h3>
-                <p className="text-white/80 text-xs mb-4 font-medium">Собственный парк</p>
-                <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                  {[
-                    { label: 'Техника', price: '−20%' },
-                    { label: 'Рабочие', price: 'свои' },
-                    { label: 'Материалы', price: 'напрямую' },
-                    { label: 'Эскроу', price: 'всегда' },
-                  ].map((row) => (
-                    <li key={row.label} className="flex justify-between items-center gap-2">
-                      <span className="text-white/90 truncate min-w-0">{row.label}</span>
-                      <span className="text-amber-300 text-xs font-semibold whitespace-nowrap">{row.price}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
-                  <span>Смотреть предложения</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-              </div>
-            </Link>
-
-            {/* ИИ-сотрудник — 5-я карточка */}
+            {/* Помощь бизнесу — 5-я карточка */}
             <button
               type="button"
               onClick={() => setAiAgentModalOpen(true)}
-              aria-label="Заказать ИИ-агента"
+              aria-label="Помощь бизнесу"
               className="group relative overflow-hidden rounded-2xl p-6 card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 text-white text-left"
               style={{ background: 'linear-gradient(135deg, #6C5CE7 0%, #2F5BFF 100%)' }}
             >
@@ -686,14 +685,14 @@ export default function HomePage() {
                     <circle cx="15" cy="10" r="1" fill="currentColor"/>
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">ИИ-сотрудник</h3>
-                <p className="text-white/80 text-xs mb-4 font-medium">Автоматизация 24/7</p>
+                <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">Помощь бизнесу</h3>
+                <p className="text-white/80 text-xs mb-4 font-medium">Меньше рутины — больше роста</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
                   {[
-                    { label: 'Работает', price: '24/7' },
-                    { label: 'Ответы', price: 'мгновенно' },
-                    { label: 'Цена', price: '×10 дешевле' },
-                    { label: 'Запуск', price: 'за 1 день' },
+                    { label: 'ИИ-сотрудники', price: 'снижение ФОТ' },
+                    { label: 'Маркетинг', price: 'лиды B2B/B2C' },
+                    { label: 'Автоматизация', price: 'минус рутина' },
+                    { label: 'Всё под ключ', price: 'стратегия роста' },
                   ].map((row) => (
                     <li key={row.label} className="flex justify-between items-center gap-2">
                       <span className="text-white/85 truncate min-w-0">{row.label}</span>
@@ -702,7 +701,7 @@ export default function HomePage() {
                   ))}
                 </ul>
                 <div className="flex items-center gap-1.5 text-white font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
-                  <span>Заказать ИИ-агента</span>
+                  <span>Получить консультацию</span>
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
@@ -927,14 +926,31 @@ export default function HomePage() {
               </button>
 
               {/* Header */}
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg, #6C5CE7 0%, #2F5BFF 100%)', boxShadow: '0 8px 32px rgba(108,92,231,0.4)' }}>
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 8h2m2 0h2m2 0h2"/>
                   </svg>
                 </div>
-                <h3 className="text-xl font-extrabold text-white font-heading mb-1.5">Заказать ИИ-сотрудника</h3>
-                <p className="text-white/45 text-sm">Выберите удобный способ связи — ответим сегодня</p>
+                <h3 className="text-xl font-extrabold text-white font-heading mb-1.5">Помощь бизнесу</h3>
+                <p className="text-white/45 text-sm">Выберите способ связи — покажем, как сократить издержки</p>
+              </div>
+
+              {/* USP */}
+              <div className="space-y-2.5 mb-6 px-3 py-4 bg-white/[0.04] border border-white/[0.06] rounded-2xl">
+                {[
+                  { icon: '🤖', label: 'ИИ-сотрудники', desc: 'замена штатных единиц, кратно дешевле' },
+                  { icon: '📊', label: 'Маркетинг', desc: 'дешёвые лиды и заказы в B2B и B2C' },
+                  { icon: '⚡', label: 'Автоматизация', desc: 'рутина уходит — вы занимаетесь развитием' },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-start gap-3">
+                    <span className="text-base mt-0.5 flex-shrink-0">{item.icon}</span>
+                    <div>
+                      <div className="text-white text-sm font-semibold">{item.label}</div>
+                      <div className="text-white/40 text-xs leading-relaxed">{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Contact options */}
@@ -1021,7 +1037,7 @@ export default function HomePage() {
               </div>
 
               <p className="text-white/20 text-xs text-center mt-6 leading-relaxed">
-                Консультация бесплатна&nbsp;&middot;&nbsp;Разработаем решение под ваш бизнес
+                Консультация бесплатна&nbsp;&middot;&nbsp;Сократим издержки — вы займётесь развитием
               </p>
             </div>
           </div>

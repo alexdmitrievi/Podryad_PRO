@@ -59,7 +59,7 @@ export default function SuppliersSection() {
                 <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
               </Link>
               <p className="text-white/40 text-xs text-center mt-1">
-                Уже более 200 исполнителей зарабатывают на платформе
+                Уже более 200 постоянных клиентов доверяют нам свои объекты
               </p>
             </div>
           </ScrollReveal>

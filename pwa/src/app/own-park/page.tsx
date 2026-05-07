@@ -1,84 +1,19 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-type Tab = 'equipment' | 'labor' | 'materials';
-
-interface OfferItem {
-  title: string;
-  meta: string;
-  market: number;
-  ours: number;
-  unit: string;
-  badge?: string;
-}
-
-const OFFERS: Record<Tab, OfferItem[]> = {
-  equipment: [
-    { title: 'Экскаватор-погрузчик JCB 3CX', meta: 'С оператором · от 4 часов', market: 2500, ours: 2000, unit: 'ч', badge: '−20%' },
-    { title: 'Самосвал 15 т (КамАЗ)', meta: 'Доставка по городу', market: 1500, ours: 1200, unit: 'ч', badge: '−20%' },
-    { title: 'Автокран 25 т', meta: 'Монтажные работы', market: 3500, ours: 2800, unit: 'ч', badge: '−20%' },
-    { title: 'Мини-погрузчик Bobcat', meta: 'Узкий доступ', market: 1800, ours: 1450, unit: 'ч', badge: '−19%' },
-    { title: 'Виброплита реверсивная', meta: 'Уплотнение грунта', market: 900, ours: 700, unit: 'сут', badge: '−22%' },
-    { title: 'Автобетоносмеситель 6 м³', meta: 'Доставка бетона', market: 1200, ours: 1000, unit: 'ч', badge: '−17%' },
-  ],
-  labor: [
-    { title: 'Бригада разнорабочих (3 чел.)', meta: 'Опыт на объектах от 2 лет', market: 350, ours: 280, unit: 'ч/чел', badge: '−20%' },
-    { title: 'Грузчики (2 чел.)', meta: 'Переезды, склад, стройка', market: 400, ours: 320, unit: 'ч/чел', badge: '−20%' },
-    { title: 'Строители-отделочники', meta: 'Плитка, штукатурка, покраска', market: 600, ours: 500, unit: 'ч/чел', badge: '−17%' },
-    { title: 'Благоустройство (4 чел.)', meta: 'Озеленение, уборка, укладка', market: 300, ours: 240, unit: 'ч/чел', badge: '−20%' },
-    { title: 'Бетонщики', meta: 'Опалубка, заливка, демонтаж', market: 550, ours: 440, unit: 'ч/чел', badge: '−20%' },
-    { title: 'Сварщики NAKS', meta: 'Аттестованный персонал', market: 800, ours: 650, unit: 'ч/чел', badge: '−19%' },
-  ],
-  materials: [
-    { title: 'Бетон М300 В22.5', meta: 'Прямая поставка с завода', market: 5200, ours: 4400, unit: 'м³', badge: '−15%' },
-    { title: 'Щебень гранитный фр. 5-20', meta: 'С доставкой от 1 т', market: 1800, ours: 1500, unit: 'т', badge: '−17%' },
-    { title: 'Песок мытый', meta: 'Карьерный, сертификат', market: 900, ours: 750, unit: 'т', badge: '−17%' },
-    { title: 'Битум БНД 60/90', meta: 'Евроконтейнер, доставка', market: 32000, ours: 27000, unit: 'т', badge: '−16%' },
-    { title: 'Арматура А500С Ø12', meta: 'С резкой в размер', market: 75000, ours: 64000, unit: 'т', badge: '−15%' },
-    { title: 'Плитка тротуарная 200×100', meta: 'Собственное производство', market: 950, ours: 780, unit: 'м²', badge: '−18%' },
-  ],
-};
-
-const TAB_CONFIG: Record<Tab, { label: string; icon: React.ReactNode; accent: string }> = {
-  equipment: {
-    label: 'Спецтехника',
-    accent: '#F59E0B',
-    icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
-      </svg>
-    ),
-  },
-  labor: {
-    label: 'Рабочая сила',
-    accent: '#2F5BFF',
-    icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-      </svg>
-    ),
-  },
-  materials: {
-    label: 'Стройматериалы',
-    accent: '#10B981',
-    icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-      </svg>
-    ),
-  },
-};
+const SERVICES = [
+  { title: 'Покос, аэрация и скарификация газона', desc: 'Профессиональный уход за газоном любой площади. Выезд, оценка, работа в день обращения.' },
+  { title: 'Расчистка территорий под строительство', desc: 'Полная подготовка участка: вывоз мусора, планировка, корчевание. Техника и бригада в одном заказе.' },
+  { title: 'Корчевание пней и спил деревьев', desc: 'Удаление деревьев любой сложности. Спил, корчевание, вывоз порубочных остатков.' },
+  { title: 'Покос высокой травы и сорняка любого вида', desc: 'Бензокосы, райдеры, тракторные косилки. Любой рельеф и густота.' },
+  { title: 'Сборка и чистка бассейнов', desc: 'Расконсервация, сборка каркасных и надувных бассейнов, химчистка, подготовка к сезону.' },
+  { title: 'Любые сварочные работы', desc: 'Аттестованные сварщики NAKS. Монтаж металлоконструкций, ворота, заборы, навесы.' },
+  { title: 'Абонентское обслуживание участков и территорий под ключ', desc: 'Постоянный уход за территорией. Покос, уборка, мелкий ремонт, вывоз мусора — по графику.' },
+];
 
 export default function OwnParkPage() {
-  const [tab, setTab] = useState<Tab>('equipment');
-  const items = OFFERS[tab];
-  const cfg = TAB_CONFIG[tab];
-  const totalSavings = items.reduce((s, i) => s + (i.market - i.ours), 0);
-  const avgDiscount = Math.round(items.reduce((s, i) => s + (1 - i.ours / i.market), 0) / items.length * 100);
-
   return (
     <div className="min-h-screen bg-surface dark:bg-dark-bg">
       {/* ── Navbar ─────────────────────────────────────────── */}
@@ -93,7 +28,7 @@ export default function OwnParkPage() {
           <div className="flex items-center gap-2">
             <span className="hidden sm:flex items-center gap-1.5 text-white/60 text-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" aria-hidden="true" />
-              Собственный парк
+              Собственный парк услуг
             </span>
             <Link
               href="/#lead-form"
@@ -121,26 +56,22 @@ export default function OwnParkPage() {
               <span className="font-semibold text-amber-200">Выгодно от Подряд PRO</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-extrabold leading-tight mb-4 font-heading">
-              Собственный парк
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400">
-                −20% к рыночным ценам
-              </span>
+              Собственный парк услуг
             </h1>
             <p className="text-base sm:text-lg text-white/75 mb-8 leading-relaxed max-w-xl">
-              Подряд PRO — это не агрегатор. У нас собственная техника, свои бригады и прямые поставки материалов. Без посредников — вы получаете лучшую цену на рынке.
+              Гарантия на все услуги. Договор и закрывающие документы для бизнеса. Качество премиум-подрядчика — по рыночной цене.
             </p>
 
             {/* Key stats */}
             <div className="grid grid-cols-3 gap-3 sm:gap-6 max-w-lg">
               {[
-                { v: '−20%', l: 'в среднем ниже рынка' },
-                { v: '24/7', l: 'выезд в день заявки' },
-                { v: '🛡', l: 'эскроу в каждой сделке' },
+                { v: '🛡', l: 'гарантия на все услуги' },
+                { v: '📄', l: 'договор и закрывающие документы' },
+                { v: '⚡', l: 'выезд в день заявки' },
               ].map((s) => (
                 <div key={s.l} className="bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-xl px-3 py-4 text-center">
-                  <div className="text-amber-300 text-xl sm:text-2xl font-extrabold font-heading">{s.v}</div>
-                  <div className="text-white/55 text-[11px] mt-1 leading-tight">{s.l}</div>
+                  <div className="text-2xl sm:text-3xl">{s.v}</div>
+                  <div className="text-white/55 text-[11px] mt-1.5 leading-tight">{s.l}</div>
                 </div>
               ))}
             </div>
@@ -148,99 +79,45 @@ export default function OwnParkPage() {
         </div>
       </section>
 
-      {/* ── Tabs ──────────────────────────────────────────── */}
-      <section className="sticky top-16 z-30 bg-white/95 dark:bg-dark-bg/95 backdrop-blur-md border-b border-gray-100 dark:border-dark-border">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="flex gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-3">
-            {(Object.keys(TAB_CONFIG) as Tab[]).map((t) => {
-              const c = TAB_CONFIG[t];
-              const active = tab === t;
-              return (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={`flex-shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                    active
-                      ? 'text-white shadow-lg'
-                      : 'bg-gray-100 dark:bg-dark-card text-gray-600 dark:text-dark-muted hover:bg-gray-200 dark:hover:bg-dark-border'
-                  }`}
-                  style={active ? { background: c.accent } : {}}
-                  aria-pressed={active}
-                >
-                  <span className={active ? 'text-white' : ''} style={!active ? { color: c.accent } : {}}>
-                    {c.icon}
-                  </span>
-                  {c.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Offers grid ───────────────────────────────────── */}
+      {/* ── Services grid ──────────────────────────────────── */}
       <section className="py-10 sm:py-14 px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: cfg.accent }}>
-                {cfg.label} &middot; от Подряд PRO
-              </div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
-                Предложения с экономией до −{avgDiscount}%
-              </h2>
+          <div className="mb-8">
+            <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-brand-500">
+              Услуги &middot; от Подряд PRO
             </div>
-            <div className="flex items-center gap-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl px-4 py-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-              </svg>
-              <span className="text-xs text-gray-600 dark:text-dark-muted">Ваша экономия:</span>
-              <span className="text-sm font-extrabold text-green-600 dark:text-green-400 font-heading">
-                до {totalSavings.toLocaleString('ru-RU')} ₽
-              </span>
-            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
+              Все цены — по запросу
+            </h2>
+            <p className="text-gray-500 dark:text-dark-muted text-sm mt-1">
+              Стоимость зависит от объёма, адреса и сроков. Свяжитесь с нами — рассчитаем за 15 минут.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {items.map((item) => (
+            {SERVICES.map((item) => (
               <article
                 key={item.title}
                 className="group relative bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-card hover:-translate-y-0.5 transition-all duration-300"
               >
-                {item.badge && (
-                  <div
-                    className="absolute top-3 right-3 text-[10px] font-extrabold px-2 py-0.5 rounded-full text-white shadow"
-                    style={{ background: `linear-gradient(135deg, ${cfg.accent} 0%, #FF6B35 100%)` }}
-                  >
-                    {item.badge}
-                  </div>
-                )}
-
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110"
-                  style={{ background: `${cfg.accent}15`, color: cfg.accent }}
-                >
-                  {cfg.icon}
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-brand-500/10 text-brand-500">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
                 </div>
 
-                <h3 className="font-bold text-[#1a1a2e] dark:text-white text-base mb-1 font-heading leading-tight pr-10">
+                <h3 className="font-bold text-[#1a1a2e] dark:text-white text-base mb-2 font-heading leading-tight pr-8">
                   {item.title}
                 </h3>
-                <p className="text-gray-500 dark:text-dark-muted text-xs mb-4">{item.meta}</p>
+                <p className="text-gray-500 dark:text-dark-muted text-xs mb-4 leading-relaxed">{item.desc}</p>
 
-                <div className="flex items-end justify-between pt-3 border-t border-gray-100 dark:border-dark-border">
-                  <div>
-                    <div className="text-gray-400 text-xs line-through">
-                      {item.market.toLocaleString('ru-RU')} ₽/{item.unit}
-                    </div>
-                    <div className="text-[#1a1a2e] dark:text-white font-extrabold text-lg font-heading">
-                      {item.ours.toLocaleString('ru-RU')} ₽/{item.unit}
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-dark-border">
+                  <span className="text-xs font-semibold text-brand-500 dark:text-brand-400">
+                    Цена по запросу
+                  </span>
                   <Link
                     href="/#lead-form"
-                    className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer hover:gap-1.5"
-                    style={{ background: `${cfg.accent}15`, color: cfg.accent }}
+                    className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-brand-500/10 text-brand-500 hover:bg-brand-500/20 transition-all duration-200 cursor-pointer hover:gap-1.5"
                   >
                     Заявка
                     <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
@@ -260,7 +137,7 @@ export default function OwnParkPage() {
           <div className="text-center mb-10">
             <span className="eyebrow text-brand-500 mb-3 block">Почему Подряд PRO</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
-              Выгода в каждом звене
+              Качество, подтверждённое договором
             </h2>
           </div>
 
@@ -269,22 +146,23 @@ export default function OwnParkPage() {
               {
                 icon: (
                   <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                  </svg>
-                ),
-                color: '#F59E0B',
-                title: 'Без посредников',
-                desc: 'Техника, бригады и материалы — напрямую от Подряд PRO. Никаких перекупщиков и скрытых наценок.',
-              },
-              {
-                icon: (
-                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                   </svg>
                 ),
                 color: '#6C5CE7',
-                title: 'Гарантия качества',
-                desc: 'ТО техники, аттестованные специалисты, сертифицированные материалы. Всё под контролем.',
+                title: 'Гарантия на все услуги',
+                desc: 'Фиксируем обязательства в договоре. Если результат не устроит — переделаем за свой счёт.',
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                ),
+                color: '#2F5BFF',
+                title: 'Закрывающие документы',
+                desc: 'Акты, счета, договоры — полный пакет первичной документации для вашего бизнеса.',
               },
               {
                 icon: (
@@ -292,9 +170,9 @@ export default function OwnParkPage() {
                     <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>
                   </svg>
                 ),
-                color: '#2F5BFF',
-                title: 'Эскроу-защита',
-                desc: 'Деньги холдируются до подтверждения работы. Не подошло — вернём. Защита заказчика 100%.',
+                color: '#F59E0B',
+                title: 'Рыночные цены',
+                desc: 'Без посредников и скрытых наценок. Цена как у прямого подрядчика — потому что мы им и являемся.',
               },
             ].map((b) => (
               <div
@@ -322,7 +200,7 @@ export default function OwnParkPage() {
             Получите предложение от Подряд PRO
           </h2>
           <p className="text-white/70 mb-8 text-base sm:text-lg">
-            Расскажите о задаче — подберём технику, бригаду или материалы с максимальной выгодой.
+            Расскажите о задаче — подберём услуги с максимальной выгодой.
             Перезвоним за&nbsp;15&nbsp;минут.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
