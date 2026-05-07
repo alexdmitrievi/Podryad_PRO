@@ -10,20 +10,6 @@ import AiChatWidget from '@/components/AiChatWidget';
 
 const LiveOrdersMap = dynamic(() => import('@/components/LiveOrdersMap'), { ssr: false });
 
-type WorkType = 'labor';
-type City = 'omsk' | 'novosibirsk';
-type Messenger = 'MAX' | 'Telegram' | 'Позвонить';
-
-
-const CATEGORY_LABELS: Record<WorkType, string> = {
-  labor: 'Рабочие',
-};
-
-const CITY_LABELS: Record<City, string> = {
-  omsk: 'Омск',
-  novosibirsk: 'Новосибирск',
-};
-
 /* ── site-wide hero images (admin-managed) ───────────────────── */
 
 function useSiteImages() {
@@ -243,12 +229,8 @@ export default function HomePage() {
   const siteImages = useSiteImages();
 
   /* form state */
-  const [category, setCategory] = useState<WorkType>('labor');
-  const [description, setDescription] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState<City>('omsk');
-  const [messenger, setMessenger] = useState<Messenger>('MAX');
   const [consent, setConsent] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -292,15 +274,8 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone,
-          work_type: category,
-          city,
+          city: 'omsk',
           address: address || undefined,
-          messenger,
-          comment: [
-            description,
-            `Мессенджер: ${messenger}`,
-            address ? `Адрес: ${address}` : '',
-          ].filter(Boolean).join(' | '),
           source: 'landing',
         }),
       });
@@ -1082,32 +1057,6 @@ export default function HomePage() {
               onSubmit={handleSubmit}
               className="bg-white dark:bg-dark-card rounded-2xl p-6 sm:p-8 shadow-elevated border border-gray-100/80 dark:border-dark-border space-y-6"
             >
-              {/* Категория */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
-                  Категория
-                </label>
-                <div className="inline-flex">
-                  <span className="min-h-[48px] py-2.5 px-4 rounded-xl text-sm font-semibold bg-brand-500 text-white border-brand-500 shadow-glow">
-                    Рабочие
-                  </span>
-                </div>
-              </div>
-
-              {/* Описание */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
-                  Описание задачи
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
-                  placeholder="Что нужно сделать..."
-                  className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-shadow"
-                />
-              </div>
-
               {/* Адрес */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
@@ -1134,52 +1083,6 @@ export default function HomePage() {
                   required
                   error={errors.phone}
                 />
-              </div>
-
-              {/* Город */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
-                  Город
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['omsk', 'novosibirsk'] as City[]).map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setCity(c)}
-                      className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
-                        city === c
-                          ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
-                          : 'bg-white dark:bg-dark-card text-gray-700 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-brand-500 hover:shadow-sm'
-                      }`}
-                    >
-                      {CITY_LABELS[c]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Мессенджер */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
-                  Как связаться
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['MAX', 'Telegram', 'Позвонить'] as Messenger[]).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setMessenger(m)}
-                      className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
-                        messenger === m
-                          ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
-                          : 'bg-white dark:bg-dark-card text-gray-700 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-brand-500 hover:shadow-sm'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Согласие 152-ФЗ */}
