@@ -380,18 +380,18 @@ export default function HomePage() {
           </p>
 
           {/* Stats card */}
-          <div
-            className="inline-flex items-center gap-8 sm:gap-14 bg-white/[0.07] backdrop-blur-2xl border border-white/[0.11] rounded-2xl px-8 sm:px-10 py-5 mb-8 animate-fade-in shadow-hero"
+           <div
+            className="inline-grid grid-cols-[1fr_auto_1fr] items-center gap-0 bg-white/[0.07] backdrop-blur-2xl border border-white/[0.11] rounded-2xl px-8 sm:px-10 py-5 mb-8 animate-fade-in shadow-hero"
             style={{ animationDelay: '0.3s' }}
           >
-            <div className="flex-1 text-center">
+            <div className="text-center px-2">
               <span ref={orders.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {orders.value}+
               </span>
               <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">заказов</span>
             </div>
-            <div className="stats-divider" />
-            <div className="flex-1 text-center">
+            <div className="stats-divider mx-2" />
+            <div className="text-center px-2">
               <span ref={contractors.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {contractors.value}+
               </span>
