@@ -388,14 +388,14 @@ export default function HomePage() {
               <span ref={orders.ref} className="text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {orders.value}+
               </span>
-              <span className="text-white/45 text-[11px] uppercase tracking-widest font-medium mt-1.5 text-center min-h-[28px] flex items-center justify-center">заказов</span>
+              <span className="text-white/45 text-[11px] uppercase tracking-widest font-medium mt-1.5 text-center whitespace-nowrap">заказов</span>
             </div>
             <div className="stats-divider mx-2" />
             <div className="flex flex-col items-center justify-center">
               <span ref={contractors.ref} className="text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {contractors.value}+
               </span>
-              <span className="text-white/45 text-[11px] uppercase tracking-widest font-medium mt-1.5 text-center min-h-[28px] flex items-center justify-center">постоянных клиентов</span>
+              <span className="text-white/45 text-[11px] uppercase tracking-widest font-medium mt-1.5 text-center whitespace-nowrap">постоянных клиентов</span>
             </div>
           </div>
 
