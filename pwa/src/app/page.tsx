@@ -401,18 +401,18 @@ export default function HomePage() {
             className="inline-flex items-center gap-8 sm:gap-14 bg-white/[0.07] backdrop-blur-2xl border border-white/[0.11] rounded-2xl px-8 sm:px-10 py-5 mb-8 animate-fade-in shadow-hero"
             style={{ animationDelay: '0.3s' }}
           >
-            <div className="text-center">
+            <div className="text-center min-w-[75px]">
               <span ref={orders.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {orders.value}+
               </span>
-              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">заказов</span>
+              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium whitespace-nowrap">заказов</span>
             </div>
             <div className="stats-divider" />
-            <div className="text-center">
+            <div className="text-center min-w-[75px]">
               <span ref={contractors.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {contractors.value}+
               </span>
-              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">постоянных клиентов</span>
+              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium whitespace-nowrap">постоянных клиентов</span>
             </div>
           </div>
 
