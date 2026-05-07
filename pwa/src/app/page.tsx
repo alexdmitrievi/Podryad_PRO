@@ -362,21 +362,14 @@ export default function HomePage() {
         ))}
 
         <div className="relative z-10 max-w-4xl mx-auto text-center">
-          {/* Live badge */}
-          <div className="live-badge mb-6 animate-fade-in inline-flex">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse-dot flex-shrink-0" />
-            Платформа для бизнеса и людей
-          </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-[3.75rem] font-extrabold text-white leading-[1.08] mb-5 font-heading animate-fade-in tracking-tight">
-            Персонал &middot; Техника &middot; Материалы
+            Стройка, благоустройство, участки
             <br />
             <span className="text-gradient">в&nbsp;Омске и&nbsp;Новосибирске</span>
           </h1>
           <p className="text-white/65 text-base sm:text-lg mb-8 max-w-xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.15s' }}>
-            Стройка, благоустройство, частные участки.
-            <br className="hidden sm:block" />
-            Безопасная оплата &middot; Перезвоним за&nbsp;15&nbsp;минут
+            Под ключ. С договором. Без предоплаты.
           </p>
 
           {/* Stats card */}
@@ -693,36 +686,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 2.5. СОЗДАТЬ ЗАКАЗ — CTA ────────────────────────────── */}
-      <section className="cta-bg py-16 sm:py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="eyebrow text-brand-500 mb-4 block">Начать работу</span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
-            Разместите заказ прямо сейчас
-          </h2>
-          <p className="text-gray-500 dark:text-dark-muted mb-8 max-w-lg mx-auto text-base">
-            Укажите адрес и параметры работы — исполнители увидят ваш заказ и откликнутся
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-5">
-            <Link
-              href="/order/new"
-              className="btn-shine group inline-flex items-center justify-center gap-2 bg-brand-500 text-white font-bold px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-glow-hover hover:bg-brand-600 cursor-pointer btn-press min-w-[210px]"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
-              </svg>
-              Заказать рабочих
-              <svg width="15" height="15" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1">
-                <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </Link>
-          </div>
-          <Link href="/dashboard" className="link-underline text-brand-500 hover:text-brand-600 text-sm font-medium transition-colors duration-200">
-            Смотреть все заказы на карте →
-          </Link>
-        </div>
-      </section>
-
       {/* ── 3. БЕЗОПАСНАЯ СДЕЛКА — 4 шага ───────────────────────── */}
       <section className="section-gradient relative py-16 sm:py-24 px-4 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] rounded-full bg-brand-500/10 blur-[130px] pointer-events-none" />
@@ -1030,14 +993,10 @@ export default function HomePage() {
       {/* ── 5. ФОРМА ЗАЯВКИ ─────────────────────────────────────── */}
       <section id="lead-form" className="py-16 sm:py-20 px-4 bg-surface dark:bg-dark-bg">
         <div ref={revForm} className="max-w-lg mx-auto reveal">
-          <div className="text-center mb-10">
-            <span className="eyebrow text-brand-500 mb-4 block">Связаться</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
               Оставить заявку
             </h2>
-            <p className="text-gray-500 dark:text-dark-muted text-sm">
-              Свяжемся за&nbsp;15&nbsp;минут
-            </p>
           </div>
 
           {submitted ? (
