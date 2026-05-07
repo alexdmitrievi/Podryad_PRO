@@ -439,22 +439,22 @@ export default function HomePage() {
           </p>
 
           {/* Stats card */}
-            <div
-            className="inline-grid grid-cols-[1fr_auto_1fr] items-center gap-0 bg-white/[0.07] backdrop-blur-2xl border border-white/[0.11] rounded-2xl px-8 sm:px-10 py-5 mb-8 animate-fade-in shadow-hero"
+           <div
+            className="inline-flex items-center gap-8 sm:gap-14 bg-white/[0.07] backdrop-blur-2xl border border-white/[0.11] rounded-2xl px-8 sm:px-10 py-5 mb-8 animate-fade-in shadow-hero"
             style={{ animationDelay: '0.3s' }}
           >
-            <div className="flex flex-col items-center justify-center">
-              <span ref={orders.ref} className="text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
+            <div className="text-center">
+              <span ref={orders.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {orders.value}+
               </span>
-              <span className="text-white/45 text-[11px] uppercase tracking-widest font-medium mt-1.5 text-center whitespace-nowrap">заказов</span>
+              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">заказов</span>
             </div>
-            <div className="stats-divider mx-2" />
-            <div className="flex flex-col items-center justify-center">
-              <span ref={contractors.ref} className="text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
+            <div className="stats-divider" />
+            <div className="text-center">
+              <span ref={contractors.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {contractors.value}+
               </span>
-              <span className="text-white/45 text-[11px] uppercase tracking-widest font-medium mt-1.5 text-center whitespace-nowrap">постоянных клиентов</span>
+              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">исполнителей</span>
             </div>
           </div>
 
