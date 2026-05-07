@@ -10,6 +10,13 @@ import AiChatWidget from '@/components/AiChatWidget';
 
 const LiveOrdersMap = dynamic(() => import('@/components/LiveOrdersMap'), { ssr: false });
 
+type City = 'omsk' | 'novosibirsk';
+
+const CITY_LABELS: Record<City, string> = {
+  omsk: 'Омск',
+  novosibirsk: 'Новосибирск',
+};
+
 /* ── site-wide hero images (admin-managed) ───────────────────── */
 
 function useSiteImages() {
@@ -231,6 +238,7 @@ export default function HomePage() {
   /* form state */
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [city, setCity] = useState<City>('omsk');
   const [consent, setConsent] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -274,7 +282,7 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone,
-          city: 'omsk',
+          city,
           address: address || undefined,
           source: 'landing',
         }),
@@ -1083,6 +1091,29 @@ export default function HomePage() {
                   required
                   error={errors.phone}
                 />
+              </div>
+
+              {/* Город */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
+                  Город
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['omsk', 'novosibirsk'] as City[]).map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCity(c)}
+                      className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
+                        city === c
+                          ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
+                          : 'bg-white dark:bg-dark-card text-gray-700 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-brand-500 hover:shadow-sm'
+                      }`}
+                    >
+                      {CITY_LABELS[c]}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Согласие 152-ФЗ */}
