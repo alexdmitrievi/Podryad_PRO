@@ -327,7 +327,7 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="sm:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-dark-border text-gray-700 dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+            className="sm:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-brand-500/10 text-brand-500 cursor-pointer hover:bg-brand-500/20 transition-colors"
             aria-label="Меню"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -346,13 +346,13 @@ export default function HomePage() {
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="absolute right-0 top-0 h-full w-[280px] bg-white dark:bg-dark-card shadow-2xl animate-[slide-in-right_0.3s_ease]">
-            <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 dark:border-dark-border">
-              <span className="font-extrabold text-brand-900 dark:text-white font-heading text-sm">Навигация</span>
+          <div className="absolute right-0 top-0 w-[280px] rounded-bl-3xl shadow-2xl animate-[slide-in-right_0.3s_ease] overflow-hidden" style={{ background: 'linear-gradient(180deg, #1E2A5A 0%, #2d1b69 100%)' }}>
+            <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
+              <span className="font-extrabold text-white font-heading text-sm">Навигация</span>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-dark-border text-gray-500 dark:text-white/60 cursor-pointer hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 text-white/60 cursor-pointer hover:bg-white/20 hover:text-white transition-colors"
                 aria-label="Закрыть меню"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -373,12 +373,22 @@ export default function HomePage() {
                   key={item.label}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-dark-text font-medium text-sm hover:bg-gray-100 dark:hover:bg-dark-border transition-colors cursor-pointer"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 font-medium text-sm hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
                 >
                   {item.label}
                 </a>
               ))}
             </nav>
+            <div className="px-4 pb-4 pt-2">
+              <a
+                href="/order/new"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-400 text-white font-bold text-sm cursor-pointer transition-colors"
+              >
+                Разместить заказ
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </a>
+            </div>
           </div>
         </div>
       )}
