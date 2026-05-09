@@ -1,10 +1,16 @@
 // Bot integration — barrel export
-export type { BotServiceKind, Screen, OrderStep, SessionState } from './types';
+export type { BotServiceKind, MaterialKind, RegionCode, CustomerType, Screen, OrderStep, SessionState } from './types';
 export {
   SERVICE_LABEL,
   PRICE_HINT,
   PRICE_RANGE,
   DISTRICTS,
+  REGION_LABEL,
+  MATERIAL_LABEL,
+  MATERIAL_DESC,
+  MATERIAL_UNIT,
+  MATERIAL_GRADES,
+  MATERIAL_PRICE_RANGE,
   STATUS_UI,
   UI,
   districtName,
@@ -22,6 +28,9 @@ export {
 
 export {
   mainMenuButtons,
+  mainMenuB2bButtons,
+  customerTypeButtons,
+  regionButtons,
   serviceSelectionButtons,
   areaButtons,
   districtButtons,
@@ -32,6 +41,9 @@ export {
   myOrdersButtons,
   referralButtons,
   backToHomeButton,
+  materialsMenuButtons,
+  gradeButtons,
+  materialQtyButtons,
 } from './keyboards';
 
 export {

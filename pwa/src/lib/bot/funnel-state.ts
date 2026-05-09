@@ -1,5 +1,5 @@
 // Bot funnel state machine — adapted from Premium lib/funnels.ts
-import type { BotServiceKind, SessionState, OrderStep } from './types';
+import type { BotServiceKind, MaterialKind, SessionState, OrderStep, RegionCode } from './types';
 
 export const SERVICE_LABEL: Record<BotServiceKind, string> = {
   lawn_mowing: 'Покос газона',
@@ -60,6 +60,78 @@ export const DISTRICTS: Array<{ code: string; name: string }> = [
   { code: 'sovetskiy', name: 'Советский' },
   { code: 'other', name: 'Другой' },
 ];
+
+export const REGION_LABEL: Record<RegionCode, string> = {
+  omsk: 'Омск',
+  novosibirsk: 'Новосибирск',
+};
+
+export const MATERIAL_LABEL: Record<MaterialKind, string> = {
+  concrete: 'Бетон',
+  crushed_stone: 'Щебень',
+  sand: 'Песок',
+  cement: 'Цемент',
+  brick: 'Кирпич',
+};
+
+export const MATERIAL_DESC: Record<MaterialKind, string> = {
+  concrete: 'Бетон любых марок: M100–M400. Доставка миксером.',
+  crushed_stone: 'Щебень всех фракций: 5–20, 20–40, 40–70, гранитный, гравийный.',
+  sand: 'Песок карьерный, речной, мытый, строительный.',
+  cement: 'Цемент M400, M500. В мешках 25/50 кг или россыпью.',
+  brick: 'Кирпич рядовой, облицовочный, силикатный, керамический.',
+};
+
+export const MATERIAL_UNIT: Record<MaterialKind, string> = {
+  concrete: 'м³',
+  crushed_stone: 'т',
+  sand: 'т',
+  cement: 'меш',
+  brick: 'шт',
+};
+
+export const MATERIAL_GRADES: Record<MaterialKind, Array<{ code: string; name: string; priceHint?: string }>> = {
+  concrete: [
+    { code: 'M100', name: 'M100 (стяжка)', priceHint: '≈ 5 200 ₽/м³' },
+    { code: 'M150', name: 'M150 (дорожки)', priceHint: '≈ 5 500 ₽/м³' },
+    { code: 'M200', name: 'M200 (фундамент)', priceHint: '≈ 5 700 ₽/м³' },
+    { code: 'M250', name: 'M250 (перекрытия)', priceHint: '≈ 6 000 ₽/м³' },
+    { code: 'M300', name: 'M300 (стены)', priceHint: '≈ 6 300 ₽/м³' },
+    { code: 'M350', name: 'M350 (балки)', priceHint: '≈ 6 800 ₽/м³' },
+    { code: 'M400', name: 'M400 (колонны)', priceHint: '≈ 7 500 ₽/м³' },
+  ],
+  crushed_stone: [
+    { code: '5-20', name: '5–20 мм (гранитный)', priceHint: '≈ 1 800 ₽/т' },
+    { code: '20-40', name: '20–40 мм (гранитный)', priceHint: '≈ 1 700 ₽/т' },
+    { code: '40-70', name: '40–70 мм', priceHint: '≈ 1 500 ₽/т' },
+    { code: 'gravel', name: 'Гравийный', priceHint: '≈ 1 200 ₽/т' },
+    { code: 'limestone', name: 'Известковый', priceHint: '≈ 900 ₽/т' },
+  ],
+  sand: [
+    { code: 'quarry', name: 'Карьерный', priceHint: '≈ 500 ₽/т' },
+    { code: 'river', name: 'Речной', priceHint: '≈ 700 ₽/т' },
+    { code: 'washed', name: 'Мытый', priceHint: '≈ 850 ₽/т' },
+    { code: 'construction', name: 'Строительный', priceHint: '≈ 650 ₽/т' },
+  ],
+  cement: [
+    { code: 'M400', name: 'M400 (50 кг мешок)', priceHint: '≈ 420 ₽/меш' },
+    { code: 'M500', name: 'M500 (50 кг мешок)', priceHint: '≈ 480 ₽/меш' },
+  ],
+  brick: [
+    { code: 'ordinary', name: 'Рядовой', priceHint: '≈ 12 ₽/шт' },
+    { code: 'facing', name: 'Облицовочный', priceHint: '≈ 18 ₽/шт' },
+    { code: 'silicate', name: 'Силикатный', priceHint: '≈ 10 ₽/шт' },
+    { code: 'ceramic', name: 'Керамический', priceHint: '≈ 25 ₽/шт' },
+  ],
+};
+
+export const MATERIAL_PRICE_RANGE: Record<MaterialKind, { min: number; max: number }> = {
+  concrete: { min: 5200, max: 7500 },
+  crushed_stone: { min: 900, max: 1800 },
+  sand: { min: 500, max: 850 },
+  cement: { min: 420, max: 480 },
+  brick: { min: 10, max: 25 },
+};
 
 export type StatusUi = { icon: string; label: string };
 
@@ -291,4 +363,52 @@ export const UI = {
     `Напишите, что вас интересует — и оставьте номер. Перезвоним в течение 30 минут (9:00–21:00).`,
 
   unknown: 'Не уловил вопрос 🙈 Воспользуйтесь меню ниже или напишите оператору.',
+
+  // ── Region ──
+  askRegion: 'В каком городе вы находитесь?',
+
+  // ── Customer type ──
+  askCustomerType: (name?: string) =>
+    `👋 Здравствуйте${name ? ', ' + name : ''}!\n\n` +
+    `Я — бот <b>«Подряд PRO»</b>. Чтобы предложить подходящее меню — подскажите:\n` +
+    `вы оформляете заказ для частного дома или для компании / стройки?`,
+
+  // ── Materials ──
+  materialsMenu: (isB2b?: boolean) =>
+    `🧱 <b>Стройматериалы</b>\n\n` +
+    `Мы возим:\n` +
+    `• бетон любых марок (M100–M400)\n` +
+    `• щебень всех фракций\n` +
+    `• песок (карьерный, речной, мытый)\n` +
+    `• цемент M400/M500\n` +
+    `• кирпич — рядовой, облицовочный, силикатный\n\n` +
+    `Что нужно?${isB2b ? '\n\n(Оформление по договору, менеджер подготовит КП)' : ''}`,
+
+  materialSelected: (k: MaterialKind) =>
+    `<b>${MATERIAL_LABEL[k]}</b>\n${MATERIAL_DESC[k]}\n\nВыберите марку/фракцию:`,
+
+  askMaterialQty: (unit: string) =>
+    `Сколько нужно? (в ${unit})`,
+
+  askDeliveryAddress: 'Адрес доставки?',
+
+  materialConfirm: (p: {
+    material: string; grade: string; qty: number; unit: string; when?: string;
+    priceLow: number; priceHigh: number; address?: string;
+  }) => {
+    const lines: string[] = ['✅ <b>Проверьте заказ</b>\n'];
+    lines.push(`Материал: <b>${p.material} ${p.grade}</b>`);
+    lines.push(`Количество: ${p.qty} ${p.unit}`);
+    if (p.address) lines.push(`Адрес доставки: ${p.address}`);
+    if (p.when) lines.push(`Когда: ${p.when}`);
+    lines.push(`\nЦена: ${formatRub(p.priceLow)}–${formatRub(p.priceHigh)} ₽ за ${p.unit}`);
+    lines.push(`Примерный итог: ${formatRub(p.priceLow * p.qty)}–${formatRub(p.priceHigh * p.qty)} ₽`);
+    lines.push(`\nТочную цену скажет менеджер при подтверждении.`);
+    return lines.join('\n');
+  },
+
+  materialThanks: (p: { humanId: string; material: string; grade: string }) =>
+    `✅ <b>Заявка #${p.humanId} принята</b>\n\n` +
+    `Материал: ${p.material} ${p.grade}\n\n` +
+    `Менеджер свяжется с вами в течение 30 минут для подтверждения заказа и расчёта доставки.`,
 } as const;

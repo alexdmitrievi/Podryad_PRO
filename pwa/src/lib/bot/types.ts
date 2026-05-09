@@ -16,6 +16,16 @@ export type BotServiceKind =
   | 'tilling'
   | 'subscription';
 
+export type MaterialKind =
+  | 'concrete'
+  | 'crushed_stone'
+  | 'sand'
+  | 'cement'
+  | 'brick';
+
+export type RegionCode = 'omsk' | 'novosibirsk';
+export type CustomerType = 'b2c' | 'b2b';
+
 export type Screen =
   | 'home'
   | 'order'
@@ -26,11 +36,15 @@ export type Screen =
   | 'referral'
   | 'referral_list'
   | 'help'
-  | 'operator';
+  | 'operator'
+  | 'material_order'
+  | 'pick_ctype'
+  | 'materials_menu';
 
 export type OrderStep =
   | 'service'
   | 'params'
+  | 'region'
   | 'district'
   | 'when'
   | 'photos'
@@ -39,6 +53,15 @@ export type OrderStep =
   | 'done';
 
 export type Step = OrderStep;
+
+export type MaterialOrderStep =
+  | 'mat_kind'
+  | 'mat_grade'
+  | 'mat_qty'
+  | 'mat_when'
+  | 'mat_address'
+  | 'mat_confirm'
+  | 'mat_done';
 
 export type SessionState = {
   screen?: Screen;
@@ -49,6 +72,7 @@ export type SessionState = {
   area?: number;
   areaUnit?: string;
   areaBucket?: string;
+  region?: RegionCode;
   district?: string;
   districtCode?: string;
   description?: string;
@@ -63,4 +87,14 @@ export type SessionState = {
   bonusRub?: number;
   activeLeadId?: string;
   referredBy?: string;
+  customerType?: CustomerType;
+  // Materials
+  materialKind?: MaterialKind;
+  materialGradeCode?: string;
+  materialGradeName?: string;
+  materialQty?: number;
+  materialUnit?: string;
+  deliveryAddress?: string;
+  materialPriceLow?: number;
+  materialPriceHigh?: number;
 };

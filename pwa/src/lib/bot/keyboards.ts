@@ -1,17 +1,18 @@
 // Inline keyboard builders for Telegram and MAX
-// Adapted from Premium lib/telegram.ts and lib/max.ts
-
 import type { MessageButton } from '@/lib/channels/types';
-import { SERVICE_LABEL, DISTRICTS } from './funnel-state';
-import type { BotServiceKind } from './types';
+import { SERVICE_LABEL, DISTRICTS, MATERIAL_LABEL, MATERIAL_GRADES } from './funnel-state';
+import type { BotServiceKind, MaterialKind, RegionCode } from './types';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
 
-/** Main menu — shown on /start or home screen */
+/** Main menu — B2C version (services first) */
 export function mainMenuButtons(): MessageButton[][] {
   return [
     [
       { type: 'callback', text: '🚀 Быстрый заказ', callback_data: 'menu:order' },
+    ],
+    [
+      { type: 'callback', text: '🧱 Стройматериалы', callback_data: 'menu:materials' },
     ],
     [
       { type: 'callback', text: '📋 Мои заказы', callback_data: 'menu:my_orders' },
@@ -21,6 +22,49 @@ export function mainMenuButtons(): MessageButton[][] {
       { type: 'callback', text: '❓ Помощь', callback_data: 'menu:help' },
       { type: 'url', text: '🌐 Сайт', url: APP_URL },
     ],
+  ];
+}
+
+/** B2B main menu (materials first) */
+export function mainMenuB2bButtons(): MessageButton[][] {
+  return [
+    [
+      { type: 'callback', text: '🧱 Стройматериалы', callback_data: 'menu:materials' },
+    ],
+    [
+      { type: 'callback', text: '🛠 Услуги', callback_data: 'menu:order' },
+    ],
+    [
+      { type: 'callback', text: '📋 Мои заказы', callback_data: 'menu:my_orders' },
+      { type: 'callback', text: '🎁 Рефералы', callback_data: 'menu:referral' },
+    ],
+    [
+      { type: 'callback', text: '🤝 Договор / счёт', callback_data: 'menu:operator' },
+      { type: 'url', text: '🌐 Сайт', url: APP_URL },
+    ],
+  ];
+}
+
+/** B2C/B2B picker — shown on first /start */
+export function customerTypeButtons(): MessageButton[][] {
+  return [
+    [
+      { type: 'callback', text: '🏡 Для частного дома', callback_data: 'ctype:b2c' },
+    ],
+    [
+      { type: 'callback', text: '🏗 Для компании / стройки', callback_data: 'ctype:b2b' },
+    ],
+  ];
+}
+
+/** Region selection buttons */
+export function regionButtons(): MessageButton[][] {
+  return [
+    [
+      { type: 'callback', text: '📍 Омск', callback_data: 'region:omsk' },
+      { type: 'callback', text: '📍 Новосибирск', callback_data: 'region:novosibirsk' },
+    ],
+    [{ type: 'callback', text: '↩ Назад', callback_data: 'funnel:back' }],
   ];
 }
 
@@ -52,7 +96,7 @@ export function serviceSelectionButtons(): MessageButton[][] {
   ];
 }
 
-/** Area bucket buttons (for lawn/clearing type services) */
+/** Area bucket buttons */
 export function areaButtons(serviceKind: string): MessageButton[][] {
   const prefix = `area:${serviceKind}`;
   return [
@@ -66,7 +110,7 @@ export function areaButtons(serviceKind: string): MessageButton[][] {
     ],
     [
       { type: 'callback', text: 'Другой размер', callback_data: `${prefix}:custom` },
-      { type: 'callback', text: '↩ Назад', callback_data: 'menu:order' },
+      { type: 'callback', text: '↩ Назад', callback_data: 'funnel:back' },
     ],
   ];
 }
@@ -125,7 +169,7 @@ export function confirmButtons(): MessageButton[][] {
   ];
 }
 
-/** Post-order buttons (shown after order created) */
+/** Post-order buttons */
 export function postOrderButtons(): MessageButton[][] {
   return [
     [
@@ -139,7 +183,6 @@ export function postOrderButtons(): MessageButton[][] {
 export function orderCardButtons(leadId: string, status: string): MessageButton[][] {
   const buttons: MessageButton[][] = [];
   const canEdit = ['new', 'qualifying', 'qualified', 'quoted', 'scheduled'].includes(status);
-  const canCancel = canEdit;
 
   buttons.push([
     { type: 'callback', text: '🔁 Повторить заказ', callback_data: `order:${leadId}:repeat` },
@@ -149,7 +192,7 @@ export function orderCardButtons(leadId: string, status: string): MessageButton[
       { type: 'callback', text: '📅 Изменить дату', callback_data: `order:${leadId}:edit_date` },
     ]);
   }
-  if (canCancel) {
+  if (canEdit) {
     buttons.push([
       { type: 'callback', text: '❌ Отменить заказ', callback_data: `order:${leadId}:cancel` },
     ]);
@@ -193,5 +236,105 @@ export function referralButtons(): MessageButton[][] {
 export function backToHomeButton(): MessageButton[][] {
   return [
     [{ type: 'callback', text: '🏠 На главную', callback_data: 'menu:home' }],
+  ];
+}
+
+// ── Material-specific keyboards ────────────────────────────
+
+/** Materials menu — 5 material types */
+export function materialsMenuButtons(): MessageButton[][] {
+  const kinds: MaterialKind[] = ['concrete', 'crushed_stone', 'sand', 'cement', 'brick'];
+  const rows: MessageButton[][] = [];
+  for (let i = 0; i < kinds.length; i += 2) {
+    const row: MessageButton[] = [{
+      type: 'callback',
+      text: MATERIAL_LABEL[kinds[i]!],
+      callback_data: `mat:${kinds[i]}`,
+    }];
+    if (kinds[i + 1]) {
+      row.push({
+        type: 'callback',
+        text: MATERIAL_LABEL[kinds[i + 1]!],
+        callback_data: `mat:${kinds[i + 1]}`,
+      });
+    }
+    rows.push(row);
+  }
+  rows.push([{ type: 'callback', text: '↩ На главную', callback_data: 'menu:home' }]);
+  return rows;
+}
+
+/** Grade selection for a specific material */
+export function gradeButtons(materialKind: MaterialKind): MessageButton[][] {
+  const grades = MATERIAL_GRADES[materialKind];
+  const rows: MessageButton[][] = [];
+  for (let i = 0; i < grades.length; i += 2) {
+    const row: MessageButton[] = [{
+      type: 'callback',
+      text: grades[i]!.name + (grades[i]!.priceHint ? ` (${grades[i]!.priceHint})` : ''),
+      callback_data: `grade:${materialKind}:${grades[i]!.code}`,
+    }];
+    if (grades[i + 1]) {
+      row.push({
+        type: 'callback',
+        text: grades[i + 1]!.name + (grades[i + 1]!.priceHint ? ` (${grades[i + 1]!.priceHint})` : ''),
+        callback_data: `grade:${materialKind}:${grades[i + 1]!.code}`,
+      });
+    }
+    rows.push(row);
+  }
+  rows.push([{ type: 'callback', text: '↩ Назад', callback_data: 'menu:materials' }]);
+  return rows;
+}
+
+/** Quantity bucket buttons */
+export function materialQtyButtons(unit: string): MessageButton[][] {
+  const isM3 = unit === 'м³';
+  const isTon = unit === 'т';
+  if (isM3) {
+    return [
+      [
+        { type: 'callback', text: '1–3 м³', callback_data: 'qty:3' },
+        { type: 'callback', text: '4–6 м³', callback_data: 'qty:6' },
+      ],
+      [
+        { type: 'callback', text: '7–10 м³', callback_data: 'qty:10' },
+        { type: 'callback', text: '10+ м³', callback_data: 'qty:15' },
+      ],
+      [
+        { type: 'callback', text: '✏️ Указать точно', callback_data: 'qty:custom' },
+        { type: 'callback', text: '↩ Назад', callback_data: 'mat:back' },
+      ],
+    ];
+  }
+  if (isTon) {
+    return [
+      [
+        { type: 'callback', text: '1–5 т', callback_data: 'qty:5' },
+        { type: 'callback', text: '5–15 т', callback_data: 'qty:15' },
+      ],
+      [
+        { type: 'callback', text: '15–30 т', callback_data: 'qty:30' },
+        { type: 'callback', text: '30+ т', callback_data: 'qty:40' },
+      ],
+      [
+        { type: 'callback', text: '✏️ Указать точно', callback_data: 'qty:custom' },
+        { type: 'callback', text: '↩ Назад', callback_data: 'mat:back' },
+      ],
+    ];
+  }
+  return [
+    [
+      { type: 'callback', text: 'До 50 шт', callback_data: 'qty:50' },
+      { type: 'callback', text: '50–200 шт', callback_data: 'qty:200' },
+    ],
+    [
+      { type: 'callback', text: '200–1000 шт', callback_data: 'qty:1000' },
+      { type: 'callback', text: '1000+ шт', callback_data: 'qty:2000' },
+    ],
+    [
+      { type: 'callback', text: '✏️ Указать точно', callback_data: 'qty:custom' },
+      { type: 'callback', text: '↩ Назад', callback_data: 'mat:back' },
+    ],
   ];
 }

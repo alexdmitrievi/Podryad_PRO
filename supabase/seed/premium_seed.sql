@@ -68,5 +68,47 @@ INSERT INTO public.campaigns (code, name, channel, service_kind, message_text, i
   ('seasonal_pool_open', 'Открытие бассейна',
    NULL, 'pool_assembly',
    '🏊 *Готовим бассейн к лету!*\n\nСезон открытия бассейнов стартует. Нужна помощь со сборкой и запуском?\n\nНажмите «Заказать» для оформления.',
-   false)
+    false)
 ON CONFLICT (code) DO NOTHING;
+
+-- =============================================================================
+-- Материалы + марки (для раздела «Стройматериалы» в ботах)
+-- =============================================================================
+
+INSERT INTO public.materials (code, name, category, unit, description) VALUES
+  ('concrete',      'Бетон',   'Сыпучие',  'м³',  'Бетон M100–M400. Доставка миксером.'),
+  ('crushed_stone', 'Щебень',  'Сыпучие',  'т',   'Щебень гранитный, гравийный, известняковый 5–70 мм.'),
+  ('sand',          'Песок',   'Сыпучие',  'т',   'Песок карьерный, речной, мытый, строительный.'),
+  ('cement',        'Цемент',  'Вяжущие',  'меш', 'Цемент M400, M500 в мешках 50 кг.'),
+  ('brick',         'Кирпич',  'Штучные',  'шт',  'Кирпич рядовой, облицовочный, силикатный, керамический.')
+ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, category = EXCLUDED.category, unit = EXCLUDED.unit, description = EXCLUDED.description;
+
+INSERT INTO public.material_grades (material_id, grade, description, price_per_unit)
+SELECT m.id, g.grade, g.description, g.price_per_unit
+FROM public.materials m
+CROSS JOIN (VALUES
+  ('concrete',       'M100',       'Бетон M100 (стяжка, подготовка)',         5200.00),
+  ('concrete',       'M150',       'Бетон M150 (дорожки, отмостка)',          5500.00),
+  ('concrete',       'M200',       'Бетон M200 (фундамент)',                  5700.00),
+  ('concrete',       'M250',       'Бетон M250 (перекрытия)',                 6000.00),
+  ('concrete',       'M300',       'Бетон M300 (стены, колонны)',             6300.00),
+  ('concrete',       'M350',       'Бетон M350 (балки)',                      6800.00),
+  ('concrete',       'M400',       'Бетон M400 (ответственные конструкции)',  7500.00),
+  ('crushed_stone',  '5-20',       'Гранитный щебень 5–20 мм',                1800.00),
+  ('crushed_stone',  '20-40',      'Гранитный щебень 20–40 мм',               1700.00),
+  ('crushed_stone',  '40-70',      'Щебень 40–70 мм',                         1500.00),
+  ('crushed_stone',  'gravel',     'Гравийный щебень',                        1200.00),
+  ('crushed_stone',  'limestone',  'Известняковый щебень',                    900.00),
+  ('sand',           'quarry',     'Песок карьерный',                         500.00),
+  ('sand',           'river',      'Песок речной',                            700.00),
+  ('sand',           'washed',     'Песок мытый',                             850.00),
+  ('sand',           'construction','Песок строительный',                     650.00),
+  ('cement',         'M400',       'Цемент M400, мешок 50 кг',                420.00),
+  ('cement',         'M500',       'Цемент M500, мешок 50 кг',                480.00),
+  ('brick',          'ordinary',   'Кирпич рядовой полнотелый',               12.00),
+  ('brick',          'facing',     'Кирпич облицовочный',                     18.00),
+  ('brick',          'silicate',   'Кирпич силикатный',                       10.00),
+  ('brick',          'ceramic',    'Кирпич керамический',                     25.00)
+) AS g(code, grade, description, price_per_unit)
+WHERE m.code = g.code
+ON CONFLICT DO NOTHING;
