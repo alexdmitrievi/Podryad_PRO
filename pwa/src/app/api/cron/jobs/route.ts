@@ -1,3 +1,4 @@
+export const maxDuration = 30;
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { claimJobs } from '@/lib/job-queue';
