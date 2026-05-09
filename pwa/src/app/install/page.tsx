@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 
 type Step = {
   title: string;
@@ -108,12 +109,7 @@ export default function InstallPage() {
           <span className="text-[17px] font-extrabold text-brand-900 dark:text-white font-heading tracking-tight">
             Подряд <span className="text-brand-500">PRO</span>
           </span>
-          <Link
-            href="/#install"
-            className="btn-shine bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-all hover:shadow-glow cursor-pointer"
-          >
-            На главную
-          </Link>
+          <BackButton label="На главную" fallbackHref="/#install" />
         </div>
       </nav>
 
@@ -197,17 +193,9 @@ export default function InstallPage() {
           Безопасно, без разрешений, занимает минимум места.
         </p>
 
-        {/* Bottom back link — second exit point */}
+        {/* Bottom back link */}
         <div className="mt-8 flex justify-center">
-          <Link
-            href="/#install"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-brand-500 hover:text-brand-600 transition-colors"
-          >
-            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M16 10H4m0 0l4-4m-4 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span>Вернуться на главную</span>
-          </Link>
+          <BackButton label="Вернуться на главную" fallbackHref="/#install" />
         </div>
       </main>
     </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import BackButton from '@/components/BackButton';
 import {
   Truck, Shield, Star, Clock, ChevronRight, Phone, MessageCircle,
   CheckCircle2, UserCheck, ArrowRight, X
@@ -404,12 +405,10 @@ export default function EquipmentPage() {
               >
                 Посмотреть технику <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </a>
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-white/30"
-              >
-                ← На главную
-              </Link>
+              <BackButton
+                fallbackHref="/"
+                className="!bg-white/10 !border-white/20 !text-white hover:!text-white hover:!bg-white/20 hover:!border-white/30"
+              />
             </div>
           </div>
         </div>

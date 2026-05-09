@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import BackButton from '@/components/BackButton';
 
 const SERVICES = [
   { title: 'Покос, аэрация и скарификация газона', desc: 'Профессиональный уход за газоном любой площади. Выезд, оценка, работа в день обращения.' },
@@ -27,7 +28,9 @@ export default function OwnParkPage() {
               Подряд <span className="text-brand-400">PRO</span>
             </span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <BackButton className="!bg-white/10 !border-white/20 !text-white/80 hover:!text-white hover:!bg-white/20 hover:!border-white/30" fallbackHref="/" />
+            <div className="flex items-center gap-2">
             <span className="hidden sm:flex items-center gap-1.5 text-white/60 text-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" aria-hidden="true" />
               Собственный парк услуг
@@ -38,6 +41,7 @@ export default function OwnParkPage() {
             >
               Оставить заявку
             </Link>
+          </div>
           </div>
         </div>
       </nav>

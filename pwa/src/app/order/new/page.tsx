@@ -4,6 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 import { Users, Wrench, Package, Layers, Zap } from 'lucide-react';
 import { showToast } from '@/components/ui/Toast';
 import PhoneInput, { isValidPhone, getRawPhone } from '@/components/ui/PhoneInput';
@@ -197,9 +198,7 @@ export default function OrderNewPage() {
             <span className="text-lg font-extrabold text-brand-900 dark:text-white font-heading">Подряд PRO</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-sm text-gray-500 dark:text-dark-muted hover:text-brand-500 transition-colors font-semibold cursor-pointer">
-              ← На главную
-            </Link>
+            <BackButton fallbackHref="/" />
             <span className="text-gray-200 dark:text-dark-border">|</span>
             <Link href="/login" className="text-sm text-[#2F5BFF] hover:underline font-semibold cursor-pointer">
               Войти в кабинет

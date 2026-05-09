@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 import PhoneInput, { isValidPhone, getRawPhone } from '@/components/ui/PhoneInput';
 import { showToast } from '@/components/ui/Toast';
 
@@ -119,12 +119,7 @@ export default function JoinPage() {
       {/* Header */}
       <div className="section-gradient py-10 sm:py-14 px-4">
         <div className="max-w-lg mx-auto">
-          <Link
-            href="/"
-            className="inline-flex items-center text-sm text-white/80 hover:text-white transition-colors cursor-pointer mb-4"
-          >
-            ← Главная
-          </Link>
+          <BackButton fallbackHref="/" className="mb-4" />
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading mb-3 text-center">
             Стать исполнителем
           </h1>
@@ -186,12 +181,7 @@ export default function JoinPage() {
             </div>
             <p className="text-green-700 font-bold text-xl mb-1">Анкета отправлена!</p>
             <p className="text-green-600 text-sm mb-6">Мы свяжемся с вами в ближайшее время.</p>
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors min-h-[48px] cursor-pointer"
-            >
-              На главную
-            </Link>
+            <BackButton fallbackHref="/" className="inline-flex items-center justify-center !px-6 !py-3 !min-h-[48px]" />
           </div>
         ) : (
           <form
