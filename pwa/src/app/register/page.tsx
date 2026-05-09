@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import BackButton from '@/components/BackButton';
 import PhoneInput, { isValidPhone, getRawPhone } from '@/components/ui/PhoneInput';
 import { showToast } from '@/components/ui/Toast';
 import { User, Building2, Phone, Lock, ChevronRight } from 'lucide-react';
@@ -68,7 +67,9 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
-        <BackButton fallbackHref="/" className="mb-6" />
+        <Link href="/#services" className="inline-flex items-center gap-1 text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors mb-6">
+          ← Главная
+        </Link>
 
         <div className="bg-white dark:bg-dark-card rounded-3xl shadow-card p-8">
           {/* Header */}

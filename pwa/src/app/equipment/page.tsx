@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import BackButton from '@/components/BackButton';
 import {
   Truck, Shield, Star, Clock, ChevronRight, Phone, MessageCircle,
   CheckCircle2, UserCheck, ArrowRight, X
@@ -355,7 +354,7 @@ export default function EquipmentPage() {
       {/* ── Navbar ───────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 bg-brand-900/95 backdrop-blur-md border-b border-white/10 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group" aria-label="Подряд PRO — на главную">
+          <Link href="/#services" className="flex items-center gap-2.5 group" aria-label="Подряд PRO — на главную">
             <Image src="/logo.png" alt="Подряд PRO" width={32} height={32} className="rounded-xl opacity-90 group-hover:opacity-100 transition-opacity" />
             <span className="text-[16px] font-extrabold text-white font-heading tracking-tight">
               Подряд <span className="text-brand-400">PRO</span>
@@ -405,10 +404,12 @@ export default function EquipmentPage() {
               >
                 Посмотреть технику <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </a>
-              <BackButton
-                fallbackHref="/"
-                className="!bg-white/10 !border-white/20 !text-white hover:!text-white hover:!bg-white/20 hover:!border-white/30"
-              />
+              <Link
+                href="/#services"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-white/30"
+              >
+                ← На главную
+              </Link>
             </div>
           </div>
         </div>

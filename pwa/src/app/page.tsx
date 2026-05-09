@@ -518,7 +518,7 @@ export default function HomePage() {
       </section>
 
       {/* ── 2. УСЛУГИ — 3 карточки ──────────────────────────────── */}
-      <section className="py-16 sm:py-20 px-4 bg-white dark:bg-dark-bg">
+      <section id="services" className="py-16 sm:py-20 px-4 bg-white dark:bg-dark-bg">
         <div ref={revServices} className="max-w-6xl mx-auto reveal">
           <div className="text-center mb-12">
             <span className="eyebrow text-brand-500 mb-4 block">Услуги</span>

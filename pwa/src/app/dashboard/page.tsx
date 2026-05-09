@@ -33,7 +33,7 @@ export default function DashboardPage() {
       {/* Navbar */}
       <nav className="navbar flex-shrink-0 h-16">
         <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/#services" className="flex items-center gap-2">
             <Image src="/logo.png" alt="Подряд PRO" width={32} height={32} className="rounded-lg" />
             <span className="text-base font-extrabold text-brand-900 dark:text-white font-heading">Подряд PRO</span>
           </Link>

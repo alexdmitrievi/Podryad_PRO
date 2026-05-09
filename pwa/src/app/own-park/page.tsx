@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import BackButton from '@/components/BackButton';
 
 const SERVICES = [
   { title: 'Покос, аэрация и скарификация газона', desc: 'Профессиональный уход за газоном любой площади. Выезд, оценка, работа в день обращения.' },
@@ -22,15 +21,13 @@ export default function OwnParkPage() {
       {/* ── Navbar ─────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 bg-brand-900/95 backdrop-blur-md border-b border-white/10 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group" aria-label="Подряд PRO — на главную">
+          <Link href="/#services" className="flex items-center gap-2.5 group" aria-label="Подряд PRO — на главную">
             <Image src="/logo.png" alt="Подряд PRO" width={32} height={32} className="rounded-xl opacity-90 group-hover:opacity-100 transition-opacity" />
             <span className="text-[16px] font-extrabold text-white font-heading tracking-tight">
               Подряд <span className="text-brand-400">PRO</span>
             </span>
           </Link>
-          <div className="flex items-center gap-3">
-            <BackButton className="!bg-white/10 !border-white/20 !text-white/80 hover:!text-white hover:!bg-white/20 hover:!border-white/30" fallbackHref="/" />
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <span className="hidden sm:flex items-center gap-1.5 text-white/60 text-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" aria-hidden="true" />
               Собственный парк услуг
@@ -41,7 +38,6 @@ export default function OwnParkPage() {
             >
               Оставить заявку
             </Link>
-          </div>
           </div>
         </div>
       </nav>

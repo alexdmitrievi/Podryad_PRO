@@ -313,13 +313,13 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
       <nav className="sticky top-0 z-50 bg-white/95 dark:bg-dark-card/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-dark-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/#services" className="flex items-center gap-2">
               <Image src="/logo.png" alt="Подряд PRO" width={36} height={36} className="rounded-lg" />
               <span className="text-lg font-extrabold text-brand-900 dark:text-white font-heading">Подряд PRO</span>
             </Link>
           </div>
           <Link
-            href="/"
+            href="/#services"
             className="text-brand-500 hover:text-brand-600 font-semibold text-sm flex items-center gap-1 transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>

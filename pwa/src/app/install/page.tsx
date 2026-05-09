@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import BackButton from '@/components/BackButton';
+import Image from 'next/image';
 
 type Step = {
   title: string;
@@ -106,10 +106,12 @@ export default function InstallPage() {
       {/* NAVBAR */}
       <nav className="sticky top-0 z-50 bg-white/95 dark:bg-dark-card/95 backdrop-blur-md border-b border-gray-100/80 dark:border-dark-border shadow-sm">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <span className="text-[17px] font-extrabold text-brand-900 dark:text-white font-heading tracking-tight">
-            Подряд <span className="text-brand-500">PRO</span>
-          </span>
-          <BackButton label="На главную" fallbackHref="/#install" />
+          <Link href="/#services" className="flex items-center gap-2.5 group" aria-label="Подряд PRO — на главную">
+            <Image src="/logo.png" alt="Подряд PRO" width={32} height={32} className="rounded-xl opacity-90 group-hover:opacity-100 transition-opacity" />
+            <span className="text-[17px] font-extrabold text-brand-900 dark:text-white font-heading tracking-tight">
+              Подряд <span className="text-brand-500">PRO</span>
+            </span>
+          </Link>
         </div>
       </nav>
 
@@ -195,7 +197,15 @@ export default function InstallPage() {
 
         {/* Bottom back link */}
         <div className="mt-8 flex justify-center">
-          <BackButton label="Вернуться на главную" fallbackHref="/#install" />
+          <Link
+            href="/#services"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-brand-500 hover:text-brand-600 transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M16 10H4m0 0l4-4m-4 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span>Вернуться на главную</span>
+          </Link>
         </div>
       </main>
     </div>

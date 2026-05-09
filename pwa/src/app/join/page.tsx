@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import BackButton from '@/components/BackButton';
+import Link from 'next/link';
+import Image from 'next/image';
 import PhoneInput, { isValidPhone, getRawPhone } from '@/components/ui/PhoneInput';
 import { showToast } from '@/components/ui/Toast';
 
@@ -116,10 +117,27 @@ export default function JoinPage() {
 
   return (
     <div className="min-h-screen bg-surface font-sans">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 bg-white/95 dark:bg-dark-card/95 backdrop-blur-md border-b border-gray-100/80 dark:border-dark-border shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+          <Link href="/#services" className="flex items-center gap-2.5 group" aria-label="Подряд PRO — на главную">
+            <Image src="/logo.png" alt="Подряд PRO" width={32} height={32} className="rounded-xl opacity-90 group-hover:opacity-100 transition-opacity" />
+            <span className="text-[17px] font-extrabold text-brand-900 dark:text-white font-heading tracking-tight">
+              Подряд <span className="text-brand-500">PRO</span>
+            </span>
+          </Link>
+          <Link
+            href="/#lead-form"
+            className="btn-shine bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-all hover:shadow-glow cursor-pointer"
+          >
+            Оставить заявку
+          </Link>
+        </div>
+      </nav>
+
       {/* Header */}
       <div className="section-gradient py-10 sm:py-14 px-4">
         <div className="max-w-lg mx-auto">
-          <BackButton fallbackHref="/" className="mb-4" />
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading mb-3 text-center">
             Стать исполнителем
           </h1>
@@ -181,7 +199,12 @@ export default function JoinPage() {
             </div>
             <p className="text-green-700 font-bold text-xl mb-1">Анкета отправлена!</p>
             <p className="text-green-600 text-sm mb-6">Мы свяжемся с вами в ближайшее время.</p>
-            <BackButton fallbackHref="/" className="inline-flex items-center justify-center !px-6 !py-3 !min-h-[48px]" />
+            <Link
+              href="/#services"
+              className="inline-flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors min-h-[48px] cursor-pointer"
+            >
+              На главную
+            </Link>
           </div>
         ) : (
           <form

@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import BackButton from '@/components/BackButton';
 import dynamic from 'next/dynamic';
 import PhoneInput, { isValidPhone } from '@/components/ui/PhoneInput';
 import Spinner from '@/components/ui/Spinner';
@@ -145,7 +144,10 @@ export default function NewOrderPage() {
             <Image src="/logo.png" alt="Подряд PRO" width={36} height={36} className="rounded-lg" />
             <span className="text-lg font-extrabold text-brand-900 font-heading">Подряд PRO</span>
           </Link>
-          <BackButton fallbackHref="/" />
+          <Link href="/#services" className="text-brand-500 hover:text-brand-600 font-semibold text-sm flex items-center gap-1 transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            На главную
+          </Link>
         </div>
       </nav>
 

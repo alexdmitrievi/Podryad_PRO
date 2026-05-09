@@ -69,9 +69,18 @@ export default function AiChatWidget() {
       {open && (
         <div className="fixed bottom-36 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm bg-white dark:bg-dark-card rounded-2xl shadow-2xl border border-gray-200 dark:border-dark-border flex flex-col overflow-hidden" style={{ height: '28rem' }}>
           {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-dark-border bg-brand-500 text-white">
-            <MessageCircle size={18} />
-            <span className="font-semibold text-sm">AI-помощник Подряд PRO</span>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-dark-border bg-brand-500 text-white">
+            <div className="flex items-center gap-3">
+              <MessageCircle size={18} />
+              <span className="font-semibold text-sm">AI-помощник Подряд PRO</span>
+            </div>
+            <button
+              onClick={() => setOpen(false)}
+              className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              aria-label="Закрыть"
+            >
+              <X size={16} />
+            </button>
           </div>
 
           {/* Messages */}
