@@ -1,20 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-
-/**
- * BackButton — унифицированная кнопка «Назад» для всех страниц.
- * Использует router.back() чтобы вернуть пользователя к позиции карточки
- * на лендинге (browser history сохраняет scroll position).
- *
- * Мировые стандарты UI/UX:
- * - 44px min tap target (WCAG 2.5.5)
- * - Focus-visible ring для клавиатурной навигации
- * - Анимированный hover/active с пружинным эффектом
- * - Glassmorphism на декстопе, компактный pill на мобилке
- * - aria-label для screen readers
- */
 
 export default function BackButton({
   className = '',
@@ -26,25 +12,11 @@ export default function BackButton({
   label?: string;
 }) {
   const router = useRouter();
-  const [canGoBack, setCanGoBack] = useState(false);
-
-  useEffect(() => {
-    // Проверяем, можно ли вернуться назад в истории браузера
-    setCanGoBack(window.history.length > 1 && document.referrer !== '');
-  }, []);
-
-  const handleClick = () => {
-    if (canGoBack) {
-      router.back();
-    } else {
-      router.push(fallbackHref);
-    }
-  };
 
   return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={() => router.back()}
       aria-label={label}
       className={`
         group
