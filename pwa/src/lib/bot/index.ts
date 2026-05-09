@@ -65,6 +65,7 @@ export {
   cancelBotOrder,
   updateBotOrderDate,
   repeatBotOrder,
+  createMaterialOrder,
 } from './order-flow';
 export type { ChannelName } from './order-flow';
 

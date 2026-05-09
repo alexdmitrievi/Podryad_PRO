@@ -214,3 +214,26 @@ export async function repeatBotOrder(
 
   return { newLeadId, oldOrder: old };
 }
+
+export async function createMaterialOrder(params: {
+  contactId: string;
+  materialCode: string;
+  grade: string;
+  quantity: number;
+  unit: string;
+  deliveryAddress?: string;
+  desiredDate?: string;
+  region?: string;
+}): Promise<string> {
+  const orderId = await rpc<string>('create_material_order', {
+    p_contact_id: params.contactId,
+    p_material_code: params.materialCode,
+    p_grade: params.grade,
+    p_quantity: params.quantity,
+    p_unit: params.unit,
+    p_delivery_address: params.deliveryAddress ?? null,
+    p_desired_date: params.desiredDate ?? null,
+    p_region: params.region ?? 'omsk',
+  });
+  return String(orderId);
+}

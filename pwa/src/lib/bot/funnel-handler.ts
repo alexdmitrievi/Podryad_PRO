@@ -5,6 +5,7 @@ import {
   getMyBotOrders, getBotOrder, cancelBotOrder, updateBotOrderDate, repeatBotOrder,
   getPriceEstimate, getReferralLink, getReferralStats, recordReferralVisit, ensureReferralCode,
 } from './index';
+import { createMaterialOrder } from './order-flow';
 import {
   SERVICE_LABEL, REGION_LABEL, MATERIAL_LABEL, MATERIAL_GRADES, MATERIAL_UNIT, MATERIAL_PRICE_RANGE,
   UI, parseAreaBucket, whenLabelToRange, districtName, estimatePriceRange,
@@ -338,11 +339,32 @@ async function handleCallback(
     if (action === 'yes') {
       const mk = state.materialKind!; const gc = state.materialGradeCode!;
       const qty = state.materialQty || 1; const unit = MATERIAL_UNIT[mk];
-      const price = MATERIAL_PRICE_RANGE[mk];
 
-      const humanId = `M-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+      let orderId: string;
+      try {
+        orderId = await createMaterialOrder({
+          contactId,
+          materialCode: mk,
+          grade: gc,
+          quantity: qty,
+          unit,
+          deliveryAddress: state.deliveryAddress,
+          desiredDate: state.whenHuman,
+          region: state.region ?? 'omsk',
+        });
+      } catch (err) {
+        log.error('[funnel-handler] createMaterialOrder failed', { error: String(err) });
+        return { text: '❌ Не удалось создать заказ. Попробуйте позже.', buttons: mainMenuButtons() };
+      }
 
-      void enqueueJob({ queueName: 'leads', jobType: 'bot.material_order', dedupeKey: `mat:${contactId}:${Date.now()}`, payload: { contact_id: contactId, material_kind: mk, grade: gc, qty, unit, delivery_address: state.deliveryAddress, when: state.whenHuman } }).catch(() => {});
+      const humanId = `M-${orderId.slice(0, 6).toUpperCase()}`;
+
+      void enqueueJob({
+        queueName: 'leads',
+        jobType: 'bot.material_order',
+        dedupeKey: `mat:${orderId}`,
+        payload: { contact_id: contactId, order_id: orderId, material_kind: mk, grade: gc, qty, unit, delivery_address: state.deliveryAddress, when: state.whenHuman },
+      }).catch(() => {});
 
       await clearSession(chatId, channel);
       return { text: UI.materialThanks({ humanId, material: MATERIAL_LABEL[mk], grade: state.materialGradeName ?? gc }), buttons: postOrderButtons() };
