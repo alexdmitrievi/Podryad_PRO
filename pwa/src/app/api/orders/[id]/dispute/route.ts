@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
 import { getOrderById, updateOrder, createDispute, getDisputesByOrder, updateDispute } from '@/lib/db';
 import { getServiceClient } from '@/lib/supabase';
 import { enqueueJob } from '@/lib/job-queue';
@@ -118,6 +117,7 @@ export async function POST(
 }
 
 // ── PATCH: разрешить спор (только для Admin) ──
+// Auth: middleware already validates x-admin-pin header. No inline PIN check needed.
 
 export async function PATCH(
   req: Request,
@@ -126,23 +126,11 @@ export async function PATCH(
   try {
     const { id } = await context.params;
 
-    const adminPin = process.env.ADMIN_PIN;
-    if (!adminPin) {
-      return NextResponse.json({ error: 'Admin not configured' }, { status: 500 });
-    }
-
-    let body: { pin?: unknown; resolution?: unknown };
+    let body: { resolution?: unknown };
     try {
       body = (await req.json()) as typeof body;
     } catch {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-    }
-
-    const pinStr = String(body.pin ?? '');
-    const pinBuf = Buffer.from(pinStr);
-    const expectedBuf = Buffer.from(adminPin);
-    if (pinBuf.length !== expectedBuf.length || !timingSafeEqual(pinBuf, expectedBuf)) {
-      return NextResponse.json({ error: 'Неверный PIN' }, { status: 403 });
     }
 
     const resolution = body.resolution;

@@ -1,6 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
+  "regions": ["fra1"],
+  "functions": {
+    "api/cron/jobs.ts": { "maxDuration": 30, "memory": 512 },
+    "api/cron/analytics.ts": { "maxDuration": 30, "memory": 512 },
+    "api/cron/crosspost.ts": { "maxDuration": 30, "memory": 512 },
+    "api/telegram/webhook/route.ts": { "maxDuration": 10, "memory": 256 },
+    "api/max/webhook/route.ts": { "maxDuration": 10, "memory": 256 },
+    "api/ai/chat/route.ts": { "maxDuration": 30, "memory": 512 }
+  },
   "crons": [
     {
       "path": "/api/cron/jobs",
@@ -13,6 +22,16 @@
     {
       "path": "/api/cron/crosspost",
       "schedule": "0 10 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "no-referrer" }
+      ]
     }
   ]
 }

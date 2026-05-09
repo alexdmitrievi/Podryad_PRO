@@ -3,7 +3,7 @@ import type { MessageButton } from '@/lib/channels/types';
 import { SERVICE_LABEL, DISTRICTS, MATERIAL_LABEL, MATERIAL_GRADES } from './funnel-state';
 import type { BotServiceKind, MaterialKind, RegionCode } from './types';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro';
 
 /** Main menu — B2C version (services first) */
 export function mainMenuButtons(): MessageButton[][] {

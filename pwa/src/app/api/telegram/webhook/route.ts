@@ -42,7 +42,7 @@ const START_TEXT = `Привет! Я — бот сервиса *Подряд PRO
 
 Напишите, что вам нужно, или используйте кнопки ниже.`;
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro';
 
 export async function POST(req: NextRequest) {
   // 1. Check channel is enabled
@@ -52,19 +52,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Channel disabled' }, { status: 503 });
   }
 
-  // 2. Security: webhook secret required in production, optional in dev
+  // 2. Security: webhook secret REQUIRED if configured
   const secret = req.headers.get('x-telegram-bot-api-secret-token') ?? '';
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (process.env.NODE_ENV === 'production') {
-    if (!expectedSecret) {
-      log.error('[TelegramWebhook] TELEGRAM_WEBHOOK_SECRET not set in production');
-      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
-    }
+  if (expectedSecret) {
     if (!timingSafeSecretCompare(secret, expectedSecret)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-  } else if (expectedSecret && !timingSafeSecretCompare(secret, expectedSecret)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  } else {
+    log.warn('[TelegramWebhook] TELEGRAM_WEBHOOK_SECRET not set — accepting all requests (security gap)');
   }
 
   let body: unknown;

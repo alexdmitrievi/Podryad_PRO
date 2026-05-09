@@ -31,7 +31,7 @@ const START_TEXT = `Привет! Я — бот сервиса Подряд PRO 
 
 Напишите, что вам нужно, или используйте /order для оформления заказа.`;
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro';
 
 /** Timing-safe string comparison for webhook secret validation. */
 function timingSafeSecretCompare(a: string, b: string): boolean {

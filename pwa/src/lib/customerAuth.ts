@@ -4,11 +4,18 @@ import { cookies } from 'next/headers';
 import { getServiceClient } from './supabase';
 import { log } from '@/lib/logger';
 
-const rawSecret = process.env.CUSTOMER_JWT_SECRET;
-if (!rawSecret) {
-  throw new Error('FATAL: CUSTOMER_JWT_SECRET environment variable is not set');
+let _jwtSecret: Uint8Array | null = null;
+
+function getJwtSecret(): Uint8Array {
+  if (_jwtSecret) return _jwtSecret;
+  const rawSecret = process.env.CUSTOMER_JWT_SECRET;
+  if (!rawSecret) {
+    throw new Error('FATAL: CUSTOMER_JWT_SECRET environment variable is not set');
+  }
+  _jwtSecret = new TextEncoder().encode(rawSecret);
+  return _jwtSecret;
 }
-const JWT_SECRET = new TextEncoder().encode(rawSecret);
+
 const COOKIE_NAME = 'customer_session';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
@@ -45,12 +52,12 @@ export async function createSessionToken(payload: CustomerJWTPayload): Promise<s
     .setSubject(payload.sub)
     .setIssuedAt()
     .setExpirationTime('30d')
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifySessionToken(token: string): Promise<CustomerJWTPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     if (!payload.sub || typeof payload.phone !== 'string') return null;
     return {
       sub: payload.sub,

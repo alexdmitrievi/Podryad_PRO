@@ -1,11 +1,7 @@
 /**
- * Structured JSON logger for production observability.
- *
- * Usage:
- *   import { log } from '@/lib/logger';
- *   log.error('payment/callback: order row missing', { orderId });
- *   log.warn('OPENAI_API_KEY is not set');
- *   log.info('ChannelRouter send result', { channel, success });
+ * Structured JSON logger with optional DB persistence to app_logs.
+ * Writes level=warn and level=error to public.app_logs (fire-and-forget)
+ * so n8n Workflow 04 (Error Watch) can pick them up.
  */
 
 type LogLevel = 'error' | 'warn' | 'info' | 'debug';
@@ -18,12 +14,10 @@ interface LogEntry {
 }
 
 function emit(entry: LogEntry): void {
-  // Production: structured JSON for log aggregation (Vercel Logs, Datadog, etc.)
-  // Development: pretty-print with timestamp
   if (process.env.NODE_ENV === 'production') {
     process.stdout.write(JSON.stringify(entry) + '\n');
   } else {
-    const ts = entry.timestamp.slice(11, 23); // HH:MM:SS.mmm
+    const ts = entry.timestamp.slice(11, 23);
     const ctx = entry.context && Object.keys(entry.context).length > 0
       ? ' ' + JSON.stringify(entry.context)
       : '';
@@ -32,6 +26,25 @@ function emit(entry: LogEntry): void {
       : 'log';
     console[method](`[${ts}] ${entry.level.toUpperCase()} ${entry.message}${ctx}`);
   }
+}
+
+/** Fire-and-forget write to public.app_logs for n8n error watchdog */
+function persistToDb(entry: LogEntry): void {
+  void (async () => {
+    try {
+      const { getServiceClient } = await import('./supabase');
+      const db = getServiceClient();
+      await db.from('app_logs').insert({
+        level: entry.level,
+        source: 'vercel:app',
+        message: entry.message,
+        context: entry.context ?? {},
+        created_at: entry.timestamp,
+      });
+    } catch {
+      // silently ignore DB write failures — logging must never crash
+    }
+  })();
 }
 
 function logAt(level: LogLevel, message: string, context?: Record<string, unknown>): void {
@@ -46,15 +59,17 @@ function logAt(level: LogLevel, message: string, context?: Record<string, unknow
 export const log = {
   error(message: string, context?: Record<string, unknown>): void {
     logAt('error', message, context);
+    persistToDb({ level: 'error', message, timestamp: new Date().toISOString(), context });
   },
   warn(message: string, context?: Record<string, unknown>): void {
     logAt('warn', message, context);
+    persistToDb({ level: 'warn', message, timestamp: new Date().toISOString(), context });
   },
   info(message: string, context?: Record<string, unknown>): void {
     logAt('info', message, context);
   },
   debug(message: string, context?: Record<string, unknown>): void {
-    if (process.env.NODE_ENV === 'production') return; // no debug in prod
+    if (process.env.NODE_ENV === 'production') return;
     logAt('debug', message, context);
   },
 };
