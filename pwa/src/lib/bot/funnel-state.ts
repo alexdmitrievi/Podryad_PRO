@@ -1,0 +1,294 @@
+// Bot funnel state machine — adapted from Premium lib/funnels.ts
+import type { BotServiceKind, SessionState, OrderStep } from './types';
+
+export const SERVICE_LABEL: Record<BotServiceKind, string> = {
+  lawn_mowing: 'Покос газона',
+  scarification: 'Скарификация',
+  aeration: 'Аэрация',
+  land_clearing: 'Расчистка участка',
+  tree_cutting: 'Спил деревьев',
+  stump_removal: 'Корчевание пней',
+  debris_removal: 'Вывоз мусора',
+  pool_cleaning: 'Чистка бассейна',
+  pool_assembly: 'Сборка бассейна',
+  weed_removal: 'Удаление сорняков',
+  pool_maintenance: 'Обслуживание бассейна',
+  welding: 'Сварка',
+  tilling: 'Вспашка',
+  subscription: 'Подписка',
+};
+
+export const PRICE_HINT: Record<BotServiceKind, string> = {
+  lawn_mowing: '≈ 500–1500 ₽ за сотку',
+  scarification: '≈ 800–2000 ₽ за сотку',
+  aeration: '≈ 600–1800 ₽ за сотку',
+  land_clearing: '≈ 1500–5000 ₽ за сотку',
+  tree_cutting: '≈ 1000–10000 ₽ за дерево',
+  stump_removal: '≈ 500–5000 ₽ за пень',
+  debris_removal: '≈ 500–3000 ₽ за м³',
+  pool_cleaning: '≈ 2000–8000 ₽',
+  pool_assembly: '≈ 3000–15000 ₽',
+  weed_removal: '≈ 400–1200 ₽ за сотку',
+  pool_maintenance: '≈ 1500–5000 ₽',
+  welding: '≈ 1000–5000 ₽',
+  tilling: '≈ 800–2500 ₽ за сотку',
+  subscription: 'от 3000 ₽/мес',
+};
+
+export const PRICE_RANGE: Record<BotServiceKind, { min: number; max: number; minOrder?: number }> = {
+  lawn_mowing: { min: 500, max: 1500, minOrder: 1500 },
+  scarification: { min: 800, max: 2000 },
+  aeration: { min: 600, max: 1800 },
+  land_clearing: { min: 1500, max: 5000 },
+  tree_cutting: { min: 1000, max: 10000 },
+  stump_removal: { min: 500, max: 5000 },
+  debris_removal: { min: 500, max: 3000 },
+  pool_cleaning: { min: 2000, max: 8000 },
+  pool_assembly: { min: 3000, max: 15000 },
+  weed_removal: { min: 400, max: 1200 },
+  pool_maintenance: { min: 1500, max: 5000 },
+  welding: { min: 1000, max: 5000 },
+  tilling: { min: 800, max: 2500 },
+  subscription: { min: 3000, max: 10000 },
+};
+
+export const DISTRICTS: Array<{ code: string; name: string }> = [
+  { code: 'chkalovskiy', name: 'Чкаловский' },
+  { code: 'kirovskiy', name: 'Кировский' },
+  { code: 'leninskiy', name: 'Ленинский' },
+  { code: 'oktyabrskiy', name: 'Октябрьский' },
+  { code: 'sovetskiy', name: 'Советский' },
+  { code: 'other', name: 'Другой' },
+];
+
+export type StatusUi = { icon: string; label: string };
+
+export const STATUS_UI: Record<string, StatusUi> = {
+  new: { icon: '🟡', label: 'Принят, обрабатываем' },
+  qualifying: { icon: '🟡', label: 'Уточняем детали' },
+  qualified: { icon: '🟡', label: 'Уточняем детали' },
+  quoted: { icon: '🟢', label: 'Цена согласована' },
+  scheduled: { icon: '🟢', label: 'Мастер приедет' },
+  in_progress: { icon: '🔵', label: 'Мастер на объекте' },
+  done: { icon: '✅', label: 'Выполнен' },
+  lost: { icon: '⚪️', label: 'Отменён' },
+  archived: { icon: '⚪️', label: 'В архиве' },
+};
+
+export function districtName(code?: string): string | undefined {
+  if (!code) return undefined;
+  return DISTRICTS.find((d) => d.code === code)?.name;
+}
+
+export function mapStatusToUi(status: string): StatusUi {
+  return STATUS_UI[status] ?? STATUS_UI.new!;
+}
+
+export function canCancelStatus(status: string): boolean {
+  return ['new', 'qualifying', 'qualified', 'quoted', 'scheduled'].includes(status);
+}
+
+export function canEditDateStatus(status: string): boolean {
+  return ['new', 'qualifying', 'qualified', 'quoted', 'scheduled'].includes(status);
+}
+
+export function parseArea(input: string): { value: number; unit: string } | null {
+  const cleaned = input.toLowerCase().replace(',', '.').trim();
+  const m = cleaned.match(/(\d+(?:\.\d+)?)\s*(сот|м2|м²|кв|кв\.?м|га)?/);
+  if (!m) return null;
+  const value = parseFloat(m[1]!);
+  const unitRaw = m[2] ?? '';
+  let unit = 'сотка';
+  if (/м2|м²|кв/.test(unitRaw)) unit = 'м2';
+  else if (/га/.test(unitRaw)) unit = 'га';
+  return { value, unit };
+}
+
+export function parseAreaBucket(callbackData: string): { bucket: string; min: number; max: number; unit: string } | null {
+  const m = callbackData.match(/^area:[^:]+:(\d+|custom)$/);
+  if (!m) return null;
+  if (m[1] === 'custom') return null;
+  const top = parseInt(m[1]!, 10);
+  let min = 0, max = top;
+  if (top === 10) { min = 5; max = 10; }
+  else if (top === 20) { min = 10; max = 20; }
+  else if (top === 30) { min = 20; max = 30; }
+  return { bucket: m[1]!, min, max, unit: 'сотка' };
+}
+
+export function whenLabelToRange(
+  label: string,
+  today: Date = new Date(),
+): { from: string; to: string; human: string } | null {
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const t = new Date(today);
+  switch (label) {
+    case 'today':
+      return { from: fmt(t), to: fmt(t), human: 'сегодня' };
+    case 'tomorrow': {
+      const x = new Date(t);
+      x.setDate(t.getDate() + 1);
+      return { from: fmt(x), to: fmt(x), human: 'завтра' };
+    }
+    case 'weekend': {
+      const day = t.getDay();
+      const sat = new Date(t);
+      sat.setDate(t.getDate() + ((6 - day + 7) % 7));
+      const sun = new Date(sat);
+      sun.setDate(sat.getDate() + 1);
+      return { from: fmt(sat), to: fmt(sun), human: 'эти выходные' };
+    }
+    case 'thisweek': {
+      const end = new Date(t);
+      end.setDate(t.getDate() + (7 - t.getDay()));
+      return { from: fmt(t), to: fmt(end), human: 'на этой неделе' };
+    }
+    default:
+      return null;
+  }
+}
+
+export function estimatePriceRange(k: BotServiceKind, units: number): { low: number; high: number } {
+  const r = PRICE_RANGE[k];
+  const low = Math.max(r.minOrder ?? 0, Math.round(r.min * units));
+  const high = Math.max(r.minOrder ?? 0, Math.round(r.max * units));
+  return { low, high };
+}
+
+export function applyDiscountToRange(
+  price: { low: number; high: number },
+  percent: number,
+  bonusRub: number,
+): { low: number; high: number } {
+  const after = (n: number) => Math.max(0, Math.round(n * (1 - percent / 100)) - bonusRub);
+  return { low: after(price.low), high: after(price.high) };
+}
+
+export function formatRub(n: number): string {
+  return n.toLocaleString('ru-RU').replace(/\u00a0/g, ' ');
+}
+
+export function formatDateRange(from?: string | null, to?: string | null): string {
+  if (!from) return '';
+  if (!to || to === from) return formatDate(from);
+  return `${formatDate(from)} — ${formatDate(to)}`;
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+}
+
+export function areaQuestion(k: BotServiceKind): string {
+  if (['lawn_mowing', 'scarification', 'aeration', 'land_clearing'].includes(k))
+    return 'Какая площадь участка?';
+  if (['pool_cleaning', 'pool_assembly'].includes(k))
+    return 'Какой размер бассейна?';
+  if (['tree_cutting'].includes(k))
+    return 'Сколько деревьев нужно спилить?';
+  if (['stump_removal'].includes(k))
+    return 'Сколько пней?';
+  return 'Опишите параметры объекта.';
+}
+
+/** UI texts used by webhook handlers */
+export const UI = {
+  homeWelcome: (name?: string) =>
+    `👋 Здравствуйте${name ? ', ' + name : ''}!\n\n` +
+    `Я — бот <b>«Подряд PRO»</b>. Помогу быстро заказать работы по дому и участку.\n\n` +
+    `Выберите услугу или воспользуйтесь меню:`,
+  homeMenu: 'Что вас интересует?',
+
+  serviceSelected: (k: BotServiceKind) =>
+    `Отлично, оформляем <b>«${SERVICE_LABEL[k]}»</b>.\n` +
+    `Ориентир по цене: ${PRICE_HINT[k]}.\n\n` +
+    `Подскажите, пожалуйста, ${areaQuestion(k)}`,
+
+  askDistrict: 'В каком районе участок?',
+  askWhen: 'Когда удобно приехать?',
+  askPhotos: 'Если есть, отправьте 1–3 фото объекта. Или нажмите «Пропустить».',
+  askPhone: 'И последний шаг — телефон, чтобы мастер связался для подтверждения.',
+
+  confirm: (p: {
+    service: string; area?: string; district?: string; when?: string;
+    priceLow: number; priceHigh: number;
+    discountPercent?: number; bonusRub?: number;
+    finalLow?: number; finalHigh?: number;
+  }) => {
+    const lines: string[] = ['✅ <b>Проверьте, всё верно?</b>\n'];
+    lines.push(`Услуга: <b>${p.service}</b>`);
+    if (p.area) lines.push(`Объём: ${p.area}`);
+    if (p.district) lines.push(`Район: ${p.district}`);
+    if (p.when) lines.push(`Когда: ${p.when}`);
+    lines.push(`\nЦена: ${formatRub(p.priceLow)}–${formatRub(p.priceHigh)} ₽`);
+    if (p.discountPercent || p.bonusRub) {
+      const parts: string[] = [];
+      if (p.discountPercent) parts.push(`−${p.discountPercent}%`);
+      if (p.bonusRub) parts.push(`−${p.bonusRub} ₽`);
+      lines.push(`🎁 Скидка: ${parts.join(' и ')}`);
+      if (p.finalLow != null && p.finalHigh != null) {
+        lines.push(`Итого: ${formatRub(p.finalLow)}–${formatRub(p.finalHigh)} ₽`);
+      }
+    }
+    return lines.join('\n');
+  },
+
+  thanks: (p: { humanId: string; service: string; when?: string; district?: string }) =>
+    `✅ <b>Заявка #${p.humanId} принята</b>\n\n` +
+    `Услуга: ${p.service}\n` +
+    (p.when ? `Когда: ${p.when}\n` : '') +
+    (p.district ? `Район: ${p.district}\n` : '') +
+    `\nМастер свяжется с вами в течение 30 минут.`,
+
+  myOrdersEmpty: 'У вас пока нет заказов. Хотите оформить?',
+
+  orderCard: (o: {
+    humanId: string; serviceName: string;
+    statusIcon: string; statusLabel: string;
+    when?: string; district?: string; area?: string;
+    priceQuoted?: number; discountPercent?: number;
+  }) => {
+    const lines: string[] = [`${o.statusIcon} <b>Заказ #${o.humanId} — ${o.serviceName}</b>\n`];
+    if (o.when) lines.push(`Дата: ${o.when}`);
+    const place = [o.district, o.area].filter(Boolean).join(', ');
+    if (place) lines.push(`Адрес: ${place}`);
+    lines.push(`Статус: ${o.statusLabel}`);
+    if (o.priceQuoted) {
+      lines.push(`\nЦена: ~${formatRub(o.priceQuoted)} ₽`);
+      if (o.discountPercent) {
+        const final = Math.round(o.priceQuoted * (1 - o.discountPercent / 100));
+        lines.push(`🎁 Со скидкой: ~${formatRub(final)} ₽`);
+      }
+    }
+    return lines.join('\n');
+  },
+
+  referralIntro: (p: { link: string; invited: number; balance: number }) =>
+    `🎁 <b>Пригласите друга — получите 500 ₽ скидки</b>\n\n` +
+    `Как работает:\n` +
+    `1. Отправьте другу свою ссылку.\n` +
+    `2. Он заказывает любую услугу.\n` +
+    `3. Когда мастер выполнит работу — вам и другу по 500 ₽ на следующий заказ.\n\n` +
+    `Ваша ссылка:\n<code>${p.link}</code>\n\n` +
+    `Друзей пригласили: ${p.invited}\n` +
+    `Баланс: ${p.balance} ₽`,
+
+  referralActivated: (referrerName?: string) =>
+    `👋 Вас пригласил ${referrerName ?? 'друг'}!\n` +
+    `Когда мастер выполнит ваш первый заказ, начислим 500 ₽ скидки вам и другу.\n\nЧто выберете?`,
+
+  helpText:
+    `ℹ️ <b>Как это работает</b>\n\n` +
+    `1. Выберите услугу.\n` +
+    `2. Ответьте на 3–4 коротких вопроса.\n` +
+    `3. Мастер позвонит подтвердить время и цену.\n` +
+    `4. После работы оплачиваете на месте.\n\n` +
+    `Вопросы? Напишите оператору — мы рядом.`,
+
+  operatorText:
+    `Передаю вас оператору 👨‍🔧\n` +
+    `Напишите, что вас интересует — и оставьте номер. Перезвоним в течение 30 минут (9:00–21:00).`,
+
+  unknown: 'Не уловил вопрос 🙈 Воспользуйтесь меню ниже или напишите оператору.',
+} as const;

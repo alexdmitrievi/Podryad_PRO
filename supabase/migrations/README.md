@@ -30,3 +30,4 @@ touch supabase/migrations/003_add_feature.sql
 | 013_executor_responses | Таблица executor_responses (несмотря на совпадение префикса с 013_crm_agent, применяется после него — alphabetical order) | 2026-04-10 |
 | 020 | Расширение CHECK orders.status (добавлены priced, payment_sent, in_progress, completed) | 2026-04-19 |
 | 021 | Недостающие индексы: customer_tokens.phone, composite (stage, next_followup_at) для CRM, (status, created_at DESC) для orders, partial для WF-07 | 2026-04-19 |
+| 033-040 | **Premium Integration**: bot_sessions, webhook_inbox, app_logs, bot_contacts, bot_services, bot_leads, loyalty, referrals, materials, subscriptions, campaigns, events, regions, RPC | 2026-05-09 |

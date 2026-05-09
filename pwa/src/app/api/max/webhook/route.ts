@@ -9,6 +9,7 @@ import { log } from '@/lib/logger';
 import { getMaxConfig } from '@/lib/channels/config';
 import { isDuplicateUpdate, extractMaxUpdateId } from '@/lib/channels/dedupe';
 import { linkMessengerAccount, getOrdersByMessengerId, formatOrderStatus } from '@/lib/channels/link';
+import { handleFunnelEvent } from '@/lib/bot/funnel-handler';
 
 const mapper = new MaxMapper();
 
@@ -139,7 +140,43 @@ async function processMessage(
   const router = getChannelRouter();
   const text = event.text.trim();
 
-  // Callbacks
+  // ── Funnel handler (Premium integration) ──
+  try {
+    const funnelResponse = await handleFunnelEvent({
+      type: event.type as 'message' | 'command' | 'callback',
+      channel: 'max',
+      chatId,
+      userId,
+      text,
+      updateId,
+      username: (event as { username?: string }).username,
+      displayName: (event as { display_name?: string }).display_name,
+    });
+    if (funnelResponse) {
+      const btns = funnelResponse.buttons
+        ? funnelResponse.buttons.flat().map((b) => ({
+            type: b.type as 'url' | 'callback',
+            text: b.text,
+            url: b.type === 'url' ? b.url : undefined,
+            callback_data: b.type === 'callback' ? b.callback_data : undefined,
+          }))
+        : undefined;
+      await router.send({
+        channel: 'max',
+        chat_id: chatId,
+        user_id: userId,
+        text: funnelResponse.text,
+        parse_mode: 'Markdown',
+        buttons: btns,
+      });
+      return;
+    }
+  } catch (err) {
+    log.error('[MaxWebhook] funnelHandler failed', { error: String(err), user_id: userId });
+    // Fall through to legacy handling
+  }
+
+  // Callbacks (legacy)
   if (event.type === 'callback') {
     await router.send({
       channel: 'max',
