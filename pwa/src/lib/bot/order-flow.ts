@@ -133,6 +133,17 @@ export async function getContactRegion(contactId: string): Promise<RegionCode> {
   return (r === 'novosibirsk' ? 'novosibirsk' : 'omsk');
 }
 
+/** Get contact's persisted customer type (returns undefined if not set). */
+export async function getContactCustomerType(contactId: string): Promise<'b2c' | 'b2b' | undefined> {
+  const { data } = await getServiceClient()
+    .from('bot_contacts')
+    .select('customer_type')
+    .eq('id', contactId)
+    .maybeSingle();
+  const ct = (data as { customer_type?: string } | null)?.customer_type;
+  return (ct === 'b2c' || ct === 'b2b') ? ct : undefined;
+}
+
 /** Set customer_type via direct UPDATE (no dedicated RPC in current schema). */
 export async function setCustomerType(contactId: string, ct: 'b2c' | 'b2b'): Promise<void> {
   const { error } = await getServiceClient()

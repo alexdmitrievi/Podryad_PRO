@@ -4,7 +4,7 @@ import {
   createBotLead, computeDiscount, applyDiscountToLead,
   listMyAllOrders, getBotOrder, cancelBotOrder, updateBotOrderDate, repeatBotOrder,
   getPriceEstimate, getReferralLink, getReferralStats, recordReferralVisit,
-  setContactRegion, getContactRegion, setCustomerType, notifyN8n,
+  setContactRegion, getContactRegion, setCustomerType, getContactCustomerType, notifyN8n,
 } from './index';
 import { createMaterialOrder } from './order-flow';
 import {
@@ -77,6 +77,9 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
   let state: SessionState = (session?.state ?? {}) as SessionState;
   if (!state.region) {
     try { state = { ...state, region: await getContactRegion(contactId) }; } catch { state = { ...state, region: 'omsk' }; }
+  }
+  if (!state.customerType) {
+    try { state = { ...state, customerType: await getContactCustomerType(contactId) }; } catch { /* ok */ }
   }
   const screen = state.screen ?? 'home';
 
@@ -467,7 +470,7 @@ async function handleCallback(
       try {
         leadId = await createBotLead({
           contactId, serviceKind: 'subscription', channel,
-          description: `Абонемент ${sp.name}, период: ${state.subscriptionPeriod ?? 'season'}`,
+          description: `Абонемент ${sp.name}, период: ${state.subscriptionPeriod ?? 'season'}, адрес: ${state.deliveryAddress ?? 'не указан'}`,
           district: `${REGION_LABEL[region]}, ${state.district ?? ''}`,
         });
       } catch (err) {
@@ -480,7 +483,7 @@ async function handleCallback(
         type: 'lead.created',
         subtype: 'subscription',
         leadId, contactId, plan, period: state.subscriptionPeriod, intervalDays: interval,
-        channel, region, district: state.district, customerType: state.customerType ?? 'b2c',
+        channel, region, district: state.district, address: state.deliveryAddress, customerType: state.customerType ?? 'b2c',
       });
 
       await clearSession(chatId, channel);
@@ -628,6 +631,7 @@ async function handleCallback(
         .from('v_material_orders_detail')
         .select('*')
         .eq('id', orderId)
+        .eq('contact_id', contactId)
         .maybeSingle();
       if (!m) return { text: 'Заказ не найден.', buttons: backToHomeButton() };
       const mm = m as Record<string, unknown>;
