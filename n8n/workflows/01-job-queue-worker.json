@@ -1,0 +1,217 @@
+{
+  "name": "Bot / Job Queue Worker (Telegram + MAX)",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "seconds", "secondsInterval": 30 }] } },
+      "name": "Cron every 30s",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM public.claim_jobs('n8n-worker', 10, NULL, 120);"
+      },
+      "name": "PG claim_jobs()",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Has jobs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": { "batchSize": 1, "options": {} },
+      "name": "SplitInBatches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "dataMode": "jsonOutput",
+        "values": {
+          "string": [
+            { "name": "worker_id", "value": "'n8n-worker'" },
+            { "name": "job_id", "value": "={{ $json.id }}" },
+            { "name": "job_type", "value": "={{ $json.job_type }}" },
+            { "name": "payload", "value": "={{ JSON.stringify($json.payload) }}" },
+            { "name": "queue_name", "value": "={{ $json.queue_name }}" },
+            { "name": "phone", "value": "={{ $json.payload.phone }}" },
+            { "name": "work_type", "value": "={{ $json.payload.work_type }}" },
+            { "name": "city", "value": "={{ $json.payload.city }}" },
+            { "name": "name", "value": "={{ $json.payload.name }}" },
+            { "name": "lead_id", "value": "={{ $json.payload.lead_id }}" },
+            { "name": "step", "value": "={{ $json.payload.step }}" },
+            { "name": "channel", "value": "={{ $json.payload.channel || 'telegram' }}" },
+            { "name": "text", "value": "={{ $json.payload.text }}" },
+            { "name": "user_id", "value": "={{ $json.payload.user_id }}" }
+          ]
+        }
+      },
+      "name": "Set job vars",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "conditions": { "string": [{ "value1": "={{ $json.job_type }}", "operation": "contains", "value2": "lead_intent" }] } },
+            { "conditions": { "string": [{ "value1": "={{ $json.job_type }}", "operation": "contains", "value2": "lead_created" }] } },
+            { "conditions": { "string": [{ "value1": "={{ $json.job_type }}", "operation": "contains", "value2": "incoming_message" }] } },
+            { "conditions": { "string": [{ "value1": "={{ $json.job_type }}", "operation": "contains", "value2": "material_order" }] } }
+          ]
+        }
+      },
+      "name": "Switch job type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.bot_leads (contact_id, service_kind, status, city, source, raw_payload)\nSELECT bc.id, 'lawn_mowing', 'new', '={{ $json.city || 'omsk' }}', '={{ $json.queue_name }}', '{{ JSON.stringify($json.payload) }}'::jsonb\n  FROM public.bot_contacts bc\n  JOIN public.bot_contact_identities bci ON bci.contact_id = bc.id\n WHERE bci.channel = '={{ $json.channel }}' AND bci.external_id = '={{ $json.user_id }}'\n LIMIT 1;"
+      },
+      "name": "PG insert bot_leads",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1560, 180],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_OWNER_CHAT_ID}}",
+        "text": "🔔 Новый лид!\n📞 {{$json.phone}}\n🏗 {{$json.work_type}}\n📍 {{$json.city}}\n👤 {{$json.name || '—'}}",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "name": "TG notify admin (lead)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1780, 180],
+      "credentials": { "telegramApi": { "id": "tg-owner", "name": "Telegram Owner Bot" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT bl.*, bc.phone, bc.full_name, bci.external_id as messenger_id, bci.channel\n  FROM public.bot_leads bl\n  JOIN public.bot_contacts bc ON bc.id = bl.contact_id\n  LEFT JOIN public.bot_contact_identities bci ON bci.contact_id = bc.id AND bci.is_blocked = false\n WHERE bl.id = '={{ $json.lead_id || '' }}'\n LIMIT 1;"
+      },
+      "name": "PG fetch lead",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1560, 360],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "msg", "value": "✅ Заказ оформлен!\n🏗 {{$json.service_kind || $json.work_type}}\n📍 {{$json.city}}\n\nС вами свяжется менеджер для уточнения деталей." }
+          ]
+        }
+      },
+      "name": "Set confirm msg",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1780, 360]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_OWNER_CHAT_ID}}",
+        "text": "🎯 Создан заказ!\n📞 {{$json.phone}}\n🏗 {{$json.service_kind || $json.work_type}}\n📍 {{$json.city}}\n🆔 {{$json.id}}",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "name": "TG notify admin (order)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [2000, 360],
+      "credentials": { "telegramApi": { "id": "tg-owner", "name": "Telegram Owner Bot" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.bot_messages (contact_id, lead_id, channel, direction, kind, text, metadata, external_id)\nSELECT bc.id, '={{ $json.lead_id || null }}'::uuid, '={{ $json.channel }}', 'inbound', 'text', '={{ $json.text || '' }}', '{}'::jsonb, '={{ $json.user_id }}'\n  FROM public.bot_contacts bc\n  JOIN public.bot_contact_identities bci ON bci.contact_id = bc.id\n WHERE bci.channel = '={{ $json.channel }}' AND bci.external_id = '={{ $json.user_id }}'\n LIMIT 1\n ON CONFLICT (channel, direction, external_id) WHERE external_id IS NOT NULL DO NOTHING;"
+      },
+      "name": "PG archive msg",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1560, 540],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.material_requests (phone, material_kind, grade, quantity, city, address, source, raw_payload)\nVALUES ('={{ $json.phone }}', '={{ $json.payload.material_kind || 'sand' }}', '={{ $json.payload.grade || '' }}', '={{ $json.payload.quantity || 1 }}', '={{ $json.city || 'omsk' }}', '={{ $json.payload.address || '' }}', 'bot', '{{ JSON.stringify($json.payload) }}'::jsonb);"
+      },
+      "name": "PG material req",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1560, 720],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_OWNER_CHAT_ID}}",
+        "text": "🧱 Заказ материалов!\n📞 {{$json.phone}}\n🏗 {{$json.payload.material_kind || '—'}}\n📦 {{$json.payload.quantity || 1}} {{$json.payload.grade || ''}}\n📍 {{$json.city}}",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "name": "TG notify admin (materials)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1780, 720],
+      "credentials": { "telegramApi": { "id": "tg-owner", "name": "Telegram Owner Bot" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.job_queue SET status = 'completed', completed_at = now(), updated_at = now() WHERE id = '={{ $json.job_id }}'::uuid;"
+      },
+      "name": "PG complete job",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [2000, 720],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    }
+  ],
+  "connections": {
+    "Cron every 30s": { "main": [[{ "node": "PG claim_jobs()", "type": "main", "index": 0 }]] },
+    "PG claim_jobs()": { "main": [[{ "node": "Has jobs?", "type": "main", "index": 0 }]] },
+    "Has jobs?": {
+      "main": [
+        [{ "node": "SplitInBatches", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "SplitInBatches": { "main": [[{ "node": "Set job vars", "type": "main", "index": 0 }]] },
+    "Set job vars": { "main": [[{ "node": "Switch job type", "type": "main", "index": 0 }]] },
+    "Switch job type": {
+      "main": [
+        [{ "node": "PG insert bot_leads", "type": "main", "index": 0 }],
+        [{ "node": "PG fetch lead", "type": "main", "index": 0 }],
+        [{ "node": "PG archive msg", "type": "main", "index": 0 }],
+        [{ "node": "PG material req", "type": "main", "index": 0 }]
+      ]
+    },
+    "PG insert bot_leads": { "main": [[{ "node": "TG notify admin (lead)", "type": "main", "index": 0 }]] },
+    "TG notify admin (lead)": { "main": [[{ "node": "PG complete job", "type": "main", "index": 0 }]] },
+    "PG fetch lead": { "main": [[{ "node": "Set confirm msg", "type": "main", "index": 0 }]] },
+    "Set confirm msg": { "main": [[{ "node": "TG notify admin (order)", "type": "main", "index": 0 }]] },
+    "TG notify admin (order)": { "main": [[{ "node": "PG complete job", "type": "main", "index": 0 }]] },
+    "PG archive msg": { "main": [[{ "node": "PG complete job", "type": "main", "index": 0 }]] },
+    "PG material req": { "main": [[{ "node": "TG notify admin (materials)", "type": "main", "index": 0 }]] },
+    "TG notify admin (materials)": { "main": [[{ "node": "PG complete job", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "tags": ["bot", "telegram", "max", "job-queue"]
+}

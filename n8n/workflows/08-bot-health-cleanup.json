@@ -1,0 +1,133 @@
+{
+  "name": "Bot / Health Monitor & Session Cleanup",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 10 }] } },
+      "name": "Cron every 10m",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT bs.id, bs.chat_id, bs.channel, bs.state, bs.updated_at\n  FROM public.bot_sessions bs\n WHERE bs.updated_at < now() - interval '24 hours';"
+      },
+      "name": "PG stale sessions",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 180],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM public.bot_sessions WHERE updated_at < now() - interval '24 hours';"
+      },
+      "name": "PG cleanup sessions",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [680, 180],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as dead_count FROM public.job_queue WHERE status = 'dead' AND updated_at > now() - interval '10 minutes';"
+      },
+      "name": "PG dead jobs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 360],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as pending_count FROM public.job_queue WHERE status = 'pending' AND run_at < now() - interval '5 minutes';"
+      },
+      "name": "PG stale pending",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 540],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "sessions_cleaned", "value": "={{ $node['PG stale sessions'].json.length || 0 }}" },
+            { "name": "dead_jobs", "value": "={{ $json.dead_count }}" },
+            { "name": "stale_pending", "value": "={{ $node['PG stale pending'].first().json.pending_count }}" }
+          ]
+        }
+      },
+      "name": "Set health vars",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            { "value1": "={{ $json.dead_jobs }}", "operation": "larger", "value2": 0 },
+            { "value1": "={{ $json.stale_pending }}", "operation": "larger", "value2": 5 }
+          ]
+        }
+      },
+      "name": "Alert needed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_OWNER_CHAT_ID}}",
+        "text": "⚠️ Bot Health Alert\n\n🗑 Сессий очищено: {{$json.sessions_cleaned}}\n💀 Dead jobs: {{$json.dead_jobs}}\n⏳ Pending >5min: {{$json.stale_pending}}\n\nПроверьте n8n worker (01-job-queue-worker).",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "name": "TG alert owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 400],
+      "credentials": { "telegramApi": { "id": "tg-owner", "name": "Telegram Owner Bot" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.app_logs (level, source, message, context)\nVALUES ('info', 'n8n-health', 'Health check OK', jsonb_build_object(\n  'sessions_cleaned', '={{ $json.sessions_cleaned || 0 }}',\n  'dead_jobs', '={{ $json.dead_jobs || 0 }}',\n  'stale_pending', '={{ $json.stale_pending || 0 }}'\n));"
+      },
+      "name": "PG log health",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1120, 600],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    }
+  ],
+  "connections": {
+    "Cron every 10m": {
+      "main": [
+        [
+          { "node": "PG stale sessions", "type": "main", "index": 0 },
+          { "node": "PG dead jobs", "type": "main", "index": 0 },
+          { "node": "PG stale pending", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "PG stale sessions": { "main": [[{ "node": "PG cleanup sessions", "type": "main", "index": 0 }]] },
+    "PG dead jobs": { "main": [[{ "node": "Set health vars", "type": "main", "index": 0 }]] },
+    "PG stale pending": { "main": [] },
+    "Set health vars": { "main": [[{ "node": "Alert needed?", "type": "main", "index": 0 }]] },
+    "Alert needed?": {
+      "main": [
+        [{ "node": "TG alert owner", "type": "main", "index": 0 }],
+        [{ "node": "PG log health", "type": "main", "index": 0 }]
+      ]
+    },
+    "TG alert owner": { "main": [[{ "node": "PG log health", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "tags": ["bot", "health", "ops"]
+}

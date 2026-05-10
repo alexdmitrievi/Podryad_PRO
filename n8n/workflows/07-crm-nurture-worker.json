@@ -1,0 +1,176 @@
+{
+  "name": "Bot / CRM Nurture Worker (welcome → followup chain)",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 1 }] } },
+      "name": "Cron every 1m",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM public.claim_jobs('n8n-crm-worker', 10, 'crm', 120);"
+      },
+      "name": "PG claim crm jobs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": { "options": {} },
+      "name": "Has jobs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": { "batchSize": 1, "options": {} },
+      "name": "SplitInBatches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "dataMode": "jsonOutput",
+        "values": {
+          "string": [
+            { "name": "job_id", "value": "={{ $json.id }}" },
+            { "name": "step", "value": "={{ $json.payload.step }}" },
+            { "name": "phone", "value": "={{ $json.payload.phone }}" },
+            { "name": "work_type", "value": "={{ $json.payload.work_type }}" },
+            { "name": "city", "value": "={{ $json.payload.city }}" },
+            { "name": "name", "value": "={{ $json.payload.name || '' }}" },
+            { "name": "lead_id", "value": "={{ $json.payload.lead_id || '' }}" }
+          ]
+        }
+      },
+      "name": "Set step vars",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "conditions": { "string": [{ "value1": "={{ $json.step }}", "operation": "equals", "value2": "welcome" }] } },
+            { "conditions": { "string": [{ "value1": "={{ $json.step }}", "operation": "equals", "value2": "followup_2h" }] } },
+            { "conditions": { "string": [{ "value1": "={{ $json.step }}", "operation": "equals", "value2": "followup_24h" }] } },
+            { "conditions": { "string": [{ "value1": "={{ $json.step }}", "operation": "equals", "value2": "followup_72h" }] } }
+          ]
+        }
+      },
+      "name": "Switch by step",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "tg_msg", "value": "👋 {{$json.name || 'Здравствуйте'}}! Спасибо за заявку на Подряд PRO.\n\nМы получили ваш запрос по направлению «{{$json.work_type}}» в городе {{$json.city || 'Омск'}}.\n\nНаш менеджер свяжется с вами в ближайшее время для уточнения деталей." }
+          ]
+        }
+      },
+      "name": "Set welcome msg",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1560, 120]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "tg_msg", "value": "⏳ {{$json.name || 'Здравствуйте'}}! Ваша заявка принята в обработку.\n\nНаш менеджер скоро свяжется с вами. Если у вас есть срочные вопросы, напишите нам." }
+          ]
+        }
+      },
+      "name": "Set 2h msg",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1560, 260]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "tg_msg", "value": "📋 {{$json.name || 'Здравствуйте'}}! Напоминаем, что ваша заявка в обработке.\n\nХотите уточнить детали или изменить заказ? Просто ответьте на это сообщение." }
+          ]
+        }
+      },
+      "name": "Set 24h msg",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "tg_msg", "value": "🔔 {{$json.name || 'Здравствуйте'}}! Всё ещё актуальна заявка по направлению «{{$json.work_type}}»?\n\nОтветьте «да» — и менеджер свяжется с вами повторно." }
+          ]
+        }
+      },
+      "name": "Set 72h msg",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1560, 540]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_OWNER_CHAT_ID}}",
+        "text": "={{ $json.tg_msg }}",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "name": "TG send nurture",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1780, 300],
+      "credentials": { "telegramApi": { "id": "tg-owner", "name": "Telegram Owner Bot" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.job_queue SET status = 'completed', completed_at = now(), updated_at = now() WHERE id = '={{ $json.job_id }}'::uuid;"
+      },
+      "name": "PG complete job",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [2000, 300],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    }
+  ],
+  "connections": {
+    "Cron every 1m": { "main": [[{ "node": "PG claim crm jobs", "type": "main", "index": 0 }]] },
+    "PG claim crm jobs": { "main": [[{ "node": "Has jobs?", "type": "main", "index": 0 }]] },
+    "Has jobs?": {
+      "main": [
+        [{ "node": "SplitInBatches", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "SplitInBatches": { "main": [[{ "node": "Set step vars", "type": "main", "index": 0 }]] },
+    "Set step vars": { "main": [[{ "node": "Switch by step", "type": "main", "index": 0 }]] },
+    "Switch by step": {
+      "main": [
+        [{ "node": "Set welcome msg", "type": "main", "index": 0 }],
+        [{ "node": "Set 2h msg", "type": "main", "index": 0 }],
+        [{ "node": "Set 24h msg", "type": "main", "index": 0 }],
+        [{ "node": "Set 72h msg", "type": "main", "index": 0 }]
+      ]
+    },
+    "Set welcome msg": { "main": [[{ "node": "TG send nurture", "type": "main", "index": 0 }]] },
+    "Set 2h msg": { "main": [[{ "node": "TG send nurture", "type": "main", "index": 0 }]] },
+    "Set 24h msg": { "main": [[{ "node": "TG send nurture", "type": "main", "index": 0 }]] },
+    "Set 72h msg": { "main": [[{ "node": "TG send nurture", "type": "main", "index": 0 }]] },
+    "TG send nurture": { "main": [[{ "node": "PG complete job", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "tags": ["bot", "crm", "nurture"]
+}
