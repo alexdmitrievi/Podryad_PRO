@@ -41,8 +41,6 @@ export class MaxTransport implements ChannelTransport {
   private proxyHeaders(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
-      'X-Forward-To': this.config.apiBase,
-      'X-Auth-Token': this.config.botToken,
     };
   }
 
@@ -54,12 +52,12 @@ export class MaxTransport implements ChannelTransport {
       return { success: false, channel: 'max', error: 'No chat_id provided', latency_ms: 0 };
     }
 
-    // Use VPS proxy if MAX_API_PROXY is configured (Vercel can't reach .ru APIs)
+    // Build URL — token always in query param; proxy just changes the base URL
+    const tokenParam = `access_token=${encodeURIComponent(this.config.botToken)}`;
     const proxyBase = process.env.MAX_API_PROXY;
-    const apiBase = proxyBase || this.config.apiBase;
     const url = proxyBase
-      ? `${proxyBase}/proxy/max/messages`
-      : `${this.config.apiBase}/messages?access_token=${encodeURIComponent(this.config.botToken)}`;
+      ? `${proxyBase}/proxy/max/messages?${tokenParam}`
+      : `${this.config.apiBase}/messages?${tokenParam}`;
 
     const headers: Record<string, string> = proxyBase
       ? this.proxyHeaders()
@@ -131,9 +129,12 @@ export class MaxTransport implements ChannelTransport {
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(`${this.config.apiBase}/me?access_token=${encodeURIComponent(this.config.botToken)}`, {
-        signal: controller.signal,
-      });
+      const tokenParam = `access_token=${encodeURIComponent(this.config.botToken)}`;
+      const proxyBase = process.env.MAX_API_PROXY;
+      const url = proxyBase
+        ? `${proxyBase}/proxy/max/me?${tokenParam}`
+        : `${this.config.apiBase}/me?${tokenParam}`;
+      const res = await fetch(url, { signal: controller.signal });
       clearTimeout(timer);
       return {
         channel: 'max',
