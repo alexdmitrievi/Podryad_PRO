@@ -2,22 +2,25 @@
 import {
   getBotContact, getOrCreateSession, setSessionState, clearSession,
   createBotLead, computeDiscount, applyDiscountToLead,
-  getMyBotOrders, getBotOrder, cancelBotOrder, updateBotOrderDate, repeatBotOrder,
-  getPriceEstimate, getReferralLink, getReferralStats, recordReferralVisit, ensureReferralCode,
+  listMyAllOrders, getBotOrder, cancelBotOrder, updateBotOrderDate, repeatBotOrder,
+  getPriceEstimate, getReferralLink, getReferralStats, recordReferralVisit,
+  setContactRegion, getContactRegion, setCustomerType, notifyN8n,
 } from './index';
 import { createMaterialOrder } from './order-flow';
 import {
   SERVICE_LABEL, REGION_LABEL, MATERIAL_LABEL, MATERIAL_GRADES, MATERIAL_UNIT, MATERIAL_PRICE_RANGE,
-  UI, parseAreaBucket, whenLabelToRange, districtName, estimatePriceRange,
-  applyDiscountToRange, formatRub, mapStatusToUi,
+  SUBSCRIPTION_PLANS, REGION_PRICE_MULT,
+  UI, parseAreaBucket, whenLabelToRange, districtName,
+  applyDiscountToRange, mapStatusToUi,
 } from './funnel-state';
 import {
   mainMenuButtons, mainMenuB2bButtons, customerTypeButtons, regionButtons,
   serviceSelectionButtons, areaButtons, districtButtons, whenButtons, confirmButtons,
   postOrderButtons, myOrdersButtons, orderCardButtons, referralButtons, backToHomeButton,
-  materialsMenuButtons, gradeButtons, materialQtyButtons,
+  materialsMenuButtons, gradeButtons, materialQtyButtons, extrasButtons,
+  subscriptionPlansButtons, subscriptionPeriodButtons,
 } from './keyboards';
-import type { BotServiceKind, MaterialKind, RegionCode, CustomerType, SessionState } from './types';
+import type { BotServiceKind, MaterialKind, RegionCode, CustomerType, SessionState, Screen, SubscriptionPlanCode } from './types';
 import type { MessageButton } from '@/lib/channels/types';
 import { enqueueJob } from '@/lib/job-queue';
 import { log } from '@/lib/logger';
@@ -35,6 +38,26 @@ export type FunnelEvent = {
 
 type FunnelResponse = { text: string; buttons?: MessageButton[][] };
 
+/** Push current screen onto navStack so "◀️ Назад" can return to it. */
+function pushNav(state: SessionState, prev: Screen): SessionState {
+  const stack = (state.navStack ?? []).slice(-9);
+  return { ...state, navStack: [...stack, prev] };
+}
+
+function popNav(state: SessionState): { state: SessionState; prev: Screen | undefined } {
+  const stack = (state.navStack ?? []).slice();
+  const prev = stack.pop();
+  return { state: { ...state, navStack: stack }, prev };
+}
+
+function homeFor(region: RegionCode, customerType: CustomerType | undefined): MessageButton[][] {
+  return customerType === 'b2b' ? mainMenuB2bButtons(region) : mainMenuButtons(region);
+}
+
+function isB2b(state: SessionState): boolean {
+  return state.customerType === 'b2b';
+}
+
 /** Main entry point */
 export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelResponse | null> {
   const { channel, chatId, userId, text, type } = event;
@@ -51,7 +74,10 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
   let session;
   try { session = await getOrCreateSession(chatId, channel, contactId); } catch { session = null; }
 
-  const state: SessionState = (session?.state ?? {}) as SessionState;
+  let state: SessionState = (session?.state ?? {}) as SessionState;
+  if (!state.region) {
+    try { state = { ...state, region: await getContactRegion(contactId) }; } catch { state = { ...state, region: 'omsk' }; }
+  }
   const screen = state.screen ?? 'home';
 
   // ── Handle callbacks ──
@@ -80,44 +106,57 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
       return { text: '✅ Отменено.\n\n' + UI.homeMenu, buttons: mainMenuButtons() };
     }
 
-    if (screen === 'order') {
-      return handleFunnelText(text, contactId, chatId, channel, state, event);
-    }
-    if (screen === 'material_order') {
-      return handleMaterialText(text, contactId, chatId, channel, state);
-    }
+    if (screen === 'order') return handleFunnelText(text, contactId, chatId, channel, state, event);
+    if (screen === 'material_order') return handleMaterialText(text, contactId, chatId, channel, state);
+    if (screen === 'subscription_confirm') return handleSubscriptionText(text, contactId, chatId, channel, state);
   }
 
-  if (type === 'message' && screen === 'order') {
-    return handleFunnelText(text, contactId, chatId, channel, state, event);
-  }
-  if (type === 'message' && screen === 'material_order') {
-    return handleMaterialText(text, contactId, chatId, channel, state);
-  }
+  if (type === 'message' && screen === 'order') return handleFunnelText(text, contactId, chatId, channel, state, event);
+  if (type === 'message' && screen === 'material_order') return handleMaterialText(text, contactId, chatId, channel, state);
+  if (type === 'message' && screen === 'subscription_confirm') return handleSubscriptionText(text, contactId, chatId, channel, state);
 
   return null;
 }
 
-/** If customer type not set, show picker; otherwise main menu */
-function customerTypeOrHome(state: SessionState, isNew: boolean, displayName?: string): FunnelResponse {
+/** If customer type not set, show picker; otherwise main menu. */
+function customerTypeOrHome(state: SessionState, _isNew: boolean, displayName?: string): FunnelResponse {
   if (!state.customerType) {
     return { text: UI.askCustomerType(displayName), buttons: customerTypeButtons() };
   }
-  const menu = state.customerType === 'b2b' ? mainMenuB2bButtons() : mainMenuButtons();
-  return { text: UI.homeWelcome(displayName), buttons: menu };
+  const region = state.region ?? 'omsk';
+  const menu = homeFor(region, state.customerType);
+  const text = state.customerType === 'b2b' ? UI.homeWelcomeB2b(displayName) : UI.homeWelcome(displayName);
+  return { text, buttons: menu };
 }
 
-/** Handle inline callbacks */
+/** Handle inline callbacks. */
 async function handleCallback(
   data: string, contactId: string, chatId: string, channel: 'telegram' | 'max',
-  state: SessionState, event: FunnelEvent, isNew: boolean,
+  state: SessionState, event: FunnelEvent, _isNew: boolean,
 ): Promise<FunnelResponse | null> {
+  const region = state.region ?? 'omsk';
+
+  // ── Universal nav: Back / Home ──
+  if (data === 'nav:home') {
+    await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region, screen: 'home' });
+    return { text: UI.homeMenu, buttons: homeFor(region, state.customerType) };
+  }
+  if (data === 'nav:back') {
+    const popped = popNav(state);
+    if (!popped.prev || popped.prev === 'home') {
+      await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region, screen: 'home' });
+      return { text: UI.homeMenu, buttons: homeFor(region, state.customerType) };
+    }
+    return showScreen(popped.prev, contactId, chatId, channel, popped.state);
+  }
+
   // ── Customer type picker ──
   if (data.startsWith('ctype:')) {
     const ct = data.slice(6) as CustomerType;
-    await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home', customerType: ct });
-    const menu = ct === 'b2b' ? mainMenuB2bButtons() : mainMenuButtons();
-    return { text: UI.homeWelcome(event.displayName), buttons: menu };
+    try { await setCustomerType(contactId, ct); } catch (err) { log.warn('[funnel-handler] setCustomerType failed', { error: String(err) }); }
+    await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home', customerType: ct, navStack: [] });
+    const text = ct === 'b2b' ? UI.homeWelcomeB2b(event.displayName) : UI.homeWelcome(event.displayName);
+    return { text, buttons: homeFor(region, ct) };
   }
 
   // ── Menu navigation ──
@@ -125,35 +164,56 @@ async function handleCallback(
     const action = data.slice(5);
     switch (action) {
       case 'home': {
-        await clearSession(chatId, channel);
-        const menu = state.customerType === 'b2b' ? mainMenuB2bButtons() : mainMenuButtons();
-        return { text: UI.homeMenu, buttons: menu };
+        await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region, screen: 'home', navStack: [] });
+        return { text: UI.homeMenu, buttons: homeFor(region, state.customerType) };
       }
+      case 'services':
       case 'order': {
-        await setSessionState(chatId, channel, 'order', 'service', { screen: 'order' });
-        return { text: 'Выберите услугу:', buttons: serviceSelectionButtons() };
+        const next = pushNav({ ...state, screen: 'services_menu' }, state.screen ?? 'home');
+        await setSessionState(chatId, channel, 'services_menu', 'pick', next);
+        return {
+          text: isB2b(state) ? UI.servicesMenuIntroB2b : UI.servicesMenuIntro,
+          buttons: serviceSelectionButtons(),
+        };
       }
       case 'materials': {
-        await setSessionState(chatId, channel, 'materials_menu', 'menu', { screen: 'materials_menu' });
-        return { text: UI.materialsMenu(state.customerType === 'b2b'), buttons: materialsMenuButtons() };
+        const next = pushNav({ ...state, screen: 'materials_menu' }, state.screen ?? 'home');
+        await setSessionState(chatId, channel, 'materials_menu', 'pick', next);
+        return { text: UI.materialsMenu(isB2b(state)), buttons: materialsMenuButtons() };
+      }
+      case 'subscription': {
+        const next = pushNav({ ...state, screen: 'subscription_pick' }, state.screen ?? 'home');
+        await setSessionState(chatId, channel, 'subscription_pick', 'plan', next);
+        return { text: UI.subscriptionsIntro(REGION_LABEL[region]), buttons: subscriptionPlansButtons() };
+      }
+      case 'region': {
+        const next = pushNav({ ...state, screen: 'region_pick' }, state.screen ?? 'home');
+        await setSessionState(chatId, channel, 'region_pick', 'pick', next);
+        return { text: UI.regionPickerIntro(REGION_LABEL[region]), buttons: regionButtons() };
       }
       case 'my_orders': {
-        await setSessionState(chatId, channel, 'orders', 'list', { screen: 'orders' });
-        const orders = await getMyBotOrders(contactId);
+        const next = pushNav({ ...state, screen: 'orders' }, state.screen ?? 'home');
+        await setSessionState(chatId, channel, 'orders', 'list', next);
+        const orders = await listMyAllOrders(contactId);
         if (orders.length === 0) {
-          const bb: MessageButton = { type: 'callback', text: '🚀 Заказать', callback_data: 'menu:order' };
-          return { text: UI.myOrdersEmpty, buttons: [[bb]] };
+          const bb: MessageButton = { type: 'callback', text: '🚀 Заказать', callback_data: 'menu:services' };
+          return { text: UI.myOrdersEmpty, buttons: [[bb], [{ type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' }]] };
         }
-        return { text: '<b>Мои заказы</b>', buttons: myOrdersButtons(orders as Array<{ id: string; human_id?: string; service_short?: string; status?: string }>) };
+        return {
+          text: '<b>Мои заказы</b>',
+          buttons: myOrdersButtons(orders as Array<{ kind?: string; id: string; human_id?: string; title?: string; status?: string }>),
+        };
       }
       case 'referral': {
-        await setSessionState(chatId, channel, 'referral', 'main', { screen: 'referral' });
+        const next = pushNav({ ...state, screen: 'referral' }, state.screen ?? 'home');
+        await setSessionState(chatId, channel, 'referral', 'main', next);
         try {
-          const link = await getReferralLink(contactId, 'PodraydPRO_bot');
+          const botName = process.env.TELEGRAM_BOT_USERNAME || 'PodraydPRO_bot';
+          const link = await getReferralLink(contactId, botName);
           const stats = await getReferralStats(contactId);
           return { text: UI.referralIntro({ link, invited: stats.invited, balance: stats.balance }), buttons: referralButtons() };
         } catch {
-          return { text: 'Ошибка. Попробуйте позже.', buttons: mainMenuButtons() };
+          return { text: 'Ошибка. Попробуйте позже.', buttons: backToHomeButton() };
         }
       }
       case 'referral_list':
@@ -162,7 +222,59 @@ async function handleCallback(
         return { text: UI.helpText, buttons: backToHomeButton() };
       case 'operator':
         return { text: UI.operatorText, buttons: backToHomeButton() };
+      case 'contract':
+        return {
+          text:
+            '🤝 <b>Договор и счёт</b>\n\n' +
+            'Менеджер свяжется с вами в течение часа: подготовит договор, выставит счёт, согласует график поставок. ' +
+            'Если есть бриф/спецификация — пришлите файлом, оператор учтёт.',
+          buttons: backToHomeButton(),
+        };
       default: return null;
+    }
+  }
+
+  // ── Region picker ──
+  if (data.startsWith('region:')) {
+    const code = data.slice(7) as RegionCode;
+    if (state.screen === 'region_pick') {
+      try { await setContactRegion(contactId, code); } catch (err) { log.warn('[funnel-handler] setContactRegion failed', { error: String(err) }); }
+      await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region: code, screen: 'home', navStack: [] });
+      return {
+        text: `${UI.regionChanged(REGION_LABEL[code])}\n\n${UI.homeMenu}`,
+        buttons: homeFor(code, state.customerType),
+      };
+    }
+    // Region picker inside service flow → keep flow going
+    await setSessionState(chatId, channel, 'order', 'district', { ...state, screen: 'order', region: code });
+    return { text: UI.askDistrict, buttons: districtButtons() };
+  }
+
+  // ── Subscription flow ──
+  if (data.startsWith('sub:')) {
+    const part = data.slice(4);
+    if (part === 'info') {
+      const lines = ['📅 <b>Что входит в пакеты</b>\n'];
+      for (const code of ['basic', 'comfort', 'premium'] as SubscriptionPlanCode[]) {
+        lines.push(UI.subscriptionPlanCard(SUBSCRIPTION_PLANS[code]));
+        lines.push('');
+      }
+      return { text: lines.join('\n').trim(), buttons: subscriptionPlansButtons() };
+    }
+    if (part.startsWith('plan:')) {
+      const plan = part.slice(5) as SubscriptionPlanCode;
+      const next = pushNav({ ...state, screen: 'subscription_pick', subscriptionPlan: plan }, state.screen ?? 'home');
+      await setSessionState(chatId, channel, 'subscription_pick', 'period', next);
+      return {
+        text: `${UI.subscriptionPlanCard(SUBSCRIPTION_PLANS[plan])}\n\nНа какой срок оформляем?`,
+        buttons: subscriptionPeriodButtons(),
+      };
+    }
+    if (part.startsWith('period:')) {
+      const period = part.slice(7) as 'season' | 'half_year' | '3_months';
+      const next = pushNav({ ...state, screen: 'subscription_confirm', subscriptionPeriod: period }, state.screen ?? 'home');
+      await setSessionState(chatId, channel, 'subscription_confirm', 'district', next);
+      return { text: UI.askDistrict, buttons: districtButtons() };
     }
   }
 
@@ -170,16 +282,17 @@ async function handleCallback(
   if (data.startsWith('svc:')) {
     const kind = data.slice(4) as BotServiceKind;
     const areasNeeded = ['lawn_mowing', 'scarification', 'aeration', 'land_clearing', 'weed_removal', 'tilling'].includes(kind);
+    const next = pushNav({ ...state, screen: 'order', serviceKind: kind }, state.screen ?? 'services_menu');
 
     if (areasNeeded) {
-      await setSessionState(chatId, channel, 'order', 'params', { ...state, screen: 'order', serviceKind: kind });
+      await setSessionState(chatId, channel, 'order', 'params', next);
       return { text: `<b>${SERVICE_LABEL[kind]}</b>\n\nОцените площадь участка:`, buttons: areaButtons(kind) };
     }
-    await setSessionState(chatId, channel, 'order', 'region', { ...state, screen: 'order', serviceKind: kind, area: 1, areaUnit: 'шт' });
-    return { text: UI.askRegion, buttons: regionButtons() };
+    await setSessionState(chatId, channel, 'order', 'district', { ...next, area: 1, areaUnit: 'шт' });
+    return { text: UI.askDistrict, buttons: districtButtons() };
   }
 
-  // ── Area selection → now goes to region ──
+  // ── Area selection ──
   if (data.startsWith('area:')) {
     const parsed = parseAreaBucket(data);
     if (!parsed) {
@@ -187,14 +300,9 @@ async function handleCallback(
       return { text: 'Напишите точную площадь в сотках (например, «15» или «3.5»):' };
     }
     const avgArea = Math.round((parsed.min + parsed.max) / 2) || parsed.max;
-    await setSessionState(chatId, channel, 'order', 'region', { ...state, screen: 'order', area: avgArea, areaUnit: parsed.unit, areaBucket: parsed.bucket });
-    return { text: UI.askRegion, buttons: regionButtons() };
-  }
-
-  // ── Region selection → then district ──
-  if (data.startsWith('region:')) {
-    const region = data.slice(7) as RegionCode;
-    await setSessionState(chatId, channel, 'order', 'district', { ...state, screen: 'order', region });
+    await setSessionState(chatId, channel, 'order', 'district', {
+      ...state, screen: 'order', area: avgArea, areaUnit: parsed.unit, areaBucket: parsed.bucket,
+    });
     return { text: UI.askDistrict, buttons: districtButtons() };
   }
 
@@ -202,22 +310,46 @@ async function handleCallback(
   if (data.startsWith('district:')) {
     const code = data.slice(9);
     const name = districtName(code) ?? code;
-    await setSessionState(chatId, channel, 'order', 'when', { ...state, screen: 'order', district: name, districtCode: code });
+
+    if (state.screen === 'subscription_confirm') {
+      await setSessionState(chatId, channel, 'subscription_confirm', 'address', {
+        ...state, screen: 'subscription_confirm', district: name, districtCode: code,
+      });
+      return { text: 'Напишите адрес (улица, дом).' };
+    }
+    await setSessionState(chatId, channel, 'order', 'when', {
+      ...state, screen: 'order', district: name, districtCode: code,
+    });
     return { text: UI.askWhen, buttons: whenButtons() };
   }
 
-  // ── When → confirm ──
+  // ── When → confirm (services + materials share when: scope) ──
   if (data.startsWith('when:')) {
     const label = data.slice(5);
     if (label === 'custom') {
-      await setSessionState(chatId, channel, 'order', 'when', { ...state, screen: 'order' });
+      // Stay in current screen so handleFunnelText / handleMaterialText catches the date
       return { text: 'Напишите удобную дату (например, «15 мая»):' };
     }
     const range = whenLabelToRange(label);
     if (!range) return null;
 
+    if (state.screen === 'material_order') {
+      // Materials: when → extras (multi-select)
+      await setSessionState(chatId, channel, 'material_order', 'extras', {
+        ...state, screen: 'material_order',
+        whenLabel: label, whenHuman: range.human, whenFrom: range.from, whenTo: range.to,
+      });
+      return {
+        text: UI.extrasIntro(MATERIAL_LABEL[state.materialKind ?? 'concrete']),
+        buttons: extrasButtons({
+          ...state,
+          whenLabel: label, whenHuman: range.human, whenFrom: range.from, whenTo: range.to,
+        }),
+      };
+    }
+
     const sk = state.serviceKind!; const area = state.area || 1;
-    const price = await getPriceEstimate(sk, area);
+    const price = await getPriceEstimate(sk, area, region);
     let discountPercent = 0, bonusRub = 0;
     try { const d = await computeDiscount(contactId); discountPercent = d.percent; bonusRub = d.bonusRub; } catch { /* ok */ }
 
@@ -230,43 +362,134 @@ async function handleCallback(
 
     return {
       text: UI.confirm({
-        service: SERVICE_LABEL[sk], area: state.areaBucket
+        service: SERVICE_LABEL[sk],
+        area: state.areaBucket
           ? `${state.areaBucket === '5' ? 'до 5' : state.areaBucket === '10' ? '5–10' : state.areaBucket === '20' ? '10–20' : '20+'} соток`
           : `${area} ${state.areaUnit ?? 'сотка'}`,
-        district: `${REGION_LABEL[state.region ?? 'omsk']}, ${state.district ?? ''}`,
+        district: `${REGION_LABEL[region]}, ${state.district ?? ''}`,
         when: range.human, priceLow: price.low, priceHigh: price.high,
         discountPercent, bonusRub, finalLow: final.low, finalHigh: final.high,
       }),
-      buttons: confirmButtons(),
+      buttons: confirmButtons(isB2b(state)),
     };
   }
 
-  // ── Confirm order ──
+  // ── Material extras: multi-select toggles ──
+  if (data.startsWith('extra:')) {
+    const part = data.slice(6);
+    if (part === 'pump') {
+      const next = { ...state, needsPump: !state.needsPump };
+      await setSessionState(chatId, channel, 'material_order', 'extras', { ...next, screen: 'material_order' });
+      return { text: UI.extrasIntro(MATERIAL_LABEL[state.materialKind ?? 'concrete']), buttons: extrasButtons(next) };
+    }
+    if (part === 'manip') {
+      const next = { ...state, needsManipulator: !state.needsManipulator };
+      await setSessionState(chatId, channel, 'material_order', 'extras', { ...next, screen: 'material_order' });
+      return { text: UI.extrasIntro(MATERIAL_LABEL[state.materialKind ?? 'concrete']), buttons: extrasButtons(next) };
+    }
+    if (part === 'delivery_only') {
+      const next = { ...state, deliveryOnly: !state.deliveryOnly };
+      await setSessionState(chatId, channel, 'material_order', 'extras', { ...next, screen: 'material_order' });
+      return { text: UI.extrasIntro(MATERIAL_LABEL[state.materialKind ?? 'concrete']), buttons: extrasButtons(next) };
+    }
+    if (part === 'done') {
+      await setSessionState(chatId, channel, 'material_order', 'address', { ...state, screen: 'material_order' });
+      return { text: UI.askDeliveryAddress };
+    }
+    return null;
+  }
+
+  // ── Confirm order (service flow) ──
   if (data.startsWith('confirm:')) {
     const action = data.slice(8);
     if (action === 'yes') {
       const sk = state.serviceKind!; const area = state.area || 1;
-      const price = await getPriceEstimate(sk, area);
+      const price = await getPriceEstimate(sk, area, region);
       const discountPercent = state.discountPercent || 0; const bonusRub = state.bonusRub || 0;
 
       const leadId = await createBotLead({
         contactId, serviceKind: sk, channel,
-        description: state.description, areaValue: area, areaUnit: state.areaUnit ?? 'сотка',
-        district: `${REGION_LABEL[state.region ?? 'omsk']}, ${state.district ?? ''}`,
+        description: state.description,
+        areaValue: area, areaUnit: state.areaUnit ?? 'сотка',
+        district: `${REGION_LABEL[region]}, ${state.district ?? ''}`,
         discountPercent, discountRub: 0,
       });
       try { await applyDiscountToLead(contactId, leadId, discountPercent, bonusRub); } catch { /* ok */ }
 
       const humanId = `B-${leadId.slice(0, 6).toUpperCase()}`;
 
-      void enqueueJob({ queueName: 'leads', jobType: 'bot.lead_created', dedupeKey: `bot:${leadId}`, payload: { contact_id: contactId, lead_id: leadId, service_kind: sk, channel, district: state.district, when: state.whenHuman, region: state.region } }).catch(() => {});
+      // Internal queue (existing CRM)
+      void enqueueJob({
+        queueName: 'leads', jobType: 'bot.lead_created', dedupeKey: `bot:${leadId}`,
+        payload: {
+          contact_id: contactId, lead_id: leadId, service_kind: sk, channel,
+          district: state.district, when: state.whenHuman, region,
+          customer_type: state.customerType,
+        },
+      }).catch(() => {});
+
+      // External n8n webhook
+      void notifyN8n({
+        type: 'lead.created',
+        leadId, contactId, serviceKind: sk,
+        channel, region, district: state.district, when: state.whenHuman,
+        customerType: state.customerType ?? 'b2c',
+        priceLow: price.low, priceHigh: price.high,
+      });
 
       await clearSession(chatId, channel);
-      return { text: UI.thanks({ humanId, service: SERVICE_LABEL[sk], when: state.whenHuman, district: `${REGION_LABEL[state.region ?? 'omsk']}, ${state.district ?? ''}` }), buttons: postOrderButtons() };
+      const thanksText = isB2b(state)
+        ? `🤝 <b>Запрос #${humanId} принят</b>\n\nУслуга: ${SERVICE_LABEL[sk]}\n${state.whenHuman ? `Когда: ${state.whenHuman}\n` : ''}Менеджер подготовит КП в течение часа.`
+        : UI.thanks({ humanId, service: SERVICE_LABEL[sk], when: state.whenHuman, district: `${REGION_LABEL[region]}, ${state.district ?? ''}` });
+      return { text: thanksText, buttons: postOrderButtons() };
     }
-    if (action === 'cancel') { await clearSession(chatId, channel); return { text: '❌ Заказ отменён.\n\n' + UI.homeMenu, buttons: mainMenuButtons() }; }
-    if (action === 'edit') { await setSessionState(chatId, channel, 'order', 'service', { screen: 'order' }); return { text: 'Выберите услугу заново:', buttons: serviceSelectionButtons() }; }
+    if (action === 'cancel') {
+      await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region, screen: 'home', navStack: [] });
+      return { text: '❌ Заказ отменён.\n\n' + UI.homeMenu, buttons: homeFor(region, state.customerType) };
+    }
+    if (action === 'edit') {
+      const next = pushNav({ customerType: state.customerType, region, screen: 'services_menu' }, 'home');
+      await setSessionState(chatId, channel, 'services_menu', 'pick', next);
+      return { text: 'Выберите услугу заново:', buttons: serviceSelectionButtons() };
+    }
     return null;
+  }
+
+  // ── Subscription confirm (sub_confirm:yes/cancel) ──
+  if (data.startsWith('sub_confirm:')) {
+    const action = data.slice(12);
+    if (action === 'yes') {
+      const plan = state.subscriptionPlan ?? 'basic';
+      const sp = SUBSCRIPTION_PLANS[plan];
+      const interval = state.subscriptionPeriod === '3_months' ? 90 : state.subscriptionPeriod === 'half_year' ? 180 : 14;
+
+      let leadId: string;
+      try {
+        leadId = await createBotLead({
+          contactId, serviceKind: 'subscription', channel,
+          description: `Абонемент ${sp.name}, период: ${state.subscriptionPeriod ?? 'season'}`,
+          district: `${REGION_LABEL[region]}, ${state.district ?? ''}`,
+        });
+      } catch (err) {
+        log.error('[funnel-handler] createBotLead (subscription) failed', { error: String(err) });
+        return { text: '❌ Не удалось создать заявку. Попробуйте позже.', buttons: backToHomeButton() };
+      }
+
+      const humanId = `S-${leadId.slice(0, 6).toUpperCase()}`;
+      void notifyN8n({
+        type: 'lead.created',
+        subtype: 'subscription',
+        leadId, contactId, plan, period: state.subscriptionPeriod, intervalDays: interval,
+        channel, region, district: state.district, customerType: state.customerType ?? 'b2c',
+      });
+
+      await clearSession(chatId, channel);
+      return { text: UI.subscriptionThanks({ humanId, plan: sp.name }), buttons: postOrderButtons() };
+    }
+    if (action === 'cancel') {
+      await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region, screen: 'home', navStack: [] });
+      return { text: '❌ Отменено.', buttons: homeFor(region, state.customerType) };
+    }
   }
 
   // ── My Orders / Order card ──
@@ -294,48 +517,48 @@ async function handleCallback(
   // ── Materials: type selection ──
   if (data.startsWith('mat:')) {
     const action = data.slice(4);
-    if (action === 'back') { await setSessionState(chatId, channel, 'materials_menu', 'menu', { screen: 'materials_menu' }); return { text: UI.materialsMenu(state.customerType === 'b2b'), buttons: materialsMenuButtons() }; }
+    if (action === 'back') {
+      const next = pushNav({ ...state, screen: 'materials_menu' }, state.screen ?? 'home');
+      await setSessionState(chatId, channel, 'materials_menu', 'pick', next);
+      return { text: UI.materialsMenu(isB2b(state)), buttons: materialsMenuButtons() };
+    }
 
     const mk = action as MaterialKind;
-    await setSessionState(chatId, channel, 'material_order', 'mat_grade', { ...state, screen: 'material_order', materialKind: mk });
+    const next = pushNav({ ...state, screen: 'material_order', materialKind: mk }, state.screen ?? 'materials_menu');
+    await setSessionState(chatId, channel, 'material_order', 'grade', next);
     return { text: UI.materialSelected(mk), buttons: gradeButtons(mk) };
   }
 
   // ── Materials: grade → qty ──
   if (data.startsWith('grade:')) {
-    const parts = data.slice(6).split(':'); const mk = parts[0] as MaterialKind; const gc = parts[1]!;
+    const parts = data.slice(6).split(':');
+    const mk = parts[0] as MaterialKind;
+    const gc = parts[1]!;
     const grades = MATERIAL_GRADES[mk]; const g = grades.find((x) => x.code === gc);
-    await setSessionState(chatId, channel, 'material_order', 'mat_qty', { ...state, screen: 'material_order', materialKind: mk, materialGradeCode: gc, materialGradeName: g?.name ?? gc });
-    return { text: `Выбрано: <b>${MATERIAL_LABEL[mk]} ${g?.name ?? gc}</b>\n\n${UI.askMaterialQty(MATERIAL_UNIT[mk])}`, buttons: materialQtyButtons(MATERIAL_UNIT[mk]) };
+    const gName = gc === 'unknown' ? 'не знаю — посоветуйте' : (g?.name ?? gc);
+    const next = pushNav({ ...state, screen: 'material_order', materialKind: mk, materialGradeCode: gc, materialGradeName: gName }, state.screen ?? 'material_order');
+    await setSessionState(chatId, channel, 'material_order', 'qty', next);
+    return {
+      text: `Выбрано: <b>${MATERIAL_LABEL[mk]} ${gName}</b>\n\n${UI.askMaterialQty(MATERIAL_UNIT[mk])}`,
+      buttons: materialQtyButtons(MATERIAL_UNIT[mk]),
+    };
   }
 
   // ── Materials: qty → when ──
   if (data.startsWith('qty:')) {
-    const val = parseInt(data.slice(4), 10);
-    if (!val) {
-      await setSessionState(chatId, channel, 'material_order', 'mat_qty', { ...state, screen: 'material_order' });
+    if (data === 'qty:custom') {
+      await setSessionState(chatId, channel, 'material_order', 'qty', { ...state, screen: 'material_order' });
       return { text: `Напишите точное количество в ${MATERIAL_UNIT[state.materialKind!]}:` };
     }
-    await setSessionState(chatId, channel, 'material_order', 'mat_when', { ...state, screen: 'material_order', materialQty: val });
+    const val = parseFloat(data.slice(4));
+    if (!val) return null;
+    await setSessionState(chatId, channel, 'material_order', 'when', { ...state, screen: 'material_order', materialQty: val });
     return { text: 'Когда нужна доставка?', buttons: whenButtons() };
   }
 
-  // ── Materials: when (callback) → address ──
-  // Uses same when: prefix — check if we're in material flow
-  if (data.startsWith('when:') && state.screen === 'material_order') {
-    const label = data.slice(5);
-    const range = whenLabelToRange(label);
-    const wh = range?.human ?? label;
-    await setSessionState(chatId, channel, 'material_order', 'mat_address', { ...state, screen: 'material_order', whenLabel: label, whenHuman: wh, whenFrom: range?.from, whenTo: range?.to });
-    return { text: UI.askDeliveryAddress, buttons: [] };
-  }
-
-  // ── Materials: address → confirm ──
-  // (address comes as free text — handled in handleMaterialText)
-
   // ── Materials confirm ──
   if (data.startsWith('matconfirm:')) {
-    const action = data.slice(10);
+    const action = data.slice(11);
     if (action === 'yes') {
       const mk = state.materialKind!; const gc = state.materialGradeCode!;
       const qty = state.materialQty || 1; const unit = MATERIAL_UNIT[mk];
@@ -345,55 +568,170 @@ async function handleCallback(
         orderId = await createMaterialOrder({
           contactId,
           materialCode: mk,
-          grade: gc,
+          grade: gc === 'unknown' ? (MATERIAL_GRADES[mk][0]?.code ?? 'M200') : gc,
           quantity: qty,
           unit,
           deliveryAddress: state.deliveryAddress,
           desiredDate: state.whenHuman,
-          region: state.region ?? 'omsk',
+          region,
+          needsPump: state.needsPump,
+          needsManipulator: state.needsManipulator,
+          deliveryOnly: state.deliveryOnly,
         });
       } catch (err) {
         log.error('[funnel-handler] createMaterialOrder failed', { error: String(err) });
-        return { text: '❌ Не удалось создать заказ. Попробуйте позже.', buttons: mainMenuButtons() };
+        return { text: '❌ Не удалось создать заказ. Попробуйте позже.', buttons: backToHomeButton() };
       }
 
       const humanId = `M-${orderId.slice(0, 6).toUpperCase()}`;
 
       void enqueueJob({
-        queueName: 'leads',
-        jobType: 'bot.material_order',
-        dedupeKey: `mat:${orderId}`,
-        payload: { contact_id: contactId, order_id: orderId, material_kind: mk, grade: gc, qty, unit, delivery_address: state.deliveryAddress, when: state.whenHuman },
+        queueName: 'leads', jobType: 'bot.material_order', dedupeKey: `mat:${orderId}`,
+        payload: {
+          contact_id: contactId, order_id: orderId, material_kind: mk, grade: gc, qty, unit,
+          delivery_address: state.deliveryAddress, when: state.whenHuman, region,
+          customer_type: state.customerType,
+          needs_pump: state.needsPump, needs_manipulator: state.needsManipulator, delivery_only: state.deliveryOnly,
+        },
       }).catch(() => {});
 
+      void notifyN8n({
+        type: 'material_order.created',
+        orderId, contactId, materialKind: mk, gradeCode: gc, quantity: qty, unit,
+        channel, region, deliveryAddress: state.deliveryAddress, when: state.whenHuman,
+        customerType: state.customerType ?? 'b2c',
+        extras: {
+          pump: !!state.needsPump,
+          manipulator: !!state.needsManipulator,
+          deliveryOnly: !!state.deliveryOnly,
+        },
+      });
+
       await clearSession(chatId, channel);
-      return { text: UI.materialThanks({ humanId, material: MATERIAL_LABEL[mk], grade: state.materialGradeName ?? gc }), buttons: postOrderButtons() };
+      const thanksText = isB2b(state)
+        ? `🤝 <b>Запрос на материалы #${humanId} принят</b>\n\n${MATERIAL_LABEL[mk]} ${state.materialGradeName ?? gc}, ${qty} ${unit}.\n\nМенеджер подготовит КП в течение часа.`
+        : UI.materialThanks({ humanId, material: MATERIAL_LABEL[mk], grade: state.materialGradeName ?? gc });
+      return { text: thanksText, buttons: postOrderButtons() };
     }
-    if (action === 'cancel') { await clearSession(chatId, channel); return { text: '❌ Заказ отменён.', buttons: mainMenuButtons() }; }
+    if (action === 'cancel') {
+      await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region, screen: 'home', navStack: [] });
+      return { text: '❌ Заказ отменён.', buttons: homeFor(region, state.customerType) };
+    }
   }
 
-  // ── Funnel back ──
-  if (data === 'funnel:back') {
-    await setSessionState(chatId, channel, 'order', 'service', { ...state, screen: 'order' });
-    return { text: 'Выберите услугу:', buttons: serviceSelectionButtons() };
+  // ── Material order from history ──
+  if (data.startsWith('morder:')) {
+    const parts = data.slice(7).split(':'); const orderId = parts[0]!; const action = parts[1]!;
+    if (action === 'view') {
+      const { getServiceClient } = await import('@/lib/supabase');
+      const { data: m } = await getServiceClient()
+        .from('v_material_orders_detail')
+        .select('*')
+        .eq('id', orderId)
+        .maybeSingle();
+      if (!m) return { text: 'Заказ не найден.', buttons: backToHomeButton() };
+      const mm = m as Record<string, unknown>;
+      const lines = [
+        `🧱 <b>Заказ материалов #${('M-' + orderId.slice(0, 6).toUpperCase())}</b>`,
+        `Материал: ${String(mm.material_name ?? '')} ${String(mm.grade ?? '')}`,
+        `Количество: ${String(mm.quantity ?? '')} ${String(mm.unit ?? '')}`,
+        mm.delivery_address ? `Адрес: ${String(mm.delivery_address)}` : '',
+        `Статус: ${String(mm.status ?? 'new')}`,
+      ].filter(Boolean);
+      return { text: lines.join('\n'), buttons: backToHomeButton() };
+    }
+  }
+
+  // ── Order list (services) ──
+  if (data.startsWith('order:')) {
+    return handleOrderCallback(data, contactId, chatId, channel, state);
   }
 
   return null;
 }
 
-/** Free-text in service order funnel */
+/** Service order card actions (view/repeat/edit_date/cancel). */
+async function handleOrderCallback(
+  data: string, contactId: string, chatId: string, channel: 'telegram' | 'max', state: SessionState,
+): Promise<FunnelResponse | null> {
+  const parts = data.slice(6).split(':'); const leadId = parts[0]!; const action = parts[1]!;
+  if (action === 'view') {
+    const order = await getBotOrder(contactId, leadId);
+    if (!order) return { text: 'Заказ не найден.', buttons: backToHomeButton() };
+    const si = mapStatusToUi(String(order.status ?? 'new'));
+    return {
+      text: UI.orderCard({
+        humanId: `B-${leadId.slice(0, 6).toUpperCase()}`, serviceName: String(order.service_name ?? ''),
+        statusIcon: si.icon, statusLabel: si.label,
+        when: order.desired_date_from ? String(order.desired_date_from) : undefined,
+        district: order.district ? String(order.district) : undefined,
+        area: order.area_value ? `${order.area_value} ${order.area_unit ?? ''}` : undefined,
+        priceQuoted: order.price_final ? Number(order.price_final) : undefined,
+        discountPercent: order.discount_percent ? Number(order.discount_percent) : undefined,
+      }),
+      buttons: orderCardButtons(leadId, String(order.status ?? 'new')),
+    };
+  }
+  if (action === 'repeat') {
+    await setSessionState(chatId, channel, 'repeat', 'when', { ...state, screen: 'repeat', activeLeadId: leadId });
+    return { text: '📅 На когда повторить заказ?', buttons: whenButtons() };
+  }
+  if (action === 'edit_date') {
+    await setSessionState(chatId, channel, 'edit_date', 'when', { ...state, screen: 'edit_date', activeLeadId: leadId });
+    return { text: '📅 Выберите новую дату:', buttons: whenButtons() };
+  }
+  if (action === 'cancel') {
+    const ok = await cancelBotOrder(contactId, leadId);
+    return { text: ok ? '✅ Заказ отменён.' : '❌ Не удалось.', buttons: backToHomeButton() };
+  }
+  return null;
+}
+
+/** Render a known screen; used by nav:back to restore the previous screen. */
+async function showScreen(
+  screen: Screen, contactId: string, chatId: string, channel: 'telegram' | 'max', state: SessionState,
+): Promise<FunnelResponse> {
+  const region = state.region ?? 'omsk';
+  switch (screen) {
+    case 'home':
+      await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home' });
+      return { text: UI.homeMenu, buttons: homeFor(region, state.customerType) };
+    case 'services_menu':
+      await setSessionState(chatId, channel, 'services_menu', 'pick', { ...state, screen: 'services_menu' });
+      return { text: isB2b(state) ? UI.servicesMenuIntroB2b : UI.servicesMenuIntro, buttons: serviceSelectionButtons() };
+    case 'materials_menu':
+      await setSessionState(chatId, channel, 'materials_menu', 'pick', { ...state, screen: 'materials_menu' });
+      return { text: UI.materialsMenu(isB2b(state)), buttons: materialsMenuButtons() };
+    case 'subscription_pick':
+      await setSessionState(chatId, channel, 'subscription_pick', 'plan', { ...state, screen: 'subscription_pick' });
+      return { text: UI.subscriptionsIntro(REGION_LABEL[region]), buttons: subscriptionPlansButtons() };
+    case 'orders': {
+      const orders = await listMyAllOrders(contactId);
+      if (orders.length === 0) {
+        const bb: MessageButton = { type: 'callback', text: '🚀 Заказать', callback_data: 'menu:services' };
+        return { text: UI.myOrdersEmpty, buttons: [[bb], [{ type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' }]] };
+      }
+      return { text: '<b>Мои заказы</b>', buttons: myOrdersButtons(orders as Array<{ kind?: string; id: string; human_id?: string; title?: string; status?: string }>) };
+    }
+    default:
+      return { text: UI.homeMenu, buttons: homeFor(region, state.customerType) };
+  }
+}
+
+/** Free-text in service order funnel. */
 async function handleFunnelText(
   text: string, contactId: string, chatId: string, channel: 'telegram' | 'max',
-  state: SessionState, event: FunnelEvent,
+  state: SessionState, _event: FunnelEvent,
 ): Promise<FunnelResponse | null> {
   const numMatch = text.match(/^(\d+(?:[.,]\d+)?)$/);
+  const region = state.region ?? 'omsk';
 
-  // Params step — parse area number
+  // Params step — parse area number, then go to district
   if (state.screen === 'order' && !state.area) {
     if (numMatch) {
       const area = parseFloat(numMatch[1]!.replace(',', '.'));
-      await setSessionState(chatId, channel, 'order', 'region', { ...state, screen: 'order', area, areaUnit: 'сотка', areaBucket: `${area}` });
-      return { text: UI.askRegion, buttons: regionButtons() };
+      await setSessionState(chatId, channel, 'order', 'district', { ...state, screen: 'order', area, areaUnit: 'сотка', areaBucket: `${area}` });
+      return { text: UI.askDistrict, buttons: districtButtons() };
     }
     return { text: 'Пожалуйста, укажите площадь числом (например, «15»).' };
   }
@@ -401,12 +739,17 @@ async function handleFunnelText(
   // When step — parse custom date → confirm
   if (state.screen === 'order' && !state.whenLabel) {
     const sk = state.serviceKind!; const area = state.area || 1;
-    const price = await getPriceEstimate(sk, area);
-
-    await setSessionState(chatId, channel, 'order', 'confirm', { ...state, screen: 'order', whenLabel: 'custom', whenCustom: text, whenHuman: text, whenFrom: text, whenTo: text });
+    const price = await getPriceEstimate(sk, area, region);
+    await setSessionState(chatId, channel, 'order', 'confirm', {
+      ...state, screen: 'order', whenLabel: 'custom', whenCustom: text, whenHuman: text, whenFrom: text, whenTo: text,
+    });
     return {
-      text: UI.confirm({ service: SERVICE_LABEL[sk], area: `${area} ${state.areaUnit ?? 'сотка'}`, district: `${REGION_LABEL[state.region ?? 'omsk']}, ${state.district ?? ''}`, when: text, priceLow: price.low, priceHigh: price.high }),
-      buttons: confirmButtons(),
+      text: UI.confirm({
+        service: SERVICE_LABEL[sk], area: `${area} ${state.areaUnit ?? 'сотка'}`,
+        district: `${REGION_LABEL[region]}, ${state.district ?? ''}`,
+        when: text, priceLow: price.low, priceHigh: price.high,
+      }),
+      buttons: confirmButtons(isB2b(state)),
     };
   }
 
@@ -418,60 +761,124 @@ async function handleFunnelText(
         const result = await repeatBotOrder(contactId, state.activeLeadId, channel, range);
         const humanId = `B-${result.newLeadId.slice(0, 6).toUpperCase()}`;
         await clearSession(chatId, channel);
-        return { text: `✅ <b>Повторный заказ #${humanId}</b>\n\nУслуга: ${String(result.oldOrder.service_name ?? '')}\nКогда: ${text}\n\nМастер свяжется в течение 30 минут.`, buttons: postOrderButtons() };
-      } catch (err) { log.error('[funnel-handler] repeatOrder', { error: String(err) }); return { text: '❌ Не удалось.', buttons: mainMenuButtons() }; }
+        return {
+          text: `✅ <b>Повторный заказ #${humanId}</b>\n\nУслуга: ${String(result.oldOrder.service_name ?? '')}\nКогда: ${text}\n\nМастер свяжется в течение 30 минут.`,
+          buttons: postOrderButtons(),
+        };
+      } catch (err) {
+        log.error('[funnel-handler] repeatOrder', { error: String(err) });
+        return { text: '❌ Не удалось.', buttons: backToHomeButton() };
+      }
     }
     if (state.screen === 'edit_date') {
-      try { await updateBotOrderDate(contactId, state.activeLeadId, text, text); await clearSession(chatId, channel); return { text: `✅ Дата изменена на ${text}.`, buttons: mainMenuButtons() }; }
-      catch { return { text: '❌ Не удалось.', buttons: mainMenuButtons() }; }
+      try {
+        await updateBotOrderDate(contactId, state.activeLeadId, text, text);
+        await clearSession(chatId, channel);
+        return { text: `✅ Дата изменена на ${text}.`, buttons: backToHomeButton() };
+      } catch {
+        return { text: '❌ Не удалось.', buttons: backToHomeButton() };
+      }
     }
   }
 
   return null;
 }
 
-/** Free-text in material order funnel */
+/** Free-text in subscription funnel: address. */
+async function handleSubscriptionText(
+  text: string, _contactId: string, chatId: string, channel: 'telegram' | 'max', state: SessionState,
+): Promise<FunnelResponse | null> {
+  const region = state.region ?? 'omsk';
+  if (!state.deliveryAddress) {
+    const plan = state.subscriptionPlan ?? 'basic';
+    const sp = SUBSCRIPTION_PLANS[plan];
+    const periodLabel = state.subscriptionPeriod === '3_months'
+      ? '3 месяца' : state.subscriptionPeriod === 'half_year' ? 'полгода' : 'сезон';
+    await setSessionState(chatId, channel, 'subscription_confirm', 'confirm', { ...state, deliveryAddress: text });
+    return {
+      text: UI.subscriptionConfirm({
+        plan: sp.name, period: periodLabel,
+        district: `${REGION_LABEL[region]}, ${state.district ?? ''}`,
+        address: text,
+        priceLow: sp.priceMin, priceHigh: sp.priceMax,
+      }),
+      buttons: [
+        [{ type: 'callback', text: '✅ Подтвердить', callback_data: 'sub_confirm:yes' }],
+        [{ type: 'callback', text: '❌ Отмена', callback_data: 'sub_confirm:cancel' }],
+      ],
+    };
+  }
+  return null;
+}
+
+/** Free-text in material order funnel. */
 async function handleMaterialText(
-  text: string, contactId: string, chatId: string, channel: 'telegram' | 'max',
+  text: string, _contactId: string, chatId: string, channel: 'telegram' | 'max',
   state: SessionState,
 ): Promise<FunnelResponse | null> {
-  // Mat qty step — parse number
+  const region = state.region ?? 'omsk';
+
+  // qty step — parse number
   if (state.screen === 'material_order' && !state.materialQty) {
     const numMatch = text.match(/^(\d+(?:[.,]\d+)?)$/);
     if (numMatch) {
       const qty = parseFloat(numMatch[1]!.replace(',', '.'));
-      await setSessionState(chatId, channel, 'material_order', 'mat_when', { ...state, screen: 'material_order', materialQty: qty });
+      await setSessionState(chatId, channel, 'material_order', 'when', { ...state, screen: 'material_order', materialQty: qty });
       return { text: 'Когда нужна доставка?', buttons: whenButtons() };
     }
     return { text: `Пожалуйста, укажите количество числом (например, «5»).` };
   }
 
-  // Mat when step — parse custom date → address
+  // custom date — go to extras
   if (state.screen === 'material_order' && !state.whenLabel) {
-    await setSessionState(chatId, channel, 'material_order', 'mat_address', { ...state, screen: 'material_order', whenLabel: 'custom', whenHuman: text });
-    return { text: UI.askDeliveryAddress, buttons: [] };
+    await setSessionState(chatId, channel, 'material_order', 'extras', {
+      ...state, screen: 'material_order', whenLabel: 'custom', whenHuman: text,
+    });
+    return {
+      text: UI.extrasIntro(MATELABEL(state.materialKind)),
+      buttons: extrasButtons({ ...state, whenLabel: 'custom', whenHuman: text }),
+    };
   }
 
-  // Address step → confirm
+  // address — go to confirm
   if (state.screen === 'material_order' && !state.deliveryAddress && state.materialQty) {
     const mk = state.materialKind!; const gc = state.materialGradeCode!;
     const qty = state.materialQty; const unit = MATERIAL_UNIT[mk];
-    const price = MATERIAL_PRICE_RANGE[mk];
+    const base = MATERIAL_PRICE_RANGE[mk];
+    const m = REGION_PRICE_MULT[region] ?? 1.0;
+    const priceLow = Math.round(base.min * m);
+    const priceHigh = Math.round(base.max * m);
 
-    await setSessionState(chatId, channel, 'material_order', 'mat_confirm', { ...state, screen: 'material_order', deliveryAddress: text });
+    await setSessionState(chatId, channel, 'material_order', 'confirm', { ...state, screen: 'material_order', deliveryAddress: text });
+
+    const extras: string[] = [];
+    if (state.needsPump) extras.push('бетононасос');
+    if (state.needsManipulator) extras.push('манипулятор');
+    if (state.deliveryOnly) extras.push('только разгрузка с борта');
+    const extrasLine = extras.length ? `\nДоп: ${extras.join(', ')}` : '';
 
     return {
       text: UI.materialConfirm({
         material: MATERIAL_LABEL[mk], grade: state.materialGradeName ?? gc,
         qty, unit, when: state.whenHuman, address: text,
-        priceLow: price.min, priceHigh: price.max,
-      }),
+        priceLow, priceHigh,
+      }) + extrasLine,
       buttons: [
-        [{ type: 'callback', text: '✅ Подтвердить', callback_data: 'matconfirm:yes' }],
+        [
+          isB2b(state)
+            ? { type: 'callback', text: '🤝 Запросить КП', callback_data: 'matconfirm:yes' }
+            : { type: 'callback', text: '✅ Подтвердить', callback_data: 'matconfirm:yes' },
+        ],
         [{ type: 'callback', text: '❌ Отмена', callback_data: 'matconfirm:cancel' }],
       ],
     };
   }
 
   return null;
+}
+
+/** Local helper: material label by kind (safe default if missing). */
+function MATELABEL(mk: MaterialKind | undefined): string {
+  if (!mk) return 'материал';
+  return MATERIAL_LABEL[mk];
 }
