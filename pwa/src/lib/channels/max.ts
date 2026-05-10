@@ -9,6 +9,20 @@ import type {
 import { getMaxConfig, type ChannelConfig } from './config';
 import { log } from '@/lib/logger';
 
+/** Strip HTML tags & decode the basic entities — MAX bot UI doesn't render markup. */
+export function stripHtml(s: string): string {
+  if (!s) return s;
+  return s
+    .replace(/<\/?(b|strong|i|em|u|s|code|pre|br)\s*\/?>/gi, '')
+    .replace(/<a\s+[^>]*href="([^"]+)"[^>]*>([^<]+)<\/a>/gi, '$2 ($1)')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
 /**
  * MAX Transport — sends messages through MAX Bot API (platform-api.max.ru).
  *
@@ -51,10 +65,11 @@ export class MaxTransport implements ChannelTransport {
       ? this.proxyHeaders()
       : { 'Content-Type': 'application/json' };
 
+    // MAX doesn't render HTML/Markdown — strip tags so <b>...</b> doesn't leak.
+    const plainText = stripHtml(message.text);
     const body: Record<string, unknown> = {
       chat_id: chatId,
-      text: message.text,
-      format: 'markdown',
+      text: plainText,
     };
 
     // MAX inline keyboard — one button per row for good UX

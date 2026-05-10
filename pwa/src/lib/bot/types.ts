@@ -25,6 +25,7 @@ export type MaterialKind =
 
 export type RegionCode = 'omsk' | 'novosibirsk';
 export type CustomerType = 'b2c' | 'b2b';
+export type SubscriptionPlanCode = 'basic' | 'comfort' | 'premium';
 
 export type Screen =
   | 'home'
@@ -39,7 +40,11 @@ export type Screen =
   | 'operator'
   | 'material_order'
   | 'pick_ctype'
-  | 'materials_menu';
+  | 'materials_menu'
+  | 'services_menu'
+  | 'subscription_pick'
+  | 'subscription_confirm'
+  | 'region_pick';
 
 export type OrderStep =
   | 'service'
@@ -97,4 +102,13 @@ export type SessionState = {
   deliveryAddress?: string;
   materialPriceLow?: number;
   materialPriceHigh?: number;
+  // Material extras (multi-select)
+  needsPump?: boolean;
+  needsManipulator?: boolean;
+  deliveryOnly?: boolean;
+  // Subscription
+  subscriptionPlan?: SubscriptionPlanCode;
+  subscriptionPeriod?: 'season' | 'half_year' | '3_months';
+  // Back-stack: previous screens for "◀️ Назад" button
+  navStack?: Screen[];
 };

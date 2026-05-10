@@ -1,16 +1,19 @@
 // Bot integration — barrel export
-export type { BotServiceKind, MaterialKind, RegionCode, CustomerType, Screen, OrderStep, SessionState } from './types';
+export type { BotServiceKind, MaterialKind, RegionCode, CustomerType, Screen, OrderStep, SessionState, SubscriptionPlanCode } from './types';
 export {
+  BRAND_NAME,
   SERVICE_LABEL,
   PRICE_HINT,
   PRICE_RANGE,
   DISTRICTS,
   REGION_LABEL,
+  REGION_PRICE_MULT,
   MATERIAL_LABEL,
   MATERIAL_DESC,
   MATERIAL_UNIT,
   MATERIAL_GRADES,
   MATERIAL_PRICE_RANGE,
+  SUBSCRIPTION_PLANS,
   STATUS_UI,
   UI,
   districtName,
@@ -24,6 +27,7 @@ export {
   applyDiscountToRange,
   formatRub,
   formatDateRange,
+  extrasForMaterial,
 } from './funnel-state';
 
 export {
@@ -44,6 +48,9 @@ export {
   materialsMenuButtons,
   gradeButtons,
   materialQtyButtons,
+  extrasButtons,
+  subscriptionPlansButtons,
+  subscriptionPeriodButtons,
 } from './keyboards';
 
 export {
@@ -61,11 +68,16 @@ export {
   applyDiscountToLead,
   getPriceEstimate,
   getMyBotOrders,
+  listMyAllOrders,
   getBotOrder,
   cancelBotOrder,
   updateBotOrderDate,
   repeatBotOrder,
   createMaterialOrder,
+  notifyN8n,
+  setContactRegion,
+  getContactRegion,
+  setCustomerType,
 } from './order-flow';
 export type { ChannelName } from './order-flow';
 

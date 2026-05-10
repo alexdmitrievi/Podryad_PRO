@@ -1,0 +1,137 @@
+{
+  "name": "Подряд PRO / Material order events",
+  "meta": {
+    "description": "Webhook receiver for {type: 'material_order.created'} events from the bot. Notifies the owner (Telegram) and writes a marker into public.events for audit. Trigger URL is the same N8N_WEBHOOK_URL the bots use; events are dispatched by `type`."
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-events",
+        "options": {}
+      },
+      "name": "Webhook (lead/material events)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [200, 320]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$headers['x-n8n-secret']}}", "operation": "equals", "value2": "={{$env.N8N_INBOUND_SECRET}}" }
+          ]
+        }
+      },
+      "name": "IF auth secret matches",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [440, 320]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$json.body.type}}", "operation": "equals", "value2": "material_order.created" }
+          ]
+        }
+      },
+      "name": "IF type = material_order.created",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 220]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "ownerText",
+              "value": "🧱 <b>Новая заявка на материалы</b>\nКлиент: {{$json.body.customerType === 'b2b' ? 'компания' : 'частник'}} ({{$json.body.region}})\nМатериал: {{$json.body.materialKind}} {{$json.body.gradeCode}}\nКоличество: {{$json.body.quantity}} {{$json.body.unit}}\nДоставка: {{$json.body.deliveryAddress || '—'}}\nДата: {{$json.body.when || 'не указана'}}\nДоп: {{ ($json.body.extras && $json.body.extras.pump) ? 'насос ✓ ' : '' }}{{ ($json.body.extras && $json.body.extras.manipulator) ? 'манипулятор ✓ ' : '' }}{{ ($json.body.extras && $json.body.extras.deliveryOnly) ? 'разгрузка с борта ✓' : '' }}\nКанал: {{$json.body.channel}}\nID: {{$json.body.orderId}}"
+            }
+          ]
+        }
+      },
+      "name": "Set (owner text)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [900, 160]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_OWNER_CHAT_ID}}",
+        "text": "={{$json.ownerText}}",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "name": "Telegram (owner)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1140, 160],
+      "credentials": { "telegramApi": { "id": "tg-main", "name": "Telegram Main Bot" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.events (type, contact_id, channel, payload)\nVALUES ('material_order.notified', $1::uuid, $2::messenger_channel, $3::jsonb)\nON CONFLICT DO NOTHING;",
+        "additionalFields": {
+          "queryParams": "={{$json.body.contactId}},{{$json.body.channel}},{{JSON.stringify($json.body)}}"
+        }
+      },
+      "name": "Postgres (audit)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1140, 280],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"ok\": true,\n  \"type\": $json.body.type,\n  \"orderId\": $json.body.orderId\n}"
+      },
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1380, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 403,
+        "responseBody": "={\"ok\": false, \"error\": \"forbidden\"}"
+      },
+      "name": "Respond 403",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 480]
+    }
+  ],
+  "connections": {
+    "Webhook (lead/material events)": {
+      "main": [[{ "node": "IF auth secret matches", "type": "main", "index": 0 }]]
+    },
+    "IF auth secret matches": {
+      "main": [
+        [{ "node": "IF type = material_order.created", "type": "main", "index": 0 }],
+        [{ "node": "Respond 403", "type": "main", "index": 0 }]
+      ]
+    },
+    "IF type = material_order.created": {
+      "main": [
+        [{ "node": "Set (owner text)", "type": "main", "index": 0 }],
+        [{ "node": "Respond 200", "type": "main", "index": 0 }]
+      ]
+    },
+    "Set (owner text)": {
+      "main": [[{ "node": "Telegram (owner)", "type": "main", "index": 0 }]]
+    },
+    "Telegram (owner)": {
+      "main": [[{ "node": "Postgres (audit)", "type": "main", "index": 0 }]]
+    },
+    "Postgres (audit)": {
+      "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "version": 1
+}
