@@ -164,7 +164,7 @@ async function processMessage(
         chat_id: chatId,
         user_id: userId,
         text: funnelResponse.text,
-        parse_mode: 'Markdown',
+        parse_mode: 'HTML',
         buttons: btns,
       });
       return;

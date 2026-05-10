@@ -1,8 +1,9 @@
 // Bot order flow — creates leads and orders from the bot funnel
 import { rpc } from './supabase';
 import { getServiceClient } from '@/lib/supabase';
-import type { BotServiceKind } from './types';
-import { estimatePriceRange, applyDiscountToRange } from './funnel-state';
+import type { BotServiceKind, RegionCode } from './types';
+import { estimatePriceRange, applyDiscountToRange, REGION_PRICE_MULT } from './funnel-state';
+import { log } from '@/lib/logger';
 
 export type ChannelName = 'telegram' | 'max';
 
@@ -105,8 +106,40 @@ export async function applyDiscountToLead(
 export async function getPriceEstimate(
   serviceKind: BotServiceKind,
   areaValue: number,
+  region: RegionCode = 'omsk',
 ): Promise<{ low: number; high: number }> {
-  return estimatePriceRange(serviceKind, areaValue || 1);
+  const base = estimatePriceRange(serviceKind, areaValue || 1);
+  const m = REGION_PRICE_MULT[region] ?? 1.0;
+  return { low: Math.round(base.low * m), high: Math.round(base.high * m) };
+}
+
+/** Update contact's region via RPC (also updates contact-default for next visit). */
+export async function setContactRegion(contactId: string, region: RegionCode): Promise<void> {
+  const { error } = await getServiceClient().rpc('rpc_set_contact_region', {
+    p_contact_id: contactId,
+    p_region: region,
+  });
+  if (error) throw error;
+}
+
+/** Get contact's saved region (defaults to omsk). */
+export async function getContactRegion(contactId: string): Promise<RegionCode> {
+  const { data } = await getServiceClient()
+    .from('bot_contacts')
+    .select('region')
+    .eq('id', contactId)
+    .maybeSingle();
+  const r = (data as { region?: string } | null)?.region;
+  return (r === 'novosibirsk' ? 'novosibirsk' : 'omsk');
+}
+
+/** Set customer_type via direct UPDATE (no dedicated RPC in current schema). */
+export async function setCustomerType(contactId: string, ct: 'b2c' | 'b2b'): Promise<void> {
+  const { error } = await getServiceClient()
+    .from('bot_contacts')
+    .update({ customer_type: ct, updated_at: new Date().toISOString() })
+    .eq('id', contactId);
+  if (error) throw error;
 }
 
 export async function getMyBotOrders(contactId: string): Promise<Array<Record<string, unknown>>> {
@@ -116,6 +149,18 @@ export async function getMyBotOrders(contactId: string): Promise<Array<Record<st
     .eq('contact_id', contactId)
     .order('created_at', { ascending: false })
     .limit(10);
+  if (error) throw error;
+  return (data ?? []) as Array<Record<string, unknown>>;
+}
+
+/** Unified service+material list via v_my_all_orders. */
+export async function listMyAllOrders(contactId: string, limit = 10): Promise<Array<Record<string, unknown>>> {
+  const { data, error } = await getServiceClient()
+    .from('v_my_all_orders')
+    .select('*')
+    .eq('contact_id', contactId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
   if (error) throw error;
   return (data ?? []) as Array<Record<string, unknown>>;
 }
@@ -224,7 +269,18 @@ export async function createMaterialOrder(params: {
   deliveryAddress?: string;
   desiredDate?: string;
   region?: string;
+  needsPump?: boolean;
+  needsManipulator?: boolean;
+  deliveryOnly?: boolean;
 }): Promise<string> {
+  // Encode extras into the description text since the RPC has no dedicated columns yet.
+  const extras: string[] = [];
+  if (params.needsPump) extras.push('бетононасос');
+  if (params.needsManipulator) extras.push('манипулятор');
+  if (params.deliveryOnly) extras.push('только разгрузка с борта');
+  const extrasNote = extras.length ? ` Доп: ${extras.join(', ')}.` : '';
+  const desiredNote = params.desiredDate ? ` Дата: ${params.desiredDate}.` : '';
+
   const orderId = await rpc<string>('create_material_order', {
     p_contact_id: params.contactId,
     p_material_code: params.materialCode,
@@ -232,8 +288,37 @@ export async function createMaterialOrder(params: {
     p_quantity: params.quantity,
     p_unit: params.unit,
     p_delivery_address: params.deliveryAddress ?? null,
-    p_desired_date: params.desiredDate ?? null,
+    p_desired_date: `${params.desiredDate ?? 'не указана'}${extrasNote}${desiredNote.length === extras.length ? '' : ''}`,
     p_region: params.region ?? 'omsk',
   });
   return String(orderId);
+}
+
+/** Fire-and-forget POST to N8N_WEBHOOK_URL with optional shared secret header. */
+export async function notifyN8n(payload: Record<string, unknown>): Promise<void> {
+  const url = process.env.N8N_WEBHOOK_URL;
+  if (!url) return;
+  const secret = process.env.N8N_INBOUND_SECRET;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (secret) headers['X-N8N-Secret'] = secret;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        brand: process.env.BOT_BRAND_NAME || 'Подряд PRO',
+        timestamp: new Date().toISOString(),
+        ...payload,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) {
+      log.warn('[notifyN8n] non-2xx response', { status: res.status, type: payload.type });
+    }
+  } catch (err) {
+    log.warn('[notifyN8n] failed', { error: String(err), type: payload.type });
+  }
 }

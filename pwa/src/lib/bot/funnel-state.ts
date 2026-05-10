@@ -1,5 +1,7 @@
 // Bot funnel state machine — adapted from Premium lib/funnels.ts
-import type { BotServiceKind, MaterialKind, SessionState, OrderStep, RegionCode } from './types';
+import type { BotServiceKind, MaterialKind, SessionState, OrderStep, RegionCode, SubscriptionPlanCode } from './types';
+
+export const BRAND_NAME = process.env.BOT_BRAND_NAME || 'Подряд PRO';
 
 export const SERVICE_LABEL: Record<BotServiceKind, string> = {
   lawn_mowing: 'Покос газона',
@@ -132,6 +134,56 @@ export const MATERIAL_PRICE_RANGE: Record<MaterialKind, { min: number; max: numb
   cement: { min: 420, max: 480 },
   brick: { min: 10, max: 25 },
 };
+
+/** Региональный множитель цены: Омск = базовая, Новосибирск = +5 %. */
+export const REGION_PRICE_MULT: Record<RegionCode, number> = {
+  omsk: 1.0,
+  novosibirsk: 1.05,
+};
+
+export type SubscriptionPlan = {
+  code: SubscriptionPlanCode;
+  name: string;
+  short: string;
+  priceMin: number;
+  priceMax: number;
+  features: string[];
+};
+
+export const SUBSCRIPTION_PLANS: Record<SubscriptionPlanCode, SubscriptionPlan> = {
+  basic: {
+    code: 'basic',
+    name: 'Базовый',
+    short: '🌿 Базовый — от 8 000 ₽/мес',
+    priceMin: 8000,
+    priceMax: 14000,
+    features: ['Покос 2 раза в месяц', 'Прополка', 'Уборка скошенной травы'],
+  },
+  comfort: {
+    code: 'comfort',
+    name: 'Комфорт',
+    short: '⭐ Комфорт — от 14 000 ₽/мес',
+    priceMin: 14000,
+    priceMax: 22000,
+    features: ['Покос каждую неделю', 'Скарификация', 'Обслуживание клумб', 'Подкормка газона'],
+  },
+  premium: {
+    code: 'premium',
+    name: 'Премиум',
+    short: '💎 Премиум — от 25 000 ₽/мес',
+    priceMin: 25000,
+    priceMax: 45000,
+    features: ['Покос каждую неделю', 'Скарификация и аэрация', 'Обслуживание бассейна', 'Подрезка кустарников', 'Полив по графику'],
+  },
+};
+
+/** Какие "экстра" опции уместны для конкретного материала. */
+export function extrasForMaterial(mk: MaterialKind): { pump: boolean; manipulator: boolean; deliveryOnly: boolean } {
+  if (mk === 'concrete') return { pump: true, manipulator: true, deliveryOnly: true };
+  if (mk === 'crushed_stone' || mk === 'sand') return { pump: false, manipulator: true, deliveryOnly: true };
+  if (mk === 'cement' || mk === 'brick') return { pump: false, manipulator: true, deliveryOnly: false };
+  return { pump: false, manipulator: false, deliveryOnly: false };
+}
 
 export type StatusUi = { icon: string; label: string };
 
@@ -268,9 +320,43 @@ export function areaQuestion(k: BotServiceKind): string {
 export const UI = {
   homeWelcome: (name?: string) =>
     `👋 Здравствуйте${name ? ', ' + name : ''}!\n\n` +
-    `Я — бот <b>«Подряд PRO»</b>. Помогу быстро заказать работы по дому и участку.\n\n` +
+    `Я — бот <b>«${BRAND_NAME}»</b>. Помогу быстро заказать работы по дому и участку.\n\n` +
     `Выберите услугу или воспользуйтесь меню:`,
+  homeWelcomeB2b: (name?: string) =>
+    `👋 Здравствуйте${name ? ', ' + name : ''}!\n\n` +
+    `Я — бот <b>«${BRAND_NAME}»</b>. Помогу со стройматериалами и услугами для вашей компании.\n\n` +
+    `Менеджер подготовит КП и счёт по первому запросу.`,
   homeMenu: 'Что вас интересует?',
+  servicesMenuIntro: '🛠 <b>Услуги</b>\n\nВыберите, что нужно сделать:',
+  servicesMenuIntroB2b:
+    '🛠 <b>Услуги для компаний</b>\n\nЦены ориентировочные — менеджер подготовит КП по факту объёмов:',
+  subscriptionsIntro: (regionLabel: string) =>
+    `📅 <b>Абонентское обслуживание</b>\n\n` +
+    `Выезжаем по графику — вы не вспоминаете, когда вызывать мастера. Регион: ${regionLabel}.\n\n` +
+    `Выберите пакет:`,
+  subscriptionPlanCard: (p: SubscriptionPlan) =>
+    `<b>${p.name} — ${formatRub(p.priceMin)}–${formatRub(p.priceMax)} ₽/мес</b>\n\n` +
+    p.features.map((f) => `• ${f}`).join('\n'),
+  subscriptionConfirm: (p: { plan: string; period: string; district?: string; address?: string; priceLow: number; priceHigh: number }) => {
+    const lines: string[] = ['✅ <b>Проверьте абонемент</b>\n'];
+    lines.push(`Пакет: <b>${p.plan}</b>`);
+    lines.push(`Период: ${p.period}`);
+    if (p.district) lines.push(`Район: ${p.district}`);
+    if (p.address) lines.push(`Адрес: ${p.address}`);
+    lines.push(`\nЦена: ${formatRub(p.priceLow)}–${formatRub(p.priceHigh)} ₽/мес`);
+    lines.push('\nТочную цену зафиксируем после первого выезда.');
+    return lines.join('\n');
+  },
+  subscriptionThanks: (p: { humanId: string; plan: string }) =>
+    `✅ <b>Заявка #${p.humanId} принята</b>\n\n` +
+    `Абонемент: ${p.plan}\n\n` +
+    `Менеджер свяжется с вами в течение 30 минут — согласует график и подпишет договор.`,
+  regionPickerIntro: (current: string) =>
+    `📍 <b>Регион обслуживания</b>\n\nСейчас выбран: <b>${current}</b>.\n\nВ каком городе оформляем заказ?`,
+  regionChanged: (label: string) => `📍 Регион обновлён: <b>${label}</b>.`,
+  extrasIntro: (mk: string) =>
+    `Дополнительно для <b>${mk}</b>:\n\n` +
+    `Отметьте всё, что нужно (можно несколько). Когда закончите — нажмите «Готово».`,
 
   serviceSelected: (k: BotServiceKind) =>
     `Отлично, оформляем <b>«${SERVICE_LABEL[k]}»</b>.\n` +
@@ -370,7 +456,7 @@ export const UI = {
   // ── Customer type ──
   askCustomerType: (name?: string) =>
     `👋 Здравствуйте${name ? ', ' + name : ''}!\n\n` +
-    `Я — бот <b>«Подряд PRO»</b>. Чтобы предложить подходящее меню — подскажите:\n` +
+    `Я — бот <b>«${BRAND_NAME}»</b>. Чтобы предложить подходящее меню — подскажите:\n` +
     `вы оформляете заказ для частного дома или для компании / стройки?`,
 
   // ── Materials ──
