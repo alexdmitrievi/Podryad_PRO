@@ -12,8 +12,9 @@
 | 06 | `06-loyalty-weekly-report.json` | Cron Mon 09:00 | Еженедельный дайджест: рефералы, повторные заказы, бонусный баланс |
 | 07 | `07-crm-nurture-worker.json` | Cron every 1m | **CRM Nurture** — разбирает `crm` очередь: welcome → followup_2h → followup_24h → followup_72h цепочка касаний |
 | 08 | `08-bot-health-cleanup.json` | Cron every 10m | **Health Monitor** — очистка bot_sessions >24ч, мониторинг dead/pending джобов, алерт владельцу при проблемах |
+| 09 | `09-material-order-events.json` | Webhook `lead-events` | **Material order webhook** — приёмник событий `{type:'material_order.created'}` от ботов: уведомление владельцу в Telegram + аудит в `public.events`. Тот же URL принимает и `lead.created` — реализованные ветки можно расширять. |
 
-> **Note:** Workflow 01 + 07 вместе образуют полный слой оркестрации Telegram/MAX — Vercel пишет джобы, n8n их обрабатывает и отправляет сообщения через Bot API.
+> **Note:** Workflow 01 + 07 вместе образуют полный слой оркестрации Telegram/MAX — Vercel пишет джобы, n8n их обрабатывает и отправляет сообщения через Bot API. Workflow 09 — отдельная цепочка для прямых вебхуков от ботов (минуя `job_queue`); используется когда нужна мгновенная реакция владельца на новый заказ.
 
 ## Required Credentials
 
