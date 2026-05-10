@@ -35,7 +35,7 @@ describe('keyboards — main menus', () => {
   it('mainMenuButtons includes materials button', () => {
     const kb = mainMenuButtons();
     const all = kb.flat();
-    const matBtn = all.find((b) => b.text?.includes('Стройматериалы'));
+    const matBtn = all.find((b) => b.text?.includes('Материалы'));
     expect(matBtn).toBeDefined();
     expect(matBtn!.callback_data).toBe('menu:materials');
   });
@@ -43,7 +43,15 @@ describe('keyboards — main menus', () => {
   it('mainMenuB2bButtons has materials first', () => {
     const kb = mainMenuB2bButtons();
     const firstRow = kb[0]!;
-    expect(firstRow[0]!.text).toContain('Стройматериалы');
+    expect(firstRow[0]!.text).toContain('Материалы');
+  });
+
+  it('mainMenuButtons shows current region in toggle button', () => {
+    const kb = mainMenuButtons('novosibirsk');
+    const all = kb.flat();
+    const regionBtn = all.find((b) => b.callback_data === 'menu:region');
+    expect(regionBtn).toBeDefined();
+    expect(regionBtn!.text).toContain('Новосибирск');
   });
 });
 
@@ -55,9 +63,9 @@ describe('keyboards — customer type & region', () => {
     expect(kb[1]![0]!.callback_data).toBe('ctype:b2b');
   });
 
-  it('regionButtons has Omsk and Novosibirsk', () => {
+  it('regionButtons has Omsk and Novosibirsk + nav', () => {
     const kb = regionButtons();
-    expect(kb).toHaveLength(2);
+    expect(kb.length).toBeGreaterThanOrEqual(2);
     expect(kb[0]![0]!.callback_data).toBe('region:omsk');
     expect(kb[0]![1]!.callback_data).toBe('region:novosibirsk');
   });
@@ -99,11 +107,11 @@ describe('keyboards — services', () => {
     expect(all.some((b) => b.callback_data === 'confirm:cancel')).toBe(true);
   });
 
-  it('postOrderButtons has my_orders + home', () => {
+  it('postOrderButtons has my_orders + nav home', () => {
     const kb = postOrderButtons();
     const all = kb.flat();
     expect(all.some((b) => b.callback_data === 'menu:my_orders')).toBe(true);
-    expect(all.some((b) => b.callback_data === 'menu:home')).toBe(true);
+    expect(all.some((b) => b.callback_data === 'nav:home')).toBe(true);
   });
 });
 
@@ -118,10 +126,11 @@ describe('keyboards — materials', () => {
     expect(all.some((b) => b.callback_data === 'mat:brick')).toBe(true);
   });
 
-  it('gradeButtons: concrete has 7 grades', () => {
+  it('gradeButtons: concrete has 7 normal grades + "не знаю"', () => {
     const kb = gradeButtons('concrete');
     const all = kb.flat();
-    expect(all.filter((b) => (b.callback_data ?? '').startsWith('grade:concrete:')).length).toBe(7);
+    // 7 marks (M100..M400) + 1 "unknown" fallback
+    expect(all.filter((b) => (b.callback_data ?? '').startsWith('grade:concrete:')).length).toBe(8);
   });
 
   it('gradeButtons: sand has 4 grades', () => {
@@ -164,9 +173,11 @@ describe('keyboards — other', () => {
     expect(kb.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('backToHomeButton has one row with home callback', () => {
+  it('backToHomeButton has one row with back + home navigation', () => {
     const kb = backToHomeButton();
     expect(kb).toHaveLength(1);
-    expect(kb[0]![0]!.callback_data).toBe('menu:home');
+    const codes = kb[0]!.map((b) => b.callback_data);
+    expect(codes).toContain('nav:back');
+    expect(codes).toContain('nav:home');
   });
 });
