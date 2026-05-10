@@ -42,7 +42,7 @@ const START_TEXT = `Привет! Я — бот сервиса *Подряд PRO
 
 Напишите, что вам нужно, или используйте кнопки ниже.`;
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
 
 export async function POST(req: NextRequest) {
   // 1. Check channel is enabled
