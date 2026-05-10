@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { enqueueJob } from '@/lib/job-queue';
 import { log } from '@/lib/logger';
-
-function verifyPin(pin: string): boolean {
-  const adminPin = process.env.ADMIN_PIN;
-  if (!adminPin) return false;
-  const pinBuf = Buffer.from(pin);
-  const expectedBuf = Buffer.from(adminPin);
-  return pinBuf.length === expectedBuf.length && timingSafeEqual(pinBuf, expectedBuf);
-}
 
 /**
  * GET /api/admin/crm/prospects
@@ -23,11 +14,6 @@ function verifyPin(pin: string): boolean {
  * Update stage / notes / contact info for prospect.
  */
 export async function GET(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   const { searchParams } = new URL(req.url);
   const stage = searchParams.get('stage');
 
@@ -51,11 +37,6 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   let body: {
     name: string;
     phone?: string;
@@ -118,11 +99,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   let body: {
     id: number;
     stage?: string;

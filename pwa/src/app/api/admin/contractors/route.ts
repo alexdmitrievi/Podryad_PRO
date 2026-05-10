@@ -1,22 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
 import { getContractors, updateContractor } from '@/lib/db';
 import { log } from '@/lib/logger';
 
-function verifyPin(pin: string): boolean {
-  const adminPin = process.env.ADMIN_PIN;
-  if (!adminPin) return false;
-  const pinBuf = Buffer.from(pin);
-  const expectedBuf = Buffer.from(adminPin);
-  return pinBuf.length === expectedBuf.length && timingSafeEqual(pinBuf, expectedBuf);
-}
-
 export async function GET(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   try {
     const contractors = await getContractors();
     return NextResponse.json({ ok: true, contractors });
@@ -27,11 +13,6 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   let body: { id: string; status?: string; admin_notes?: string };
   try {
     body = await req.json();

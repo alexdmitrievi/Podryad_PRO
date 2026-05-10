@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { log } from '@/lib/logger';
 
@@ -18,25 +17,12 @@ interface ContactEntry {
   source: string;
 }
 
-function verifyPin(pin: string): boolean {
-  const adminPin = process.env.ADMIN_PIN;
-  if (!adminPin) return false;
-  const pinBuf = Buffer.from(pin);
-  const expectedBuf = Buffer.from(adminPin);
-  return pinBuf.length === expectedBuf.length && timingSafeEqual(pinBuf, expectedBuf);
-}
-
 /**
  * GET /api/admin/contacts
  * Returns a unified list of all customers (from leads) and executors (from executor_responses).
  * Deduplicates by phone number, keeping the most recent entry.
  */
 export async function GET(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
-
   try {
   const db = getServiceClient();
   const contacts: ContactEntry[] = [];

@@ -1,23 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual, randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { getMarkupRate, applyMarkup } from '@/lib/pricing';
 import { log } from '@/lib/logger';
 
-function verifyPin(pin: string): boolean {
-  const adminPin = process.env.ADMIN_PIN;
-  if (!adminPin) return false;
-  const pinBuf = Buffer.from(pin);
-  const expectedBuf = Buffer.from(adminPin);
-  return pinBuf.length === expectedBuf.length && timingSafeEqual(pinBuf, expectedBuf);
-}
-
 export async function GET(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   const db = getServiceClient();
   const { data, error } = await db
     .from('listings')
@@ -34,11 +21,6 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -88,11 +70,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   let body: { listing_id: string; title?: string; price?: number; price_unit?: string; is_active?: boolean };
   try {
     body = await req.json();

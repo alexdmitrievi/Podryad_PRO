@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { enqueueJob } from '@/lib/job-queue';
 import { log } from '@/lib/logger';
@@ -34,23 +33,10 @@ async function resolveExecutorPhone(
   return /^\d{10,}$/.test(rawExecutorId) ? rawExecutorId : null;
 }
 
-function verifyPin(pin: string): boolean {
-  const adminPin = process.env.ADMIN_PIN;
-  if (!adminPin) return false;
-  const pinBuf = Buffer.from(pin);
-  const expectedBuf = Buffer.from(adminPin);
-  return pinBuf.length === expectedBuf.length && timingSafeEqual(pinBuf, expectedBuf);
-}
-
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   const { id: orderId } = await params;
 
   let body: { payment_status?: string; executor_payout_status?: string };

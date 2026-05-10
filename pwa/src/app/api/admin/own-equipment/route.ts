@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual, randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { log } from '@/lib/logger';
 
 const DISCOUNT = 20; // always 20% for own equipment
-
-function verifyPin(pin: string): boolean {
-  const adminPin = process.env.ADMIN_PIN;
-  if (!adminPin) return false;
-  const pinBuf = Buffer.from(pin);
-  const expectedBuf = Buffer.from(adminPin);
-  return pinBuf.length === expectedBuf.length && timingSafeEqual(pinBuf, expectedBuf);
-}
 
 function calcDisplayPrice(price: number): number {
   return Math.round(price * (1 - DISCOUNT / 100));
@@ -22,9 +14,6 @@ function calcDisplayPrice(price: number): number {
  * Returns all own_equipment listings (full data, admin-only).
  */
 export async function GET(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
   const db = getServiceClient();
   const { data, error } = await db
     .from('listings')
@@ -45,9 +34,6 @@ export async function GET(req: NextRequest) {
  * price = full market rate; display_price auto-set to price * 0.8 (20% off).
  */
 export async function POST(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
   let body: {
     title: string;
     description?: string;
@@ -117,9 +103,6 @@ export async function POST(req: NextRequest) {
  * Update existing own equipment listing.
  */
 export async function PUT(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
   let body: {
     listing_id: string;
     title?: string;
@@ -184,9 +167,6 @@ export async function PUT(req: NextRequest) {
  * Soft-delete (set is_active = false) or hard-delete.
  */
 export async function DELETE(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
   const listingId = req.nextUrl.searchParams.get('id');
   if (!listingId) return NextResponse.json({ error: 'id required' }, { status: 400 });
 

@@ -94,6 +94,47 @@ export async function POST(req: NextRequest) {
   }
 
   const leadId = insertedLead?.id ?? null;
+
+  // ── Unified CRM: upsert bot_contacts + insert bot_leads ──
+  const cityName = city === 'novosibirsk' ? 'Новосибирск' : 'Омск';
+  void db.from('bot_contacts')
+    .upsert({
+      phone: digits,
+      full_name: name?.trim() || null,
+      city: cityName,
+      source_id: null,
+      consent_marketing: false,
+    }, { onConflict: 'phone_normalized' })
+    .select('id').single()
+    .then(async ({ data: contact }) => {
+      if (contact) {
+        await db.from('bot_leads').insert({
+          contact_id: contact.id,
+          service_kind: 'general' as any,
+          channel: (messenger === 'telegram' ? 'telegram' : messenger === 'max' ? 'max' : 'offline') as any,
+          status: 'new' as any,
+          name: name?.trim() || null,
+          phone: digits,
+          email: email?.trim() || null,
+          messenger: messenger || null,
+          telegram: telegram?.trim() || null,
+          comment: comment || null,
+          city: cityName,
+          address: address?.trim() || null,
+          source: 'landing',
+          metadata: { work_type, legacy_lead_id: leadId },
+        });
+        void enqueueJob({
+          queueName: 'default',
+          jobType: 'chat.lead_intent',
+          dedupeKey: `lead_intent:landing:${leadId ?? digits}`,
+          payload: { phone: digits, work_type: work_type ?? '', city: cityName, name: name ?? '', lead_id: leadId != null ? String(leadId) : undefined, channel: messenger || 'offline' },
+        }).catch(() => {});
+      }
+    }).catch((err) => {
+      log.error('unified_crm: failed to upsert bot_contact/lead', { error: String(err) });
+    });
+
   const leadPayload = {
     lead_id: leadId,
     phone: digits, work_type, city: city ?? 'omsk',

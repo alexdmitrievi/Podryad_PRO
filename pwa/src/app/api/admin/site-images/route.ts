@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { log } from '@/lib/logger';
 
@@ -17,14 +16,6 @@ const ALLOWED_SLUGS = new Set([
   'category.materials',
 ]);
 
-function verifyPin(pin: string): boolean {
-  const adminPin = process.env.ADMIN_PIN;
-  if (!adminPin) return false;
-  const pinBuf = Buffer.from(pin);
-  const expectedBuf = Buffer.from(adminPin);
-  return pinBuf.length === expectedBuf.length && timingSafeEqual(pinBuf, expectedBuf);
-}
-
 function pathFromPublicUrl(url: string): string | null {
   // https://<project>.supabase.co/storage/v1/object/public/site-images/<path>
   const marker = `/storage/v1/object/public/${BUCKET}/`;
@@ -36,18 +27,13 @@ function pathFromPublicUrl(url: string): string | null {
 /**
  * POST /api/admin/site-images
  * Uploads a hero image and assigns it to a site slot.
- * Body: FormData { pin, slug, file }
+ * Body: FormData { slug, file }
  * On success, replaces any previously uploaded file at that slot (best-effort
  * delete of the old object to keep the bucket clean) and updates the
  * site_images row.
  */
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
-  const pin = String(formData.get('pin') || '');
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   const slug = String(formData.get('slug') || '');
   const file = formData.get('file') as File | null;
 
@@ -120,15 +106,9 @@ export async function POST(req: NextRequest) {
 
 /**
  * DELETE /api/admin/site-images?slug=hero.labor
- * Header: x-admin-pin
  * Clears the slot and removes the underlying storage object.
  */
 export async function DELETE(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') || '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   const slug = req.nextUrl.searchParams.get('slug') || '';
   if (!slug || !ALLOWED_SLUGS.has(slug)) {
     return NextResponse.json({ error: 'invalid_slug' }, { status: 400 });

@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import UnifiedCRM from '@/components/admin/UnifiedCRM';
 import {
   Lock, Users, ShoppingBag, Tag, AlertTriangle, BarChart3,
   Copy, Check, ExternalLink, UserPlus, RefreshCw, Save,
@@ -145,9 +146,10 @@ interface ContactEntry {
   source: string;
 }
 
-type TabId = 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'crm' | 'analytics' | 'documents' | 'own-equipment' | 'hero-images';
+type TabId = 'unified-crm' | 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'crm' | 'analytics' | 'documents' | 'own-equipment' | 'hero-images';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
+  { id: "unified-crm", label: "CRM Unified", icon: TrendingUp },
   { id: "crm", label: "CRM Воронка", icon: TrendingUp },
   { id: "own-equipment", label: "Наша техника", icon: Truck },
   { id: "analytics", label: "Аналитика", icon: Activity },
@@ -3536,12 +3538,12 @@ function HeroImagesTab({ pin }: { pin: string }) {
 }
 
 function getInitialTab(): TabId {
-  if (typeof window === 'undefined') return 'listings';
+  if (typeof window === 'undefined') return 'unified-crm';
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab');
-  const validTabs: TabId[] = ['listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'crm', 'analytics', 'documents', 'own-equipment', 'hero-images'];
+  const validTabs: TabId[] = ['unified-crm', 'listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'crm', 'analytics', 'documents', 'own-equipment', 'hero-images'];
   if (tab && validTabs.includes(tab as TabId)) return tab as TabId;
-  return 'listings';
+  return 'unified-crm';
 }
 
 export default function AdminPage() {
@@ -3598,6 +3600,7 @@ export default function AdminPage() {
         </div>
 
         <div>
+          {activeTab === 'unified-crm' && <UnifiedCRM pin={pin} />}
           {activeTab === 'own-equipment' && <OwnEquipmentTab pin={pin} />}
           {activeTab === 'crm' && <CrmFunnelTab pin={pin} />}
           {activeTab === 'analytics' && <AnalyticsTab pin={pin} />}

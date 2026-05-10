@@ -1,26 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { log } from '@/lib/logger';
-
-function verifyPin(pin: string): boolean {
-  const adminPin = process.env.ADMIN_PIN;
-  if (!adminPin) return false;
-  const pinBuf = Buffer.from(pin);
-  const expectedBuf = Buffer.from(adminPin);
-  return pinBuf.length === expectedBuf.length && timingSafeEqual(pinBuf, expectedBuf);
-}
 
 /**
  * GET /api/admin/crm/funnel
  * Returns the full customer funnel + executor prospects pipeline.
  */
 export async function GET(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   const db = getServiceClient();
 
   const { searchParams } = new URL(req.url);
@@ -85,11 +71,6 @@ export async function GET(req: NextRequest) {
  * Update stage or notes for a lead or prospect.
  */
 export async function PUT(req: NextRequest) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   let body: {
     type: 'lead' | 'prospect';
     id: number;

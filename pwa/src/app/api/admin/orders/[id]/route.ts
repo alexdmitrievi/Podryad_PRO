@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { getMarkupRate } from '@/lib/pricing';
 import { enqueueJob } from '@/lib/job-queue';
 import { log } from '@/lib/logger';
-
-function verifyPin(pin: string): boolean {
-  const adminPin = process.env.ADMIN_PIN;
-  if (!adminPin) return false;
-  const pinBuf = Buffer.from(pin);
-  const expectedBuf = Buffer.from(adminPin);
-  return pinBuf.length === expectedBuf.length && timingSafeEqual(pinBuf, expectedBuf);
-}
 
 const VALID_STATUSES = [
   'pending',
@@ -29,11 +20,6 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const pin = req.headers.get('x-admin-pin') ?? '';
-  if (!verifyPin(pin)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
   const { id: orderId } = await params;
 
   let body: { display_price?: number; contractor_id?: string; status?: string; address?: string; work_date?: string; hours?: number | null; people_count?: number | null; customer_comment?: string; customer_name?: string; customer_phone?: string; supplier_payout?: number };
