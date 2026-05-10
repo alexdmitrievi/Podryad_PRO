@@ -124,14 +124,14 @@ export async function POST(req: NextRequest) {
           source: 'landing',
           metadata: { work_type, legacy_lead_id: leadId },
         });
-        void enqueueJob({
+        enqueueJob({
           queueName: 'default',
           jobType: 'chat.lead_intent',
           dedupeKey: `lead_intent:landing:${leadId ?? digits}`,
           payload: { phone: digits, work_type: work_type ?? '', city: cityName, name: name ?? '', lead_id: leadId != null ? String(leadId) : undefined, channel: messenger || 'offline' },
         }).catch(() => {});
       }
-    }).catch((err) => {
+    }).then(null, (err: unknown) => {
       log.error('unified_crm: failed to upsert bot_contact/lead', { error: String(err) });
     });
 

@@ -7,9 +7,16 @@ import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import { log } from '@/lib/logger';
 
-const ADMIN_JWT_SECRET = new TextEncoder().encode(
-  process.env.SESSION_SECRET || 'fallback-admin-secret'
-);
+const ADMIN_JWT_SECRET = (() => {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('SESSION_SECRET must be set in production');
+    }
+    return new TextEncoder().encode('dev-session-secret-not-for-production');
+  }
+  return new TextEncoder().encode(secret);
+})();
 const COOKIE_NAME = 'admin_session';
 const COOKIE_MAX_AGE = 60 * 60 * 12; // 12 hours for admin sessions
 
