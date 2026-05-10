@@ -93,10 +93,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // 6. Process message: commands are awaited (fast), free-text runs in background
-  const isCommand = event.type === 'command';
-  if (isCommand) {
-    // Commands (/start, /help, /order, /status) are fast — await them
+  // 6. Process message: commands & callbacks are awaited, free-text runs in background
+  const isInteractive = event.type === 'command' || event.type === 'callback';
+  if (isInteractive) {
     try {
       await processMessage(event, userId, chatId, updateId);
     } catch (err) {
@@ -129,6 +128,31 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
+/** Answer a Telegram callback query so the button stops showing loading. */
+async function answerCallbackQuery(
+  callbackQueryId: string,
+  text?: string,
+  showAlert?: boolean,
+): Promise<void> {
+  const config = getTelegramConfig();
+  try {
+    const body: Record<string, unknown> = { callback_query_id: callbackQueryId };
+    if (text) body.text = text;
+    if (showAlert) body.show_alert = true;
+    const res = await fetch(`${config.apiBase}/answerCallbackQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    if (!json.ok) {
+      log.warn('[TelegramWebhook] answerCallbackQuery API error', { description: json.description });
+    }
+  } catch (err) {
+    log.error('[TelegramWebhook] answerCallbackQuery failed', { error: String(err) });
+  }
+}
+
 async function processMessage(
   event: ReturnType<typeof mapper.normalize>,
   userId: string,
@@ -137,6 +161,7 @@ async function processMessage(
 ): Promise<void> {
   const router = getChannelRouter();
   const text = event.text.trim();
+  const callbackQueryId = (event.payload as { callback_query_id?: string } | undefined)?.callback_query_id;
 
   // ── Funnel handler (Premium integration) ──
   try {
@@ -167,20 +192,35 @@ async function processMessage(
         parse_mode: 'HTML',
         buttons: btns,
       });
+      if (callbackQueryId) await answerCallbackQuery(callbackQueryId);
       return;
     }
+    // Funnel returned null — acknowledged, not an error
+    if (callbackQueryId) await answerCallbackQuery(callbackQueryId);
   } catch (err) {
     log.error('[TelegramWebhook] funnelHandler failed', { error: String(err), user_id: userId });
-    // Fall through to legacy handling
+    if (callbackQueryId) {
+      await answerCallbackQuery(callbackQueryId, 'Произошла ошибка. Попробуйте ещё раз.', true);
+    }
+    await router.send({
+      channel: 'telegram',
+      chat_id: chatId,
+      user_id: userId,
+      text: 'Извините, произошла ошибка. Попробуйте ещё раз или напишите оператору через меню.',
+    }).catch(() => {});
+    return;
   }
 
-  // Handle callbacks (legacy)
+  // Handle callbacks (legacy fallback — only reached if funnel didn't handle the callback)
   if (event.type === 'callback') {
     await router.send({
       channel: 'telegram',
       chat_id: chatId,
       user_id: userId,
-      text: `Вы выбрали: ${text}`,
+      text: 'Это действие больше не доступно. Пожалуйста, используйте меню ниже.',
+      buttons: [
+        { type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' },
+      ],
     });
     return;
   }

@@ -93,9 +93,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // 6. Process message: commands are awaited (fast), free-text runs in background
-  const isCommand = event.type === 'command';
-  if (isCommand) {
+  // 6. Process message: commands & callbacks are awaited, free-text runs in background
+  const isInteractive = event.type === 'command' || event.type === 'callback';
+  if (isInteractive) {
     try {
       await processMessage(event, userId, chatId, updateId);
     } catch (err) {
@@ -127,6 +127,29 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
+/** Answer a MAX callback so the button stops showing loading. */
+async function answerMaxCallback(
+  callbackId: string,
+  text?: string,
+): Promise<void> {
+  const config = getMaxConfig();
+  const proxyBase = process.env.MAX_API_PROXY;
+  const apiBase = proxyBase || config.apiBase;
+  try {
+    const url = proxyBase
+      ? `${proxyBase}/proxy/max/callbacks/${encodeURIComponent(callbackId)}/answer`
+      : `${config.apiBase}/callbacks/${encodeURIComponent(callbackId)}/answer?access_token=${encodeURIComponent(config.botToken)}`;
+    const headers: Record<string, string> = proxyBase
+      ? { 'Content-Type': 'application/json', 'X-Forward-To': config.apiBase, 'X-Auth-Token': config.botToken }
+      : { 'Content-Type': 'application/json' };
+    const body: Record<string, unknown> = {};
+    if (text) body.text = text;
+    await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+  } catch (err) {
+    log.error('[MaxWebhook] answerMaxCallback failed', { error: String(err) });
+  }
+}
+
 async function processMessage(
   event: ReturnType<typeof mapper.normalize>,
   userId: string,
@@ -135,6 +158,7 @@ async function processMessage(
 ): Promise<void> {
   const router = getChannelRouter();
   const text = event.text.trim();
+  const maxCallbackId = (event.payload as { callback_id?: string } | undefined)?.callback_id;
 
   // ── Funnel handler (Premium integration) ──
   try {
@@ -164,20 +188,32 @@ async function processMessage(
         text: funnelResponse.text,
         buttons: btns,
       });
+      if (maxCallbackId) await answerMaxCallback(maxCallbackId);
       return;
     }
+    if (maxCallbackId) await answerMaxCallback(maxCallbackId);
   } catch (err) {
     log.error('[MaxWebhook] funnelHandler failed', { error: String(err), user_id: userId });
-    // Fall through to legacy handling
+    if (maxCallbackId) await answerMaxCallback(maxCallbackId, 'Произошла ошибка. Попробуйте ещё раз.');
+    await router.send({
+      channel: 'max',
+      chat_id: chatId,
+      user_id: userId,
+      text: 'Извините, произошла ошибка. Попробуйте ещё раз или напишите оператору через меню.',
+    }).catch(() => {});
+    return;
   }
 
-  // Callbacks (legacy)
+  // Callbacks (legacy fallback)
   if (event.type === 'callback') {
     await router.send({
       channel: 'max',
       chat_id: chatId,
       user_id: userId,
-      text: `Вы выбрали: ${text}`,
+      text: 'Это действие больше не доступно. Пожалуйста, используйте меню ниже.',
+      buttons: [
+        { type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' },
+      ],
     });
     return;
   }
