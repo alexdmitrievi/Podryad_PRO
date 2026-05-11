@@ -11,6 +11,12 @@ import { isDuplicateUpdate, extractTelegramUpdateId } from '@/lib/channels/dedup
 import { linkMessengerAccount, getOrdersByMessengerId, formatOrderStatus } from '@/lib/channels/link';
 import { handleFunnelEvent } from '@/lib/bot/funnel-handler';
 
+// Webhook routes must run on Node.js (we use crypto.timingSafeEqual + Buffer)
+// and must never be statically optimized.
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
+
 const mapper = new TelegramMapper();
 
 /** Timing-safe string comparison for webhook secret validation. */
@@ -23,9 +29,9 @@ function timingSafeSecretCompare(a: string, b: string): boolean {
   }
 }
 
-const HELP_TEXT = `*Подряд PRO* — платформа для заказа рабочей силы в Омске и Новосибирске.
+const HELP_TEXT = `<b>Подряд PRO</b> — платформа для заказа рабочей силы в Омске и Новосибирске.
 
-*Команды:*
+<b>Команды:</b>
 /start — приветствие
 /help — справка
 /order — создать заказ
@@ -35,7 +41,7 @@ const HELP_TEXT = `*Подряд PRO* — платформа для заказа
 
 Просто напишите, что вам нужно — я помогу!`;
 
-const START_TEXT = `Привет! Я — бот сервиса *Подряд PRO* 🏗️
+const START_TEXT = `Привет! Я — бот сервиса <b>Подряд PRO</b> 🏗️
 
 Мы помогаем найти:
 • Рабочих (грузчики, разнорабочие, строители)
@@ -57,6 +63,7 @@ export async function POST(req: NextRequest) {
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
   if (expectedSecret) {
     if (!timingSafeSecretCompare(secret, expectedSecret)) {
+      log.warn('[TelegramWebhook] Forbidden — webhook secret mismatch', { hasSecret: !!secret });
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
   } else {
@@ -67,7 +74,8 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+    // Always 200 — Telegram retries non-2xx aggressively and we don't want a poison pill.
+    return NextResponse.json({ ok: true, error: 'invalid_json' });
   }
 
   // 3. Deduplicate by update_id (Telegram guarantees at-least-once delivery)
@@ -93,19 +101,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // 6. Process message: commands & callbacks are awaited, free-text runs in background
-  const isInteractive = event.type === 'command' || event.type === 'callback';
-  if (isInteractive) {
-    try {
-      await processMessage(event, userId, chatId, updateId);
-    } catch (err) {
-      log.error('[TelegramWebhook] processMessage failed', { error: String(err), user_id: userId });
-    }
-  } else {
-    // Free-text → AI is slow — run in background with catch
-    void processMessage(event, userId, chatId, updateId).catch((err) => {
-      log.error('[TelegramWebhook] processMessage (free-text) failed', { error: String(err), user_id: userId });
-    });
+  // 6. Process message — always await so we don't lose work on serverless cold-shutdown.
+  //    Telegram's webhook timeout is 60s, ours is well under that.
+  try {
+    await processMessage(event, userId, chatId, updateId);
+  } catch (err) {
+    log.error('[TelegramWebhook] processMessage failed', { error: String(err), user_id: userId });
   }
 
   // 7. Enqueue CRM event (non-blocking, deduped by update_id)
@@ -153,6 +154,25 @@ async function answerCallbackQuery(
   }
 }
 
+/** Send a message and surface failures so silent breakage gets logged. */
+async function sendOrLog(
+  router: ReturnType<typeof getChannelRouter>,
+  msg: Parameters<ReturnType<typeof getChannelRouter>['send']>[0],
+): Promise<void> {
+  try {
+    const res = await router.send(msg);
+    if (!res.success) {
+      log.error('[TelegramWebhook] router.send failed', {
+        chat_id: msg.chat_id,
+        text_len: msg.text.length,
+        error: res.error,
+      });
+    }
+  } catch (err) {
+    log.error('[TelegramWebhook] router.send threw', { error: String(err), chat_id: msg.chat_id });
+  }
+}
+
 async function processMessage(
   event: ReturnType<typeof mapper.normalize>,
   userId: string,
@@ -161,7 +181,8 @@ async function processMessage(
 ): Promise<void> {
   const router = getChannelRouter();
   const text = event.text.trim();
-  const callbackQueryId = (event.payload as { callback_query_id?: string } | undefined)?.callback_query_id;
+  const payload = (event.payload ?? {}) as { callback_query_id?: string; username?: string; display_name?: string };
+  const callbackQueryId = payload.callback_query_id;
 
   // ── Funnel handler (Premium integration) ──
   try {
@@ -172,25 +193,18 @@ async function processMessage(
       userId,
       text,
       updateId,
-      username: (event as { username?: string }).username,
-      displayName: (event as { display_name?: string }).display_name,
+      username: payload.username,
+      displayName: payload.display_name,
     });
     if (funnelResponse) {
-      const btns = funnelResponse.buttons
-        ? funnelResponse.buttons.flat().map((b) => ({
-            type: b.type as 'url' | 'callback',
-            text: b.text,
-            url: b.type === 'url' ? b.url : undefined,
-            callback_data: b.type === 'callback' ? b.callback_data : undefined,
-          }))
-        : undefined;
-      await router.send({
+      await sendOrLog(router, {
         channel: 'telegram',
         chat_id: chatId,
         user_id: userId,
         text: funnelResponse.text,
         parse_mode: 'HTML',
-        buttons: btns,
+        // Pass row layout through unchanged — TelegramTransport handles MessageButton[][] now.
+        buttons: funnelResponse.buttons,
       });
       if (callbackQueryId) await answerCallbackQuery(callbackQueryId);
       return;
@@ -202,18 +216,13 @@ async function processMessage(
     if (callbackQueryId) {
       await answerCallbackQuery(callbackQueryId, 'Произошла ошибка. Попробуйте ещё раз.', true);
     }
-    await router.send({
-      channel: 'telegram',
-      chat_id: chatId,
-      user_id: userId,
-      text: 'Извините, произошла ошибка. Попробуйте ещё раз или напишите оператору через меню.',
-    }).catch(() => {});
-    return;
+    // Do NOT return here — let the legacy /start fallback below send something
+    // useful (with URL buttons that work even when Supabase is down).
   }
 
   // Handle callbacks (legacy fallback — only reached if funnel didn't handle the callback)
   if (event.type === 'callback') {
-    await router.send({
+    await sendOrLog(router, {
       channel: 'telegram',
       chat_id: chatId,
       user_id: userId,
@@ -230,37 +239,41 @@ async function processMessage(
     const [cmd, ...args] = text.split(/\s+/);
     switch (cmd.toLowerCase()) {
       case '/start':
-        await router.send({
+        await sendOrLog(router, {
           channel: 'telegram',
           chat_id: chatId,
           user_id: userId,
           text: START_TEXT,
-          parse_mode: 'Markdown',
+          parse_mode: 'HTML',
           buttons: [
-            { type: 'url', text: '🚀 Создать заказ', url: `${APP_URL}/order/new` },
-            { type: 'url', text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` },
-            { type: 'url', text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` },
+            [
+              { type: 'url', text: '🚀 Создать заказ', url: `${APP_URL}/order/new` },
+              { type: 'url', text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` },
+            ],
+            [
+              { type: 'url', text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` },
+            ],
           ],
         });
         return;
 
       case '/help':
-        await router.send({
+        await sendOrLog(router, {
           channel: 'telegram',
           chat_id: chatId,
           user_id: userId,
           text: HELP_TEXT,
-          parse_mode: 'Markdown',
+          parse_mode: 'HTML',
         });
         return;
 
-      case '/order':
-        await router.send({
+      case '/order': {
+        await sendOrLog(router, {
           channel: 'telegram',
           chat_id: chatId,
           user_id: userId,
-          text: '📋 *Оформление заказа*\n\nОпишите, что нужно сделать и где. Например:\n«Нужны 2 грузчика на завтра в 10:00, ул. Ленина 15, разгрузить фуру»\n\nЯ передам заказ администратору для расчёта стоимости.',
-          parse_mode: 'Markdown',
+          text: '📋 <b>Оформление заказа</b>\n\nОпишите, что нужно сделать и где. Например:\n«Нужны 2 грузчика на завтра в 10:00, ул. Ленина 15, разгрузить фуру»\n\nЯ передам заказ администратору для расчёта стоимости.',
+          parse_mode: 'HTML',
         });
         void enqueueJob({
           queueName: 'leads',
@@ -271,47 +284,47 @@ async function processMessage(
           log.error('[TelegramWebhook] lead enqueue failed', { error: String(err), user_id: userId });
         });
         return;
+      }
 
-      case '/status':
+      case '/status': {
         const orders = await getOrdersByMessengerId({ channel: 'telegram', userId });
         if (orders.length === 0) {
-          await router.send({
+          await sendOrLog(router, {
             channel: 'telegram',
             chat_id: chatId,
             user_id: userId,
-            text: '🔍 *Проверка статуса*\n\nУ вас пока нет заказов, или ваш Telegram не привязан к аккаунту.\nОтправьте `/link ВАШ_ТЕЛЕФОН` для привязки.',
-            parse_mode: 'Markdown',
+            text: '🔍 <b>Проверка статуса</b>\n\nУ вас пока нет заказов, или ваш Telegram не привязан к аккаунту.\nОтправьте <code>/link ВАШ_ТЕЛЕФОН</code> для привязки.',
+            parse_mode: 'HTML',
           });
         } else {
           const lines = orders.slice(0, 5).map((o) => {
             const num = o.order_number ? `#${o.order_number}` : `ID: ${String(o.order_id).slice(0, 8)}`;
             return `• ${num} — ${formatOrderStatus(String(o.status ?? ''))}`;
           });
-          await router.send({
+          await sendOrLog(router, {
             channel: 'telegram',
             chat_id: chatId,
             user_id: userId,
-            text: `📋 *Ваши заказы*\n\n${lines.join('\n')}\n\nПодробнее: [Личный кабинет](${APP_URL}/my)`,
-            parse_mode: 'Markdown',
+            text: `📋 <b>Ваши заказы</b>\n\n${lines.join('\n')}\n\n<a href="${APP_URL}/my">Личный кабинет</a>`,
+            parse_mode: 'HTML',
           });
         }
         return;
+      }
 
       case '/link': {
         const phoneArg = args.join('').replace(/\s+/g, '');
         const result = await linkMessengerAccount({ channel: 'telegram', userId, rawPhone: phoneArg });
-        await router.send({
+        await sendOrLog(router, {
           channel: 'telegram',
           chat_id: chatId,
           user_id: userId,
           text: result.message,
-          parse_mode: result.ok ? undefined : undefined,
         });
         return;
       }
 
-      case '/orders':
-        // Browse available orders (for contractors)
+      case '/orders': {
         const { data: pubOrders } = await (await import('@/lib/supabase')).getServiceClient()
           .from('orders')
           .select('order_id, order_number, work_type, display_price, city, created_at')
@@ -319,12 +332,12 @@ async function processMessage(
           .order('created_at', { ascending: false })
           .limit(5);
         if (!pubOrders || pubOrders.length === 0) {
-          await router.send({
+          await sendOrLog(router, {
             channel: 'telegram',
             chat_id: chatId,
             user_id: userId,
-            text: '📢 *Актуальные заказы*\n\nСейчас нет активных заказов. Загляните позже!',
-            parse_mode: 'Markdown',
+            text: '📢 <b>Актуальные заказы</b>\n\nСейчас нет активных заказов. Загляните позже!',
+            parse_mode: 'HTML',
           });
         } else {
           const orderLines = pubOrders.map((o: Record<string, unknown>) => {
@@ -333,15 +346,16 @@ async function processMessage(
             const type = String(o.work_type ?? '');
             return `• ${num} — ${type}, ${price}`;
           });
-          await router.send({
+          await sendOrLog(router, {
             channel: 'telegram',
             chat_id: chatId,
             user_id: userId,
-            text: `📢 *Актуальные заказы*\n\n${orderLines.join('\n')}\n\nОткликнуться: [Сайт](${APP_URL}/orders)`,
-            parse_mode: 'Markdown',
+            text: `📢 <b>Актуальные заказы</b>\n\n${orderLines.join('\n')}\n\n<a href="${APP_URL}/orders">Откликнуться</a>`,
+            parse_mode: 'HTML',
           });
         }
         return;
+      }
 
       default:
         break;
@@ -371,7 +385,7 @@ async function processMessage(
       ],
     });
 
-    await router.send({
+    await sendOrLog(router, {
       channel: 'telegram',
       chat_id: chatId,
       user_id: userId,
@@ -379,11 +393,11 @@ async function processMessage(
     });
   } catch (err) {
     log.error('[TelegramWebhook] AI or send failed', { error: String(err), user_id: userId });
-    await router.send({
+    await sendOrLog(router, {
       channel: 'telegram',
       chat_id: chatId,
       user_id: userId,
       text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
-    }).catch(() => {});
+    });
   }
 }

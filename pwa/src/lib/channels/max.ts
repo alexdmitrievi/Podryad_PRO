@@ -70,18 +70,22 @@ export class MaxTransport implements ChannelTransport {
       text: plainText,
     };
 
-    // MAX inline keyboard — one button per row for good UX
+    // MAX inline keyboard — accept either flat list or pre-grouped rows.
     if (message.buttons?.length) {
+      const toBtn = (btn: { type: string; text: string; url?: string; callback_data?: string }) =>
+        btn.type === 'url'
+          ? { type: 'link', text: btn.text, url: btn.url }
+          : { type: 'callback', text: btn.text, payload: btn.callback_data };
+
+      const isRowed = Array.isArray(message.buttons[0]);
+      const rows = isRowed
+        ? (message.buttons as unknown as Array<Array<Parameters<typeof toBtn>[0]>>).map((row) => row.map(toBtn))
+        : (message.buttons as Array<Parameters<typeof toBtn>[0]>).map((b) => [toBtn(b)]);
+
       body.attachments = [
         {
           type: 'inline_keyboard',
-          payload: {
-            buttons: message.buttons.map((btn) => [
-              btn.type === 'url'
-                ? { type: 'link', text: btn.text, url: btn.url }
-                : { type: 'callback', text: btn.text, payload: btn.callback_data },
-            ]),
-          },
+          payload: { buttons: rows },
         },
       ];
     }
@@ -154,34 +158,60 @@ export class MaxTransport implements ChannelTransport {
 }
 
 /**
- * MAX Mapper — converts raw MAX webhook payload to NormalizedIncomingEvent.
+ * MAX Mapper — converts raw MAX (TamTam) webhook payload to NormalizedIncomingEvent.
+ *
+ * Handles both shapes:
+ *  - { update: { message: {...}, callback: {...}, update_type } }   ← legacy/some payloads
+ *  - { update_type, timestamp, message: {...}, callback: {...} }    ← real TamTam shape
+ *
+ * Callback may carry user as either `callback.user.user_id` (TamTam) or
+ * `callback.user_id` (flat). Same goes for chat_id.
  */
 export class MaxMapper implements ChannelMapper {
   readonly channel = 'max' as const;
 
   normalize(raw: unknown): NormalizedIncomingEvent {
     const data = raw as Record<string, unknown>;
-    const update = data.update ?? data;
-    const updateObj = update as Record<string, unknown>;
-    const message = (updateObj.message ?? {}) as Record<string, unknown>;
+    const update = (data.update ?? data) as Record<string, unknown>;
+    const message = (update.message ?? data.message ?? {}) as Record<string, unknown>;
     const body = (message.body ?? {}) as Record<string, unknown>;
     const sender = (message.sender ?? {}) as Record<string, unknown>;
     const recipient = (message.recipient ?? {}) as Record<string, unknown>;
-    const callback = updateObj.callback as Record<string, unknown> | undefined;
+    const callback = (update.callback ?? data.callback) as Record<string, unknown> | undefined;
+    const updateType = String(update.update_type ?? data.update_type ?? '');
 
     let type: NormalizedIncomingEvent['type'] = 'message';
     let text = String(body.text ?? '');
-    let userId = String(sender.user_id ?? '');
+    let userId = String(sender.user_id ?? sender.id ?? '');
     let cId = String(recipient.chat_id ?? message.chat_id ?? '');
+    let username: string | undefined = sender.username ? String(sender.username) : undefined;
+    let displayName: string | undefined = sender.name ? String(sender.name) : (sender.first_name ? String(sender.first_name) : undefined);
 
-    if (callback) {
+    if (callback || updateType === 'message_callback') {
+      const cb = callback ?? {};
+      const cbUser = (cb.user ?? {}) as Record<string, unknown>;
       type = 'callback';
-      text = String(callback.payload ?? '');
-      userId = String(callback.user_id ?? sender.user_id ?? '');
-      cId = String(callback.chat_id ?? recipient.chat_id ?? '');
+      text = String(cb.payload ?? cb.callback_data ?? '');
+      userId = String(cbUser.user_id ?? cb.user_id ?? sender.user_id ?? userId ?? '');
+      cId = String(cb.chat_id ?? recipient.chat_id ?? message.chat_id ?? cId ?? '');
+      if (cbUser.username) username = String(cbUser.username);
+      if (cbUser.name) displayName = String(cbUser.name);
     } else if (text.startsWith('/')) {
       type = 'command';
+    } else if (updateType === 'bot_started') {
+      // Treat bot_started as an implicit /start so users get the welcome flow.
+      type = 'command';
+      text = '/start';
+      const userField = (update.user ?? data.user ?? {}) as Record<string, unknown>;
+      if (!userId) userId = String(userField.user_id ?? '');
+      if (!cId) cId = String(update.chat_id ?? data.chat_id ?? userId ?? '');
+      if (userField.name) displayName = String(userField.name);
     }
+
+    const out: Record<string, unknown> = {};
+    if (callback?.callback_id) out.callback_id = callback.callback_id;
+    if (username) out.username = username;
+    if (displayName) out.display_name = displayName;
 
     return {
       channel: 'max',
@@ -189,7 +219,7 @@ export class MaxMapper implements ChannelMapper {
       user_id: userId,
       chat_id: cId,
       text,
-      payload: callback ? { callback_id: callback.callback_id } : undefined,
+      payload: Object.keys(out).length > 0 ? out : undefined,
       timestamp: message.timestamp
         ? new Date(message.timestamp as number).toISOString()
         : new Date().toISOString(),

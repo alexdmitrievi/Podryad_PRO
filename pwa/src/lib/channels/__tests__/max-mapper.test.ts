@@ -164,4 +164,41 @@ describe('MaxMapper.normalize', () => {
     const event = mapper.normalize(raw);
     expect(event.raw).toBe(raw);
   });
+
+  it('handles TamTam-style callback with nested user object', () => {
+    const raw = {
+      update_type: 'message_callback',
+      timestamp: 1700000000000,
+      callback: {
+        callback_id: 'cb_42',
+        payload: 'menu:home',
+        user: { user_id: 'user_99', name: 'Иван' },
+      },
+      message: {
+        recipient: { chat_id: 'chat_77' },
+      },
+    };
+    const event = mapper.normalize(raw);
+    expect(event.type).toBe('callback');
+    expect(event.text).toBe('menu:home');
+    expect(event.user_id).toBe('user_99');
+    expect(event.chat_id).toBe('chat_77');
+    expect(event.payload?.callback_id).toBe('cb_42');
+    expect(event.payload?.display_name).toBe('Иван');
+  });
+
+  it('treats bot_started as a /start command', () => {
+    const raw = {
+      update_type: 'bot_started',
+      timestamp: 1700000000000,
+      chat_id: 'chat_55',
+      user: { user_id: 'user_55', name: 'Bot Newbie' },
+    };
+    const event = mapper.normalize(raw);
+    expect(event.type).toBe('command');
+    expect(event.text).toBe('/start');
+    expect(event.user_id).toBe('user_55');
+    expect(event.chat_id).toBe('chat_55');
+    expect(event.payload?.display_name).toBe('Bot Newbie');
+  });
 });
