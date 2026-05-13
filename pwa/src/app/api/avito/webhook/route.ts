@@ -6,11 +6,36 @@ import { enqueueJob } from '@/lib/job-queue';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
 import { getAvitoConfig } from '@/lib/channels/config';
-import { isDuplicateUpdate, extractTelegramUpdateId } from '@/lib/channels/dedupe';
+import {
+  isUpdateProcessed,
+  tryAcquireProcessingLock,
+  releaseProcessingLock,
+  markUpdateProcessed,
+} from '@/lib/channels/redis-dedupe';
 import { linkMessengerAccount, getOrdersByMessengerId, formatOrderStatus } from '@/lib/channels/link';
 import { timingSafeEqual } from 'crypto';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
+
+const CHANNEL = 'avito' as const;
+
 const mapper = new AvitoMapper();
+
+function timingSafeSecretCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
+}
+
+function extractAvitoUpdateId(body: Record<string, unknown>): string {
+  const update = body.update as Record<string, unknown> | undefined;
+  return String(update?.update_id ?? body.timestamp ?? Date.now());
+}
 
 const HELP_TEXT = `Подряд PRO — платформа для заказа рабочей силы в Омске и Новосибирске.
 
@@ -33,17 +58,9 @@ const START_TEXT = `Привет! Я — бот сервиса Подряд PRO 
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro';
 
-/** Timing-safe string comparison for webhook secret validation. */
-function timingSafeSecretCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  try {
-    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
-  } catch {
-    return false;
-  }
-}
-
 export async function POST(req: NextRequest) {
+  const t0 = Date.now();
+
   // 1. Check channel is enabled
   const config = getAvitoConfig();
   if (!config.enabled) {
@@ -66,6 +83,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  // 3. Parse body
   let body: unknown;
   try {
     body = await req.json();
@@ -73,47 +91,47 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  // 3. Deduplicate by update_id (Avito also guarantees at-least-once delivery)
+  // 4. Extract update_id
   const rawBody = body as Record<string, unknown>;
   const updateId = extractAvitoUpdateId(rawBody);
-  if (isDuplicateUpdate(updateId)) {
+
+  // 5. Distributed deduplication — READ-ONLY check
+  const alreadyProcessed = await isUpdateProcessed(CHANNEL, updateId);
+  if (alreadyProcessed) {
     return NextResponse.json({ ok: true, deduped: true });
   }
 
-  // 4. Normalize incoming event
+  // 6. Acquire distributed processing lock
+  const lockAcquired = await tryAcquireProcessingLock(CHANNEL, updateId);
+  if (!lockAcquired) {
+    return NextResponse.json({ ok: true, locked: true });
+  }
+
+  // 7. Normalize incoming event
   const event = mapper.normalize(body);
   const userId = event.user_id;
   const chatId = event.chat_id;
 
   if (!chatId) {
+    await markUpdateProcessed(CHANNEL, updateId);
     return NextResponse.json({ ok: true });
   }
 
-  // 5. Rate limit per user (10 messages / minute)
+  // 8. Rate limit per user
   const rl = await checkRateLimit(`avito:${userId}`, 10, 60_000);
   if (rl.limited) {
     log.warn('[AvitoWebhook] Rate limited', { user_id: userId });
+    await releaseProcessingLock(CHANNEL, updateId);
     return NextResponse.json({ ok: true });
   }
 
-  // 6. Process message: commands are awaited (fast), free-text runs in background
-  if (event.type === 'command') {
-    try { await processMessage(event, userId, chatId, updateId); } catch (err) {
-      log.error('[AvitoWebhook] processMessage failed', { error: String(err), user_id: userId });
-    }
-  } else {
-    void processMessage(event, userId, chatId, updateId).catch((err) => {
-      log.error('[AvitoWebhook] processMessage (free-text) failed', { error: String(err), user_id: userId });
-    });
-  }
-
-  // 7. Enqueue CRM event (non-blocking, deduped by update_id)
+  // 9. Fire-and-forget CRM event
   void enqueueJob({
     queueName: 'channels',
     jobType: 'channel.incoming_message',
     dedupeKey: `avito:${updateId}`,
     payload: {
-      channel: 'avito',
+      channel: CHANNEL,
       user_id: userId,
       chat_id: chatId,
       text: event.text,
@@ -124,14 +142,41 @@ export async function POST(req: NextRequest) {
     log.error('[AvitoWebhook] enqueue failed', { error: String(err) });
   });
 
-  return NextResponse.json({ ok: true });
+  // 10. Return 200 to Avito NOW — prevent retries
+  const response = NextResponse.json({ ok: true });
+
+  // 11. Background processing with failure recovery
+  processMessage(event, userId, chatId, updateId)
+    .then(() => markUpdateProcessed(CHANNEL, updateId))
+    .catch(async (err) => {
+      log.error('[AvitoWebhook] processMessage failed', {
+        error: String(err),
+        user_id: userId,
+        update_id: updateId,
+        elapsed_ms: Date.now() - t0,
+      });
+
+      await releaseProcessingLock(CHANNEL, updateId);
+
+      try {
+        const router = getChannelRouter();
+        await router.send({
+          channel: CHANNEL,
+          chat_id: chatId,
+          user_id: userId,
+          text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
+        });
+      } catch (sendErr) {
+        log.error('[AvitoWebhook] Fallback error message failed', { error: String(sendErr) });
+      }
+    });
+
+  return response;
 }
 
-/** Extract update_id from Avito webhook payload. Uses timestamp-based fallback. */
-function extractAvitoUpdateId(body: Record<string, unknown>): string {
-  const update = body.update as Record<string, unknown> | undefined;
-  return String(update?.update_id ?? body.timestamp ?? Date.now());
-}
+/* ------------------------------------------------------------------ */
+/*  processMessage (unchanged logic, now runs in background)          */
+/* ------------------------------------------------------------------ */
 
 async function processMessage(
   event: ReturnType<typeof mapper.normalize>,
@@ -145,7 +190,7 @@ async function processMessage(
   // Callbacks
   if (event.type === 'callback') {
     await router.send({
-      channel: 'avito',
+      channel: CHANNEL,
       chat_id: chatId,
       user_id: userId,
       text: `Вы выбрали: ${text}`,
@@ -159,7 +204,7 @@ async function processMessage(
     switch (cmd.toLowerCase()) {
       case '/start':
         await router.send({
-          channel: 'avito',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: START_TEXT,
@@ -168,7 +213,7 @@ async function processMessage(
 
       case '/help':
         await router.send({
-          channel: 'avito',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: HELP_TEXT,
@@ -177,7 +222,7 @@ async function processMessage(
 
       case '/order':
         await router.send({
-          channel: 'avito',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: '📋 Оформление заказа\n\nОпишите, что нужно сделать и где. Например:\n«Нужны 2 грузчика на завтра в 10:00, ул. Ленина 15, разгрузить фуру»\n\nЯ передам заказ администратору для расчёта стоимости.',
@@ -186,17 +231,17 @@ async function processMessage(
           queueName: 'leads',
           jobType: 'chat.lead_intent',
           dedupeKey: `lead:avito:${userId}:${updateId}`,
-          payload: { user_id: userId, chat_id: chatId, channel: 'avito', raw_text: args.join(' ') },
+          payload: { user_id: userId, chat_id: chatId, channel: CHANNEL, raw_text: args.join(' ') },
         }).catch((err) => {
           log.error('[AvitoWebhook] lead enqueue failed', { error: String(err), user_id: userId });
         });
         return;
 
       case '/status': {
-        const orders = await getOrdersByMessengerId({ channel: 'avito', userId });
+        const orders = await getOrdersByMessengerId({ channel: CHANNEL, userId });
         if (orders.length === 0) {
           await router.send({
-            channel: 'avito',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: '🔍 Проверка статуса\n\nУ вас пока нет заказов, или ваш Avito не привязан к аккаунту.\nОтправьте /link ВАШ_ТЕЛЕФОН для привязки.',
@@ -207,7 +252,7 @@ async function processMessage(
             return `• ${num} — ${formatOrderStatus(String(o.status ?? ''))}`;
           });
           await router.send({
-            channel: 'avito',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: `📋 Ваши заказы\n\n${lines.join('\n')}\n\nПодробнее: ${APP_URL}/my`,
@@ -218,9 +263,9 @@ async function processMessage(
 
       case '/link': {
         const phoneArg = args.join('').replace(/\s+/g, '');
-        const result = await linkMessengerAccount({ channel: 'avito', userId, rawPhone: phoneArg });
+        const result = await linkMessengerAccount({ channel: CHANNEL, userId, rawPhone: phoneArg });
         await router.send({
-          channel: 'avito',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: result.message,
@@ -238,7 +283,7 @@ async function processMessage(
           .limit(5);
         if (!pubAvitoOrders || pubAvitoOrders.length === 0) {
           await router.send({
-            channel: 'avito',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: '📢 Актуальные заказы\n\nСейчас нет активных заказов. Загляните позже!',
@@ -251,7 +296,7 @@ async function processMessage(
             return `• ${num} — ${type}, ${price}`;
           });
           await router.send({
-            channel: 'avito',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: `📢 Актуальные заказы\n\n${orderLines.join('\n')}\n\nОткликнуться: ${APP_URL}/orders`,
@@ -265,7 +310,7 @@ async function processMessage(
     }
   }
 
-  // Free-text → AI (background-safe: user already got the acknowledgement)
+  // Free-text → AI
   const maxLen = 2000;
   const trimmedText = text.length > maxLen ? text.slice(0, maxLen) : text;
   if (text.length > maxLen) {
@@ -275,7 +320,7 @@ async function processMessage(
   try {
     const ai = getOpenAIClient();
     const aiResponse = await ai.chat({
-      channel: 'avito',
+      channel: CHANNEL,
       message: trimmedText,
       history: [],
       systemConstraints: [
@@ -289,7 +334,7 @@ async function processMessage(
     });
 
     await router.send({
-      channel: 'avito',
+      channel: CHANNEL,
       chat_id: chatId,
       user_id: userId,
       text: aiResponse.text,
@@ -297,7 +342,7 @@ async function processMessage(
   } catch (err) {
     log.error('[AvitoWebhook] AI or send failed', { error: String(err), user_id: userId });
     await router.send({
-      channel: 'avito',
+      channel: CHANNEL,
       chat_id: chatId,
       user_id: userId,
       text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',

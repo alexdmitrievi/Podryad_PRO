@@ -7,7 +7,13 @@ import { enqueueJob } from '@/lib/job-queue';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
 import { getTelegramConfig } from '@/lib/channels/config';
-import { isDuplicateUpdate, extractTelegramUpdateId } from '@/lib/channels/dedupe';
+import {
+  isUpdateProcessed,
+  tryAcquireProcessingLock,
+  releaseProcessingLock,
+  markUpdateProcessed,
+} from '@/lib/channels/redis-dedupe';
+import { extractTelegramUpdateId } from '@/lib/channels/dedupe';
 import { linkMessengerAccount, getOrdersByMessengerId, formatOrderStatus } from '@/lib/channels/link';
 import { handleFunnelEvent } from '@/lib/bot/funnel-handler';
 
@@ -17,9 +23,10 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
+const CHANNEL = 'telegram' as const;
+
 const mapper = new TelegramMapper();
 
-/** Timing-safe string comparison for webhook secret validation. */
 function timingSafeSecretCompare(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   try {
@@ -51,6 +58,8 @@ const START_TEXT = `Привет! Я — бот сервиса <b>Подряд P
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
 
 export async function POST(req: NextRequest) {
+  const t0 = Date.now();
+
   // 1. Check channel is enabled
   const config = getTelegramConfig();
   if (!config.enabled) {
@@ -70,52 +79,55 @@ export async function POST(req: NextRequest) {
     log.warn('[TelegramWebhook] TELEGRAM_WEBHOOK_SECRET not set — accepting all requests (security gap)');
   }
 
+  // 3. Parse body
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    // Always 200 — Telegram retries non-2xx aggressively and we don't want a poison pill.
     return NextResponse.json({ ok: true, error: 'invalid_json' });
   }
 
-  // 3. Deduplicate by update_id (Telegram guarantees at-least-once delivery)
+  // 4. Extract update_id
   const rawBody = body as Record<string, unknown>;
   const updateId = extractTelegramUpdateId(rawBody);
-  if (isDuplicateUpdate(updateId)) {
+
+  // 5. Distributed deduplication — READ-ONLY check, no write yet
+  const alreadyProcessed = await isUpdateProcessed(CHANNEL, updateId);
+  if (alreadyProcessed) {
     return NextResponse.json({ ok: true, deduped: true });
   }
 
-  // 4. Normalize incoming event
+  // 6. Acquire distributed processing lock (prevents concurrent double-processing)
+  const lockAcquired = await tryAcquireProcessingLock(CHANNEL, updateId);
+  if (!lockAcquired) {
+    return NextResponse.json({ ok: true, locked: true });
+  }
+
+  // 7. Normalize incoming event
   const event = mapper.normalize(body);
   const userId = event.user_id;
   const chatId = event.chat_id;
 
   if (!chatId) {
+    await markUpdateProcessed(CHANNEL, updateId);
     return NextResponse.json({ ok: true });
   }
 
-  // 5. Rate limit per user (10 messages / minute)
+  // 8. Rate limit per user (10 messages / minute)
   const rl = await checkRateLimit(`tg:${userId}`, 10, 60_000);
   if (rl.limited) {
     log.warn('[TelegramWebhook] Rate limited', { user_id: userId });
+    await releaseProcessingLock(CHANNEL, updateId);
     return NextResponse.json({ ok: true });
   }
 
-  // 6. Process message — always await so we don't lose work on serverless cold-shutdown.
-  //    Telegram's webhook timeout is 60s, ours is well under that.
-  try {
-    await processMessage(event, userId, chatId, updateId);
-  } catch (err) {
-    log.error('[TelegramWebhook] processMessage failed', { error: String(err), user_id: userId });
-  }
-
-  // 7. Enqueue CRM event (non-blocking, deduped by update_id)
+  // 9. Fire-and-forget CRM event (deduped by update_id in DB)
   void enqueueJob({
     queueName: 'channels',
     jobType: 'channel.incoming_message',
     dedupeKey: `tg:${updateId}`,
     payload: {
-      channel: 'telegram',
+      channel: CHANNEL,
       user_id: userId,
       chat_id: chatId,
       text: event.text,
@@ -126,10 +138,46 @@ export async function POST(req: NextRequest) {
     log.error('[TelegramWebhook] enqueue failed', { error: String(err) });
   });
 
-  return NextResponse.json({ ok: true });
+  // 10. CRITICAL: Return 200 to Telegram NOW — within ~200ms of receiving the webhook.
+  //     This prevents Telegram retries and race conditions.
+  //     Processing continues in background (Vercel Pro keeps the function alive
+  //     for maxDuration seconds after the response is sent).
+  const response = NextResponse.json({ ok: true });
+
+  // 11. Background processing with proper failure recovery
+  processMessage(event, userId, chatId, updateId)
+    .then(() => markUpdateProcessed(CHANNEL, updateId))
+    .catch(async (err) => {
+      log.error('[TelegramWebhook] processMessage failed', {
+        error: String(err),
+        user_id: userId,
+        update_id: updateId,
+        elapsed_ms: Date.now() - t0,
+      });
+
+      await releaseProcessingLock(CHANNEL, updateId);
+
+      try {
+        const router = getChannelRouter();
+        await router.send({
+          channel: CHANNEL,
+          chat_id: chatId,
+          user_id: userId,
+          text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
+          parse_mode: 'HTML',
+        });
+      } catch (sendErr) {
+        log.error('[TelegramWebhook] Fallback error message failed', { error: String(sendErr) });
+      }
+    });
+
+  return response;
 }
 
-/** Answer a Telegram callback query so the button stops showing loading. */
+/* ------------------------------------------------------------------ */
+/*  processMessage (unchanged logic, now runs in background)          */
+/* ------------------------------------------------------------------ */
+
 async function answerCallbackQuery(
   callbackQueryId: string,
   text?: string,
@@ -154,7 +202,6 @@ async function answerCallbackQuery(
   }
 }
 
-/** Send a message and surface failures so silent breakage gets logged. */
 async function sendOrLog(
   router: ReturnType<typeof getChannelRouter>,
   msg: Parameters<ReturnType<typeof getChannelRouter>['send']>[0],
@@ -188,7 +235,7 @@ async function processMessage(
   try {
     const funnelResponse = await handleFunnelEvent({
       type: event.type as 'message' | 'command' | 'callback',
-      channel: 'telegram',
+      channel: CHANNEL,
       chatId,
       userId,
       text,
@@ -198,32 +245,28 @@ async function processMessage(
     });
     if (funnelResponse) {
       await sendOrLog(router, {
-        channel: 'telegram',
+        channel: CHANNEL,
         chat_id: chatId,
         user_id: userId,
         text: funnelResponse.text,
         parse_mode: 'HTML',
-        // Pass row layout through unchanged — TelegramTransport handles MessageButton[][] now.
         buttons: funnelResponse.buttons,
       });
       if (callbackQueryId) await answerCallbackQuery(callbackQueryId);
       return;
     }
-    // Funnel returned null — acknowledged, not an error
     if (callbackQueryId) await answerCallbackQuery(callbackQueryId);
   } catch (err) {
     log.error('[TelegramWebhook] funnelHandler failed', { error: String(err), user_id: userId });
     if (callbackQueryId) {
       await answerCallbackQuery(callbackQueryId, 'Произошла ошибка. Попробуйте ещё раз.', true);
     }
-    // Do NOT return here — let the legacy /start fallback below send something
-    // useful (with URL buttons that work even when Supabase is down).
   }
 
-  // Handle callbacks (legacy fallback — only reached if funnel didn't handle the callback)
+  // Handle callbacks (legacy fallback)
   if (event.type === 'callback') {
     await sendOrLog(router, {
-      channel: 'telegram',
+      channel: CHANNEL,
       chat_id: chatId,
       user_id: userId,
       text: 'Это действие больше не доступно. Пожалуйста, используйте меню ниже.',
@@ -240,7 +283,7 @@ async function processMessage(
     switch (cmd.toLowerCase()) {
       case '/start':
         await sendOrLog(router, {
-          channel: 'telegram',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: START_TEXT,
@@ -259,7 +302,7 @@ async function processMessage(
 
       case '/help':
         await sendOrLog(router, {
-          channel: 'telegram',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: HELP_TEXT,
@@ -269,7 +312,7 @@ async function processMessage(
 
       case '/order': {
         await sendOrLog(router, {
-          channel: 'telegram',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: '📋 <b>Оформление заказа</b>\n\nОпишите, что нужно сделать и где. Например:\n«Нужны 2 грузчика на завтра в 10:00, ул. Ленина 15, разгрузить фуру»\n\nЯ передам заказ администратору для расчёта стоимости.',
@@ -279,7 +322,7 @@ async function processMessage(
           queueName: 'leads',
           jobType: 'chat.lead_intent',
           dedupeKey: `lead:tg:${userId}:${updateId}`,
-          payload: { user_id: userId, chat_id: chatId, channel: 'telegram', raw_text: args.join(' ') },
+          payload: { user_id: userId, chat_id: chatId, channel: CHANNEL, raw_text: args.join(' ') },
         }).catch((err) => {
           log.error('[TelegramWebhook] lead enqueue failed', { error: String(err), user_id: userId });
         });
@@ -287,10 +330,10 @@ async function processMessage(
       }
 
       case '/status': {
-        const orders = await getOrdersByMessengerId({ channel: 'telegram', userId });
+        const orders = await getOrdersByMessengerId({ channel: CHANNEL, userId });
         if (orders.length === 0) {
           await sendOrLog(router, {
-            channel: 'telegram',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: '🔍 <b>Проверка статуса</b>\n\nУ вас пока нет заказов, или ваш Telegram не привязан к аккаунту.\nОтправьте <code>/link ВАШ_ТЕЛЕФОН</code> для привязки.',
@@ -302,7 +345,7 @@ async function processMessage(
             return `• ${num} — ${formatOrderStatus(String(o.status ?? ''))}`;
           });
           await sendOrLog(router, {
-            channel: 'telegram',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: `📋 <b>Ваши заказы</b>\n\n${lines.join('\n')}\n\n<a href="${APP_URL}/my">Личный кабинет</a>`,
@@ -314,9 +357,9 @@ async function processMessage(
 
       case '/link': {
         const phoneArg = args.join('').replace(/\s+/g, '');
-        const result = await linkMessengerAccount({ channel: 'telegram', userId, rawPhone: phoneArg });
+        const result = await linkMessengerAccount({ channel: CHANNEL, userId, rawPhone: phoneArg });
         await sendOrLog(router, {
-          channel: 'telegram',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: result.message,
@@ -333,7 +376,7 @@ async function processMessage(
           .limit(5);
         if (!pubOrders || pubOrders.length === 0) {
           await sendOrLog(router, {
-            channel: 'telegram',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: '📢 <b>Актуальные заказы</b>\n\nСейчас нет активных заказов. Загляните позже!',
@@ -347,7 +390,7 @@ async function processMessage(
             return `• ${num} — ${type}, ${price}`;
           });
           await sendOrLog(router, {
-            channel: 'telegram',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: `📢 <b>Актуальные заказы</b>\n\n${orderLines.join('\n')}\n\n<a href="${APP_URL}/orders">Откликнуться</a>`,
@@ -372,7 +415,7 @@ async function processMessage(
   try {
     const ai = getOpenAIClient();
     const aiResponse = await ai.chat({
-      channel: 'telegram',
+      channel: CHANNEL,
       message: trimmedText,
       history: [],
       systemConstraints: [
@@ -386,7 +429,7 @@ async function processMessage(
     });
 
     await sendOrLog(router, {
-      channel: 'telegram',
+      channel: CHANNEL,
       chat_id: chatId,
       user_id: userId,
       text: aiResponse.text,
@@ -394,7 +437,7 @@ async function processMessage(
   } catch (err) {
     log.error('[TelegramWebhook] AI or send failed', { error: String(err), user_id: userId });
     await sendOrLog(router, {
-      channel: 'telegram',
+      channel: CHANNEL,
       chat_id: chatId,
       user_id: userId,
       text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',

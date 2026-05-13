@@ -23,7 +23,7 @@ export function getLLMConfig(): LLMConfig {
   return {
     apiKey,
     model: process.env.OPENAI_MODEL ?? 'gpt-4o',
-    timeout: parseInt(process.env.OPENAI_TIMEOUT ?? '30000', 10),
+    timeout: parseInt(process.env.OPENAI_TIMEOUT ?? '20000', 10),
     maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS ?? '2048', 10),
     temperature: parseFloat(process.env.OPENAI_TEMPERATURE ?? '0.7'),
     apiBase: process.env.OPENAI_API_BASE ?? 'https://api.openai.com/v1',

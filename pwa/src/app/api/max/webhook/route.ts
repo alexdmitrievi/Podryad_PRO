@@ -7,19 +7,24 @@ import { enqueueJob } from '@/lib/job-queue';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
 import { getMaxConfig } from '@/lib/channels/config';
-import { isDuplicateUpdate, extractMaxUpdateId } from '@/lib/channels/dedupe';
+import {
+  isUpdateProcessed,
+  tryAcquireProcessingLock,
+  releaseProcessingLock,
+  markUpdateProcessed,
+} from '@/lib/channels/redis-dedupe';
+import { extractMaxUpdateId } from '@/lib/channels/dedupe';
 import { linkMessengerAccount, getOrdersByMessengerId, formatOrderStatus } from '@/lib/channels/link';
 import { handleFunnelEvent } from '@/lib/bot/funnel-handler';
 
-// Webhook routes must run on Node.js (we use crypto.timingSafeEqual + Buffer)
-// and must never be statically optimized.
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
+const CHANNEL = 'max' as const;
+
 const mapper = new MaxMapper();
 
-/** Timing-safe string comparison for webhook secret validation. */
 function timingSafeSecretCompare(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   try {
@@ -29,11 +34,6 @@ function timingSafeSecretCompare(a: string, b: string): boolean {
   }
 }
 
-/**
- * MAX delivers the subscription secret in different places depending on the
- * platform release: header `x-max-bot-api-secret-token`, header `secret`,
- * or query string `?secret=...`. Accept any of them.
- */
 function readMaxSecret(req: NextRequest, body: Record<string, unknown> | null): string {
   return (
     req.headers.get('x-max-bot-api-secret-token') ??
@@ -66,6 +66,8 @@ const START_TEXT = `Привет! Я — бот сервиса Подряд PRO 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
 
 export async function POST(req: NextRequest) {
+  const t0 = Date.now();
+
   // 1. Check channel is enabled
   const config = getMaxConfig();
   if (!config.enabled) {
@@ -73,8 +75,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Channel disabled' }, { status: 503 });
   }
 
-  // Parse body first so we can also check for in-body secret. If it's not JSON,
-  // still ack 200 to avoid MAX retry storms.
+  // Parse body first to check for in-body secret
   let body: unknown;
   try {
     body = await req.json();
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
   }
   const rawBody = (body ?? {}) as Record<string, unknown>;
 
-  // 2. Security: webhook secret REQUIRED if configured
+  // 2. Security: webhook secret
   const expectedSecret = process.env.MAX_WEBHOOK_SECRET;
   if (expectedSecret) {
     const secret = readMaxSecret(req, rawBody);
@@ -95,43 +96,46 @@ export async function POST(req: NextRequest) {
     log.warn('[MaxWebhook] MAX_WEBHOOK_SECRET not set — accepting all requests (security gap)');
   }
 
-  // 3. Deduplicate by update_id
+  // 3. Extract update_id
   const updateId = extractMaxUpdateId(rawBody);
-  if (isDuplicateUpdate(updateId)) {
+
+  // 4. Distributed deduplication — READ-ONLY check
+  const alreadyProcessed = await isUpdateProcessed(CHANNEL, updateId);
+  if (alreadyProcessed) {
     return NextResponse.json({ ok: true, deduped: true });
   }
 
-  // 4. Normalize incoming event
+  // 5. Acquire distributed processing lock
+  const lockAcquired = await tryAcquireProcessingLock(CHANNEL, updateId);
+  if (!lockAcquired) {
+    return NextResponse.json({ ok: true, locked: true });
+  }
+
+  // 6. Normalize incoming event
   const event = mapper.normalize(body);
   const userId = event.user_id;
   const chatId = event.chat_id;
 
   if (!chatId) {
+    await markUpdateProcessed(CHANNEL, updateId);
     return NextResponse.json({ ok: true });
   }
 
-  // 5. Rate limit per user
+  // 7. Rate limit per user
   const rl = await checkRateLimit(`max:${userId}`, 10, 60_000);
   if (rl.limited) {
     log.warn('[MaxWebhook] Rate limited', { user_id: userId });
+    await releaseProcessingLock(CHANNEL, updateId);
     return NextResponse.json({ ok: true });
   }
 
-  // 6. Always await processing — serverless instances may be torn down right
-  //    after the response, killing fire-and-forget work.
-  try {
-    await processMessage(event, userId, chatId, updateId);
-  } catch (err) {
-    log.error('[MaxWebhook] processMessage failed', { error: String(err), user_id: userId });
-  }
-
-  // 7. Enqueue CRM event (deduped by update_id)
+  // 8. Fire-and-forget CRM event
   void enqueueJob({
     queueName: 'channels',
     jobType: 'channel.incoming_message',
     dedupeKey: `max:${updateId}`,
     payload: {
-      channel: 'max',
+      channel: CHANNEL,
       user_id: userId,
       chat_id: chatId,
       text: event.text,
@@ -142,10 +146,42 @@ export async function POST(req: NextRequest) {
     log.error('[MaxWebhook] enqueue failed', { error: String(err) });
   });
 
-  return NextResponse.json({ ok: true });
+  // 9. Return 200 to MAX NOW — prevent retries
+  const response = NextResponse.json({ ok: true });
+
+  // 10. Background processing with failure recovery
+  processMessage(event, userId, chatId, updateId)
+    .then(() => markUpdateProcessed(CHANNEL, updateId))
+    .catch(async (err) => {
+      log.error('[MaxWebhook] processMessage failed', {
+        error: String(err),
+        user_id: userId,
+        update_id: updateId,
+        elapsed_ms: Date.now() - t0,
+      });
+
+      await releaseProcessingLock(CHANNEL, updateId);
+
+      try {
+        const router = getChannelRouter();
+        await router.send({
+          channel: CHANNEL,
+          chat_id: chatId,
+          user_id: userId,
+          text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
+        });
+      } catch (sendErr) {
+        log.error('[MaxWebhook] Fallback error message failed', { error: String(sendErr) });
+      }
+    });
+
+  return response;
 }
 
-/** Answer a MAX callback so the button stops showing loading. */
+/* ------------------------------------------------------------------ */
+/*  processMessage (unchanged logic, now runs in background)          */
+/* ------------------------------------------------------------------ */
+
 async function answerMaxCallback(
   callbackId: string,
   text?: string,
@@ -165,7 +201,6 @@ async function answerMaxCallback(
   }
 }
 
-/** Send a message and surface failures so silent breakage gets logged. */
 async function sendOrLog(
   router: ReturnType<typeof getChannelRouter>,
   msg: Parameters<ReturnType<typeof getChannelRouter>['send']>[0],
@@ -195,11 +230,11 @@ async function processMessage(
   const payload = (event.payload ?? {}) as { callback_id?: string; username?: string; display_name?: string };
   const maxCallbackId = payload.callback_id;
 
-  // ── Funnel handler (Premium integration) ──
+  // ── Funnel handler ──
   try {
     const funnelResponse = await handleFunnelEvent({
       type: event.type as 'message' | 'command' | 'callback',
-      channel: 'max',
+      channel: CHANNEL,
       chatId,
       userId,
       text,
@@ -209,11 +244,10 @@ async function processMessage(
     });
     if (funnelResponse) {
       await sendOrLog(router, {
-        channel: 'max',
+        channel: CHANNEL,
         chat_id: chatId,
         user_id: userId,
         text: funnelResponse.text,
-        // MAX's transport strips HTML; pass row layout through unchanged.
         buttons: funnelResponse.buttons,
       });
       if (maxCallbackId) await answerMaxCallback(maxCallbackId);
@@ -223,13 +257,12 @@ async function processMessage(
   } catch (err) {
     log.error('[MaxWebhook] funnelHandler failed', { error: String(err), user_id: userId });
     if (maxCallbackId) await answerMaxCallback(maxCallbackId, 'Произошла ошибка. Попробуйте ещё раз.');
-    // Do NOT return — let the legacy /start fallback below send a usable greeting.
   }
 
   // Callbacks (legacy fallback)
   if (event.type === 'callback') {
     await sendOrLog(router, {
-      channel: 'max',
+      channel: CHANNEL,
       chat_id: chatId,
       user_id: userId,
       text: 'Это действие больше не доступно. Пожалуйста, используйте меню ниже.',
@@ -246,7 +279,7 @@ async function processMessage(
     switch (cmd.toLowerCase()) {
       case '/start':
         await sendOrLog(router, {
-          channel: 'max',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: START_TEXT,
@@ -264,7 +297,7 @@ async function processMessage(
 
       case '/help':
         await sendOrLog(router, {
-          channel: 'max',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: HELP_TEXT,
@@ -273,7 +306,7 @@ async function processMessage(
 
       case '/order': {
         await sendOrLog(router, {
-          channel: 'max',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: '📋 Оформление заказа\n\nОпишите, что нужно сделать и где. Например:\n«Нужны 2 грузчика на завтра в 10:00, ул. Ленина 15, разгрузить фуру»\n\nЯ передам заказ администратору для расчёта стоимости.',
@@ -282,7 +315,7 @@ async function processMessage(
           queueName: 'leads',
           jobType: 'chat.lead_intent',
           dedupeKey: `lead:max:${userId}:${updateId}`,
-          payload: { user_id: userId, chat_id: chatId, channel: 'max', raw_text: args.join(' ') },
+          payload: { user_id: userId, chat_id: chatId, channel: CHANNEL, raw_text: args.join(' ') },
         }).catch((err) => {
           log.error('[MaxWebhook] lead enqueue failed', { error: String(err), user_id: userId });
         });
@@ -290,10 +323,10 @@ async function processMessage(
       }
 
       case '/status': {
-        const orders = await getOrdersByMessengerId({ channel: 'max', userId });
+        const orders = await getOrdersByMessengerId({ channel: CHANNEL, userId });
         if (orders.length === 0) {
           await sendOrLog(router, {
-            channel: 'max',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: '🔍 Проверка статуса\n\nУ вас пока нет заказов, или ваш MAX не привязан к аккаунту.\nОтправьте /link ВАШ_ТЕЛЕФОН для привязки.',
@@ -304,7 +337,7 @@ async function processMessage(
             return `• ${num} — ${formatOrderStatus(String(o.status ?? ''))}`;
           });
           await sendOrLog(router, {
-            channel: 'max',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: `📋 Ваши заказы\n\n${lines.join('\n')}\n\nПодробнее: ${APP_URL}/my`,
@@ -315,9 +348,9 @@ async function processMessage(
 
       case '/link': {
         const phoneArg = args.join('').replace(/\s+/g, '');
-        const result = await linkMessengerAccount({ channel: 'max', userId, rawPhone: phoneArg });
+        const result = await linkMessengerAccount({ channel: CHANNEL, userId, rawPhone: phoneArg });
         await sendOrLog(router, {
-          channel: 'max',
+          channel: CHANNEL,
           chat_id: chatId,
           user_id: userId,
           text: result.message,
@@ -334,7 +367,7 @@ async function processMessage(
           .limit(5);
         if (!pubMaxOrders || pubMaxOrders.length === 0) {
           await sendOrLog(router, {
-            channel: 'max',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: '📢 Актуальные заказы\n\nСейчас нет активных заказов. Загляните позже!',
@@ -347,7 +380,7 @@ async function processMessage(
             return `• ${num} — ${type}, ${price}`;
           });
           await sendOrLog(router, {
-            channel: 'max',
+            channel: CHANNEL,
             chat_id: chatId,
             user_id: userId,
             text: `📢 Актуальные заказы\n\n${orderLines.join('\n')}\n\nОткликнуться: ${APP_URL}/orders`,
@@ -371,7 +404,7 @@ async function processMessage(
   try {
     const ai = getOpenAIClient();
     const aiResponse = await ai.chat({
-      channel: 'max',
+      channel: CHANNEL,
       message: trimmedText,
       history: [],
       systemConstraints: [
@@ -385,7 +418,7 @@ async function processMessage(
     });
 
     await sendOrLog(router, {
-      channel: 'max',
+      channel: CHANNEL,
       chat_id: chatId,
       user_id: userId,
       text: aiResponse.text,
@@ -393,7 +426,7 @@ async function processMessage(
   } catch (err) {
     log.error('[MaxWebhook] AI or send failed', { error: String(err), user_id: userId });
     await sendOrLog(router, {
-      channel: 'max',
+      channel: CHANNEL,
       chat_id: chatId,
       user_id: userId,
       text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
