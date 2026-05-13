@@ -26,7 +26,11 @@ export interface NormalizedOutgoingMessage {
   user_id?: string;
   text: string;
   parse_mode?: 'MarkdownV2' | 'Markdown' | 'HTML';
-  buttons?: MessageButton[];
+  /**
+   * Inline buttons. Either a flat list (one button per row) or a 2D array of rows
+   * for explicit multi-button rows. Transports must accept both shapes.
+   */
+  buttons?: MessageButton[] | MessageButton[][];
   attachments?: Attachment[];
   reply_to?: string;
   meta?: Record<string, unknown>;

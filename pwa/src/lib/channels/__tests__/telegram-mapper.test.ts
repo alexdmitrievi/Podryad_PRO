@@ -140,4 +140,35 @@ describe('TelegramMapper.normalize', () => {
     const event = mapper.normalize(raw);
     expect(event.raw).toBe(raw);
   });
+
+  it('extracts username and display_name when present', () => {
+    const raw = {
+      update_id: 100,
+      message: {
+        message_id: 1,
+        from: { id: 111, username: 'ivanov', first_name: 'Иван', last_name: 'Иванов' },
+        chat: { id: 222, type: 'private' },
+        date: 1700000000,
+        text: '/start',
+      },
+    };
+    const event = mapper.normalize(raw);
+    expect(event.payload?.username).toBe('ivanov');
+    expect(event.payload?.display_name).toBe('Иван Иванов');
+  });
+
+  it('omits payload entirely when no callback/username/display_name', () => {
+    const raw = {
+      update_id: 100,
+      message: {
+        message_id: 1,
+        from: { id: 111 },
+        chat: { id: 222, type: 'private' },
+        date: 1700000000,
+        text: 'hi',
+      },
+    };
+    const event = mapper.normalize(raw);
+    expect(event.payload).toBeUndefined();
+  });
 });

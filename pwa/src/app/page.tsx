@@ -629,7 +629,7 @@ export default function HomePage() {
 
             {/* TenderPars */}
             <a
-              href="https://parser-dusky.vercel.app/"
+              href="https://parser-juzu.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
               className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"

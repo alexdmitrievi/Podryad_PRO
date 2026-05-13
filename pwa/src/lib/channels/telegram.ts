@@ -40,17 +40,23 @@ export class TelegramTransport implements ChannelTransport {
       chat_id: chatId,
       text: message.text,
       parse_mode: message.parse_mode ?? 'HTML',
+      disable_web_page_preview: true,
     };
 
-    // Inline keyboard — one button per row for better mobile UX
+    // Inline keyboard — accept either flat list (one per row) or pre-grouped rows (button[][]).
     if (message.buttons?.length) {
-      body.reply_markup = {
-        inline_keyboard: message.buttons.map((btn) => [
-          btn.type === 'url'
-            ? { text: btn.text, url: btn.url }
-            : { text: btn.text, callback_data: btn.callback_data },
-        ]),
-      };
+      const toBtn = (btn: { type: string; text: string; url?: string; callback_data?: string }) =>
+        btn.type === 'url'
+          ? { text: btn.text, url: btn.url }
+          : { text: btn.text, callback_data: btn.callback_data };
+
+      // If already a 2D array of rows, pass through as-is; otherwise wrap each as its own row.
+      const isRowed = Array.isArray(message.buttons[0]);
+      const rows = isRowed
+        ? (message.buttons as unknown as Array<Array<Parameters<typeof toBtn>[0]>>).map((row) => row.map(toBtn))
+        : (message.buttons as Array<Parameters<typeof toBtn>[0]>).map((b) => [toBtn(b)]);
+
+      body.reply_markup = { inline_keyboard: rows };
     }
 
     let lastError = '';
@@ -139,13 +145,23 @@ export class TelegramMapper implements ChannelMapper {
       type = 'command';
     }
 
+    const username = from.username ? String(from.username) : undefined;
+    const firstName = from.first_name ? String(from.first_name) : '';
+    const lastName = from.last_name ? String(from.last_name) : '';
+    const displayName = [firstName, lastName].filter(Boolean).join(' ').trim() || undefined;
+
+    const payload: Record<string, unknown> = {};
+    if (callbackQuery) payload.callback_query_id = callbackQuery.id;
+    if (username) payload.username = username;
+    if (displayName) payload.display_name = displayName;
+
     return {
       channel: 'telegram',
       type,
       user_id: String(from.id ?? ''),
       chat_id: String((message.chat as Record<string, unknown>)?.id ?? ''),
       text,
-      payload: callbackQuery ? { callback_query_id: callbackQuery.id } : undefined,
+      payload: Object.keys(payload).length > 0 ? payload : undefined,
       timestamp: message.date
         ? new Date((message.date as number) * 1000).toISOString()
         : new Date().toISOString(),
