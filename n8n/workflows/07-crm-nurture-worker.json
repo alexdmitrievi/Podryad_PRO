@@ -123,25 +123,73 @@
     },
     {
       "parameters": {
-        "chatId": "={{$env.TELEGRAM_OWNER_CHAT_ID}}",
+        "operation": "executeQuery",
+        "query": "SELECT bci.external_id as chat_id, bci.channel\nFROM public.bot_contacts bc\nJOIN public.bot_contact_identities bci ON bci.contact_id = bc.id AND bci.is_blocked = false\nWHERE bc.phone = '={{ ($json.phone || '').toString().replace(/'/g, \"''\") }}'\nLIMIT 1;"
+      },
+      "name": "PG lookup client chat",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1780, 200],
+      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.chat_id }}",
+              "operation": "isNotEmpty",
+              "value2": ""
+            },
+            {
+              "value1": "={{ $json.channel }}",
+              "operation": "equals",
+              "value2": "telegram"
+            }
+          ],
+          "options": {
+            "combinator": "and"
+          }
+        }
+      },
+      "name": "Client has Telegram?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2000, 200]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
         "text": "={{ $json.tg_msg }}",
         "additionalFields": { "parse_mode": "HTML" }
       },
-      "name": "TG send nurture",
+      "name": "TG send to client",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
-      "position": [1780, 300],
+      "position": [2220, 120],
+      "credentials": { "telegramApi": { "id": "tg-main", "name": "Telegram Main Bot" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_OWNER_CHAT_ID}}",
+        "text": "={{ $json.tg_msg + '\\n\\n⚠️ Клиент не привязал Telegram. Требуется ручной контакт.\\n📞 ' + ($json.phone || '') }}",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "name": "TG fallback owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [2220, 340],
       "credentials": { "telegramApi": { "id": "tg-owner", "name": "Telegram Owner Bot" } }
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE public.job_queue SET status = 'completed', completed_at = now(), updated_at = now() WHERE id = '={{ $json.job_id }}'::uuid;"
+        "query": "UPDATE public.job_queue SET status = 'completed', completed_at = now(), updated_at = now() WHERE id = '={{ ($json.job_id || '').toString().replace(/'/g, \"''\") }}'::uuid;"
       },
       "name": "PG complete job",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [2000, 300],
+      "position": [2440, 200],
       "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
     }
   ],
@@ -164,11 +212,19 @@
         [{ "node": "Set 72h msg", "type": "main", "index": 0 }]
       ]
     },
-    "Set welcome msg": { "main": [[{ "node": "TG send nurture", "type": "main", "index": 0 }]] },
-    "Set 2h msg": { "main": [[{ "node": "TG send nurture", "type": "main", "index": 0 }]] },
-    "Set 24h msg": { "main": [[{ "node": "TG send nurture", "type": "main", "index": 0 }]] },
-    "Set 72h msg": { "main": [[{ "node": "TG send nurture", "type": "main", "index": 0 }]] },
-    "TG send nurture": { "main": [[{ "node": "PG complete job", "type": "main", "index": 0 }]] }
+    "Set welcome msg": { "main": [[{ "node": "PG lookup client chat", "type": "main", "index": 0 }]] },
+    "Set 2h msg": { "main": [[{ "node": "PG lookup client chat", "type": "main", "index": 0 }]] },
+    "Set 24h msg": { "main": [[{ "node": "PG lookup client chat", "type": "main", "index": 0 }]] },
+    "Set 72h msg": { "main": [[{ "node": "PG lookup client chat", "type": "main", "index": 0 }]] },
+    "PG lookup client chat": { "main": [[{ "node": "Client has Telegram?", "type": "main", "index": 0 }]] },
+    "Client has Telegram?": {
+      "main": [
+        [{ "node": "TG send to client", "type": "main", "index": 0 }],
+        [{ "node": "TG fallback owner", "type": "main", "index": 0 }]
+      ]
+    },
+    "TG send to client": { "main": [[{ "node": "PG complete job", "type": "main", "index": 0 }]] },
+    "TG fallback owner": { "main": [[{ "node": "PG complete job", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1" },
   "active": false,

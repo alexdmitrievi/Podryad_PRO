@@ -81,7 +81,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO public.bot_leads (contact_id, service_kind, status, city, source, raw_payload)\nSELECT bc.id, 'lawn_mowing', 'new', '={{ $json.city || 'omsk' }}', '={{ $json.queue_name }}', '{{ JSON.stringify($json.payload) }}'::jsonb\n  FROM public.bot_contacts bc\n  JOIN public.bot_contact_identities bci ON bci.contact_id = bc.id\n WHERE bci.channel = '={{ $json.channel }}' AND bci.external_id = '={{ $json.user_id }}'\n LIMIT 1;"
+        "query": "INSERT INTO public.bot_leads (contact_id, service_kind, status, city, source, raw_payload)\nSELECT bc.id, 'lawn_mowing', 'new', '={{ ($json.city || 'omsk').toString().replace(/'/g, \"''\") }}', '={{ ($json.queue_name || '').toString().replace(/'/g, \"''\") }}', '{{ JSON.stringify($json.payload) }}'::jsonb\n  FROM public.bot_contacts bc\n  JOIN public.bot_contact_identities bci ON bci.contact_id = bc.id\n WHERE bci.channel = '={{ ($json.channel || '').toString().replace(/'/g, \"''\") }}' AND bci.external_id = '={{ ($json.user_id || '').toString().replace(/'/g, \"''\") }}'\n LIMIT 1;"
       },
       "name": "PG insert bot_leads",
       "type": "n8n-nodes-base.postgres",
@@ -104,7 +104,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT bl.*, bc.phone, bc.full_name, bci.external_id as messenger_id, bci.channel\n  FROM public.bot_leads bl\n  JOIN public.bot_contacts bc ON bc.id = bl.contact_id\n  LEFT JOIN public.bot_contact_identities bci ON bci.contact_id = bc.id AND bci.is_blocked = false\n WHERE bl.id = '={{ $json.lead_id || '' }}'\n LIMIT 1;"
+        "query": "SELECT bl.*, bc.phone, bc.full_name, bci.external_id as messenger_id, bci.channel\n  FROM public.bot_leads bl\n  JOIN public.bot_contacts bc ON bc.id = bl.contact_id\n  LEFT JOIN public.bot_contact_identities bci ON bci.contact_id = bc.id AND bci.is_blocked = false\n WHERE bl.id = '={{ ($json.lead_id || '').toString().replace(/'/g, \"''\") }}'\n LIMIT 1;"
       },
       "name": "PG fetch lead",
       "type": "n8n-nodes-base.postgres",
@@ -140,7 +140,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO public.bot_messages (contact_id, lead_id, channel, direction, kind, text, metadata, external_id)\nSELECT bc.id, '={{ $json.lead_id || null }}'::uuid, '={{ $json.channel }}', 'inbound', 'text', '={{ $json.text || '' }}', '{}'::jsonb, '={{ $json.user_id }}'\n  FROM public.bot_contacts bc\n  JOIN public.bot_contact_identities bci ON bci.contact_id = bc.id\n WHERE bci.channel = '={{ $json.channel }}' AND bci.external_id = '={{ $json.user_id }}'\n LIMIT 1\n ON CONFLICT (channel, direction, external_id) WHERE external_id IS NOT NULL DO NOTHING;"
+        "query": "INSERT INTO public.bot_messages (contact_id, lead_id, channel, direction, kind, text, metadata, external_id)\nSELECT bc.id, '={{ ($json.lead_id || '').toString().replace(/'/g, \"''\") }}'::uuid, '={{ ($json.channel || '').toString().replace(/'/g, \"''\") }}', 'inbound', 'text', '={{ ($json.text || '').toString().replace(/'/g, \"''\") }}', '{}'::jsonb, '={{ ($json.user_id || '').toString().replace(/'/g, \"''\") }}'\n  FROM public.bot_contacts bc\n  JOIN public.bot_contact_identities bci ON bci.contact_id = bc.id\n WHERE bci.channel = '={{ ($json.channel || '').toString().replace(/'/g, \"''\") }}' AND bci.external_id = '={{ ($json.user_id || '').toString().replace(/'/g, \"''\") }}'\n LIMIT 1\n ON CONFLICT (channel, direction, external_id) WHERE external_id IS NOT NULL DO NOTHING;"
       },
       "name": "PG archive msg",
       "type": "n8n-nodes-base.postgres",
@@ -151,7 +151,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO public.material_requests (phone, material_kind, grade, quantity, city, address, source, raw_payload)\nVALUES ('={{ $json.phone }}', '={{ $json.payload.material_kind || 'sand' }}', '={{ $json.payload.grade || '' }}', '={{ $json.payload.quantity || 1 }}', '={{ $json.city || 'omsk' }}', '={{ $json.payload.address || '' }}', 'bot', '{{ JSON.stringify($json.payload) }}'::jsonb);"
+        "query": "INSERT INTO public.material_requests (phone, material_kind, grade, quantity, city, address, source, raw_payload)\nVALUES ('={{ ($json.phone || '').toString().replace(/'/g, \"''\") }}', '={{ ($json.payload?.material_kind || 'sand').toString().replace(/'/g, \"''\") }}', '={{ ($json.payload?.grade || '').toString().replace(/'/g, \"''\") }}', '={{ ($json.payload?.quantity || 1).toString().replace(/'/g, \"''\") }}', '={{ ($json.city || 'omsk').toString().replace(/'/g, \"''\") }}', '={{ ($json.payload?.address || '').toString().replace(/'/g, \"''\") }}', 'bot', '{{ JSON.stringify($json.payload) }}'::jsonb);"
       },
       "name": "PG material req",
       "type": "n8n-nodes-base.postgres",
@@ -174,7 +174,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE public.job_queue SET status = 'completed', completed_at = now(), updated_at = now() WHERE id = '={{ $json.job_id }}'::uuid;"
+        "query": "UPDATE public.job_queue SET status = 'completed', completed_at = now(), updated_at = now() WHERE id = '={{ ($json.job_id || '').toString().replace(/'/g, \"''\") }}'::uuid;"
       },
       "name": "PG complete job",
       "type": "n8n-nodes-base.postgres",

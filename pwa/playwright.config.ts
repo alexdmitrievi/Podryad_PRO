@@ -40,6 +40,18 @@ export default defineConfig({
       testMatch: /api-.*\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
+    // Additional browsers — not run in CI (CI job explicitly selects only Mobile Chrome + Desktop Chrome).
+    // Uncomment when running locally after installing browsers: npx playwright install safari firefox
+    // {
+    //   name: 'Mobile Safari',
+    //   testIgnore: /api-.*\.spec\.ts/,
+    //   use: { ...devices['iPhone 15'] },
+    // },
+    // {
+    //   name: 'Desktop Firefox',
+    //   testIgnore: /api-.*\.spec\.ts/,
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
   ],
   webServer: {
     command: 'npm run dev',
