@@ -123,15 +123,33 @@ async function main() {
   // 4. RLS enforcement
   console.log('\n── 4. RLS enforcement ──');
   {
-    // Anon client should be restricted from reading all orders
+    // Anon client should only see published orders (RLS filters by status)
     const { data: anonOrders, error: anonErr } = await anon
       .from('orders')
-      .select('count', { count: 'exact', head: true });
+      .select('status', { count: 'exact', head: true });
+    
     if (anonErr) {
-      record('Anon: orders read restricted (RLS enforced)', true);
+      record('Anon: orders access restricted (RLS blocks)', true);
     } else {
-      // If no error, check that it returns only published orders (or empty)
-      record('Anon: orders read restricted (RLS enforced)', false, 'Anon client can read all orders — RLS may be too permissive');
+      // Count all orders with service_role for comparison
+      const { count: totalCount } = await service
+        .from('orders')
+        .select('*', { count: 'exact', head: true });
+      const { count: anonCount } = await anon
+        .from('orders')
+        .select('*', { count: 'exact', head: true });
+      const { count: publishedCount } = await anon
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'published');
+      
+      // RLS should filter: anon count should equal published-only count
+      const rlsWorking = anonCount === publishedCount;
+      record(
+        `Anon: only published orders visible (RLS enforced) [anon=${anonCount}, published=${publishedCount}, total=${totalCount}]`,
+        rlsWorking,
+        rlsWorking ? undefined : `Anon sees ${anonCount} but published=${publishedCount}`
+      );
     }
 
     // Service client should have full access

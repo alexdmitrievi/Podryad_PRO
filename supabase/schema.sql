@@ -206,11 +206,35 @@ CREATE INDEX IF NOT EXISTS idx_push_subs_role ON push_subscriptions(role);
 -- Supabase anon-клиент (используется на фронте для realtime).
 -- service_role обходит RLS — серверные API-роуты работают через него.
 
--- orders: anon может читать published, realtime работает
+-- orders: anon → только published, authenticated → свои, service_role → всё
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "orders_select_published" ON orders
-  FOR SELECT USING (status = 'published');
+CREATE POLICY "orders_anon_select_published" ON orders
+  FOR SELECT USING (auth.role() = 'anon' AND status = 'published');
+
+CREATE POLICY "orders_auth_select_own" ON orders
+  FOR SELECT USING (
+    auth.role() = 'authenticated'
+    AND (
+      customer_phone = (auth.jwt() ->> 'phone')
+      OR contractor_id IN (SELECT id FROM public.contractors WHERE phone = (auth.jwt() ->> 'phone'))
+    )
+  );
+
+CREATE POLICY "orders_auth_insert" ON orders
+  FOR INSERT WITH CHECK (
+    auth.role() = 'authenticated'
+    AND customer_phone = (auth.jwt() ->> 'phone')
+  );
+
+CREATE POLICY "orders_auth_update_own" ON orders
+  FOR UPDATE USING (
+    auth.role() = 'authenticated'
+    AND (
+      customer_phone = (auth.jwt() ->> 'phone')
+      OR contractor_id IN (SELECT id FROM public.contractors WHERE phone = (auth.jwt() ->> 'phone'))
+    )
+  );
 
 CREATE POLICY "orders_service_all" ON orders
   FOR ALL USING (auth.role() = 'service_role');
