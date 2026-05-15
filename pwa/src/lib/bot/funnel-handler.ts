@@ -101,6 +101,7 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
     try { state = { ...state, customerType: await getContactCustomerType(contactId) }; } catch { /* ok */ }
   }
   const screen = state.screen ?? 'home';
+  const region = state.region ?? 'omsk';
 
   // ── Handle callbacks ──
   if (type === 'callback') {
@@ -331,7 +332,7 @@ async function handleCallback(
       }
       case 'quick_order': {
         await setSessionState(chatId, channel, 'quick_order', 'describe', { ...state, screen: 'quick_order' as Screen });
-        return { text: '📝 <b>Опишите задачу</b>\n\nНапишите, что нужно сделать, какой объём и когда.\n<i>Например: «Покосить газон, 10 соток, завтра»</i>\n\n📸 Можете прикрепить фото.', buttons: [navRow(false)] };
+        return { text: '📝 <b>Опишите задачу</b>\n\nНапишите, что нужно сделать, какой объём и когда.\n<i>Например: «Покосить газон, 10 соток, завтра»</i>\n\n📸 Можете прикрепить фото.', buttons: [[{ type: 'callback', text: '◀️ Назад', callback_data: 'nav:back' }]] };
       }
       case 'services':
       case 'order': {
