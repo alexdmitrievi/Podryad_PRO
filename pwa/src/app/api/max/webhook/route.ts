@@ -146,27 +146,53 @@ export async function POST(req: NextRequest) {
     log.error('[MaxWebhook] enqueue failed', { error: String(err) });
   });
 
-  // 9. Process message synchronously. On Vercel Hobby, background processing
-  //     is killed after response.
-  try {
-    await processMessage(event, userId, chatId, updateId);
-    await markUpdateProcessed(CHANNEL, updateId);
-  } catch (err) {
-    log.error('[MaxWebhook] processMessage failed', {
-      error: String(err),
-      user_id: userId,
-      update_id: updateId,
-      elapsed_ms: Date.now() - t0,
-    });
-    await releaseProcessingLock(CHANNEL, updateId);
+  // 9. Fast response: send immediately, then do Supabase work in background.
+  const fastCmd = event.text.trim().toLowerCase().startsWith('/start');
+  const response = NextResponse.json({ ok: true });
+
+  if (fastCmd) {
+    processFastStart(chatId, userId)
+      .catch(err => log.error('[MaxWebhook] fastStart failed', { error: String(err) }));
   }
 
-  return NextResponse.json({ ok: true });
+  processMessage(event, userId, chatId, updateId)
+    .then(() => markUpdateProcessed(CHANNEL, updateId))
+    .catch(async (err) => {
+      log.error('[MaxWebhook] processMessage failed', {
+        error: String(err),
+        user_id: userId,
+        update_id: updateId,
+        elapsed_ms: Date.now() - t0,
+      });
+      await releaseProcessingLock(CHANNEL, updateId);
+    });
+
+  return response;
 }
 
 /* ------------------------------------------------------------------ */
 /*  processMessage (runs in background after 200 response)             */
 /* ------------------------------------------------------------------ */
+
+async function processFastStart(chatId: string, userId: string): Promise<void> {
+  const router = getChannelRouter();
+  try {
+    await router.send({
+      channel: CHANNEL,
+      chat_id: chatId,
+      user_id: userId,
+      text: '👋 Здравствуйте!\n\nЯ — бот «Подряд PRO». Помогаю быстро заказать работы по дому и участку, стройматериалы.\n\n📍 В каком городе вы находитесь?',
+      buttons: [
+        [
+          { type: 'callback', text: '📍 Омск', callback_data: 'region:omsk' },
+          { type: 'callback', text: '📍 Новосибирск', callback_data: 'region:novosibirsk' },
+        ],
+      ],
+    });
+  } catch (err) {
+    log.error('[MaxWebhook] fastStart send failed', { error: String(err) });
+  }
+}
 
 async function answerMaxCallback(
   callbackId: string,
