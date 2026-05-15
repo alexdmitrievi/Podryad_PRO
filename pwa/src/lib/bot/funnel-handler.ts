@@ -109,7 +109,7 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
       return await handleCallback(text, contactId, chatId, channel, state, event, contact.isNew);
     } catch (err) {
       log.error('[funnel-handler] handleCallback threw', { error: String(err), text });
-      return { text: '⚠️ Произошёл сбой. Попробуйте ещё раз.', buttons: backToHomeButton() };
+      return { text: '⚠️ Произошёл сбой. Попробуйте ещё раз.\n\n' + UI.homeMenu, buttons: homeFor(region, state.customerType) };
     }
   }
 
@@ -283,7 +283,7 @@ function regionOrTypeOrHome(state: SessionState, isNew: boolean, displayName?: s
 
 /** If customer type not set, show picker; otherwise main menu. */
 function customerTypeOrHome(state: SessionState, _isNew: boolean, displayName?: string): FunnelResponse {
-  if (!state.customerType) {
+  if (!state.ctypePicked) {
     return { text: UI.askCustomerType(displayName), buttons: customerTypeButtons() };
   }
   const region = state.region ?? 'omsk';
@@ -317,7 +317,7 @@ async function handleCallback(
   if (data.startsWith('ctype:')) {
     const ct = data.slice(6) as CustomerType;
     try { await setCustomerType(contactId, ct); } catch (err) { log.warn('[funnel-handler] setCustomerType failed', { error: String(err) }); }
-    await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home', customerType: ct, navStack: [] });
+    await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home', customerType: ct, ctypePicked: true, navStack: [] });
     const text = ct === 'b2b' ? UI.homeWelcomeB2b(event.displayName) : UI.homeWelcome(event.displayName);
     return { text, buttons: homeFor(region, ct) };
   }
