@@ -146,31 +146,24 @@ export async function POST(req: NextRequest) {
     log.error('[MaxWebhook] enqueue failed', { error: String(err) });
   });
 
-  // 9. Return 200 to MAX NOW — prevent retries. Message is sent in background.
-  const response = NextResponse.json({ ok: true });
-
-  processMessage(event, userId, chatId, updateId)
-    .then(() => markUpdateProcessed(CHANNEL, updateId))
-    .catch(async (err) => {
-      log.error('[MaxWebhook] processMessage failed', {
-        error: String(err),
-        user_id: userId,
-        update_id: updateId,
-        elapsed_ms: Date.now() - t0,
-      });
-      await releaseProcessingLock(CHANNEL, updateId);
-      try {
-        const router = getChannelRouter();
-        await router.send({
-          channel: CHANNEL,
-          chat_id: chatId,
-          user_id: userId,
-          text: 'Извините, произошла ошибка. Попробуйте позже или свяжитесь с нами через сайт.',
-        });
-      } catch {}
+  // 9. Process message synchronously with 8s timeout.
+  //     Vercel Hobby kills background processing after response.
+  try {
+    await Promise.race([
+      (async () => { await processMessage(event, userId, chatId, updateId); await markUpdateProcessed(CHANNEL, updateId); })(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
+    ]);
+  } catch (err) {
+    log.error('[MaxWebhook] processMessage failed or timed out', {
+      error: String(err),
+      user_id: userId,
+      update_id: updateId,
+      elapsed_ms: Date.now() - t0,
     });
+    await releaseProcessingLock(CHANNEL, updateId);
+  }
 
-  return response;
+  return NextResponse.json({ ok: true });
 }
 
 /* ------------------------------------------------------------------ */
