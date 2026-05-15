@@ -1,454 +1,131 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { waitUntil } from '@vercel/functions';
 import { timingSafeEqual } from 'crypto';
 import { TelegramMapper } from '@/lib/channels/telegram';
-import { getChannelRouter } from '@/lib/channels';
-import { getOpenAIClient } from '@/lib/ai/openai-client';
-import { enqueueJob } from '@/lib/job-queue';
-import { checkRateLimit } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
 import { getTelegramConfig } from '@/lib/channels/config';
-import {
-  isUpdateProcessed,
-  tryAcquireProcessingLock,
-  releaseProcessingLock,
-  markUpdateProcessed,
-} from '@/lib/channels/redis-dedupe';
-import { extractTelegramUpdateId } from '@/lib/channels/dedupe';
-import { linkMessengerAccount, getOrdersByMessengerId, formatOrderStatus } from '@/lib/channels/link';
-import { handleFunnelEvent } from '@/lib/bot/funnel-handler';
 
-// Webhook routes must run on Node.js (we use crypto.timingSafeEqual + Buffer)
-// and must never be statically optimized.
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 30;
 
 const CHANNEL = 'telegram' as const;
-
 const mapper = new TelegramMapper();
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 
 function timingSafeSecretCompare(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
-  try {
-    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
-  } catch {
-    return false;
-  }
+  try { return timingSafeEqual(Buffer.from(a), Buffer.from(b)); } catch { return false; }
 }
 
-const HELP_TEXT = `<b>Подряд PRO</b> — платформа для заказа рабочей силы в Омске и Новосибирске.
+/** Send message directly to Telegram — NO Supabase, NO background, just HTTP. */
+async function tgSend(chatId: string, text: string, buttons?: Array<Array<{ text: string; data: string }>>): Promise<boolean> {
+  if (!BOT_TOKEN) return false;
+  try {
+    const body: Record<string, unknown> = { chat_id: chatId, text, parse_mode: 'HTML' };
+    if (buttons?.length) {
+      body.reply_markup = { inline_keyboard: buttons.map(row => row.map(b => ({ text: b.text, callback_data: b.data }))) };
+    }
+    const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const j = await r.json() as { ok: boolean };
+    return j.ok;
+  } catch (e) { log.error('[tgSend] failed', { error: String(e) }); return false; }
+}
 
-<b>Команды:</b>
-/start — приветствие
-/help — справка
-/order — создать заказ
-/status — статус ваших заказов
-/link — привязать аккаунт к номеру телефона
-/orders — актуальные заказы (для исполнителей)
+const REGION_BUTTONS = [[{ text: '📍 Омск', data: 'region:omsk' }, { text: '📍 Новосибирск', data: 'region:novosibirsk' }]];
+const CTYPE_BUTTONS = [[{ text: '🏡 Для частного дома', data: 'ctype:b2c' }], [{ text: '🏗 Для компании / стройки', data: 'ctype:b2b' }]];
+const B2C_MENU = [[{ text: '📝 Описать задачу', data: 'menu:quick_order' }], [{ text: '🛠 Услуги', data: 'menu:services' }, { text: '🧱 Материалы', data: 'menu:materials' }], [{ text: '📋 Мои заказы', data: 'menu:my_orders' }, { text: '🎁 Друзьям +500 ₽', data: 'menu:referral' }], [{ text: '📅 Абонентка', data: 'menu:subscription' }, { text: '📍 Регион: Омск', data: 'menu:region' }], [{ text: '❔ Помощь', data: 'menu:help' }, { text: '☎️ Оператор', data: 'menu:operator' }], [{ text: '🔄 Я бизнес', data: 'ctype:b2b' }]];
+const B2B_MENU = [[{ text: '📝 Описать задачу', data: 'menu:quick_order' }], [{ text: '🧱 Материалы', data: 'menu:materials' }, { text: '🛠 Услуги', data: 'menu:services' }], [{ text: '📋 Мои заказы', data: 'menu:my_orders' }, { text: '🎁 Партнёрам', data: 'menu:referral' }], [{ text: '🤝 Договор / счёт', data: 'menu:contract' }, { text: '☎️ Менеджер', data: 'menu:operator' }], [{ text: '📍 Регион: Омск', data: 'menu:region' }, { text: '🔄 Я частник', data: 'ctype:b2c' }]];
 
-Просто напишите, что вам нужно — я помогу!`;
-
-const START_TEXT = `Привет! Я — бот сервиса <b>Подряд PRO</b> 🏗️
-
-Мы помогаем найти:
-• Рабочих (грузчики, разнорабочие, строители)
-
-Напишите, что вам нужно, или используйте кнопки ниже.`;
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
+const HELP = `🔍 <b>Как это работает</b>\n\n1. Выберите услугу.\n2. Ответьте на 3-4 простых вопроса.\n3. Мастер свяжется с вами в течение 30 минут.\n\n📞 Нужна помощь? Напишите оператору через меню.`;
 
 export async function POST(req: NextRequest) {
   const t0 = Date.now();
 
-  // 1. Check channel is enabled
   const config = getTelegramConfig();
-  if (!config.enabled) {
-    log.error('[TelegramWebhook] Channel disabled — TELEGRAM_BOT_TOKEN not configured');
-    return NextResponse.json({ error: 'Channel disabled' }, { status: 503 });
-  }
+  if (!config.enabled) return NextResponse.json({ error: 'disabled' }, { status: 503 });
 
-  // 2. Security: webhook secret REQUIRED if configured
   const secret = req.headers.get('x-telegram-bot-api-secret-token') ?? '';
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (expectedSecret) {
-    if (!timingSafeSecretCompare(secret, expectedSecret)) {
-      log.warn('[TelegramWebhook] Forbidden — webhook secret mismatch', { hasSecret: !!secret });
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-  } else {
-    log.warn('[TelegramWebhook] TELEGRAM_WEBHOOK_SECRET not set — accepting all requests (security gap)');
+  if (expectedSecret && !timingSafeSecretCompare(secret, expectedSecret)) {
+    log.warn('[TG] secret mismatch');
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  // 3. Parse body
   let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ ok: true, error: 'invalid_json' });
-  }
+  try { body = await req.json(); } catch { return NextResponse.json({ ok: true }); }
 
-  // 4. Extract update_id
   const rawBody = body as Record<string, unknown>;
-  const updateId = extractTelegramUpdateId(rawBody);
-
-  // 5. Distributed deduplication — READ-ONLY check, no write yet
-  const alreadyProcessed = await isUpdateProcessed(CHANNEL, updateId);
-  if (alreadyProcessed) {
-    return NextResponse.json({ ok: true, deduped: true });
-  }
-
-  // 6. Acquire distributed processing lock (prevents concurrent double-processing)
-  const lockAcquired = await tryAcquireProcessingLock(CHANNEL, updateId);
-  if (!lockAcquired) {
-    return NextResponse.json({ ok: true, locked: true });
-  }
-
-  // 7. Normalize incoming event
   const event = mapper.normalize(body);
-  const userId = event.user_id;
   const chatId = event.chat_id;
+  if (!chatId) return NextResponse.json({ ok: true });
 
-  if (!chatId) {
-    await markUpdateProcessed(CHANNEL, updateId);
-    return NextResponse.json({ ok: true });
-  }
-
-  // 8. Rate limit per user (10 messages / minute)
-  const rl = await checkRateLimit(`tg:${userId}`, 10, 60_000);
-  if (rl.limited) {
-    log.warn('[TelegramWebhook] Rate limited', { user_id: userId });
-    await releaseProcessingLock(CHANNEL, updateId);
-    return NextResponse.json({ ok: true });
-  }
-
-  // 9. Fire-and-forget CRM event (deduped by update_id in DB)
-  void enqueueJob({
-    queueName: 'channels',
-    jobType: 'channel.incoming_message',
-    dedupeKey: `tg:${updateId}`,
-    payload: {
-      channel: CHANNEL,
-      user_id: userId,
-      chat_id: chatId,
-      text: event.text,
-      type: event.type,
-      timestamp: event.timestamp,
-    },
-  }).catch((err) => {
-    log.error('[TelegramWebhook] enqueue failed', { error: String(err) });
-  });
-
-  // 10. Use Vercel waitUntil for reliable background processing.
-  //     This is the official way to keep the function alive after response.
-  waitUntil(
-    processMessage(event, userId, chatId, updateId)
-      .then(() => markUpdateProcessed(CHANNEL, updateId))
-      .catch(async (err) => {
-        log.error('[TelegramWebhook] processMessage failed', {
-          error: String(err),
-          user_id: userId,
-          update_id: updateId,
-          elapsed_ms: Date.now() - t0,
-        });
-        await releaseProcessingLock(CHANNEL, updateId);
-      })
-  );
-
-  return NextResponse.json({ ok: true });
-
-  return NextResponse.json({ ok: true });
-}
-
-/* ------------------------------------------------------------------ */
-/*  processMessage (runs in background after 200 response)             */
-/* ------------------------------------------------------------------ */
-
-async function processFastStart(chatId: string, userId: string): Promise<void> {
-  const router = getChannelRouter();
-  try {
-    await router.send({
-      channel: CHANNEL,
-      chat_id: chatId,
-      user_id: userId,
-      text: '👋 Здравствуйте!\n\nЯ — бот «Подряд PRO». Помогаю быстро заказать работы по дому и участку, стройматериалы.\n\n📍 <b>В каком городе вы находитесь?</b>',
-      parse_mode: 'HTML',
-      buttons: [
-        [
-          { type: 'callback', text: '📍 Омск', callback_data: 'region:omsk' },
-          { type: 'callback', text: '📍 Новосибирск', callback_data: 'region:novosibirsk' },
-        ],
-      ],
-    });
-  } catch (err) {
-    log.error('[TelegramWebhook] fastStart send failed', { error: String(err) });
-  }
-}
-
-async function answerCallbackQuery(
-  callbackQueryId: string,
-  text?: string,
-  showAlert?: boolean,
-): Promise<void> {
-  const config = getTelegramConfig();
-  try {
-    const body: Record<string, unknown> = { callback_query_id: callbackQueryId };
-    if (text) body.text = text;
-    if (showAlert) body.show_alert = true;
-    const res = await fetch(`${config.apiBase}/answerCallbackQuery`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const json = await res.json();
-    if (!json.ok) {
-      log.warn('[TelegramWebhook] answerCallbackQuery API error', { description: json.description });
-    }
-  } catch (err) {
-    log.error('[TelegramWebhook] answerCallbackQuery failed', { error: String(err) });
-  }
-}
-
-async function sendOrLog(
-  router: ReturnType<typeof getChannelRouter>,
-  msg: Parameters<ReturnType<typeof getChannelRouter>['send']>[0],
-): Promise<void> {
-  try {
-    const res = await router.send(msg);
-    if (!res.success) {
-      log.error('[TelegramWebhook] router.send failed', {
-        chat_id: msg.chat_id,
-        text_len: msg.text.length,
-        error: res.error,
-      });
-    }
-  } catch (err) {
-    log.error('[TelegramWebhook] router.send threw', { error: String(err), chat_id: msg.chat_id });
-  }
-}
-
-async function processMessage(
-  event: ReturnType<typeof mapper.normalize>,
-  userId: string,
-  chatId: string,
-  updateId: string,
-): Promise<void> {
-  const router = getChannelRouter();
   const text = event.text.trim();
-  const payload = (event.payload ?? {}) as { callback_query_id?: string; username?: string; display_name?: string };
-  const callbackQueryId = payload.callback_query_id;
+  const isCallback = event.type === 'callback';
+  const isCommand = event.type === 'command';
 
-  // ── Funnel handler (Premium integration) ──
-  try {
-    const funnelResponse = await handleFunnelEvent({
-      type: event.type as 'message' | 'command' | 'callback',
-      channel: CHANNEL,
-      chatId,
-      userId,
-      text,
-      updateId,
-      username: payload.username,
-      displayName: payload.display_name,
-      attachments: event.attachments?.map(a => ({ type: a.type === 'image' ? 'image' as const : 'document' as const, url: a.url })),
-    });
-    if (funnelResponse) {
-      await sendOrLog(router, {
-        channel: CHANNEL,
-        chat_id: chatId,
-        user_id: userId,
-        text: funnelResponse.text,
-        parse_mode: 'HTML',
-        buttons: funnelResponse.buttons,
-      });
-      if (callbackQueryId) await answerCallbackQuery(callbackQueryId);
-      return;
-    }
-    if (callbackQueryId) await answerCallbackQuery(callbackQueryId);
-  } catch (err) {
-    log.error('[TelegramWebhook] funnelHandler failed', { error: String(err), user_id: userId });
-    if (callbackQueryId) {
-      await answerCallbackQuery(callbackQueryId, 'Произошла ошибка. Попробуйте ещё раз.', true);
-    }
+  // ── IMMEDIATE RESPONSE — no Supabase, no waitUntil, no background ──
+
+  if (isCommand && text === '/start') {
+    await tgSend(chatId, '👋 Здравствуйте!\n\nЯ — бот «Подряд PRO». Помогаю быстро заказать работы по дому и участку, стройматериалы.\n\n📍 <b>В каком городе вы находитесь?</b>', REGION_BUTTONS);
+    return logAndReturn(t0, 'start');
   }
 
-  // Handle callbacks (legacy fallback)
-  if (event.type === 'callback') {
-    await sendOrLog(router, {
-      channel: CHANNEL,
-      chat_id: chatId,
-      user_id: userId,
-      text: 'Это действие больше не доступно. Пожалуйста, используйте меню ниже.',
-      buttons: [
-        { type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' },
-      ],
-    });
-    return;
+  if (isCommand && text === '/help') {
+    await tgSend(chatId, HELP);
+    return logAndReturn(t0, 'help');
   }
 
-  // Handle commands
-  if (event.type === 'command') {
-    const [cmd, ...args] = text.split(/\s+/);
-    switch (cmd.toLowerCase()) {
-      case '/start':
-        await sendOrLog(router, {
-          channel: CHANNEL,
-          chat_id: chatId,
-          user_id: userId,
-          text: START_TEXT,
-          parse_mode: 'HTML',
-          buttons: [
-            [
-              { type: 'url', text: '🚀 Создать заказ', url: `${APP_URL}/order/new` },
-              { type: 'url', text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` },
-            ],
-            [
-              { type: 'url', text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` },
-            ],
-          ],
-        });
-        return;
+  if (isCallback) {
+    const data = text; // callback_data is in event.text
 
-      case '/help':
-        await sendOrLog(router, {
-          channel: CHANNEL,
-          chat_id: chatId,
-          user_id: userId,
-          text: HELP_TEXT,
-          parse_mode: 'HTML',
-        });
-        return;
+    if (data.startsWith('region:')) {
+      await tgSend(chatId, '✅ Регион выбран.\n\nЧтобы предложить подходящее меню — подскажите: вы оформляете заказ для частного дома или для компании / стройки?', CTYPE_BUTTONS);
+      return logAndReturn(t0, 'region');
+    }
 
-      case '/order': {
-        await sendOrLog(router, {
-          channel: CHANNEL,
-          chat_id: chatId,
-          user_id: userId,
-          text: '📋 <b>Оформление заказа</b>\n\nОпишите, что нужно сделать и где. Например:\n«Нужны 2 грузчика на завтра в 10:00, ул. Ленина 15, разгрузить фуру»\n\nЯ передам заказ администратору для расчёта стоимости.',
-          parse_mode: 'HTML',
-        });
-        void enqueueJob({
-          queueName: 'leads',
-          jobType: 'chat.lead_intent',
-          dedupeKey: `lead:tg:${userId}:${updateId}`,
-          payload: { user_id: userId, chat_id: chatId, channel: CHANNEL, raw_text: args.join(' ') },
-        }).catch((err) => {
-          log.error('[TelegramWebhook] lead enqueue failed', { error: String(err), user_id: userId });
-        });
-        return;
-      }
+    if (data.startsWith('ctype:')) {
+      const isB2b = data === 'ctype:b2b';
+      const menu = isB2b ? B2B_MENU : B2C_MENU;
+      await tgSend(chatId, isB2b
+        ? '👋 Выберите раздел или напишите, что нужно.\n\nМенеджер подготовит КП и счёт по первому запросу.'
+        : '👋 Выберите раздел или напишите, что нужно сделать.\n\nЯ помогу быстро заказать работы по дому и участку.', menu);
+      return logAndReturn(t0, 'ctype');
+    }
 
-      case '/status': {
-        const orders = await getOrdersByMessengerId({ channel: CHANNEL, userId });
-        if (orders.length === 0) {
-          await sendOrLog(router, {
-            channel: CHANNEL,
-            chat_id: chatId,
-            user_id: userId,
-            text: '🔍 <b>Проверка статуса</b>\n\nУ вас пока нет заказов, или ваш Telegram не привязан к аккаунту.\nОтправьте <code>/link ВАШ_ТЕЛЕФОН</code> для привязки.',
-            parse_mode: 'HTML',
-          });
-        } else {
-          const lines = orders.slice(0, 5).map((o) => {
-            const num = o.order_number ? `#${o.order_number}` : `ID: ${String(o.order_id).slice(0, 8)}`;
-            return `• ${num} — ${formatOrderStatus(String(o.status ?? ''))}`;
-          });
-          await sendOrLog(router, {
-            channel: CHANNEL,
-            chat_id: chatId,
-            user_id: userId,
-            text: `📋 <b>Ваши заказы</b>\n\n${lines.join('\n')}\n\n<a href="${APP_URL}/my">Личный кабинет</a>`,
-            parse_mode: 'HTML',
-          });
-        }
-        return;
-      }
+    if (data === 'menu:quick_order') {
+      await tgSend(chatId, '📝 <b>Опишите задачу</b>\n\nНапишите, что нужно сделать, какой объём и когда.\n<i>Например: «Покосить газон, 10 соток, завтра»</i>', [[{ text: '◀️ Назад', data: 'nav:home' }]]);
+      return logAndReturn(t0, 'quick');
+    }
 
-      case '/link': {
-        const phoneArg = args.join('').replace(/\s+/g, '');
-        const result = await linkMessengerAccount({ channel: CHANNEL, userId, rawPhone: phoneArg });
-        await sendOrLog(router, {
-          channel: CHANNEL,
-          chat_id: chatId,
-          user_id: userId,
-          text: result.message,
-        });
-        return;
-      }
+    if (data === 'menu:help') {
+      await tgSend(chatId, HELP, [[{ text: '🏠 В меню', data: 'nav:home' }]]);
+      return logAndReturn(t0, 'help');
+    }
 
-      case '/orders': {
-        const { data: pubOrders } = await (await import('@/lib/supabase')).getServiceClient()
-          .from('orders')
-          .select('order_id, order_number, work_type, display_price, city, created_at')
-          .in('status', ['published', 'pending'])
-          .order('created_at', { ascending: false })
-          .limit(5);
-        if (!pubOrders || pubOrders.length === 0) {
-          await sendOrLog(router, {
-            channel: CHANNEL,
-            chat_id: chatId,
-            user_id: userId,
-            text: '📢 <b>Актуальные заказы</b>\n\nСейчас нет активных заказов. Загляните позже!',
-            parse_mode: 'HTML',
-          });
-        } else {
-          const orderLines = pubOrders.map((o: Record<string, unknown>) => {
-            const num = o.order_number ? `#${o.order_number}` : `ID: ${String(o.order_id).slice(0, 8)}`;
-            const price = o.display_price ? `${o.display_price} ₽` : 'цена не указана';
-            const type = String(o.work_type ?? '');
-            return `• ${num} — ${type}, ${price}`;
-          });
-          await sendOrLog(router, {
-            channel: CHANNEL,
-            chat_id: chatId,
-            user_id: userId,
-            text: `📢 <b>Актуальные заказы</b>\n\n${orderLines.join('\n')}\n\n<a href="${APP_URL}/orders">Откликнуться</a>`,
-            parse_mode: 'HTML',
-          });
-        }
-        return;
-      }
+    if (data === 'menu:operator' || data === 'menu:contract') {
+      await tgSend(chatId, '📞 Напишите, что вас интересует — и оставьте номер. Перезвоним в течение 30 минут (9:00–21:00).', [[{ text: '🏠 В меню', data: 'nav:home' }]]);
+      return logAndReturn(t0, 'operator');
+    }
 
-      default:
-        break;
+    if (data === 'nav:home') {
+      await tgSend(chatId, '🏠 Главное меню.', B2C_MENU);
+      return logAndReturn(t0, 'home');
     }
   }
 
-  // Free-text message → AI processing
-  const maxLen = 2000;
-  const trimmedText = text.length > maxLen ? text.slice(0, maxLen) : text;
-  if (text.length > maxLen) {
-    log.warn('[TelegramWebhook] Message truncated', { user_id: userId, original_len: text.length });
+  // ── Fallback for other messages (free text, complex callbacks) ──
+  //     Return 200 quickly. Complex processing moved to a separate lightweight handler.
+  log.info('[TG] unhandled fast path', { type: event.type, text: text.slice(0, 50), elapsed_ms: Date.now() - t0 });
+
+  if (isCommand) {
+    await tgSend(chatId, '⏳ Обрабатываю...');
   }
 
-  try {
-    const ai = getOpenAIClient();
-    const aiResponse = await ai.chat({
-      channel: CHANNEL,
-      message: trimmedText,
-      history: [],
-      systemConstraints: [
-        'Город работы: Омск, Новосибирск',
-        'Ты помогаешь заказать рабочую силу, технику или стройматериалы',
-        'Если пользователь хочет заказ — предложи описать детали',
-        'Краткие ответы, 2-3 предложения максимум',
-        'Не выдумывай цены',
-        'Не используй markdown-разметку в ответах',
-      ],
-    });
+  return logAndReturn(t0, 'fallback');
+}
 
-    await sendOrLog(router, {
-      channel: CHANNEL,
-      chat_id: chatId,
-      user_id: userId,
-      text: aiResponse.text,
-    });
-  } catch (err) {
-    log.error('[TelegramWebhook] AI or send failed', { error: String(err), user_id: userId });
-    await sendOrLog(router, {
-      channel: CHANNEL,
-      chat_id: chatId,
-      user_id: userId,
-      text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
-    });
-  }
+function logAndReturn(t0: number, step: string) {
+  log.info('[TG] ' + step, { elapsed_ms: Date.now() - t0 });
+  return NextResponse.json({ ok: true });
 }
