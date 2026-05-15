@@ -2,6 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "regions": ["fra1"],
+  "protectionBypass": {
+    "secret": "ddf130b0557a681809095f42f15261512ac2f80417d3ea75b44432ad29c8c277"
+  },
   "crons": [
     {
       "path": "/api/cron/jobs",
