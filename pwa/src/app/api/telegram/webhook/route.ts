@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { waitUntil } from '@vercel/functions';
 import { timingSafeEqual } from 'crypto';
 import { TelegramMapper } from '@/lib/channels/telegram';
 import { getChannelRouter } from '@/lib/channels';
@@ -138,23 +139,23 @@ export async function POST(req: NextRequest) {
     log.error('[TelegramWebhook] enqueue failed', { error: String(err) });
   });
 
-  // 10. Return 200 first, process in background.
-  //     Queue cleared — Supabase should respond faster now.
-  const response = NextResponse.json({ ok: true });
+  // 10. Use Vercel waitUntil for reliable background processing.
+  //     This is the official way to keep the function alive after response.
+  waitUntil(
+    processMessage(event, userId, chatId, updateId)
+      .then(() => markUpdateProcessed(CHANNEL, updateId))
+      .catch(async (err) => {
+        log.error('[TelegramWebhook] processMessage failed', {
+          error: String(err),
+          user_id: userId,
+          update_id: updateId,
+          elapsed_ms: Date.now() - t0,
+        });
+        await releaseProcessingLock(CHANNEL, updateId);
+      })
+  );
 
-  processMessage(event, userId, chatId, updateId)
-    .then(() => markUpdateProcessed(CHANNEL, updateId))
-    .catch(async (err) => {
-      log.error('[TelegramWebhook] processMessage failed', {
-        error: String(err),
-        user_id: userId,
-        update_id: updateId,
-        elapsed_ms: Date.now() - t0,
-      });
-      await releaseProcessingLock(CHANNEL, updateId);
-    });
-
-  return response;
+  return NextResponse.json({ ok: true });
 
   return NextResponse.json({ ok: true });
 }

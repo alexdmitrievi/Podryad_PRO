@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { waitUntil } from '@vercel/functions';
 import { timingSafeEqual } from 'crypto';
 import { MaxMapper } from '@/lib/channels/max';
 import { getChannelRouter } from '@/lib/channels';
@@ -146,22 +147,22 @@ export async function POST(req: NextRequest) {
     log.error('[MaxWebhook] enqueue failed', { error: String(err) });
   });
 
-  // 9. Return 200 first, process in background.
-  const response = NextResponse.json({ ok: true });
+  // 9. Use Vercel waitUntil for reliable background processing.
+  waitUntil(
+    processMessage(event, userId, chatId, updateId)
+      .then(() => markUpdateProcessed(CHANNEL, updateId))
+      .catch(async (err) => {
+        log.error('[MaxWebhook] processMessage failed', {
+          error: String(err),
+          user_id: userId,
+          update_id: updateId,
+          elapsed_ms: Date.now() - t0,
+        });
+        await releaseProcessingLock(CHANNEL, updateId);
+      })
+  );
 
-  processMessage(event, userId, chatId, updateId)
-    .then(() => markUpdateProcessed(CHANNEL, updateId))
-    .catch(async (err) => {
-      log.error('[MaxWebhook] processMessage failed', {
-        error: String(err),
-        user_id: userId,
-        update_id: updateId,
-        elapsed_ms: Date.now() - t0,
-      });
-      await releaseProcessingLock(CHANNEL, updateId);
-    });
-
-  return response;
+  return NextResponse.json({ ok: true });
 }
 
 /* ------------------------------------------------------------------ */
