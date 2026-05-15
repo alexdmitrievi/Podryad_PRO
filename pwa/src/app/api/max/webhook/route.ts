@@ -146,15 +146,13 @@ export async function POST(req: NextRequest) {
     log.error('[MaxWebhook] enqueue failed', { error: String(err) });
   });
 
-  // 9. Process message synchronously with 8s timeout.
-  //     Vercel Hobby kills background processing after response.
+  // 9. Process message synchronously. On Vercel Hobby, background processing
+  //     is killed after response.
   try {
-    await Promise.race([
-      (async () => { await processMessage(event, userId, chatId, updateId); await markUpdateProcessed(CHANNEL, updateId); })(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-    ]);
+    await processMessage(event, userId, chatId, updateId);
+    await markUpdateProcessed(CHANNEL, updateId);
   } catch (err) {
-    log.error('[MaxWebhook] processMessage failed or timed out', {
+    log.error('[MaxWebhook] processMessage failed', {
       error: String(err),
       user_id: userId,
       update_id: updateId,
