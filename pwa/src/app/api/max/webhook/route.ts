@@ -146,14 +146,8 @@ export async function POST(req: NextRequest) {
     log.error('[MaxWebhook] enqueue failed', { error: String(err) });
   });
 
-  // 9. Fast response: send immediately, then do Supabase work in background.
-  const fastCmd = event.text.trim().toLowerCase().startsWith('/start');
+  // 9. Return 200 first, process in background.
   const response = NextResponse.json({ ok: true });
-
-  if (fastCmd) {
-    processFastStart(chatId, userId)
-      .catch(err => log.error('[MaxWebhook] fastStart failed', { error: String(err) }));
-  }
 
   processMessage(event, userId, chatId, updateId)
     .then(() => markUpdateProcessed(CHANNEL, updateId))

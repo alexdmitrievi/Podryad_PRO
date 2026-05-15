@@ -138,32 +138,23 @@ export async function POST(req: NextRequest) {
     log.error('[TelegramWebhook] enqueue failed', { error: String(err) });
   });
 
-  // 10. Fast response: send reply synchronously before returning 200.
-  //     Vercel Hobby kills background work — sync is the only reliable way.
-  //     /start → region picker (no DB), callbacks → processed sync.
-  //     Slow Supabase operations complete before 200.
-  try {
-    await processMessage(event, userId, chatId, updateId);
-    await markUpdateProcessed(CHANNEL, updateId);
-  } catch (err) {
-    log.error('[TelegramWebhook] processMessage failed', {
-      error: String(err),
-      user_id: userId,
-      update_id: updateId,
-      elapsed_ms: Date.now() - t0,
-    });
-    await releaseProcessingLock(CHANNEL, updateId);
-    try {
-      const router = getChannelRouter();
-      await router.send({
-        channel: CHANNEL,
-        chat_id: chatId,
+  // 10. Return 200 first, process in background.
+  //     Queue cleared — Supabase should respond faster now.
+  const response = NextResponse.json({ ok: true });
+
+  processMessage(event, userId, chatId, updateId)
+    .then(() => markUpdateProcessed(CHANNEL, updateId))
+    .catch(async (err) => {
+      log.error('[TelegramWebhook] processMessage failed', {
+        error: String(err),
         user_id: userId,
-        text: '⚠️ Произошёл сбой. Попробуйте ещё раз.',
-        parse_mode: 'HTML',
+        update_id: updateId,
+        elapsed_ms: Date.now() - t0,
       });
-    } catch {}
-  }
+      await releaseProcessingLock(CHANNEL, updateId);
+    });
+
+  return response;
 
   return NextResponse.json({ ok: true });
 }
