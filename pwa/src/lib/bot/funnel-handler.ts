@@ -573,7 +573,13 @@ async function handleCallback(
   if (data.startsWith('confirm:')) {
     const action = data.slice(8);
     if (action === 'yes') {
-      const sk = state.serviceKind!; const area = state.area || 1;
+    const sk = state.serviceKind;
+    if (!sk) {
+      log.error('[funnel-handler] when: missing serviceKind', { state: JSON.stringify({ screen: state.screen, region: state.region }) });
+      await setSessionState(chatId, channel, 'services_menu', 'pick', { ...state, screen: 'services_menu', serviceKind: undefined, area: undefined, district: undefined, whenLabel: undefined });
+      return { text: '⚠️ Данные заказа утеряны. Выберите услугу заново.', buttons: serviceSelectionButtons() };
+    }
+    const area = state.area || 1;
       const price = await getPriceEstimate(sk, area, region);
       const discountPercent = state.discountPercent || 0; const bonusRub = state.bonusRub || 0;
 

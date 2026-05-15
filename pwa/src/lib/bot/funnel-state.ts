@@ -273,7 +273,7 @@ export function whenLabelToRange(
 }
 
 export function estimatePriceRange(k: BotServiceKind, units: number): { low: number; high: number } {
-  const r = PRICE_RANGE[k];
+  const r = PRICE_RANGE[k] ?? { min: 0, max: 0, minOrder: 0 };
   const low = Math.max(r.minOrder ?? 0, Math.round(r.min * units));
   const high = Math.max(r.minOrder ?? 0, Math.round(r.max * units));
   return { low, high };
