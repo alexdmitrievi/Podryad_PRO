@@ -136,7 +136,7 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
 
 /** Region first, then customer type, then main menu. */
 function regionOrTypeOrHome(state: SessionState, isNew: boolean, displayName?: string): FunnelResponse {
-  if (!state.region) {
+  if (!state.regionPicked) {
     return { text: UI.askRegion(displayName), buttons: regionButtons() };
   }
   return customerTypeOrHome(state, isNew, displayName);
@@ -263,7 +263,7 @@ async function handleCallback(
     const code = data.slice(7) as RegionCode;
     if (state.screen === 'region_pick') {
       try { await setContactRegion(contactId, code); } catch (err) { log.warn('[funnel-handler] setContactRegion failed', { error: String(err) }); }
-      await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region: code, screen: 'home', navStack: [] });
+      await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region: code, regionPicked: true, screen: 'home', navStack: [] });
       if (!state.customerType) {
         return { text: UI.askCustomerType(event.displayName), buttons: customerTypeButtons() };
       }
@@ -273,7 +273,7 @@ async function handleCallback(
       };
     }
     // Region picker inside service flow → keep flow going
-    await setSessionState(chatId, channel, 'order', 'district', { ...state, screen: 'order', region: code });
+    await setSessionState(chatId, channel, 'order', 'district', { ...state, screen: 'order', region: code, regionPicked: true });
     return { text: UI.askDistrict, buttons: districtButtons() };
   }
 

@@ -78,6 +78,7 @@ export type SessionState = {
   areaUnit?: string;
   areaBucket?: string;
   region?: RegionCode;
+  regionPicked?: boolean;
   district?: string;
   districtCode?: string;
   description?: string;
