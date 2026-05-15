@@ -94,14 +94,18 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
 
     if (cmd === '/start' && args[0]?.startsWith('ref_')) {
       const code = args[0]!.slice(4);
-      try { await recordReferralVisit(contactId, code); } catch { /* ok */ }
+      let referrerName: string | undefined;
+      try { referrerName = (await recordReferralVisit(contactId, code)) ?? undefined; } catch { /* ok */ }
       await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home', referredBy: code });
-      return customerTypeOrHome(state, contact.isNew, event.displayName);
+      if (referrerName) {
+        return { text: UI.referralActivated(referrerName), buttons: [...regionButtons(), [{ type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' }]] };
+      }
+      return regionOrTypeOrHome(state, contact.isNew, event.displayName);
     }
 
     if (cmd === '/start') {
       await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home' });
-      return customerTypeOrHome(state, contact.isNew, event.displayName);
+      return regionOrTypeOrHome(state, contact.isNew, event.displayName);
     }
 
     if (cmd === '/cancel') {
@@ -118,7 +122,24 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
   if (type === 'message' && screen === 'material_order') return handleMaterialText(text, contactId, chatId, channel, state);
   if (type === 'message' && screen === 'subscription_confirm') return handleSubscriptionText(text, contactId, chatId, channel, state);
 
+  // ── Fallback: help keywords / unknown ──
+  if (type === 'message') {
+    const lower = text.toLowerCase().trim();
+    if (['help', 'помощь', 'справка', 'команды', '/help', '/h', 'что делать', 'что умеешь'].some(k => lower === k || lower.startsWith(k))) {
+      return { text: UI.helpText, buttons: backToHomeButton() };
+    }
+    return { text: UI.unknown, buttons: homeFor(state.region ?? 'omsk', state.customerType) };
+  }
+
   return null;
+}
+
+/** Region first, then customer type, then main menu. */
+function regionOrTypeOrHome(state: SessionState, isNew: boolean, displayName?: string): FunnelResponse {
+  if (!state.region) {
+    return { text: UI.askRegion(displayName), buttons: regionButtons() };
+  }
+  return customerTypeOrHome(state, isNew, displayName);
 }
 
 /** If customer type not set, show picker; otherwise main menu. */
@@ -243,6 +264,9 @@ async function handleCallback(
     if (state.screen === 'region_pick') {
       try { await setContactRegion(contactId, code); } catch (err) { log.warn('[funnel-handler] setContactRegion failed', { error: String(err) }); }
       await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region: code, screen: 'home', navStack: [] });
+      if (!state.customerType) {
+        return { text: UI.askCustomerType(event.displayName), buttons: customerTypeButtons() };
+      }
       return {
         text: `${UI.regionChanged(REGION_LABEL[code])}\n\n${UI.homeMenu}`,
         buttons: homeFor(code, state.customerType),
@@ -451,9 +475,15 @@ async function handleCallback(
       return { text: '❌ Заказ отменён.\n\n' + UI.homeMenu, buttons: homeFor(region, state.customerType) };
     }
     if (action === 'edit') {
-      const next = pushNav({ customerType: state.customerType, region, screen: 'services_menu' }, 'home');
-      await setSessionState(chatId, channel, 'services_menu', 'pick', next);
-      return { text: 'Выберите услугу заново:', buttons: serviceSelectionButtons() };
+      // Reset to first step of current service, not full services menu
+      const sk = state.serviceKind!;
+      const areasNeeded = ['lawn_mowing', 'scarification', 'aeration', 'land_clearing', 'weed_removal', 'tilling'].includes(sk);
+      if (areasNeeded) {
+        await setSessionState(chatId, channel, 'order', 'params', { ...state, screen: 'order', area: undefined, areaBucket: undefined, district: undefined, districtCode: undefined, whenLabel: undefined, whenHuman: undefined, whenFrom: undefined, whenTo: undefined });
+        return { text: `<b>${SERVICE_LABEL[sk]}</b>\n\nОцените площадь участка:`, buttons: areaButtons(sk) };
+      }
+      await setSessionState(chatId, channel, 'order', 'district', { ...state, screen: 'order', district: undefined, districtCode: undefined, whenLabel: undefined, whenHuman: undefined, whenFrom: undefined, whenTo: undefined });
+      return { text: UI.askDistrict, buttons: districtButtons() };
     }
     return null;
   }
@@ -709,6 +739,23 @@ async function showScreen(
     case 'subscription_pick':
       await setSessionState(chatId, channel, 'subscription_pick', 'plan', { ...state, screen: 'subscription_pick' });
       return { text: UI.subscriptionsIntro(REGION_LABEL[region]), buttons: subscriptionPlansButtons() };
+    case 'order': {
+      if (state.serviceKind) {
+        const areasNeeded = ['lawn_mowing', 'scarification', 'aeration', 'land_clearing', 'weed_removal', 'tilling'].includes(state.serviceKind);
+        const clean = { ...state, screen: 'order' as const, area: undefined as number|undefined, areaBucket: undefined, areaUnit: undefined, district: undefined, districtCode: undefined, whenLabel: undefined, whenHuman: undefined, whenFrom: undefined, whenTo: undefined };
+        if (areasNeeded) {
+          await setSessionState(chatId, channel, 'order', 'params', clean);
+          return { text: `<b>${SERVICE_LABEL[state.serviceKind]}</b>\n\nОцените площадь участка:`, buttons: areaButtons(state.serviceKind) };
+        }
+        await setSessionState(chatId, channel, 'order', 'district', clean);
+        return { text: UI.askDistrict, buttons: districtButtons() };
+      }
+      await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home' });
+      return { text: UI.homeMenu, buttons: homeFor(region, state.customerType) };
+    }
+    case 'material_order':
+      await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home' });
+      return { text: '❌ Отменено.\n\n' + UI.homeMenu, buttons: homeFor(region, state.customerType) };
     case 'orders': {
       const orders = await listMyAllOrders(contactId);
       if (orders.length === 0) {

@@ -91,17 +91,17 @@ export function regionButtons(): MessageButton[][] {
 export function serviceSelectionButtons(): MessageButton[][] {
   const layout: Array<[BotServiceKind, string]> = [
     ['lawn_mowing',      '🌱 Покос газона'],
-    ['weed_removal',     '🌾 Высокая трава / сорняк'],
-    ['scarification',    '🌿 Скарификация'],
-    ['aeration',         '🌬 Аэрация'],
-    ['land_clearing',    '🪓 Расчистка участка'],
-    ['tree_cutting',     '🪚 Спил / корчевание'],
+    ['weed_removal',     '🌾 Удаление сорняков'],
     ['debris_removal',   '🚮 Вывоз мусора'],
+    ['land_clearing',    '🪓 Расчистка участка'],
+    ['tree_cutting',     '🪚 Спил деревьев'],
     ['tilling',          '🚜 Вспашка'],
     ['pool_cleaning',    '🏊 Чистка бассейна'],
+    ['welding',          '🔥 Сварочные работы'],
+    ['scarification',    '🌿 Скарификация'],
+    ['aeration',         '🌬 Аэрация'],
     ['pool_assembly',    '🏗 Сборка бассейна'],
     ['pool_maintenance', '💦 Обслуживание бассейна'],
-    ['welding',          '🔥 Сварочные работы'],
   ];
 
   const rows: MessageButton[][] = [];
