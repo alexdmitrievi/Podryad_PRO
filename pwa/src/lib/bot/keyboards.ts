@@ -20,6 +20,9 @@ function navRow(includeHome = true): MessageButton[] {
 export function mainMenuButtons(region: RegionCode = 'omsk'): MessageButton[][] {
   return [
     [
+      { type: 'callback', text: '📝 Описать задачу', callback_data: 'menu:quick_order' },
+    ],
+    [
       { type: 'callback', text: '🛠 Услуги', callback_data: 'menu:services' },
       { type: 'callback', text: '🧱 Материалы', callback_data: 'menu:materials' },
     ],
@@ -45,6 +48,9 @@ export function mainMenuButtons(region: RegionCode = 'omsk'): MessageButton[][] 
 /** B2B main menu (materials first, contract/invoice prominent). */
 export function mainMenuB2bButtons(region: RegionCode = 'omsk'): MessageButton[][] {
   return [
+    [
+      { type: 'callback', text: '📝 Описать задачу', callback_data: 'menu:quick_order' },
+    ],
     [
       { type: 'callback', text: '🧱 Материалы', callback_data: 'menu:materials' },
       { type: 'callback', text: '🛠 Услуги', callback_data: 'menu:services' },

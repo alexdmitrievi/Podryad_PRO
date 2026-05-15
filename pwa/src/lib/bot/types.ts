@@ -44,7 +44,8 @@ export type Screen =
   | 'services_menu'
   | 'subscription_pick'
   | 'subscription_confirm'
-  | 'region_pick';
+  | 'region_pick'
+  | 'quick_order';
 
 export type OrderStep =
   | 'service'

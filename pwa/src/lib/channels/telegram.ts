@@ -155,6 +155,26 @@ export class TelegramMapper implements ChannelMapper {
     if (username) payload.username = username;
     if (displayName) payload.display_name = displayName;
 
+    const attachments: NormalizedIncomingEvent['attachments'] = [];
+    const photoArr = message.photo as Array<Record<string, unknown>> | undefined;
+    if (photoArr?.length) {
+      const best = photoArr.reduce((a, b) => ((a.width as number) > (b.width as number) ? a : b));
+      const fileId = best.file_id ? String(best.file_id) : undefined;
+      if (fileId) {
+        attachments.push({ type: 'image', url: fileId });
+        if (!text) text = '[фото]';
+      }
+    }
+    const document = message.document as Record<string, unknown> | undefined;
+    if (document) {
+      attachments.push({
+        type: 'document',
+        url: document.file_id ? String(document.file_id) : undefined,
+        filename: document.file_name ? String(document.file_name) : undefined,
+        mime_type: document.mime_type ? String(document.mime_type) : undefined,
+      });
+    }
+
     return {
       channel: 'telegram',
       type,
@@ -162,6 +182,7 @@ export class TelegramMapper implements ChannelMapper {
       chat_id: String((message.chat as Record<string, unknown>)?.id ?? ''),
       text,
       payload: Object.keys(payload).length > 0 ? payload : undefined,
+      attachments: attachments.length > 0 ? attachments : undefined,
       timestamp: message.date
         ? new Date((message.date as number) * 1000).toISOString()
         : new Date().toISOString(),

@@ -24,6 +24,24 @@ import type { BotServiceKind, MaterialKind, RegionCode, CustomerType, SessionSta
 import type { MessageButton } from '@/lib/channels/types';
 import { enqueueJob } from '@/lib/job-queue';
 import { log } from '@/lib/logger';
+import { getTelegramConfig } from '@/lib/channels/config';
+
+const MANAGER_CHAT_ID = '407721399';
+
+async function notifyManager(text: string): Promise<void> {
+  const cfg = getTelegramConfig();
+  if (!cfg.botToken) return;
+  try {
+    const url = `https://api.telegram.org/bot${cfg.botToken}/sendMessage`;
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: MANAGER_CHAT_ID, text, parse_mode: 'HTML' }),
+    });
+  } catch (err) {
+    log.error('[notifyManager] failed', { error: String(err) });
+  }
+}
 
 export type FunnelEvent = {
   type: 'message' | 'command' | 'callback';
@@ -34,6 +52,7 @@ export type FunnelEvent = {
   updateId: string;
   username?: string;
   displayName?: string;
+  attachments?: Array<{ type: 'image' | 'document'; url?: string; filename?: string; mime_type?: string }>;
 };
 
 type FunnelResponse = { text: string; buttons?: MessageButton[][] };
@@ -85,7 +104,12 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
 
   // ── Handle callbacks ──
   if (type === 'callback') {
-    return handleCallback(text, contactId, chatId, channel, state, event, contact.isNew);
+    try {
+      return await handleCallback(text, contactId, chatId, channel, state, event, contact.isNew);
+    } catch (err) {
+      log.error('[funnel-handler] handleCallback threw', { error: String(err), text });
+      return { text: '⚠️ Произошёл сбой. Попробуйте ещё раз.', buttons: backToHomeButton() };
+    }
   }
 
   // ── Handle commands ──
@@ -116,11 +140,13 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
     if (screen === 'order') return handleFunnelText(text, contactId, chatId, channel, state, event);
     if (screen === 'material_order') return handleMaterialText(text, contactId, chatId, channel, state);
     if (screen === 'subscription_confirm') return handleSubscriptionText(text, contactId, chatId, channel, state);
+    if (screen === 'quick_order') return handleQuickOrder(text, contactId, chatId, channel, state, region, event.attachments);
   }
 
   if (type === 'message' && screen === 'order') return handleFunnelText(text, contactId, chatId, channel, state, event);
   if (type === 'message' && screen === 'material_order') return handleMaterialText(text, contactId, chatId, channel, state);
   if (type === 'message' && screen === 'subscription_confirm') return handleSubscriptionText(text, contactId, chatId, channel, state);
+  if (type === 'message' && screen === 'quick_order') return handleQuickOrder(text, contactId, chatId, channel, state, region, event.attachments);
 
   // ── Fallback: help keywords / unknown ──
   if (type === 'message') {
@@ -132,6 +158,118 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
   }
 
   return null;
+}
+
+/** Quick order: parse text, extract service+area+when, show confirm. */
+async function handleQuickOrder(
+  text: string, contactId: string, chatId: string, channel: 'telegram' | 'max',
+  state: SessionState, region: RegionCode,
+  attachments?: FunnelEvent['attachments'],
+): Promise<FunnelResponse> {
+  const lower = text.toLowerCase().trim();
+
+  // Accumulate media IDs from any photo attachments
+  const mediaIds = state.mediaIds ?? [];
+  if (attachments?.length) {
+    for (const a of attachments) {
+      if (a.type === 'image' && a.url) mediaIds.push(a.url);
+    }
+  }
+
+  // Parse service
+  const serviceMap: Array<{ keys: string[]; kind: BotServiceKind }> = [
+    { keys: ['покос', 'газон', 'косить', 'трава газон', 'стрижк'], kind: 'lawn_mowing' },
+    { keys: ['сорняк', 'прополк', 'полот'], kind: 'weed_removal' },
+    { keys: ['мусор', 'вывоз', 'вывез', 'хлам'], kind: 'debris_removal' },
+    { keys: ['расчистк', 'участок', 'куст', 'зарос'], kind: 'land_clearing' },
+    { keys: ['спил', 'дерев', 'корчеван'], kind: 'tree_cutting' },
+    { keys: ['вспашк', 'пахот', 'культивац'], kind: 'tilling' },
+    { keys: ['бассейн', 'чистк', 'обслуживан'], kind: 'pool_cleaning' },
+    { keys: ['сварк', 'сварщик'], kind: 'welding' },
+    { keys: ['скарификац', 'аэрац'], kind: 'scarification' },
+    { keys: ['сборк'], kind: 'pool_assembly' },
+  ];
+
+  let serviceKind: BotServiceKind | undefined;
+  for (const svc of serviceMap) {
+    if (svc.keys.some(k => lower.includes(k))) { serviceKind = svc.kind; break; }
+  }
+
+  // Parse area
+  let area: number | undefined;
+  const areaMatch = text.match(/(\d+(?:[.,]\d+)?)\s*(?:с[оо]т[оок][кв]|сот|ар|га)/i);
+  if (areaMatch) area = parseFloat(areaMatch[1]!.replace(',', '.'));
+  if (!area) {
+    const numMatch = text.match(/(\d+(?:[.,]\d+)?)\s*(?:м²|кв\.?\s*м|м2)/i);
+    if (numMatch) area = parseFloat(numMatch[1]!.replace(',', '.')) / 100;
+  }
+  if (!area) {
+    const bareMatch = text.match(/(?:площад[ьи]?|участок|объём)\s*[:=]*\s*(\d+)/i);
+    if (bareMatch) area = parseInt(bareMatch[1]!, 10);
+  }
+
+  // Parse when
+  let whenHuman: string | undefined;
+  let whenFrom: string | undefined;
+  let whenTo: string | undefined;
+  const today = new Date();
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+  if (/(?:сегодня|сейчас)/i.test(lower)) {
+    whenHuman = 'Сегодня'; whenFrom = fmt(today); whenTo = fmt(today);
+  } else if (/(?:завтра)/i.test(lower)) {
+    const t = new Date(today); t.setDate(today.getDate() + 1);
+    whenHuman = 'Завтра'; whenFrom = fmt(t); whenTo = fmt(t);
+  } else if (/(?:выходн|суббот|воскрес)/i.test(lower)) {
+    const t = new Date(today);
+    if (t.getDay() === 6) { whenFrom = fmt(t); t.setDate(t.getDate() + 1); whenTo = fmt(t); }
+    else { while (t.getDay() !== 6) t.setDate(t.getDate() + 1); whenFrom = fmt(t); t.setDate(t.getDate() + 1); whenTo = fmt(t); }
+    whenHuman = 'На выходных';
+  } else if (/(?:на недел|в течение недел|эта недел)/i.test(lower)) {
+    const t = new Date(today); t.setDate(t.getDate() + 1);
+    whenFrom = fmt(t); t.setDate(today.getDate() + 7); whenTo = fmt(t);
+    whenHuman = 'На неделе';
+  } else {
+    const dateMatch = text.match(/(\d{1,2})\s*(мая|июня|июля|августа|сентября|октября|апреля)/i);
+    if (dateMatch) {
+      const months: Record<string, number> = { января:0, февраля:1, марта:2, апреля:3, мая:4, июня:5, июля:6, августа:7, сентября:8, октября:9, ноября:10, декабря:11 };
+      const m = months[dateMatch[2]!.toLowerCase()];
+      if (m !== undefined) {
+        const d = new Date(today.getFullYear(), m, parseInt(dateMatch[1]!, 10));
+        whenHuman = d.toLocaleDateString('ru', { day:'numeric', month:'long' });
+        whenFrom = fmt(d); whenTo = fmt(d);
+      }
+    }
+  }
+
+  if (!serviceKind) {
+    return { text: '🤔 Не совсем понял, какая услуга нужна.\n\nВыберите из списка или опишите точнее:', buttons: serviceSelectionButtons() };
+  }
+
+  if (!area) area = 1;
+
+  const price = await getPriceEstimate(serviceKind, area, region);
+  const discountPercent = state.discountPercent || 0;
+  const bonusRub = state.bonusRub || 0;
+  const final = applyDiscountToRange(price, discountPercent, Math.min(bonusRub, 500));
+
+  const clean = { ...state, screen: 'order' as Screen, serviceKind, area, areaUnit: areaMatch ? 'сотка' : 'шт', district: REGION_LABEL[region], whenHuman, whenFrom, whenTo, whenLabel: whenHuman ? 'custom' : undefined, discountPercent, bonusRub: Math.min(bonusRub, 500), mediaIds: mediaIds.length > 0 ? mediaIds : undefined };
+  await setSessionState(chatId, channel, 'order', 'confirm', clean);
+
+  const priceLine = final.low !== final.high
+    ? `от ${final.low} до ${final.high} ₽`
+    : `${final.low} ₽`;
+
+  return {
+    text: `✅ <b>Проверьте</b>\n\n` +
+      `Услуга: <b>${SERVICE_LABEL[serviceKind]}</b>\n` +
+      `Площадь: ${area} ${areaMatch ? 'соток' : 'шт'}\n` +
+      `Город: ${REGION_LABEL[region]}\n` +
+      (whenHuman ? `Когда: ${whenHuman}\n` : '') +
+      `\nЦена: ${priceLine}` +
+      (discountPercent ? ` (скидка ${discountPercent}%)` : ''),
+    buttons: confirmButtons(isB2b(state)),
+  };
 }
 
 /** Region first, then customer type, then main menu. */
@@ -190,6 +328,10 @@ async function handleCallback(
       case 'home': {
         await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region, screen: 'home', navStack: [] });
         return { text: UI.homeMenu, buttons: homeFor(region, state.customerType) };
+      }
+      case 'quick_order': {
+        await setSessionState(chatId, channel, 'quick_order', 'describe', { ...state, screen: 'quick_order' as Screen });
+        return { text: '📝 <b>Опишите задачу</b>\n\nНапишите, что нужно сделать, какой объём и когда.\n<i>Например: «Покосить газон, 10 соток, завтра»</i>\n\n📸 Можете прикрепить фото.', buttons: [navRow(false)] };
       }
       case 'services':
       case 'order': {
@@ -434,28 +576,31 @@ async function handleCallback(
       const price = await getPriceEstimate(sk, area, region);
       const discountPercent = state.discountPercent || 0; const bonusRub = state.bonusRub || 0;
 
-      const leadId = await createBotLead({
-        contactId, serviceKind: sk, channel,
-        description: state.description,
-        areaValue: area, areaUnit: state.areaUnit ?? 'сотка',
-        district: `${REGION_LABEL[region]}, ${state.district ?? ''}`,
-        discountPercent, discountRub: 0,
-      });
-      try { await applyDiscountToLead(contactId, leadId, discountPercent, bonusRub); } catch { /* ok */ }
+      let leadId: string;
+      try {
+        leadId = await createBotLead({
+          contactId, serviceKind: sk, channel,
+          description: state.description,
+          areaValue: area, areaUnit: state.areaUnit ?? 'сотка',
+          district: `${REGION_LABEL[region]}, ${state.district ?? ''}`,
+          discountPercent, discountRub: 0,
+        });
+      } catch (err) {
+        log.error('[funnel-handler] createBotLead failed', { error: String(err), contactId, serviceKind: sk });
+        return { text: '❌ Не удалось создать заявку. Попробуйте позже.', buttons: backToHomeButton() };
+      }
+
+      try { await applyDiscountToLead(contactId, leadId, discountPercent, bonusRub); } catch (err) {
+        log.error('[funnel-handler] applyDiscountToLead failed', { error: String(err), leadId, discountPercent, bonusRub });
+      }
 
       const humanId = `B-${leadId.slice(0, 6).toUpperCase()}`;
 
-      // Internal queue (existing CRM)
       void enqueueJob({
         queueName: 'leads', jobType: 'bot.lead_created', dedupeKey: `bot:${leadId}`,
-        payload: {
-          contact_id: contactId, lead_id: leadId, service_kind: sk, channel,
-          district: state.district, when: state.whenHuman, region,
-          customer_type: state.customerType,
-        },
+        payload: { contact_id: contactId, lead_id: leadId, service_kind: sk, channel, district: state.district, when: state.whenHuman, region, customer_type: state.customerType },
       }).catch(() => {});
 
-      // External n8n webhook
       void notifyN8n({
         type: 'lead.created',
         leadId, contactId, serviceKind: sk,
@@ -463,6 +608,21 @@ async function handleCallback(
         customerType: state.customerType ?? 'b2c',
         priceLow: price.low, priceHigh: price.high,
       });
+
+      void notifyManager(
+        `🆕 <b>Новая заявка #${humanId}</b>\n` +
+        `Услуга: <b>${SERVICE_LABEL[sk]}</b>\n` +
+        `Площадь: ${area} ${state.areaUnit ?? 'сотка'}\n` +
+        `Район: ${state.district ?? 'не указан'}\n` +
+        `Когда: ${state.whenHuman ?? 'не указано'}\n` +
+        `Город: ${REGION_LABEL[region]}\n` +
+        `Тип клиента: ${state.customerType === 'b2b' ? 'Бизнес' : 'Частник'}\n` +
+        `Цена: от ${price.low} до ${price.high} ₽\n` +
+        (discountPercent ? `Скидка: ${discountPercent}%\n` : '') +
+        (state.mediaIds?.length ? `📸 Фото: ${state.mediaIds.length} шт.\n` : '') +
+        `Канал: ${channel === 'telegram' ? 'Telegram' : 'MAX'}\n` +
+        `\n<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru'}/admin">Открыть админку</a>`
+      );
 
       await clearSession(chatId, channel);
       const thanksText = isB2b(state)
@@ -639,6 +799,19 @@ async function handleCallback(
           deliveryOnly: !!state.deliveryOnly,
         },
       });
+
+      void notifyManager(
+        `🧱 <b>Новый заказ материалов #${humanId}</b>\n` +
+        `Материал: <b>${MATERIAL_LABEL[mk]} ${state.materialGradeName ?? gc}</b>\n` +
+        `Количество: ${qty} ${unit}\n` +
+        `Адрес: ${state.deliveryAddress ?? 'не указан'}\n` +
+        `Когда: ${state.whenHuman ?? 'не указано'}\n` +
+        `Город: ${REGION_LABEL[region]}\n` +
+        `Тип клиента: ${state.customerType === 'b2b' ? 'Бизнес' : 'Частник'}\n` +
+        `Доп:${state.needsPump ? ' бетононасос' : ''}${state.needsManipulator ? ' манипулятор' : ''}${state.deliveryOnly ? ' разгрузка с борта' : ''}\n` +
+        `Канал: ${channel === 'telegram' ? 'Telegram' : 'MAX'}\n` +
+        `\n<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru'}/admin">Открыть админку</a>`
+      );
 
       await clearSession(chatId, channel);
       const thanksText = isB2b(state)

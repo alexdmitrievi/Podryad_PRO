@@ -239,6 +239,7 @@ async function processMessage(
       updateId,
       username: payload.username,
       displayName: payload.display_name,
+      attachments: event.attachments?.map(a => ({ type: a.type === 'image' ? 'image' as const : 'document' as const, url: a.url })),
     });
     if (funnelResponse) {
       await sendOrLog(router, {
