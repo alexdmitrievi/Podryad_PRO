@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { waitUntil } from '@vercel/functions';
 import { timingSafeEqual } from 'crypto';
 import { TelegramMapper } from '@/lib/channels/telegram';
 import { getChannelRouter } from '@/lib/channels';
@@ -138,36 +139,35 @@ export async function POST(req: NextRequest) {
     log.error('[TelegramWebhook] enqueue failed', { error: String(err) });
   });
 
-  // 10. Return 200 to Telegram NOW — prevenTS retries.
-  //     Processing continues in background.
-  const response = NextResponse.json({ ok: true });
-
-  // 11. Background processing with proper failure recovery
-  processMessage(event, userId, chatId, updateId)
-    .then(() => markUpdateProcessed(CHANNEL, updateId))
-    .catch(async (err) => {
-      log.error('[TelegramWebhook] processMessage failed', {
-        error: String(err),
-        user_id: userId,
-        update_id: updateId,
-        elapsed_ms: Date.now() - t0,
-      });
-      await releaseProcessingLock(CHANNEL, updateId);
-      try {
-        const router = getChannelRouter();
-        await router.send({
-          channel: CHANNEL,
-          chat_id: chatId,
+  // 10. Return 200 to Telegram immediately. Processing continues
+  //     in background via waitUntil (keeps function alive).
+  waitUntil(
+    processMessage(event, userId, chatId, updateId)
+      .then(() => markUpdateProcessed(CHANNEL, updateId))
+      .catch(async (err) => {
+        log.error('[TelegramWebhook] processMessage failed', {
+          error: String(err),
           user_id: userId,
-          text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
-          parse_mode: 'HTML',
+          update_id: updateId,
+          elapsed_ms: Date.now() - t0,
         });
-      } catch (sendErr) {
-        log.error('[TelegramWebhook] Fallback error message failed', { error: String(sendErr) });
-      }
-    });
+        await releaseProcessingLock(CHANNEL, updateId);
+        try {
+          const router = getChannelRouter();
+          await router.send({
+            channel: CHANNEL,
+            chat_id: chatId,
+            user_id: userId,
+            text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
+            parse_mode: 'HTML',
+          });
+        } catch (sendErr) {
+          log.error('[TelegramWebhook] Fallback error message failed', { error: String(sendErr) });
+        }
+      })
+  );
 
-  return response;
+  return NextResponse.json({ ok: true });
 }
 
 /* ------------------------------------------------------------------ */

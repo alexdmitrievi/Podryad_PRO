@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { waitUntil } from '@vercel/functions';
 import { timingSafeEqual } from 'crypto';
 import { MaxMapper } from '@/lib/channels/max';
 import { getChannelRouter } from '@/lib/channels';
@@ -146,35 +147,34 @@ export async function POST(req: NextRequest) {
     log.error('[MaxWebhook] enqueue failed', { error: String(err) });
   });
 
-  // 9. Return 200 to MAX NOW — prevent retries.
-  //     Processing continues in background.
-  const response = NextResponse.json({ ok: true });
-
-  // 10. Background processing with failure recovery
-  processMessage(event, userId, chatId, updateId)
-    .then(() => markUpdateProcessed(CHANNEL, updateId))
-    .catch(async (err) => {
-      log.error('[MaxWebhook] processMessage failed', {
-        error: String(err),
-        user_id: userId,
-        update_id: updateId,
-        elapsed_ms: Date.now() - t0,
-      });
-      await releaseProcessingLock(CHANNEL, updateId);
-      try {
-        const router = getChannelRouter();
-        await router.send({
-          channel: CHANNEL,
-          chat_id: chatId,
+  // 9. Return 200 to MAX immediately. Processing continues
+  //     in background via waitUntil (keeps function alive).
+  waitUntil(
+    processMessage(event, userId, chatId, updateId)
+      .then(() => markUpdateProcessed(CHANNEL, updateId))
+      .catch(async (err) => {
+        log.error('[MaxWebhook] processMessage failed', {
+          error: String(err),
           user_id: userId,
-          text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
+          update_id: updateId,
+          elapsed_ms: Date.now() - t0,
         });
-      } catch (sendErr) {
-        log.error('[MaxWebhook] Fallback error message failed', { error: String(sendErr) });
-      }
-    });
+        await releaseProcessingLock(CHANNEL, updateId);
+        try {
+          const router = getChannelRouter();
+          await router.send({
+            channel: CHANNEL,
+            chat_id: chatId,
+            user_id: userId,
+            text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
+          });
+        } catch (sendErr) {
+          log.error('[MaxWebhook] Fallback error message failed', { error: String(sendErr) });
+        }
+      })
+  );
 
-  return response;
+  return NextResponse.json({ ok: true });
 }
 
 /* ------------------------------------------------------------------ */
