@@ -138,44 +138,29 @@ export async function POST(req: NextRequest) {
     log.error('[TelegramWebhook] enqueue failed', { error: String(err) });
   });
 
-  // 10. CRITICAL: Return 200 to Telegram NOW — within ~200ms of receiving the webhook.
-  //     This prevents Telegram retries and race conditions.
-  //     Processing continues in background (Vercel Pro keeps the function alive
-  //     for maxDuration seconds after the response is sent).
-  const response = NextResponse.json({ ok: true });
-
-  // 11. Background processing with proper failure recovery
-  processMessage(event, userId, chatId, updateId)
-    .then(() => markUpdateProcessed(CHANNEL, updateId))
-    .catch(async (err) => {
-      log.error('[TelegramWebhook] processMessage failed', {
-        error: String(err),
-        user_id: userId,
-        update_id: updateId,
-        elapsed_ms: Date.now() - t0,
-      });
-
-      await releaseProcessingLock(CHANNEL, updateId);
-
-      try {
-        const router = getChannelRouter();
-        await router.send({
-          channel: CHANNEL,
-          chat_id: chatId,
-          user_id: userId,
-          text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
-          parse_mode: 'HTML',
-        });
-      } catch (sendErr) {
-        log.error('[TelegramWebhook] Fallback error message failed', { error: String(sendErr) });
-      }
+  // 10. Process the message SYNCHRONOUSLY for simple commands / Hobby plan.
+  //     On Vercel Hobby, background processing may be terminated after response.
+  //     Simple commands (/start, /help) need synchronous handling so the user
+  //     actually receives a reply. Complex operations (AI, order creation)
+  //     are fire-and-forget.
+  try {
+    await processMessageAndMark(event, userId, chatId, updateId, t0);
+  } catch (err) {
+    log.error('[TelegramWebhook] sync processMessage failed', {
+      error: String(err),
+      user_id: userId,
+      update_id: updateId,
+      elapsed_ms: Date.now() - t0,
     });
+    await releaseProcessingLock(CHANNEL, updateId);
+    // Still return 200 to Telegram — otherwise it retries indefinitely
+  }
 
-  return response;
+  return NextResponse.json({ ok: true });
 }
 
 /* ------------------------------------------------------------------ */
-/*  processMessage (unchanged logic, now runs in background)          */
+/*  processMessage (synchronous processing for Hobby plan)             */
 /* ------------------------------------------------------------------ */
 
 async function answerCallbackQuery(
@@ -218,6 +203,18 @@ async function sendOrLog(
   } catch (err) {
     log.error('[TelegramWebhook] router.send threw', { error: String(err), chat_id: msg.chat_id });
   }
+}
+
+
+async function processMessageAndMark(
+  event: ReturnType<typeof mapper.normalize>,
+  userId: string,
+  chatId: string,
+  updateId: string,
+  t0: number,
+): Promise<void> {
+  await processMessage(event, userId, chatId, updateId);
+  await markUpdateProcessed(CHANNEL, updateId);
 }
 
 async function processMessage(
