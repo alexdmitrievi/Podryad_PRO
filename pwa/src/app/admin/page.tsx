@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import UnifiedCRM from '@/components/admin/UnifiedCRM';
+import InviteTab from '@/components/admin/InviteTab';
 import {
   Lock, Users, ShoppingBag, Tag, AlertTriangle, BarChart3,
   Copy, Check, ExternalLink, UserPlus, RefreshCw, Save,
@@ -146,7 +147,7 @@ interface ContactEntry {
   source: string;
 }
 
-type TabId = 'unified-crm' | 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'crm' | 'analytics' | 'documents' | 'own-equipment' | 'hero-images';
+type TabId = 'unified-crm' | 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'crm' | 'analytics' | 'documents' | 'own-equipment' | 'hero-images' | 'invites';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "unified-crm", label: "CRM Unified", icon: TrendingUp },
@@ -165,6 +166,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "documents", label: "Документы", icon: FileDown },
   { id: "markups", label: "Наценки", icon: Tag },
   { id: "disputes", label: "Споры", icon: AlertTriangle },
+  { id: "invites", label: "Инвайтинг", icon: Send },
 ];
 
 function fmtDate(iso: string): string {
@@ -3541,7 +3543,7 @@ function getInitialTab(): TabId {
   if (typeof window === 'undefined') return 'unified-crm';
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab');
-  const validTabs: TabId[] = ['unified-crm', 'listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'crm', 'analytics', 'documents', 'own-equipment', 'hero-images'];
+  const validTabs: TabId[] = ['unified-crm', 'listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'crm', 'analytics', 'documents', 'own-equipment', 'hero-images', 'invites'];
   if (tab && validTabs.includes(tab as TabId)) return tab as TabId;
   return 'unified-crm';
 }
@@ -3616,6 +3618,7 @@ export default function AdminPage() {
           {activeTab === 'documents' && <DocumentsTab pin={pin} />}
           {activeTab === 'markups' && <MarkupsTab pin={pin} />}
           {activeTab === 'disputes' && <DisputesTab pin={pin} />}
+          {activeTab === 'invites' && <InviteTab pin={pin} />}
         </div>
       </div>
     </div>
