@@ -23,7 +23,7 @@ jobs:
           cache-dependency-path: pwa/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Validate SQL migrations
         run: |
@@ -75,7 +75,7 @@ jobs:
           cache-dependency-path: pwa/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run API e2e tests
         run: npm run test:e2e:api
@@ -115,7 +115,7 @@ jobs:
           cache-dependency-path: pwa/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -158,7 +158,7 @@ jobs:
           cache-dependency-path: pwa/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Install Lighthouse CLI
         run: npm install -g @lhci/cli
@@ -205,7 +205,7 @@ jobs:
           cache-dependency-path: pwa/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Validate environment variables
         run: npx tsx scripts/validate-env.ts
@@ -226,7 +226,7 @@ jobs:
           cache-dependency-path: pwa/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run npm audit
         continue-on-error: true
