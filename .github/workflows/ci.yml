@@ -12,6 +12,8 @@ jobs:
     defaults:
       run:
         working-directory: pwa
+    env:
+      LANG: C.UTF-8
 
     steps:
       - uses: actions/checkout@v4
@@ -209,6 +211,11 @@ jobs:
 
       - name: Validate environment variables
         run: npx tsx scripts/validate-env.ts
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY || 'placeholder' }}
+          NEXT_PUBLIC_BOT_NAME: test_bot
+          LANG: C.UTF-8
 
   security-audit:
     runs-on: ubuntu-latest
