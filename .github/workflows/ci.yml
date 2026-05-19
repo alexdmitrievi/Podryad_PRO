@@ -105,6 +105,7 @@ jobs:
           MAX_WEBHOOK_SECRET: ${{ secrets.STAGING_MAX_WEBHOOK_SECRET || '' }}
           MAX_ADMIN_USER_ID: ${{ secrets.STAGING_MAX_ADMIN_USER_ID || '' }}
           MAX_CHANNEL_ID: ${{ secrets.STAGING_MAX_CHANNEL_ID || '' }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.STAGING_TELEGRAM_BOT_TOKEN || '' }}
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
       - name: Upload Playwright report
@@ -160,6 +161,7 @@ jobs:
           MAX_WEBHOOK_SECRET: ${{ secrets.STAGING_MAX_WEBHOOK_SECRET || '' }}
           MAX_ADMIN_USER_ID: ${{ secrets.STAGING_MAX_ADMIN_USER_ID || '' }}
           MAX_CHANNEL_ID: ${{ secrets.STAGING_MAX_CHANNEL_ID || '' }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.STAGING_TELEGRAM_BOT_TOKEN || '' }}
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
       - name: Upload Playwright report
