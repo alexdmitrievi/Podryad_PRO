@@ -90,6 +90,7 @@ jobs:
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: placeholder
           CRON_SECRET: test-cron-secret-local
           NEXT_PUBLIC_APP_URL: http://localhost:3000
+          E2E_ALLOW_PROD: 1
           CUSTOMER_JWT_SECRET: ${{ secrets.STAGING_CUSTOMER_JWT_SECRET || 'placeholder' }}
           SESSION_SECRET: ${{ secrets.STAGING_SESSION_SECRET || 'placeholder' }}
           ADMIN_PIN: ${{ secrets.STAGING_ADMIN_PIN || '2407' }}
@@ -133,6 +134,7 @@ jobs:
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: placeholder
           CRON_SECRET: test-cron-secret-local
           NEXT_PUBLIC_APP_URL: http://localhost:3000
+          E2E_ALLOW_PROD: 1
           CUSTOMER_JWT_SECRET: ${{ secrets.STAGING_CUSTOMER_JWT_SECRET || 'placeholder' }}
           SESSION_SECRET: ${{ secrets.STAGING_SESSION_SECRET || 'placeholder' }}
           ADMIN_PIN: ${{ secrets.STAGING_ADMIN_PIN || '2407' }}
