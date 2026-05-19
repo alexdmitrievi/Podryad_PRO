@@ -49,8 +49,9 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY || 'placeholder' }}
-          NEXT_PUBLIC_BOT_NAME: test_bot
-          NEXT_PUBLIC_VAPID_PUBLIC_KEY: placeholder
+          NEXT_PUBLIC_BOT_NAME: ${{ secrets.STAGING_BOT_NAME || 'test_bot' }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.STAGING_VAPID_PUBLIC_KEY || 'placeholder' }}
+          VAPID_PRIVATE_KEY: ${{ secrets.STAGING_VAPID_PRIVATE_KEY || 'placeholder' }}
           CUSTOMER_JWT_SECRET: ${{ secrets.STAGING_CUSTOMER_JWT_SECRET || 'placeholder' }}
           SESSION_SECRET: ${{ secrets.STAGING_SESSION_SECRET || 'placeholder' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY || 'placeholder' }}
@@ -86,8 +87,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY || 'placeholder' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY || 'placeholder' }}
-          NEXT_PUBLIC_BOT_NAME: test_bot
-          NEXT_PUBLIC_VAPID_PUBLIC_KEY: placeholder
+          NEXT_PUBLIC_BOT_NAME: ${{ secrets.STAGING_BOT_NAME || 'test_bot' }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.STAGING_VAPID_PUBLIC_KEY || 'placeholder' }}
+          VAPID_PRIVATE_KEY: ${{ secrets.STAGING_VAPID_PRIVATE_KEY || 'placeholder' }}
+          VAPID_SUBJECT: mailto:staging@podryadpro.ru
           CRON_SECRET: test-cron-secret-local
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           E2E_ALLOW_PROD: 1
@@ -130,8 +133,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY || 'placeholder' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY || 'placeholder' }}
-          NEXT_PUBLIC_BOT_NAME: test_bot
-          NEXT_PUBLIC_VAPID_PUBLIC_KEY: placeholder
+          NEXT_PUBLIC_BOT_NAME: ${{ secrets.STAGING_BOT_NAME || 'test_bot' }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.STAGING_VAPID_PUBLIC_KEY || 'placeholder' }}
+          VAPID_PRIVATE_KEY: ${{ secrets.STAGING_VAPID_PRIVATE_KEY || 'placeholder' }}
+          VAPID_SUBJECT: mailto:staging@podryadpro.ru
           CRON_SECRET: test-cron-secret-local
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           E2E_ALLOW_PROD: 1
@@ -173,8 +178,9 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY || 'placeholder' }}
-          NEXT_PUBLIC_BOT_NAME: test_bot
-          NEXT_PUBLIC_VAPID_PUBLIC_KEY: placeholder
+          NEXT_PUBLIC_BOT_NAME: ${{ secrets.STAGING_BOT_NAME || 'test_bot' }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.STAGING_VAPID_PUBLIC_KEY || 'placeholder' }}
+          VAPID_PRIVATE_KEY: ${{ secrets.STAGING_VAPID_PRIVATE_KEY || 'placeholder' }}
           CUSTOMER_JWT_SECRET: ${{ secrets.STAGING_CUSTOMER_JWT_SECRET || 'placeholder' }}
           SESSION_SECRET: ${{ secrets.STAGING_SESSION_SECRET || 'placeholder' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY || 'placeholder' }}
