@@ -66,18 +66,18 @@ describe('TelegramMapper.normalize', () => {
 
   it('handles messages without text (photo, sticker etc)', () => {
     const raw = {
-      update_id: 100,
+      update_id: 99,
       message: {
-        message_id: 1,
-        from: { id: 111 },
-        chat: { id: 222, type: 'private' },
+        message_id: 2,
+        from: { id: 111, first_name: 'T' },
+        chat: { id: 111 },
         date: 1700000000,
         photo: [{ file_id: 'abc', width: 100, height: 100 }],
       },
     };
     const event = mapper.normalize(raw);
     expect(event.type).toBe('message');
-    expect(event.text).toBe('');
+    expect(event.text).toBe('[фото]');
     expect(event.user_id).toBe('111');
   });
 

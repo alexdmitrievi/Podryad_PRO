@@ -157,8 +157,10 @@ describe('funnel-state — status UI', () => {
 });
 
 describe('funnel-state — UI texts', () => {
-  it('UI.homeWelcome contains Подряд PRO', () => {
-    expect(UI.homeWelcome('Иван')).toContain('Подряд PRO');
+  it('UI.homeWelcome contains greeting', () => {
+    const text = UI.homeWelcome('Иван');
+    expect(text).toContain('Иван');
+    expect(text).toContain('выберите раздел');
   });
 
   it('UI.confirm generates correct card', () => {
@@ -188,7 +190,7 @@ describe('funnel-state — UI texts', () => {
   });
 
   it('UI.askRegion asks about city', () => {
-    expect(UI.askRegion).toContain('городе');
+    expect(UI.askRegion()).toContain('городе');
   });
 
   it('UI.askCustomerType asks about B2C/B2B', () => {

@@ -3,6 +3,7 @@
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.2",
+    "libsodium-wrappers": "^0.8.4",
     "pg": "^8.20.0"
   }
 }

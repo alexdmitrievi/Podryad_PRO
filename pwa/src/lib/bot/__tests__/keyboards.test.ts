@@ -42,8 +42,8 @@ describe('keyboards — main menus', () => {
 
   it('mainMenuB2bButtons has materials first', () => {
     const kb = mainMenuB2bButtons();
-    const firstRow = kb[0]!;
-    expect(firstRow[0]!.text).toContain('Материалы');
+    const materialsRow = kb[1]!;
+    expect(materialsRow[0]!.text).toContain('Материалы');
   });
 
   it('mainMenuButtons shows current region in toggle button', () => {
