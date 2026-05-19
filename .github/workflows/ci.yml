@@ -101,6 +101,10 @@ jobs:
           CRM_WEBHOOK_SECRET: ${{ secrets.STAGING_CRM_WEBHOOK_SECRET || '' }}
           PAYMENT_API_SECRET: ${{ secrets.STAGING_PAYMENT_API_SECRET || '' }}
           PUSH_API_SECRET: ${{ secrets.STAGING_PUSH_API_SECRET || '' }}
+          MAX_BOT_TOKEN: ${{ secrets.STAGING_MAX_BOT_TOKEN || '' }}
+          MAX_WEBHOOK_SECRET: ${{ secrets.STAGING_MAX_WEBHOOK_SECRET || '' }}
+          MAX_ADMIN_USER_ID: ${{ secrets.STAGING_MAX_ADMIN_USER_ID || '' }}
+          MAX_CHANNEL_ID: ${{ secrets.STAGING_MAX_CHANNEL_ID || '' }}
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
       - name: Upload Playwright report
@@ -152,6 +156,10 @@ jobs:
           CRM_WEBHOOK_SECRET: ${{ secrets.STAGING_CRM_WEBHOOK_SECRET || '' }}
           PAYMENT_API_SECRET: ${{ secrets.STAGING_PAYMENT_API_SECRET || '' }}
           PUSH_API_SECRET: ${{ secrets.STAGING_PUSH_API_SECRET || '' }}
+          MAX_BOT_TOKEN: ${{ secrets.STAGING_MAX_BOT_TOKEN || '' }}
+          MAX_WEBHOOK_SECRET: ${{ secrets.STAGING_MAX_WEBHOOK_SECRET || '' }}
+          MAX_ADMIN_USER_ID: ${{ secrets.STAGING_MAX_ADMIN_USER_ID || '' }}
+          MAX_CHANNEL_ID: ${{ secrets.STAGING_MAX_CHANNEL_ID || '' }}
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
       - name: Upload Playwright report
