@@ -97,6 +97,11 @@ jobs:
           CUSTOMER_JWT_SECRET: ${{ secrets.STAGING_CUSTOMER_JWT_SECRET || 'placeholder' }}
           SESSION_SECRET: ${{ secrets.STAGING_SESSION_SECRET || 'placeholder' }}
           ADMIN_PIN: ${{ secrets.STAGING_ADMIN_PIN || '2407' }}
+          AVITO_WEBHOOK_SECRET: ${{ secrets.STAGING_AVITO_WEBHOOK_SECRET || '' }}
+          CRM_WEBHOOK_SECRET: ${{ secrets.STAGING_CRM_WEBHOOK_SECRET || '' }}
+          PAYMENT_API_SECRET: ${{ secrets.STAGING_PAYMENT_API_SECRET || '' }}
+          PUSH_API_SECRET: ${{ secrets.STAGING_PUSH_API_SECRET || '' }}
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -143,6 +148,11 @@ jobs:
           CUSTOMER_JWT_SECRET: ${{ secrets.STAGING_CUSTOMER_JWT_SECRET || 'placeholder' }}
           SESSION_SECRET: ${{ secrets.STAGING_SESSION_SECRET || 'placeholder' }}
           ADMIN_PIN: ${{ secrets.STAGING_ADMIN_PIN || '2407' }}
+          AVITO_WEBHOOK_SECRET: ${{ secrets.STAGING_AVITO_WEBHOOK_SECRET || '' }}
+          CRM_WEBHOOK_SECRET: ${{ secrets.STAGING_CRM_WEBHOOK_SECRET || '' }}
+          PAYMENT_API_SECRET: ${{ secrets.STAGING_PAYMENT_API_SECRET || '' }}
+          PUSH_API_SECRET: ${{ secrets.STAGING_PUSH_API_SECRET || '' }}
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
