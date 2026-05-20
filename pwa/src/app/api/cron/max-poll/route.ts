@@ -25,6 +25,29 @@ export const maxDuration = 55;
 const CHANNEL = 'max' as const;
 const mapper = new MaxMapper();
 
+const HELP_TEXT = `Подряд PRO — платформа для заказа рабочей силы в Омске и Новосибирске.
+
+Команды:
+/start — приветствие
+/help — справка
+/order — создать заказ
+/status — статус ваших заказов
+/link — привязать аккаунт к номеру телефона
+/orders — актуальные заказы (для исполнителей)
+
+Просто напишите, что вам нужно — я помогу!`;
+
+const START_TEXT = `Привет! Я — бот сервиса Подряд PRO 🏗️
+
+Мы помогаем найти:
+• Рабочих (грузчики, разнорабочие, строители)
+• Материалы (бетон, щебень, песок, цемент, кирпич)
+• Спецтехнику и оборудование в аренду
+
+Напишите, что вам нужно, или используйте кнопки ниже.`;
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
+
 export async function GET(req: NextRequest) {
   // CRON_SECRET check
   const expectedSecret = process.env.CRON_SECRET;
@@ -212,7 +235,7 @@ export async function GET(req: NextRequest) {
               break;
             case '/status':
               try {
-                const orders = await getOrdersByMessengerId(CHANNEL, userId);
+                const orders = await getOrdersByMessengerId({ channel: CHANNEL, userId });
                 if (!orders || orders.length === 0) {
                   await safeSend(router, {
                     channel: CHANNEL,
@@ -221,7 +244,7 @@ export async function GET(req: NextRequest) {
                     text: 'У вас пока нет заказов.',
                   });
                 } else {
-                  const orderList = orders.map(o => `• ${o.order_id} — ${formatOrderStatus(o.status)}`).join('\n');
+                  const orderList = orders.map((o: Record<string, unknown>) => `• ${o.order_id} — ${formatOrderStatus(String(o.status ?? ''))}`).join('\n');
                   await safeSend(router, {
                     channel: CHANNEL,
                     chat_id: chatId,
@@ -246,7 +269,7 @@ export async function GET(req: NextRequest) {
                   channel: CHANNEL,
                   chat_id: chatId,
                   user_id: userId,
-                  text: result.ok ? '✅ Аккаунт привязан!' : `❌ ${result.error || 'Не удалось привязать'}`,
+                  text: result.ok ? '✅ Аккаунт привязан!' : `❌ ${result.message || 'Не удалось привязать'}`,
                 });
               }
               break;
@@ -255,12 +278,12 @@ export async function GET(req: NextRequest) {
               // AI fallback
               try {
                 const ai = getOpenAIClient();
-                const response = await ai.query(text);
+                const response = await ai.chat({ message: text, history: [], channel: 'max' });
                 await safeSend(router, {
                   channel: CHANNEL,
                   chat_id: chatId,
                   user_id: userId,
-                  text: response || 'Не уловил вопрос 🙈 Напишите оператору.',
+                  text: response.text || 'Не уловил вопрос 🙈 Напишите оператору.',
                 });
               } catch {
                 await safeSend(router, {
@@ -276,12 +299,12 @@ export async function GET(req: NextRequest) {
           // Free text → AI
           try {
             const ai = getOpenAIClient();
-            const response = await ai.query(text);
+            const response = await ai.chat({ message: text, history: [], channel: 'max' });
             await safeSend(router, {
               channel: CHANNEL,
               chat_id: chatId,
               user_id: userId,
-              text: response || START_TEXT,
+              text: response.text || START_TEXT,
             });
           } catch {
             await safeSend(router, {
@@ -328,3 +351,4 @@ async function safeSend(
     log.error('[MaxPoll] send threw', { error: String(err) });
   }
 }
+
