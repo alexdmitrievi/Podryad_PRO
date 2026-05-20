@@ -104,6 +104,9 @@ function handleUpdate(update) {
   var body = msg.body || {};
   var text = (body.text || '').trim();
   var callback = update.callback || {};
+  var payload = update.payload || '';
+
+  log('[update] type=' + type + ' chatId=' + chatId + ' text=' + (text || payload || '(none)').slice(0,60));
 
   if (!chatId) { return; }
 
