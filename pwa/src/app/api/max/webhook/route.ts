@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
       })
   );
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, debug: { userId, chatId, text: event.text, type: event.type, rawType: event.type, updateId } });
 }
 
 /* ------------------------------------------------------------------ */
