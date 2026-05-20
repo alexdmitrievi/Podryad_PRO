@@ -1,0 +1,17 @@
+name: MAX Long Poll
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  max-poll:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll MAX for updates
+        run: |
+          curl -s -X GET "https://www.podryadpro.ru/api/cron/max-poll" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -w "\nHTTP %{http_code}" \
+            --max-time 55
