@@ -169,7 +169,7 @@ function handleUpdate(update) {
     var cmd = text.split(/\s+/)[0].toLowerCase();
 
     switch (cmd) {
-      case '/start': {
+      case '/start': case '/старт': {
         var name = user.first_name || '';
         var greeting = name ? '👋 Здравствуйте, ' + name + '!' : '👋 Здравствуйте!';
         sendMessage(chatId, greeting + '\n\nЯ — бот «Подряд PRO». Помогаю быстро заказать работы по дому и участку, стройматериалы.\n\n📍 <b>В каком городе вы находитесь?</b>', { format: 'html' }, function() {
@@ -180,16 +180,16 @@ function handleUpdate(update) {
         });
         return;
       }
-      case '/help':
-        sendMessage(chatId, 'Подряд PRO — платформа для заказа рабочей силы в Омске и Новосибирске.\n\nКоманды:\n/start — приветствие\n/help — справка\n/order — создать заказ\n/status — статус ваших заказов\n/orders — актуальные заказы\n\nПросто напишите, что вам нужно — я помогу!');
+      case '/help': case '/помощь':
+        sendMessage(chatId, 'Подряд PRO — платформа для заказа рабочей силы в Омске и Новосибирске.\n\nКоманды:\n/старт — приветствие\n/помощь — справка\n/заказ — создать заказ\n/статус — статус ваших заказов\n/заказы — актуальные заказы\n\nПросто напишите, что вам нужно — я помогу!');
         return;
-      case '/order':
+      case '/order': case '/заказ':
         sendMessage(chatId, '📋 Оформление заказа\n\nОпишите, что нужно сделать и где. Например:\n«Нужны 2 грузчика на завтра в 10:00, ул. Ленина 15, разгрузить фуру»\n\nЯ передам заказ администратору для расчёта стоимости.');
         return;
-      case '/status':
+      case '/status': case '/статус':
         sendMessage(chatId, '📋 Для проверки статуса заказов перейдите в личный кабинет.', { attachments: [{ type: 'inline_keyboard', payload: { buttons: [[{ type: 'link', text: '🌐 Личный кабинет', url: APP_URL + '/dashboard' }]] }}] });
         return;
-      case '/orders':
+      case '/orders': case '/заказы':
         sendMessage(chatId, '📋 Актуальные заказы доступны на сайте.', { attachments: [{ type: 'inline_keyboard', payload: { buttons: [[{ type: 'link', text: '🌐 Сайт', url: APP_URL }]] }}] });
         return;
       default: {
@@ -246,11 +246,11 @@ maxGet('/me', {}, function(err, bot) {
   
   // Set command hints (appear as suggestions in chat)
   var commands = [
-    { name: 'start', description: '🚀 Начать работу' },
-    { name: 'help', description: '❓ Помощь' },
-    { name: 'order', description: '📋 Создать заказ' },
-    { name: 'status', description: '📊 Статус заказов' },
-    { name: 'orders', description: '📦 Все заказы' },
+    { name: 'старт', description: '🚀 Начать работу' },
+    { name: 'помощь', description: '❓ Помощь' },
+    { name: 'заказ', description: '📋 Создать заказ' },
+    { name: 'статус', description: '📊 Статус заказов' },
+    { name: 'заказы', description: '📦 Все заказы' },
   ];
   maxPost('/me/commands', {}, { commands: commands }, function(err, res) {
     if (err) { log('[commands] Error:', err.message); return; }
