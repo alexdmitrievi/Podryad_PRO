@@ -243,6 +243,20 @@ log('Token:', TOKEN.slice(0,8) + '...');
 maxGet('/me', {}, function(err, bot) {
   if (err) { log('Failed to get bot info:', err.message); process.exit(1); }
   log('Bot:', bot.first_name, '@' + bot.username, 'ID:', bot.user_id);
+  
+  // Set command hints (appear as suggestions in chat)
+  var commands = [
+    { name: 'start', description: '🚀 Начать работу' },
+    { name: 'help', description: '❓ Помощь' },
+    { name: 'order', description: '📋 Создать заказ' },
+    { name: 'status', description: '📊 Статус заказов' },
+    { name: 'orders', description: '📦 Все заказы' },
+  ];
+  maxPost('/me/commands', {}, { commands: commands }, function(err, res) {
+    if (err) { log('[commands] Error:', err.message); return; }
+    log('[commands] Set ' + commands.length + ' commands:', JSON.stringify(res).slice(0,100));
+  });
+  
   poll();
 });
 
