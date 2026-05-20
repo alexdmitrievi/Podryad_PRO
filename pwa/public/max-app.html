@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Подряд PRO</title>
+  <script src="https://st.max.ru/js/max-web-app.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; color: #1a1a1a; }
+    .container { max-width: 480px; margin: 0 auto; padding: 20px 16px; }
+    .header { background: linear-gradient(135deg, #2F5BFF, #6C5CE7); padding: 24px 16px; color: white; text-align: center; border-radius: 0 0 20px 20px; }
+    .header h1 { font-size: 22px; margin-bottom: 4px; }
+    .header p { font-size: 14px; opacity: 0.9; }
+    .user-card { background: white; border-radius: 16px; padding: 16px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 48px; height: 48px; border-radius: 50%; background: #e0e7ff; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .user-info { flex: 1; }
+    .user-name { font-weight: 600; font-size: 16px; }
+    .user-id { font-size: 12px; color: #888; margin-top: 2px; }
+    .actions { display: grid; gap: 12px; margin: 16px 0; }
+    .btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; border-radius: 14px; font-size: 15px; font-weight: 600; text-decoration: none; cursor: pointer; border: none; width: 100%; transition: transform 0.1s; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: #2F5BFF; color: white; }
+    .btn-secondary { background: white; color: #2F5BFF; border: 2px solid #2F5BFF; }
+    .btn-outline { background: #f0f0f0; color: #333; }
+    .service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+    .service-card { background: white; border-radius: 14px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; cursor: pointer; transition: transform 0.1s; }
+    .service-card:active { transform: scale(0.97); }
+    .service-icon { font-size: 28px; margin-bottom: 6px; }
+    .service-name { font-size: 13px; font-weight: 600; }
+    .footer { text-align: center; padding: 20px; color: #888; font-size: 12px; }
+    .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading { text-align: center; padding: 40px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="loading">
+      <div class="spinner" style="border-color: rgba(47,91,255,0.3); border-top-color: #2F5BFF;"></div>
+      <p style="margin-top:12px;color:#888;">Загрузка...</p>
+    </div>
+  </div>
+
+  <script>
+    var APP_URL = 'https://www.podryadpro.ru';
+    var user = null;
+    var chat = null;
+    
+    function renderApp() {
+      var el = document.getElementById('app');
+      if (!user) {
+        el.innerHTML = '<div class="loading"><p>Ожидание данных MAX...</p></div>';
+        return;
+      }
+      
+      var name = user.first_name || 'Пользователь';
+      if (user.last_name) name += ' ' + user.last_name;
+      var avatar = (name[0] || '👤').toUpperCase();
+      
+      el.innerHTML = 
+        '<div class="header">' +
+          '<h1>🏗️ Подряд PRO</h1>' +
+          '<p>Закажите работы по дому и участку</p>' +
+        '</div>' +
+        '<div class="container">' +
+          '<div class="user-card">' +
+            '<div class="user-avatar">' + avatar + '</div>' +
+            '<div class="user-info">' +
+              '<div class="user-name">' + escapeHtml(name) + '</div>' +
+              '<div class="user-id">ID: ' + user.id + (user.username ? ' | @' + escapeHtml(user.username) : '') + '</div>' +
+            '</div>' +
+          '</div>' +
+          
+          '<div class="actions">' +
+            '<button class="btn btn-primary" onclick="openOrder()">🚀 Создать заказ</button>' +
+            '<button class="btn btn-secondary" onclick="openExecutor()">👷 Стать исполнителем</button>' +
+            '<button class="btn btn-outline" onclick="openSite()">🌐 Открыть сайт</button>' +
+          '</div>' +
+          
+          '<h3 style="margin-top:20px;font-size:16px;">Популярные услуги</h3>' +
+          '<div class="service-grid">' +
+            '<div class="service-card" onclick="openService(\"lawn\")"><div class="service-icon\">🌿</div><div class="service-name\">Покос газона</div></div>' +
+            '<div class="service-card" onclick="openService(\"clearing\")"><div class="service-icon\">🌲</div><div class="service-name\">Расчистка участка</div></div>' +
+            '<div class="service-card" onclick="openService(\"trees\")"><div class="service-icon\">🪓</div><div class="service-name\">Валка деревьев</div></div>' +
+            '<div class="service-card" onclick="openService(\"materials\")"><div class="service-icon\">🧱</div><div class="service-name\">Материалы</div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="footer">Подряд PRO © 2026</div>';
+    }
+    
+    function escapeHtml(s) {
+      return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    
+    function openOrder() {
+      window.WebApp.openLink(APP_URL + '/order/new');
+    }
+    
+    function openExecutor() {
+      window.WebApp.openLink(APP_URL + '/executor/register');
+    }
+    
+    function openSite() {
+      window.WebApp.openLink(APP_URL);
+    }
+    
+    function openService(type) {
+      window.WebApp.openLink(APP_URL + '/catalog/' + type);
+    }
+    
+    // Wait for MAX Bridge
+    function waitForBridge(retries) {
+      retries = retries || 0;
+      if (window.WebApp && window.WebApp.initDataUnsafe) {
+        try {
+          var data = window.WebApp.initDataUnsafe;
+          user = data.user;
+          chat = data.chat;
+          console.log('MAX user:', user);
+          console.log('MAX chat:', chat);
+          renderApp();
+        } catch(e) {
+          console.error('Bridge error:', e);
+          document.getElementById('app').innerHTML = '<div class="loading"><p>Ошибка загрузки. Попробуйте позже.</p></div>';
+        }
+        return;
+      }
+      if (retries > 50) {
+        console.log('Bridge timeout — running without MAX');
+        user = { id: 0, first_name: 'Гость' };
+        renderApp();
+        return;
+      }
+      setTimeout(function() { waitForBridge(retries + 1); }, 200);
+    }
+    
+    waitForBridge();
+  </script>
+</body>
+</html>
