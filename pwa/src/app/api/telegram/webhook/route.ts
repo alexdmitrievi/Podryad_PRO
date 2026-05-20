@@ -3,9 +3,12 @@ import { timingSafeEqual } from 'crypto';
 import { TelegramMapper } from '@/lib/channels/telegram';
 import { log } from '@/lib/logger';
 import { getTelegramConfig } from '@/lib/channels/config';
+import { handleFunnelEvent } from '@/lib/bot/funnel-handler';
+import { getChannelRouter } from '@/lib/channels';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 25;
 
 const CHANNEL = 'telegram' as const;
 const mapper = new TelegramMapper();
@@ -16,7 +19,7 @@ function timingSafeSecretCompare(a: string, b: string): boolean {
   try { return timingSafeEqual(Buffer.from(a), Buffer.from(b)); } catch { return false; }
 }
 
-/** Send message directly to Telegram — NO Supabase, NO background, just HTTP. */
+/** Send message directly to Telegram. */
 async function tgSend(chatId: string, text: string, buttons?: Array<Array<{ text: string; data: string }>>): Promise<boolean> {
   if (!BOT_TOKEN) return false;
   try {
@@ -39,6 +42,17 @@ const B2B_MENU = [[{ text: '📝 Описать задачу', data: 'menu:quick
 
 const HELP = `🔍 <b>Как это работает</b>\n\n1. Выберите услугу.\n2. Ответьте на 3-4 простых вопроса.\n3. Мастер свяжется с вами в течение 30 минут.\n\n📞 Нужна помощь? Напишите оператору через меню.`;
 
+/** Convert unified MessageButton to Telegram format */
+function mapButtons(buttons: Array<Array<{ type: string; text: string; url?: string; callback_data?: string }>>) {
+  return buttons.map(row =>
+    row.map(b => ({
+      text: b.text,
+      data: b.type === 'url' ? '' : (b.callback_data || ''),
+      url: b.type === 'url' ? (b.url || '') : undefined,
+    }))
+  );
+}
+
 export async function POST(req: NextRequest) {
   const t0 = Date.now();
 
@@ -58,13 +72,15 @@ export async function POST(req: NextRequest) {
   const rawBody = body as Record<string, unknown>;
   const event = mapper.normalize(body);
   const chatId = event.chat_id;
+  const userId = event.user_id;
   if (!chatId) return NextResponse.json({ ok: true });
 
   const text = event.text.trim();
   const isCallback = event.type === 'callback';
   const isCommand = event.type === 'command';
+  const updateId = String((rawBody.update_id as number) || Date.now());
 
-  // ── IMMEDIATE RESPONSE — no Supabase, no waitUntil, no background ──
+  // ── FAST PATH: simple onboarding ──
 
   if (isCommand && text === '/start') {
     await tgSend(chatId, '👋 Здравствуйте!\n\nЯ — бот «Подряд PRO». Помогаю быстро заказать работы по дому и участку, стройматериалы.\n\n📍 <b>В каком городе вы находитесь?</b>', REGION_BUTTONS);
@@ -77,7 +93,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (isCallback) {
-    const data = text; // callback_data is in event.text
+    const data = text;
 
     if (data.startsWith('region:')) {
       await tgSend(chatId, '✅ Регион выбран.\n\nЧтобы предложить подходящее меню — подскажите: вы оформляете заказ для частного дома или для компании / стройки?', CTYPE_BUTTONS);
@@ -86,43 +102,48 @@ export async function POST(req: NextRequest) {
 
     if (data.startsWith('ctype:')) {
       const isB2b = data === 'ctype:b2b';
-      const menu = isB2b ? B2B_MENU : B2C_MENU;
       await tgSend(chatId, isB2b
         ? '👋 Выберите раздел или напишите, что нужно.\n\nМенеджер подготовит КП и счёт по первому запросу.'
-        : '👋 Выберите раздел или напишите, что нужно сделать.\n\nЯ помогу быстро заказать работы по дому и участку.', menu);
+        : '👋 Выберите раздел или напишите, что нужно сделать.\n\nЯ помогу быстро заказать работы по дому и участку.', isB2b ? B2B_MENU : B2C_MENU);
       return logAndReturn(t0, 'ctype');
     }
-
-    if (data === 'menu:quick_order') {
-      await tgSend(chatId, '📝 <b>Опишите задачу</b>\n\nНапишите, что нужно сделать, какой объём и когда.\n<i>Например: «Покосить газон, 10 соток, завтра»</i>', [[{ text: '◀️ Назад', data: 'nav:home' }]]);
-      return logAndReturn(t0, 'quick');
-    }
-
-    if (data === 'menu:help') {
-      await tgSend(chatId, HELP, [[{ text: '🏠 В меню', data: 'nav:home' }]]);
-      return logAndReturn(t0, 'help');
-    }
-
-    if (data === 'menu:operator' || data === 'menu:contract') {
-      await tgSend(chatId, '📞 Напишите, что вас интересует — и оставьте номер. Перезвоним в течение 30 минут (9:00–21:00).', [[{ text: '🏠 В меню', data: 'nav:home' }]]);
-      return logAndReturn(t0, 'operator');
-    }
-
-    if (data === 'nav:home') {
-      await tgSend(chatId, '🏠 Главное меню.', B2C_MENU);
-      return logAndReturn(t0, 'home');
-    }
   }
 
-  // ── Fallback for other messages (free text, complex callbacks) ──
-  //     Return 200 quickly. Complex processing moved to a separate lightweight handler.
-  log.info('[TG] unhandled fast path', { type: event.type, text: text.slice(0, 50), elapsed_ms: Date.now() - t0 });
+  // ── FULL FUNNEL for everything else ──
+  try {
+    const funnelResponse = await handleFunnelEvent({
+      type: event.type as 'message' | 'command' | 'callback',
+      channel: CHANNEL,
+      chatId,
+      userId,
+      text,
+      updateId,
+      attachments: event.attachments?.map(a => ({ type: a.type === 'image' ? 'image' as const : 'document' as const, url: a.url })),
+    });
 
-  if (isCommand) {
-    await tgSend(chatId, '⏳ Обрабатываю...');
+    if (funnelResponse) {
+      const router = getChannelRouter();
+      // Send via channel router (handles HTML formatting for Telegram)
+      const routerRes = await router.send({
+        channel: CHANNEL,
+        chat_id: chatId,
+        user_id: userId,
+        text: funnelResponse.text,
+        buttons: funnelResponse.buttons,
+      });
+      if (!routerRes.success) {
+        // Fallback: send via tgSend with HTML parse mode
+        await tgSend(chatId, funnelResponse.text, mapButtons(funnelResponse.buttons || []));
+      }
+    } else if (isCommand) {
+      await tgSend(chatId, '⏳ Обрабатываю...');
+    }
+  } catch (err) {
+    log.error('[TG] funnelHandler failed', { error: String(err), user_id: userId });
+    if (isCommand) await tgSend(chatId, '⏳ Обрабатываю...');
   }
 
-  return logAndReturn(t0, 'fallback');
+  return logAndReturn(t0, 'funneled');
 }
 
 function logAndReturn(t0: number, step: string) {
