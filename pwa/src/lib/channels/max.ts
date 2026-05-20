@@ -53,11 +53,12 @@ export class MaxTransport implements ChannelTransport {
       return { success: false, channel: 'max', error: 'No chat_id provided', latency_ms: 0 };
     }
 
-    // Build URL — token in Authorization header per MAX API docs (query param deprecated)
+    // Build URL — user_id in query param per MAX API docs
     const proxyBase = process.env.MAX_API_PROXY;
+    const encodedUserId = encodeURIComponent(chatId);
     const url = proxyBase
-      ? `${proxyBase}/proxy/max/messages`
-      : `${this.config.apiBase}/messages`;
+      ? `${proxyBase}/proxy/max/messages?user_id=${encodedUserId}`
+      : `${this.config.apiBase}/messages?user_id=${encodedUserId}`;
 
     const headers: Record<string, string> = proxyBase
       ? this.proxyHeaders()
@@ -66,7 +67,6 @@ export class MaxTransport implements ChannelTransport {
     // MAX doesn't render HTML/Markdown — strip tags so <b>...</b> doesn't leak.
     const plainText = stripHtml(message.text);
     const body: Record<string, unknown> = {
-      chat_id: chatId,
       text: plainText,
     };
 

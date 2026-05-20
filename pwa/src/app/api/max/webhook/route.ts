@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
 
   if (!chatId) {
     await markUpdateProcessed(CHANNEL, updateId);
-    return NextResponse.json({ ok: true, debug: { userId, chatId, text: event.text, type: event.type } });
+    return NextResponse.json({ ok: true, _chat_id: chatId, _user_id: userId });
   }
 
   // 7. Rate limit per user
@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
       })
   );
 
-  return NextResponse.json({ ok: true, debug: { userId, chatId, text: event.text, type: event.type, rawType: event.type, updateId } });
+  return NextResponse.json({ ok: true, _chat_id: chatId, _user_id: userId });
 }
 
 /* ------------------------------------------------------------------ */
