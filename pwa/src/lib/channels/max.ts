@@ -184,8 +184,10 @@ export class MaxMapper implements ChannelMapper {
 
     let type: NormalizedIncomingEvent['type'] = 'message';
     let text = String(body.text ?? '');
-    let userId = String(sender.user_id ?? sender.id ?? '');
-    let cId = String(recipient.chat_id ?? message.chat_id ?? '');
+    // MAX API: Update.chat_id is the conversation ID (use for responses); Message.recipient.chat_id is the bot
+    const topUser = (data.user ?? update.user) as Record<string, unknown> | undefined;
+    let userId = String(topUser?.user_id ?? sender.user_id ?? sender.id ?? '');
+    let cId = String(data.chat_id ?? update.chat_id ?? recipient.chat_id ?? message.chat_id ?? '');
     let username: string | undefined = sender.username ? String(sender.username) : undefined;
     let displayName: string | undefined = sender.name ? String(sender.name) : (sender.first_name ? String(sender.first_name) : undefined);
 
@@ -194,8 +196,8 @@ export class MaxMapper implements ChannelMapper {
       const cbUser = (cb.user ?? {}) as Record<string, unknown>;
       type = 'callback';
       text = String(cb.payload ?? cb.callback_data ?? '');
-      userId = String(cbUser.user_id ?? cb.user_id ?? sender.user_id ?? userId ?? '');
-      cId = String(cb.chat_id ?? recipient.chat_id ?? message.chat_id ?? cId ?? '');
+      userId = String(cbUser.user_id ?? cb.user_id ?? topUser?.user_id ?? sender.user_id ?? userId ?? '');
+      cId = String(cb.chat_id ?? data.chat_id ?? update.chat_id ?? recipient.chat_id ?? message.chat_id ?? cId ?? '');
       if (cbUser.username) username = String(cbUser.username);
       if (cbUser.name) displayName = String(cbUser.name);
     } else if (text.startsWith('/')) {
