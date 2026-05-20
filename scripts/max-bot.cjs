@@ -98,7 +98,11 @@ function answerCallback(callbackId, text) {
 
 function handleUpdate(update) {
   var type = update.update_type;
+  // Extract chatId: bot_started has it at top level; message_created has it in message.recipient
   var chatId = update.chat_id;
+  if (!chatId && update.message && update.message.recipient) {
+    chatId = update.message.recipient.chat_id;
+  }
   var user = update.user || {};
   var msg = update.message || {};
   var body = msg.body || {};
