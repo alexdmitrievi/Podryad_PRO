@@ -21,9 +21,18 @@ function maxGet(path, query, cb) {
 
 function maxPost(path, query, body, cb) {
   var qs = query ? '?' + Object.keys(query).map(function(k) { return k + '=' + encodeURIComponent(query[k]); }).join('&') : '';
+  var fullUrl = API_BASE + path + qs;
+  var parsed = require('url').parse(fullUrl);
   var data = JSON.stringify(body);
-  var req = https.request(API_BASE + path + qs, { method: 'POST', headers: { Authorization: TOKEN, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } }, function(res) {
-    var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { try { cb(null, JSON.parse(b)); } catch(e) { cb(e); } });
+  var opts = {
+    hostname: parsed.hostname,
+    port: parsed.port || 443,
+    path: parsed.path,
+    method: 'POST',
+    headers: { Authorization: TOKEN, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) }
+  };
+  var req = https.request(opts, function(res) {
+    var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { try { cb(null, JSON.parse(b)); } catch(e) { cb(e, b); } });
   });
   req.on('error', cb);
   req.write(data); req.end();
@@ -31,9 +40,28 @@ function maxPost(path, query, body, cb) {
 
 // ====== Message sending ======
 
+function maxPost(path, query, body, cb) {
+  var qs = query ? '?' + Object.keys(query).map(function(k) { return k + '=' + encodeURIComponent(query[k]); }).join('&') : '';
+  var fullUrl = API_BASE + path + qs;
+  var parsed = require('url').parse(fullUrl);
+  var data = JSON.stringify(body);
+  var opts = {
+    hostname: parsed.hostname,
+    port: parsed.port || 443,
+    path: parsed.path,
+    method: 'POST',
+    headers: { Authorization: TOKEN, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) }
+  };
+  var req = https.request(opts, function(res) {
+    var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { try { cb(null, JSON.parse(b)); } catch(e) { cb(e, b); } });
+  });
+  req.on('error', cb);
+  req.write(data); req.end();
+}
+
 function sendMessage(chatId, text, extra, cb) {
   cb = cb || function(){};
-  var q = { user_id: String(chatId) };
+  var q = { chat_id: String(chatId), user_id: String(chatId) };
   var b = { text: text };
   if (extra) {
     if (extra.attachments) b.attachments = extra.attachments;
@@ -43,17 +71,25 @@ function sendMessage(chatId, text, extra, cb) {
   }
   maxPost('/messages', q, b, function(err, res) {
     if (err) { log('[sendMessage] Error:', err.message); return; }
-    if (res && res.message) { cb(null, res); }
-    else { log('[sendMessage] Fail:', JSON.stringify(res).slice(0,100)); }
+    if (res && res.message) { log('[sendMessage] OK:', res.message.body.mid); cb(null, res); }
+    else { log('[sendMessage] Fail:', JSON.stringify(res).slice(0,150)); }
   });
 }
 
 function answerCallback(callbackId, text) {
   var url = API_BASE + '/answers?callback_id=' + encodeURIComponent(callbackId);
+  var parsed = require('url').parse(url);
   var body = {};
   if (text) body.message = { text: text };
   var data = JSON.stringify(body);
-  var req = https.request(url, { method: 'POST', headers: { Authorization: TOKEN, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } }, function() {});
+  var opts = {
+    hostname: parsed.hostname,
+    port: parsed.port || 443,
+    path: parsed.path,
+    method: 'POST',
+    headers: { Authorization: TOKEN, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) }
+  };
+  var req = https.request(opts, function() {});
   req.on('error', function(){});
   req.write(data); req.end();
 }
