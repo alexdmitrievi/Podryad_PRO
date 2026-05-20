@@ -19,6 +19,25 @@ function maxGet(path, query, cb) {
   }).on('error', cb);
 }
 
+function maxPatch(path, query, body, cb) {
+  var qs = query ? '?' + Object.keys(query).map(function(k) { return k + '=' + encodeURIComponent(query[k]); }).join('&') : '';
+  var fullUrl = API_BASE + path + qs;
+  var parsed = require('url').parse(fullUrl);
+  var data = JSON.stringify(body);
+  var opts = {
+    hostname: parsed.hostname,
+    port: parsed.port || 443,
+    path: parsed.path,
+    method: 'PATCH',
+    headers: { Authorization: TOKEN, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) }
+  };
+  var req = https.request(opts, function(res) {
+    var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { try { cb(null, JSON.parse(b)); } catch(e) { cb(e, b); } });
+  });
+  req.on('error', cb);
+  req.write(data); req.end();
+}
+
 function maxPost(path, query, body, cb) {
   var qs = query ? '?' + Object.keys(query).map(function(k) { return k + '=' + encodeURIComponent(query[k]); }).join('&') : '';
   var fullUrl = API_BASE + path + qs;
@@ -244,7 +263,7 @@ maxGet('/me', {}, function(err, bot) {
   if (err) { log('Failed to get bot info:', err.message); process.exit(1); }
   log('Bot:', bot.first_name, '@' + bot.username, 'ID:', bot.user_id);
   
-  // Set command hints (appear as suggestions in chat)
+  // Set command hints via PATCH /me
   var commands = [
     { name: 'старт', description: '🚀 Начать работу' },
     { name: 'помощь', description: '❓ Помощь' },
@@ -252,9 +271,9 @@ maxGet('/me', {}, function(err, bot) {
     { name: 'статус', description: '📊 Статус заказов' },
     { name: 'заказы', description: '📦 Все заказы' },
   ];
-  maxPost('/me/commands', {}, { commands: commands }, function(err, res) {
+  maxPatch('/me', {}, { commands: commands }, function(err, res) {
     if (err) { log('[commands] Error:', err.message); return; }
-    log('[commands] Set ' + commands.length + ' commands:', JSON.stringify(res).slice(0,100));
+    log('[commands] OK — 5 command hints set');
   });
   
   poll();
