@@ -41,6 +41,7 @@ export class MaxTransport implements ChannelTransport {
   private proxyHeaders(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
+      Authorization: this.config.botToken,
     };
   }
 
@@ -52,16 +53,15 @@ export class MaxTransport implements ChannelTransport {
       return { success: false, channel: 'max', error: 'No chat_id provided', latency_ms: 0 };
     }
 
-    // Build URL — token always in query param; proxy just changes the base URL
-    const tokenParam = `access_token=${encodeURIComponent(this.config.botToken)}`;
+    // Build URL — token in Authorization header per MAX API docs (query param deprecated)
     const proxyBase = process.env.MAX_API_PROXY;
     const url = proxyBase
-      ? `${proxyBase}/proxy/max/messages?${tokenParam}`
-      : `${this.config.apiBase}/messages?${tokenParam}`;
+      ? `${proxyBase}/proxy/max/messages`
+      : `${this.config.apiBase}/messages`;
 
     const headers: Record<string, string> = proxyBase
       ? this.proxyHeaders()
-      : { 'Content-Type': 'application/json' };
+      : { 'Content-Type': 'application/json', Authorization: this.config.botToken };
 
     // MAX doesn't render HTML/Markdown — strip tags so <b>...</b> doesn't leak.
     const plainText = stripHtml(message.text);
@@ -133,12 +133,14 @@ export class MaxTransport implements ChannelTransport {
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 5000);
-      const tokenParam = `access_token=${encodeURIComponent(this.config.botToken)}`;
       const proxyBase = process.env.MAX_API_PROXY;
       const url = proxyBase
-        ? `${proxyBase}/proxy/max/me?${tokenParam}`
-        : `${this.config.apiBase}/me?${tokenParam}`;
-      const res = await fetch(url, { signal: controller.signal });
+        ? `${proxyBase}/proxy/max/me`
+        : `${this.config.apiBase}/me`;
+      const res = await fetch(url, {
+        signal: controller.signal,
+        headers: { Authorization: this.config.botToken },
+      });
       clearTimeout(timer);
       return {
         channel: 'max',

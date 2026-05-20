@@ -194,15 +194,14 @@ async function answerMaxCallback(
   text?: string,
 ): Promise<void> {
   const config = getMaxConfig();
-  const tokenParam = `access_token=${encodeURIComponent(config.botToken)}`;
   const proxyBase = process.env.MAX_API_PROXY;
   try {
     const url = proxyBase
-      ? `${proxyBase}/proxy/max/callbacks/${encodeURIComponent(callbackId)}/answer?${tokenParam}`
-      : `${config.apiBase}/callbacks/${encodeURIComponent(callbackId)}/answer?${tokenParam}`;
+      ? `${proxyBase}/proxy/max/callbacks/${encodeURIComponent(callbackId)}/answer`
+      : `${config.apiBase}/callbacks/${encodeURIComponent(callbackId)}/answer`;
     const body: Record<string, unknown> = {};
     if (text) body.text = text;
-    await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: config.botToken }, body: JSON.stringify(body) });
   } catch (err) {
     log.error('[MaxWebhook] answerMaxCallback failed', { error: String(err) });
   }
