@@ -197,10 +197,10 @@ async function answerMaxCallback(
   const proxyBase = process.env.MAX_API_PROXY;
   try {
     const url = proxyBase
-      ? `${proxyBase}/proxy/max/callbacks/${encodeURIComponent(callbackId)}/answer`
-      : `${config.apiBase}/callbacks/${encodeURIComponent(callbackId)}/answer`;
+      ? `${proxyBase}/proxy/max/answers?callback_id=${encodeURIComponent(callbackId)}`
+      : `${config.apiBase}/answers?callback_id=${encodeURIComponent(callbackId)}`;
     const body: Record<string, unknown> = {};
-    if (text) body.text = text;
+    if (text) body.message = { text };
     await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: config.botToken }, body: JSON.stringify(body) });
   } catch (err) {
     log.error('[MaxWebhook] answerMaxCallback failed', { error: String(err) });
