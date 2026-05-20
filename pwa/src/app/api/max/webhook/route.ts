@@ -86,6 +86,29 @@ export async function POST(req: NextRequest) {
   }
   const rawBody = (body ?? {}) as Record<string, unknown>;
 
+  // Handle /updates batch format (from n8n Long Poll proxy)
+  if (Array.isArray(rawBody.updates)) {
+    const updates = rawBody.updates as Array<Record<string, unknown>>;
+    let processed = 0;
+    for (const update of updates) {
+      try {
+        const event = mapper.normalize(update);
+        const uid = event.user_id;
+        const cid = event.chat_id;
+        if (!cid) continue;
+        void enqueueJob({
+          queueName: 'channels',
+          jobType: 'channel.incoming_message',
+          dedupeKey: `max:${extractMaxUpdateId(update)}`,
+          payload: { channel: CHANNEL, user_id: uid, chat_id: cid, text: event.text, type: event.type, timestamp: event.timestamp },
+        }).catch(() => {});
+        waitUntil(processMessage(event, uid, cid, extractMaxUpdateId(update)).catch(() => {}));
+        processed++;
+      } catch { /* skip malformed */ }
+    }
+    return NextResponse.json({ ok: true, batch_processed: processed });
+  }
+
   // DEBUG: log every webhook receipt to bot_messages (temp)
   try {
     const db = getServiceClient();
