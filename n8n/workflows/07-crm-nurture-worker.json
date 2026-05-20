@@ -2,11 +2,23 @@
   "name": "Bot / CRM Nurture Worker (welcome → followup chain)",
   "nodes": [
     {
-      "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 1 }] } },
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
       "name": "Cron every 1m",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -16,110 +28,194 @@
       "name": "PG claim crm jobs",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [460, 300],
-      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
-    },
-    {
-      "parameters": { "options": {} },
-      "name": "Has jobs?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [680, 300]
-    },
-    {
-      "parameters": { "batchSize": 1, "options": {} },
-      "name": "SplitInBatches",
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [900, 300]
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-direct",
+          "name": "Supabase (direct)"
+        }
+      }
     },
     {
       "parameters": {
-        "dataMode": "jsonOutput",
         "values": {
           "string": [
-            { "name": "job_id", "value": "={{ $json.id }}" },
-            { "name": "step", "value": "={{ $json.payload.step }}" },
-            { "name": "phone", "value": "={{ $json.payload.phone }}" },
-            { "name": "work_type", "value": "={{ $json.payload.work_type }}" },
-            { "name": "city", "value": "={{ $json.payload.city }}" },
-            { "name": "name", "value": "={{ $json.payload.name || '' }}" },
-            { "name": "lead_id", "value": "={{ $json.payload.lead_id || '' }}" }
+            {
+              "name": "job_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "step",
+              "value": "={{ $json.payload.step }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $json.payload.phone }}"
+            },
+            {
+              "name": "work_type",
+              "value": "={{ $json.payload.work_type }}"
+            },
+            {
+              "name": "city",
+              "value": "={{ $json.payload.city }}"
+            },
+            {
+              "name": "name",
+              "value": "={{ $json.payload.name || '' }}"
+            },
+            {
+              "name": "lead_id",
+              "value": "={{ $json.payload.lead_id || '' }}"
+            }
           ]
         }
       },
       "name": "Set step vars",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3,
-      "position": [1120, 300]
+      "typeVersion": 2,
+      "position": [
+        1120,
+        300
+      ]
     },
     {
       "parameters": {
         "rules": {
           "values": [
-            { "conditions": { "string": [{ "value1": "={{ $json.step }}", "operation": "equals", "value2": "welcome" }] } },
-            { "conditions": { "string": [{ "value1": "={{ $json.step }}", "operation": "equals", "value2": "followup_2h" }] } },
-            { "conditions": { "string": [{ "value1": "={{ $json.step }}", "operation": "equals", "value2": "followup_24h" }] } },
-            { "conditions": { "string": [{ "value1": "={{ $json.step }}", "operation": "equals", "value2": "followup_72h" }] } }
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ .step }}",
+                    "operation": "equals",
+                    "value2": "welcome"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ .step }}",
+                    "operation": "equals",
+                    "value2": "followup_2h"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ .step }}",
+                    "operation": "equals",
+                    "value2": "followup_24h"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ .step }}",
+                    "operation": "equals",
+                    "value2": "followup_72h"
+                  }
+                ]
+              }
+            }
           ]
         }
       },
       "name": "Switch by step",
       "type": "n8n-nodes-base.switch",
-      "typeVersion": 3,
-      "position": [1340, 300]
+      "typeVersion": 2,
+      "position": [
+        1340,
+        300
+      ]
     },
     {
       "parameters": {
         "values": {
           "string": [
-            { "name": "tg_msg", "value": "👋 {{$json.name || 'Здравствуйте'}}! Спасибо за заявку на Подряд PRO.\n\nМы получили ваш запрос по направлению «{{$json.work_type}}» в городе {{$json.city || 'Омск'}}.\n\nНаш менеджер свяжется с вами в ближайшее время для уточнения деталей." }
+            {
+              "name": "tg_msg",
+              "value": "👋 {{$json.name || 'Здравствуйте'}}! Спасибо за заявку на Подряд PRO.\n\nМы получили ваш запрос по направлению «{{$json.work_type}}» в городе {{$json.city || 'Омск'}}.\n\nНаш менеджер свяжется с вами в ближайшее время для уточнения деталей."
+            }
           ]
         }
       },
       "name": "Set welcome msg",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3,
-      "position": [1560, 120]
+      "typeVersion": 2,
+      "position": [
+        1560,
+        120
+      ]
     },
     {
       "parameters": {
         "values": {
           "string": [
-            { "name": "tg_msg", "value": "⏳ {{$json.name || 'Здравствуйте'}}! Ваша заявка принята в обработку.\n\nНаш менеджер скоро свяжется с вами. Если у вас есть срочные вопросы, напишите нам." }
+            {
+              "name": "tg_msg",
+              "value": "⏳ {{$json.name || 'Здравствуйте'}}! Ваша заявка принята в обработку.\n\nНаш менеджер скоро свяжется с вами. Если у вас есть срочные вопросы, напишите нам."
+            }
           ]
         }
       },
       "name": "Set 2h msg",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3,
-      "position": [1560, 260]
+      "typeVersion": 2,
+      "position": [
+        1560,
+        260
+      ]
     },
     {
       "parameters": {
         "values": {
           "string": [
-            { "name": "tg_msg", "value": "📋 {{$json.name || 'Здравствуйте'}}! Напоминаем, что ваша заявка в обработке.\n\nХотите уточнить детали или изменить заказ? Просто ответьте на это сообщение." }
+            {
+              "name": "tg_msg",
+              "value": "📋 {{$json.name || 'Здравствуйте'}}! Напоминаем, что ваша заявка в обработке.\n\nХотите уточнить детали или изменить заказ? Просто ответьте на это сообщение."
+            }
           ]
         }
       },
       "name": "Set 24h msg",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3,
-      "position": [1560, 400]
+      "typeVersion": 2,
+      "position": [
+        1560,
+        400
+      ]
     },
     {
       "parameters": {
         "values": {
           "string": [
-            { "name": "tg_msg", "value": "🔔 {{$json.name || 'Здравствуйте'}}! Всё ещё актуальна заявка по направлению «{{$json.work_type}}»?\n\nОтветьте «да» — и менеджер свяжется с вами повторно." }
+            {
+              "name": "tg_msg",
+              "value": "🔔 {{$json.name || 'Здравствуйте'}}! Всё ещё актуальна заявка по направлению «{{$json.work_type}}»?\n\nОтветьте «да» — и менеджер свяжется с вами повторно."
+            }
           ]
         }
       },
       "name": "Set 72h msg",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3,
-      "position": [1560, 540]
+      "typeVersion": 2,
+      "position": [
+        1560,
+        540
+      ]
     },
     {
       "parameters": {
@@ -129,20 +225,27 @@
       "name": "PG lookup client chat",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1780, 200],
-      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+      "position": [
+        1780,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-direct",
+          "name": "Supabase (direct)"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
           "string": [
             {
-              "value1": "={{ $json.chat_id }}",
-              "operation": "isNotEmpty",
-              "value2": ""
+              "value1": "={{ .chat_id }}",
+              "operation": "isNotEmpty"
             },
             {
-              "value1": "={{ $json.channel }}",
+              "value1": "={{ .channel }}",
               "operation": "equals",
               "value2": "telegram"
             }
@@ -155,31 +258,32 @@
       "name": "Client has Telegram?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [2000, 200]
+      "position": [
+        2000,
+        200
+      ]
     },
     {
       "parameters": {
         "chatId": "={{ $json.chat_id }}",
         "text": "={{ $json.tg_msg }}",
-        "additionalFields": { "parse_mode": "HTML" }
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
       },
       "name": "TG send to client",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
-      "position": [2220, 120],
-      "credentials": { "telegramApi": { "id": "tg-main", "name": "Telegram Main Bot" } }
-    },
-    {
-      "parameters": {
-        "chatId": "={{$env.TELEGRAM_OWNER_CHAT_ID}}",
-        "text": "={{ $json.tg_msg + '\\n\\n⚠️ Клиент не привязал Telegram. Требуется ручной контакт.\\n📞 ' + ($json.phone || '') }}",
-        "additionalFields": { "parse_mode": "HTML" }
-      },
-      "name": "TG fallback owner",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.1,
-      "position": [2220, 340],
-      "credentials": { "telegramApi": { "id": "tg-owner", "name": "Telegram Owner Bot" } }
+      "position": [
+        2220,
+        120
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "tg-main",
+          "name": "Telegram Main Bot"
+        }
+      }
     },
     {
       "parameters": {
@@ -189,44 +293,176 @@
       "name": "PG complete job",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [2440, 200],
-      "credentials": { "postgres": { "id": "supabase-direct", "name": "Supabase (direct)" } }
+      "position": [
+        2440,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-direct",
+          "name": "Supabase (direct)"
+        }
+      }
     }
   ],
   "connections": {
-    "Cron every 1m": { "main": [[{ "node": "PG claim crm jobs", "type": "main", "index": 0 }]] },
-    "PG claim crm jobs": { "main": [[{ "node": "Has jobs?", "type": "main", "index": 0 }]] },
-    "Has jobs?": {
+    "Cron every 1m": {
       "main": [
-        [{ "node": "SplitInBatches", "type": "main", "index": 0 }],
-        []
+        [
+          {
+            "node": "PG claim crm jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "SplitInBatches": { "main": [[{ "node": "Set step vars", "type": "main", "index": 0 }]] },
-    "Set step vars": { "main": [[{ "node": "Switch by step", "type": "main", "index": 0 }]] },
+    "PG claim crm jobs": {
+      "main": [
+        [
+          {
+            "node": "Set step vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set step vars": {
+      "main": [
+        [
+          {
+            "node": "Switch by step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Switch by step": {
       "main": [
-        [{ "node": "Set welcome msg", "type": "main", "index": 0 }],
-        [{ "node": "Set 2h msg", "type": "main", "index": 0 }],
-        [{ "node": "Set 24h msg", "type": "main", "index": 0 }],
-        [{ "node": "Set 72h msg", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Set welcome msg",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set 2h msg",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set 24h msg",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set 72h msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Set welcome msg": { "main": [[{ "node": "PG lookup client chat", "type": "main", "index": 0 }]] },
-    "Set 2h msg": { "main": [[{ "node": "PG lookup client chat", "type": "main", "index": 0 }]] },
-    "Set 24h msg": { "main": [[{ "node": "PG lookup client chat", "type": "main", "index": 0 }]] },
-    "Set 72h msg": { "main": [[{ "node": "PG lookup client chat", "type": "main", "index": 0 }]] },
-    "PG lookup client chat": { "main": [[{ "node": "Client has Telegram?", "type": "main", "index": 0 }]] },
+    "Set welcome msg": {
+      "main": [
+        [
+          {
+            "node": "PG lookup client chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set 2h msg": {
+      "main": [
+        [
+          {
+            "node": "PG lookup client chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set 24h msg": {
+      "main": [
+        [
+          {
+            "node": "PG lookup client chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set 72h msg": {
+      "main": [
+        [
+          {
+            "node": "PG lookup client chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG lookup client chat": {
+      "main": [
+        [
+          {
+            "node": "Client has Telegram?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Client has Telegram?": {
       "main": [
-        [{ "node": "TG send to client", "type": "main", "index": 0 }],
-        [{ "node": "TG fallback owner", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "TG send to client",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PG complete job",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "TG send to client": { "main": [[{ "node": "PG complete job", "type": "main", "index": 0 }]] },
-    "TG fallback owner": { "main": [[{ "node": "PG complete job", "type": "main", "index": 0 }]] }
+    "TG send to client": {
+      "main": [
+        [
+          {
+            "node": "PG complete job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "active": false,
-  "tags": ["bot", "crm", "nurture"]
+  "tags": [
+    "bot",
+    "crm",
+    "nurture"
+  ]
 }

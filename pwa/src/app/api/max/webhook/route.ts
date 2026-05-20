@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
 
   if (!chatId) {
     await markUpdateProcessed(CHANNEL, updateId);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, debug: { userId, chatId, text: event.text, type: event.type } });
   }
 
   // 7. Rate limit per user
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
   if (rl.limited) {
     log.warn('[MaxWebhook] Rate limited', { user_id: userId });
     await releaseProcessingLock(CHANNEL, updateId);
-    return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, debug: { userId, chatId, text: event.text, type: event.type } });
   }
 
   // 8. Fire-and-forget CRM event
