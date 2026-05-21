@@ -143,6 +143,15 @@ export default function BusinessHelpPage() {
         <p className="text-white/20 text-xs text-center mt-8 leading-relaxed">
           Консультация бесплатна&nbsp;&middot;&nbsp;Сократим издержки — вы займётесь развитием
         </p>
+
+        <div className="text-center mt-6">
+          <Link
+            href="/#services"
+            className="inline-flex items-center gap-1 text-white/40 hover:text-white/80 text-sm transition-colors"
+          >
+            ← На главную
+          </Link>
+        </div>
       </main>
     </div>
   );

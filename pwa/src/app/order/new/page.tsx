@@ -197,13 +197,13 @@ export default function OrderNewPage() {
             <span className="text-lg font-extrabold text-brand-900 dark:text-white font-heading">Подряд PRO</span>
           </div>
           <div className="flex items-center gap-3">
-            <a href="/#services" className="text-sm text-gray-500 dark:text-dark-muted hover:text-brand-500 transition-colors font-semibold cursor-pointer">
+            <Link href="/#services" className="text-sm text-gray-500 dark:text-dark-muted hover:text-brand-500 transition-colors font-semibold cursor-pointer">
               ← На главную
-            </a>
+            </Link>
             <span className="text-gray-200 dark:text-dark-border">|</span>
-            <a href="/login" className="text-sm text-[#2F5BFF] hover:underline font-semibold cursor-pointer">
+            <Link href="/login" className="text-sm text-[#2F5BFF] hover:underline font-semibold cursor-pointer">
               Войти в кабинет
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
@@ -503,9 +503,9 @@ export default function OrderNewPage() {
             <span className="text-xs text-gray-500 dark:text-dark-muted leading-relaxed">
               Я даю согласие на обработку персональных данных в соответствии
               с&nbsp;
-              <a href="/privacy" className="text-brand-500 underline">
+              <Link href="/privacy" className="text-brand-500 underline">
                 Федеральным законом №152-ФЗ
-              </a>
+              </Link>
             </span>
           </label>
 
@@ -521,7 +521,7 @@ export default function OrderNewPage() {
       </div>
 
       {/* Mobile sticky CTA */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/95 dark:bg-dark-card/95 backdrop-blur-md border-t border-gray-200 dark:border-dark-border px-4 py-3 safe-area-pb">
+      <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-40 md:hidden bg-white/95 dark:bg-dark-card/95 backdrop-blur-md border-t border-gray-200 dark:border-dark-border px-4 py-3 safe-area-pb">
         <button
           type="submit"
           form="order-form"

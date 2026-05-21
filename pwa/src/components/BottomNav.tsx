@@ -8,7 +8,7 @@ import type { LucideIcon } from 'lucide-react';
 const NAV_ITEMS: { href: string; icon: LucideIcon; label: string }[] = [
   { href: '/', icon: Home, label: 'Главная' },
   { href: '/dashboard', icon: ClipboardList, label: 'Заказы' },
-  { href: '/catalog/workers', icon: Store, label: 'Каталог' },
+  { href: '/catalog/labor', icon: Store, label: 'Каталог' },
   { href: '/order/new', icon: PlusCircle, label: 'Заказ' },
   { href: '/join', icon: UserCircle, label: 'Работа' },
 ];

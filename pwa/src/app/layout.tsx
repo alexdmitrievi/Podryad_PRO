@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Manrope, Space_Grotesk } from 'next/font/google';
 import DevUnregisterSW from '@/components/DevUnregisterSW';
+import NavWrapper from '@/components/NavWrapper';
 import ToastProvider from '@/components/ui/Toast';
 import './globals.css';
 
@@ -23,23 +24,23 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'Подряд PRO | Работа в Омске и Новосибирске',
+  title: 'Подряд PRO',
   description:
-    'Платформа для поиска работы и подработки в Омске и Новосибирске. Грузчики, уборка, строительство — быстро и надёжно.',
+    'Закажите работы по дому и участку',
   manifest: '/manifest.json',
   keywords:
     'работа омск, подработка омск, грузчики омск, новосибирск, работа новосибирск, подработка новосибирск, подряд, уборка',
   openGraph: {
-    title: 'Подряд PRO | Работа в Омске и Новосибирске',
-    description: 'Платформа для поиска работы и подработки в Омске и Новосибирске',
+    title: 'Подряд PRO',
+    description: 'Закажите работы по дому и участку',
     type: 'website',
     url: 'https://podryad.pro',
     siteName: 'Подряд PRO',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Подряд PRO | Работа в Омске и Новосибирске',
-    description: 'Платформа для поиска работы и подработки в Омске и Новосибирске',
+    title: 'Подряд PRO',
+    description: 'Закажите работы по дому и участку',
   },
   alternates: { canonical: 'https://podryad.pro' },
   robots: 'index, follow',
@@ -90,7 +91,7 @@ export default function RootLayout({
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-brand-500 focus:text-white focus:rounded-xl focus:text-sm focus:font-semibold">Перейти к контенту</a>
         <DevUnregisterSW />
         <ToastProvider />
-        {children}
+        <NavWrapper>{children}</NavWrapper>
       </body>
     </html>
   );

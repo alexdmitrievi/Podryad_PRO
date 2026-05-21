@@ -59,8 +59,8 @@ export default function OfflinePage() {
         <Link href="/equipment" className="text-xs text-gray-400 hover:text-brand-500 transition-colors">
           Техника
         </Link>
-        <Link href="/catalog/materials" className="text-xs text-gray-400 hover:text-brand-500 transition-colors">
-          Материалы
+        <Link href="/own-park" className="text-xs text-gray-400 hover:text-brand-500 transition-colors">
+          Свой парк
         </Link>
       </div>
     </div>

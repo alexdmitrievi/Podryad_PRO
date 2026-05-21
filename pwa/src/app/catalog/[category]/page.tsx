@@ -40,6 +40,8 @@ const LABOR_SERVICES: CatalogItem[] = [
 
 const CATEGORY_META: Record<string, { title: string; subtitle: string; icon: string; apiType?: string }> = {
   labor: { title: 'Рабочая сила', subtitle: 'Бригады от 2 до 15 человек', icon: '👷' },
+  equipment: { title: 'Техника', subtitle: 'Аренда спецтехники от собственника', icon: '🏗️', apiType: 'own_equipment' },
+  materials: { title: 'Материалы', subtitle: 'Стройматериалы с доставкой', icon: '🧱' },
 };
 
 /* ── Order modal ──────────────────────────────────────────────── */
@@ -191,9 +193,9 @@ function OrderModal({ item, onClose }: { item: CatalogItem; onClose: () => void 
                 <span className="text-xs text-gray-500 dark:text-dark-muted leading-relaxed">
                   Я даю согласие на обработку персональных данных в соответствии
                   с&nbsp;
-                  <a href="/privacy" className="text-brand-500 underline" target="_blank">
+                  <Link href="/privacy" className="text-brand-500 underline" target="_blank">
                     Федеральным законом №152-ФЗ
-                  </a>
+                  </Link>
                 </span>
               </label>
 
@@ -301,7 +303,7 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
       <div className="min-h-screen bg-white dark:bg-dark-bg flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Категория не найдена</h1>
-          <Link href="/" className="text-brand-500 hover:underline">Вернуться на главную</Link>
+          <Link href="/#services" className="text-brand-500 hover:underline">Вернуться на главную</Link>
         </div>
       </div>
     );

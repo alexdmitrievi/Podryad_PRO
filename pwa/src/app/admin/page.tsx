@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import UnifiedCRM from '@/components/admin/UnifiedCRM';
 import InviteTab from '@/components/admin/InviteTab';
+import MobileTabMenu from '@/components/admin/MobileTabMenu';
 import {
   Lock, Users, ShoppingBag, Tag, AlertTriangle, BarChart3,
   Copy, Check, ExternalLink, UserPlus, RefreshCw, Save,
@@ -211,8 +212,8 @@ function PinGate({ onAuth }: { onAuth: (pin: string) => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-dark-card rounded-3xl shadow-card p-8 w-full max-w-sm">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-4 safe-area-pt safe-area-pb">
+      <div className="bg-white dark:bg-dark-card rounded-3xl shadow-card p-6 sm:p-8 w-full max-w-sm">
         <div className="mb-8">
           <Link
             href="/"
@@ -233,14 +234,14 @@ function PinGate({ onAuth }: { onAuth: (pin: string) => void }) {
             value={pin}
             onChange={e => setPin(e.target.value)}
             placeholder="Введите PIN"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-center text-2xl tracking-widest"
+            className="w-full px-4 py-3.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-center text-2xl tracking-widest min-h-[48px]"
             autoFocus
           />
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <button
             type="submit"
             disabled={loading || !pin}
-            className="w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold cursor-pointer transition-colors duration-150 disabled:opacity-50"
+            className="w-full py-3.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold cursor-pointer transition-colors duration-150 disabled:opacity-50 min-h-[48px]"
           >
             {loading ? 'Проверка…' : 'Войти'}
           </button>
@@ -691,13 +692,13 @@ function OrdersTab({ pin }: { pin: string }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <button onClick={loadOrders} disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50 min-h-[44px]">
           <RefreshCw className={loading ? "w-4 h-4 animate-spin" : "w-4 h-4"} /> Загрузить
         </button>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск по имени, телефону, адресу..."
-          className="flex-1 min-w-[200px] px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+          className="flex-1 min-w-[160px] px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 min-h-[44px]" />
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer">
+          className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white text-sm cursor-pointer min-h-[44px]">
           <option value="">Все статусы</option>
           {['pending', 'priced', 'payment_sent', 'paid', 'in_progress', 'confirming', 'completed', 'cancelled', 'disputed'].map(s => (
             <option key={s} value={s}>{s}</option>
@@ -733,23 +734,23 @@ function OrdersTab({ pin }: { pin: string }) {
               {/* Contact buttons */}
               {o.customer_phone && (
                 <div className="flex gap-2 mt-3">
-                  <a href={`https://max.im/search?q=${o.customer_phone}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#2787F5] cursor-pointer hover:opacity-80">MAX</a>
-                  <a href={`https://t.me/+7${o.customer_phone}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#229ED9] cursor-pointer hover:opacity-80">TG</a>
-                  <a href={`tel:+7${o.customer_phone}`} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-green-500 cursor-pointer hover:opacity-80">Тел</a>
+                  <a href={`https://max.im/search?q=${o.customer_phone}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-[#2787F5] cursor-pointer hover:opacity-80 min-h-[44px] flex items-center">MAX</a>
+                  <a href={`https://t.me/+7${o.customer_phone}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-[#229ED9] cursor-pointer hover:opacity-80 min-h-[44px] flex items-center">TG</a>
+                  <a href={`tel:+7${o.customer_phone}`} className="px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-green-500 cursor-pointer hover:opacity-80 min-h-[44px] flex items-center">Тел</a>
                 </div>
               )}
               {/* Assign price + contractor for pending orders */}
               {(o.status === 'pending') && (
-                <div className="mt-3 p-3 rounded-xl bg-gray-50 border border-gray-200 space-y-2">
-                  <div className="flex gap-2">
+                <div className="mt-3 p-3 rounded-xl bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border space-y-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input type="number" placeholder="Цена клиенту"
                       value={assignState[oid]?.price || ''}
                       onChange={e => setAssignState(s => ({ ...s, [oid]: { ...s[oid], price: e.target.value, cid: s[oid]?.cid || '' } }))}
-                      className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500/30" />
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-sm focus:outline-none focus:ring-1 focus:ring-brand-500/30 min-h-[44px]" />
                     <select
                       value={assignState[oid]?.cid || ''}
                       onChange={e => setAssignState(s => ({ ...s, [oid]: { ...s[oid], cid: e.target.value, price: s[oid]?.price || '' } }))}
-                      className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 text-sm cursor-pointer">
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-sm cursor-pointer min-h-[44px]">
                       <option value="">Исполнитель...</option>
                       {contractors.filter(c => c.status === 'active' || c.status === 'verified').map(c => (
                         <option key={c.id} value={c.id}>{c.name} ({c.specialties.join(', ')})</option>
@@ -758,7 +759,7 @@ function OrdersTab({ pin }: { pin: string }) {
                   </div>
                   <button onClick={() => assignOrder(oid)}
                     disabled={!assignState[oid]?.price || !assignState[oid]?.cid}
-                    className="w-full py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium cursor-pointer disabled:opacity-50 transition-colors">
+                    className="w-full py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium cursor-pointer disabled:opacity-50 transition-colors min-h-[44px]">
                     Назначить
                   </button>
                 </div>
@@ -826,7 +827,7 @@ function OrdersTab({ pin }: { pin: string }) {
                 <div className="mt-3 flex flex-wrap gap-2">
                   {STATUS_TRANSITIONS[o.status].map(t => (
                     <button key={t.next} onClick={() => changeStatus(oid, t.next)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold text-white cursor-pointer transition-colors ${t.color}`}>
+                      className={`px-4 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer transition-colors min-h-[44px] ${t.color}`}>
                       {t.label}
                     </button>
                   ))}
@@ -846,33 +847,33 @@ function OrdersTab({ pin }: { pin: string }) {
                 });
                 setEditingOrder(oid);
               }}
-                className="mt-2 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 cursor-pointer transition-colors">
+                className="mt-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 dark:bg-dark-border hover:bg-gray-200 dark:hover:bg-dark-muted cursor-pointer transition-colors min-h-[44px]">
                 {editingOrder === oid ? 'Отмена' : 'Редактировать'}
               </button>
               {/* Inline edit form */}
               {editingOrder === oid && (
-                <div className="mt-3 p-3 rounded-xl bg-blue-50 border border-blue-200 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="mt-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input value={editForm.customer_name || ''} onChange={e => setEditForm(f => ({ ...f, customer_name: e.target.value }))}
-                      placeholder="Имя клиента" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                      placeholder="Имя клиента" className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg text-sm min-h-[44px]" />
                     <input value={editForm.customer_phone || ''} onChange={e => setEditForm(f => ({ ...f, customer_phone: e.target.value }))}
-                      placeholder="Телефон" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                      placeholder="Телефон" className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg text-sm min-h-[44px]" />
                   </div>
                   <input value={editForm.address || ''} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))}
-                    placeholder="Адрес" className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                    placeholder="Адрес" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg text-sm min-h-[44px]" />
                   <div className="grid grid-cols-3 gap-2">
                     <input value={editForm.work_date || ''} onChange={e => setEditForm(f => ({ ...f, work_date: e.target.value }))}
-                      placeholder="Дата работ" type="date" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                      placeholder="Дата работ" type="date" className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg text-sm min-h-[44px]" />
                     <input value={editForm.hours || ''} onChange={e => setEditForm(f => ({ ...f, hours: e.target.value }))}
-                      placeholder="Часы" type="number" min="0" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                      placeholder="Часы" type="number" min="0" className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg text-sm min-h-[44px]" />
                     <input value={editForm.people_count || ''} onChange={e => setEditForm(f => ({ ...f, people_count: e.target.value }))}
-                      placeholder="Человек" type="number" min="0" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                      placeholder="Человек" type="number" min="0" className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg text-sm min-h-[44px]" />
                   </div>
                   <textarea value={editForm.customer_comment || ''} onChange={e => setEditForm(f => ({ ...f, customer_comment: e.target.value }))}
                     placeholder="Комментарий клиента" rows={2}
-                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-sm resize-none" />
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg text-sm resize-none" />
                   <button onClick={() => saveEdit(oid)}
-                    className="w-full py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium cursor-pointer transition-colors">
+                    className="w-full py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium cursor-pointer transition-colors min-h-[44px]">
                     Сохранить
                   </button>
                 </div>
@@ -964,35 +965,58 @@ function MarkupsTab({ pin }: { pin: string }) {
       {error && <p className="text-red-500 text-sm">{error}</p>}
       {success && <p className="text-green-600 text-sm">{success}</p>}
       {rates.length > 0 && (
-        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-dark-border">
-                {['Тип','Категория','Подкатегория','Наценка %'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rates.map(r => (
-                <tr key={r.id} className="border-b border-gray-50 dark:border-dark-border">
-                  <td className="px-4 py-3">{r.listing_type}</td>
-                  <td className="px-4 py-3">{r.category || '—'}</td>
-                  <td className="px-4 py-3">{r.subcategory || '—'}</td>
-                  <td className="px-4 py-3">
-                    <input
-                      type="number"
-                      value={r.markup_percent}
-                      onChange={e => updateRate(r.id, parseFloat(e.target.value) || 0)}
-                      className="w-24 px-2 py-1 rounded-lg border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white text-center"
-                      min="0" max="100" step="0.1"
-                    />
-                  </td>
+        <>
+          <div className="hidden md:block bg-white dark:bg-dark-card rounded-2xl shadow-card overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-dark-border">
+                  {['Тип','Категория','Подкатегория','Наценка %'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {rates.map(r => (
+                  <tr key={r.id} className="border-b border-gray-50 dark:border-dark-border">
+                    <td className="px-4 py-3">{r.listing_type}</td>
+                    <td className="px-4 py-3">{r.category || '—'}</td>
+                    <td className="px-4 py-3">{r.subcategory || '—'}</td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        value={r.markup_percent}
+                        onChange={e => updateRate(r.id, parseFloat(e.target.value) || 0)}
+                        className="w-24 px-2 py-1 rounded-lg border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white text-center"
+                        min="0" max="100" step="0.1"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="md:hidden space-y-2">
+            {rates.map(r => (
+              <div key={r.id} className="bg-white dark:bg-dark-card rounded-2xl p-4 shadow-card space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{r.listing_type}</span>
+                  <span className="text-xs text-gray-400">{r.category || '—'} {r.subcategory ? `· ${r.subcategory}` : ''}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-500">Наценка:</label>
+                  <input
+                    type="number"
+                    value={r.markup_percent}
+                    onChange={e => updateRate(r.id, parseFloat(e.target.value) || 0)}
+                    className="w-20 px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white text-center min-h-[44px] text-sm"
+                    min="0" max="100" step="0.1"
+                  />
+                  <span className="text-sm text-gray-500">%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -1217,94 +1241,156 @@ function ListingsTab({ pin }: { pin: string }) {
       {uploadSuccess && <p className="text-green-600 text-sm">{uploadSuccess}</p>}
 
       {listings.length > 0 && (
-        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-dark-border">
-                {['Название', 'Категория', 'Тип', 'База', 'Витрина', 'Наценка', 'Ед.', 'Фото', 'Статус', 'Дата', 'Действия'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {listings.map(l => (
-                <tr key={l.listing_id} className="border-b border-gray-50 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border">
-                  <td className="px-4 py-3 max-w-[200px] truncate">{l.title}</td>
-                  <td className="px-4 py-3">{l.category_slug}</td>
-                  <td className="px-4 py-3">{l.listing_type === 'material' ? 'Мат.' : 'Техн.'}</td>
-                  <td className="px-4 py-3 tabular-nums">{fmtMoney(l.price)}</td>
-                  <td className="px-4 py-3 tabular-nums font-medium">{fmtMoney(l.display_price)}</td>
-                  <td className="px-4 py-3 tabular-nums text-brand-500">{l.markup_percent}%</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{l.price_unit}</td>
-                  <td className="px-4 py-3">
-                    <label className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-brand-500/10 text-brand-500 hover:bg-brand-500/20 cursor-pointer transition-colors text-xs font-medium">
-                      {uploadingId === l.listing_id ? (
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Camera className="w-3.5 h-3.5" />
-                      )}
-                      <span>{uploadingId === l.listing_id ? '...' : 'Фото'}</span>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        className="hidden"
-                        onChange={e => {
-                          const f = e.target.files?.[0];
-                          if (f) handleUploadPhoto(l.listing_id, f);
-                          e.target.value = '';
+        <>
+          <div className="hidden md:block bg-white dark:bg-dark-card rounded-2xl shadow-card overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-dark-border">
+                  {['Название', 'Категория', 'Тип', 'База', 'Витрина', 'Наценка', 'Ед.', 'Фото', 'Статус', 'Дата', 'Действия'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {listings.map(l => (
+                  <tr key={l.listing_id} className="border-b border-gray-50 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border">
+                    <td className="px-4 py-3 max-w-[200px] truncate">{l.title}</td>
+                    <td className="px-4 py-3">{l.category_slug}</td>
+                    <td className="px-4 py-3">{l.listing_type === 'material' ? 'Мат.' : 'Техн.'}</td>
+                    <td className="px-4 py-3 tabular-nums">{fmtMoney(l.price)}</td>
+                    <td className="px-4 py-3 tabular-nums font-medium">{fmtMoney(l.display_price)}</td>
+                    <td className="px-4 py-3 tabular-nums text-brand-500">{l.markup_percent}%</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{l.price_unit}</td>
+                    <td className="px-4 py-3">
+                      <label className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-brand-500/10 text-brand-500 hover:bg-brand-500/20 cursor-pointer transition-colors text-xs font-medium">
+                        {uploadingId === l.listing_id ? (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Camera className="w-3.5 h-3.5" />
+                        )}
+                        <span>{uploadingId === l.listing_id ? '...' : 'Фото'}</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={e => {
+                            const f = e.target.files?.[0];
+                            if (f) handleUploadPhoto(l.listing_id, f);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={"px-2 py-0.5 rounded-full text-xs " + (l.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>
+                        {l.is_active ? 'Актив' : 'Скрыта'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(l.created_at)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1">
+                        <button onClick={() => toggleListingActive(l.listing_id, l.is_active)}
+                          className={`px-2 py-1 rounded-lg text-xs font-medium cursor-pointer transition-colors ${l.is_active ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}>
+                          {l.is_active ? 'Скрыть' : 'Активировать'}
+                        </button>
+                        <button onClick={() => {
+                          if (editingListing === l.listing_id) { setEditingListing(null); return; }
+                          setEditListingForm({ title: l.title, price: String(l.price), price_unit: l.price_unit });
+                          setEditingListing(l.listing_id);
                         }}
-                      />
-                    </label>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={"px-2 py-0.5 rounded-full text-xs " + (l.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>
-                      {l.is_active ? 'Актив' : 'Скрыта'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(l.created_at)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1">
-                      <button onClick={() => toggleListingActive(l.listing_id, l.is_active)}
-                        className={`px-2 py-1 rounded-lg text-xs font-medium cursor-pointer transition-colors ${l.is_active ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}>
-                        {l.is_active ? 'Скрыть' : 'Активировать'}
-                      </button>
-                      <button onClick={() => {
-                        if (editingListing === l.listing_id) { setEditingListing(null); return; }
-                        setEditListingForm({ title: l.title, price: String(l.price), price_unit: l.price_unit });
-                        setEditingListing(l.listing_id);
-                      }}
-                        className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 cursor-pointer transition-colors">
-                        Ред.
-                      </button>
-                    </div>
-                    {editingListing === l.listing_id && (
-                      <div className="mt-2 space-y-1.5 min-w-[250px]">
-                        <input value={editListingForm.title} onChange={e => setEditListingForm(f => ({ ...f, title: e.target.value }))}
-                          placeholder="Название" className="w-full px-2 py-1 rounded-lg border border-gray-200 text-xs" />
-                        <input value={editListingForm.price} onChange={e => setEditListingForm(f => ({ ...f, price: e.target.value }))}
-                          placeholder="Базовая цена" type="number" className="w-full px-2 py-1 rounded-lg border border-gray-200 text-xs" />
-                        <button onClick={() => saveListingEdit(l.listing_id)} disabled={saving}
-                          className="w-full py-1 rounded-lg bg-blue-500 text-white text-xs font-medium cursor-pointer hover:bg-blue-600 disabled:opacity-50 transition-colors">
-                          {saving ? '...' : 'Сохранить'}
+                          className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 cursor-pointer transition-colors">
+                          Ред.
                         </button>
                       </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      {editingListing === l.listing_id && (
+                        <div className="mt-2 space-y-1.5 min-w-[250px]">
+                          <input value={editListingForm.title} onChange={e => setEditListingForm(f => ({ ...f, title: e.target.value }))}
+                            placeholder="Название" className="w-full px-2 py-1 rounded-lg border border-gray-200 text-xs" />
+                          <input value={editListingForm.price} onChange={e => setEditListingForm(f => ({ ...f, price: e.target.value }))}
+                            placeholder="Базовая цена" type="number" className="w-full px-2 py-1 rounded-lg border border-gray-200 text-xs" />
+                          <button onClick={() => saveListingEdit(l.listing_id)} disabled={saving}
+                            className="w-full py-1 rounded-lg bg-blue-500 text-white text-xs font-medium cursor-pointer hover:bg-blue-600 disabled:opacity-50 transition-colors">
+                            {saving ? '...' : 'Сохранить'}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="md:hidden space-y-2">
+            {listings.map(l => (
+              <div key={l.listing_id} className="bg-white dark:bg-dark-card rounded-2xl p-4 shadow-card space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-gray-900 dark:text-white text-sm leading-tight">{l.title}</h4>
+                    <p className="text-xs text-gray-400 mt-0.5">{l.category_slug} · {l.listing_type === 'material' ? 'Материал' : 'Техника'}</p>
+                  </div>
+                  <span className={"px-2 py-0.5 rounded-full text-xs flex-shrink-0 " + (l.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>
+                    {l.is_active ? 'Актив' : 'Скрыта'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div><span className="text-gray-400">База:</span> <span className="font-medium">{fmtMoney(l.price)}</span></div>
+                  <div><span className="text-gray-400">Витрина:</span> <span className="font-medium">{fmtMoney(l.display_price)}</span></div>
+                  <div><span className="text-gray-400">Наценка:</span> <span className="font-medium text-brand-500">{l.markup_percent}%</span></div>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span>{l.price_unit}</span>
+                  <span>·</span>
+                  <span>{fmtDate(l.created_at)}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => toggleListingActive(l.listing_id, l.is_active)}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors min-h-[40px] ${l.is_active ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}>
+                    {l.is_active ? 'Скрыть' : 'Активировать'}
+                  </button>
+                  <label className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-brand-500/10 text-brand-500 hover:bg-brand-500/20 cursor-pointer transition-colors text-xs font-medium min-h-[40px]">
+                    {uploadingId === l.listing_id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                    <span>Фото</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadPhoto(l.listing_id, f); e.target.value = ''; }} />
+                  </label>
+                  <button onClick={() => {
+                    if (editingListing === l.listing_id) { setEditingListing(null); return; }
+                    setEditListingForm({ title: l.title, price: String(l.price), price_unit: l.price_unit });
+                    setEditingListing(l.listing_id);
+                  }} className="px-3 py-2 rounded-lg text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 cursor-pointer transition-colors min-h-[40px]">
+                    Ред.
+                  </button>
+                </div>
+                {editingListing === l.listing_id && (
+                  <div className="space-y-2 pt-1">
+                    <input value={editListingForm.title} onChange={e => setEditListingForm(f => ({ ...f, title: e.target.value }))}
+                      placeholder="Название" className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border text-sm min-h-[44px]" />
+                    <div className="flex gap-2">
+                      <input value={editListingForm.price} onChange={e => setEditListingForm(f => ({ ...f, price: e.target.value }))}
+                        placeholder="Цена" type="number" className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border text-sm min-h-[44px]" />
+                      <button onClick={() => saveListingEdit(l.listing_id)} disabled={saving}
+                        className="px-4 py-2 rounded-xl bg-blue-500 text-white text-sm font-medium cursor-pointer hover:bg-blue-600 disabled:opacity-50 transition-colors min-h-[44px]">
+                        {saving ? '...' : 'Сохранить'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card w-full max-w-md p-6 relative">
-            <button onClick={() => { setShowModal(false); setPendingPhoto(null); }}
-              className="absolute top-4 right-4 cursor-pointer text-gray-400 hover:text-gray-600 transition-colors">
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Новая позиция</h3>
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 p-4" onClick={() => { setShowModal(false); setPendingPhoto(null); }}>
+          <div className="bg-white dark:bg-dark-card rounded-t-3xl md:rounded-2xl shadow-card w-full max-w-md p-6 relative animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Новая позиция</h3>
+              <button onClick={() => { setShowModal(false); setPendingPhoto(null); }}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-dark-border text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer transition-colors min-h-[44px] min-w-[44px]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <form onSubmit={handleCreate} className="flex flex-col gap-3">
               <div>
                 <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Тип</label>
@@ -1314,14 +1400,14 @@ function ListingsTab({ pin }: { pin: string }) {
                     const firstCat = LISTING_CATEGORIES[lt]?.[0]?.slug || '';
                     setForm(f => ({ ...f, listing_type: lt, category_slug: firstCat }));
                   }}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white">
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white min-h-[44px]">
                 </select>
               </div>
               <div>
                 <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Категория</label>
                 <select value={form.category_slug}
                   onChange={e => setForm(f => ({ ...f, category_slug: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white">
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white min-h-[44px]">
                   {cats.map(c => <option key={c.slug} value={c.slug}>{c.label}</option>)}
                 </select>
               </div>
@@ -1329,7 +1415,7 @@ function ListingsTab({ pin }: { pin: string }) {
                 <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Название</label>
                 <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   placeholder="Бетон М300 В22.5"
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white min-h-[44px]"
                   required />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -1337,13 +1423,13 @@ function ListingsTab({ pin }: { pin: string }) {
                   <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Базовая цена</label>
                   <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
                     placeholder="5000" min="1" step="1"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white min-h-[44px]"
                     required />
                 </div>
                 <div>
                   <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Единица</label>
                   <select value={form.price_unit} onChange={e => setForm(f => ({ ...f, price_unit: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white">
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white min-h-[44px]">
                     {PRICE_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                   </select>
                 </div>
@@ -1351,7 +1437,7 @@ function ListingsTab({ pin }: { pin: string }) {
               {/* Optional photo upload */}
               <div>
                 <label className="text-sm text-gray-600 dark:text-gray-400 mb-1 block">Фото <span className="text-gray-400">(необязательно)</span></label>
-                <label className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-300 dark:border-dark-border cursor-pointer hover:border-brand-500 transition-colors">
+                <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-gray-300 dark:border-dark-border cursor-pointer hover:border-brand-500 transition-colors min-h-[44px]">
                   <Camera className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <span className="text-sm text-gray-500 truncate">
                     {pendingPhoto ? pendingPhoto.name : 'Выбрать фото...'}
@@ -1366,7 +1452,7 @@ function ListingsTab({ pin }: { pin: string }) {
               </div>
 
               <button type="submit" disabled={saving}
-                className="mt-2 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50">
+                className="mt-2 py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium cursor-pointer transition-colors duration-150 disabled:opacity-50 min-h-[48px]">
                 {saving ? 'Создание...' : 'Создать'}
               </button>
             </form>
@@ -1528,33 +1614,51 @@ function LeadsTab({ pin }: { pin: string }) {
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       {leads.length > 0 && (
-        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-dark-border">
-                {['Дата', 'Телефон', 'Категория', 'Город', 'Комментарий', 'Источник'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {leads.map(l => (
-                <tr key={l.id} className="border-b border-gray-50 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border">
-                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(l.created_at)}</td>
-                  <td className="px-4 py-3 font-mono">{l.phone}</td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-border">
-                      {WORK_TYPE_LABELS[l.work_type] || l.work_type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">{l.city}</td>
-                  <td className="px-4 py-3 max-w-[200px] truncate text-gray-600 dark:text-gray-300">{l.comment || '—'}</td>
-                  <td className="px-4 py-3 text-gray-500">{l.source}</td>
+        <>
+          <div className="hidden md:block bg-white dark:bg-dark-card rounded-2xl shadow-card overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-dark-border">
+                  {['Дата', 'Телефон', 'Категория', 'Город', 'Комментарий', 'Источник'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {leads.map(l => (
+                  <tr key={l.id} className="border-b border-gray-50 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border">
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(l.created_at)}</td>
+                    <td className="px-4 py-3 font-mono">{l.phone}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-border">
+                        {WORK_TYPE_LABELS[l.work_type] || l.work_type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">{l.city}</td>
+                    <td className="px-4 py-3 max-w-[200px] truncate text-gray-600 dark:text-gray-300">{l.comment || '—'}</td>
+                    <td className="px-4 py-3 text-gray-500">{l.source}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="md:hidden space-y-2">
+            {leads.map(l => (
+              <div key={l.id} className="bg-white dark:bg-dark-card rounded-2xl p-4 shadow-card space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-semibold text-gray-900 dark:text-white">{l.phone}</span>
+                  <span className="text-xs text-gray-400">{fmtDate(l.created_at)}</span>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-border font-medium">{WORK_TYPE_LABELS[l.work_type] || l.work_type}</span>
+                  <span className="text-xs text-gray-500">{l.city}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-500/10 text-brand-500">{l.source}</span>
+                </div>
+                {l.comment && <p className="text-sm text-gray-600 dark:text-gray-300">{l.comment}</p>}
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -3552,52 +3656,66 @@ export default function AdminPage() {
   const [pin, setPin] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>(getInitialTab);
 
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab as TabId);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
+
   if (!pin) {
     return <PinGate onAuth={setPin} />;
   }
 
   return (
-    <div className="min-h-screen bg-surface">
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-6">
+    <div className="min-h-screen bg-surface safe-area-pt">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 flex-wrap">
           <Link
             href="/"
-            className="inline-flex items-center gap-1 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="inline-flex items-center gap-1 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] px-2"
           >
             &larr; Главная
           </Link>
-          <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center">
-            <BarChart3 className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand-500 flex items-center justify-center flex-shrink-0">
+            <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Админ-панель</h1>
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Админ-панель</h1>
           <button
             onClick={() => setPin(null)}
-            className="ml-auto text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer transition-colors"
+            className="ml-auto text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer transition-colors min-h-[44px] min-w-[44px] flex items-center"
           >
             Выйти
           </button>
         </div>
 
-        <div className="overflow-x-auto mb-6">
-          <div className="flex gap-1 border-b border-gray-200 dark:border-dark-border min-w-max">
-            {TABS.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={
-                    "flex items-center gap-2 px-4 py-3 text-sm font-medium cursor-pointer transition-all duration-150 whitespace-nowrap border-b-2 " +
-                    (activeTab === tab.id
-                      ? "border-brand-500 text-brand-500"
-                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white")
-                  }
-                >
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              );
-            })}
+        <div className="mb-6">
+          <div className="hidden md:block overflow-x-auto">
+            <div className="flex gap-1 border-b border-gray-200 dark:border-dark-border min-w-max">
+              {TABS.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabChange(tab.id)}
+                    className={
+                      "flex items-center gap-2 px-4 py-3 text-sm font-medium cursor-pointer transition-all duration-150 whitespace-nowrap border-b-2 min-h-[44px] " +
+                      (activeTab === tab.id
+                        ? "border-brand-500 text-brand-500"
+                        : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white")
+                    }
+                  >
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="md:hidden">
+            <MobileTabMenu tabs={TABS} activeTab={activeTab} onSelect={handleTabChange} />
           </div>
         </div>
 

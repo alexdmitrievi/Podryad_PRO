@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function PrivacyPage() {
   return (
@@ -7,9 +8,10 @@ export default function PrivacyPage() {
       {/* NAVBAR */}
       <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <span className="text-lg font-extrabold text-brand-900">
-            Подряд PRO
-          </span>
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/logo.png" alt="Подряд PRO" width={36} height={36} className="rounded-lg" />
+            <span className="text-lg font-extrabold text-brand-900">Подряд PRO</span>
+          </Link>
           <Link
             href="/"
             className="bg-brand-500 text-white text-sm font-bold px-5 py-2 rounded-xl hover:bg-brand-600 transition-colors cursor-pointer"
@@ -324,9 +326,9 @@ export default function PrivacyPage() {
           &copy; {new Date().getFullYear()} ИП Жбанков Алексей Дмитриевич. ИНН 550516401202. г. Омск.
         </p>
         <p className="text-gray-500 text-sm">
-          <a href="/privacy" className="hover:text-gray-300 transition-colors">
-            Политика конфиденциальности
-          </a>
+          <Link href="/" className="hover:text-gray-300 transition-colors">
+            На главную
+          </Link>
         </p>
       </footer>
     </div>
