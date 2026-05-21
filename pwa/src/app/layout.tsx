@@ -83,6 +83,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#2F5BFF" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </head>
       <body className="bg-surface dark:bg-dark-bg text-[#2B2B2B] dark:text-dark-text font-sans antialiased transition-colors duration-300">

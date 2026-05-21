@@ -3,6 +3,21 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  manifest: {
+    name: 'Подряд PRO',
+    short_name: 'Подряд PRO',
+    description: 'Закажите работы по дому и участку',
+    start_url: '/',
+    display: 'standalone',
+    orientation: 'any',
+    background_color: '#f0f2f5',
+    theme_color: '#2F5BFF',
+    icons: [
+      { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { src: '/apple-touch-icon.png', sizes: '512x512', type: 'image/png' },
+    ],
+  },
   fallbacks: {
     document: '/offline',
   },
@@ -85,9 +100,6 @@ const withPWA = require('@ducanh2912/next-pwa').default({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: __dirname,
-  assetPrefix: process.env.VERCEL_ENV === 'production'
-    ? 'https://podryad-pro-kohl.vercel.app'
-    : undefined,
   reactStrictMode: true,
   experimental: {
     optimizePackageImports: ['lucide-react'],
