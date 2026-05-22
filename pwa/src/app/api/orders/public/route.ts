@@ -14,10 +14,10 @@ export async function GET() {
   const { data, error } = await supabase
     .from('orders')
     .select(
-      'order_id, order_number, work_type, subcategory, address, address_lat, address_lng, status, people_count, hours, work_date, created_at'
+      'order_id, order_number, work_type, subcategory, address, lat, lon, status, people_count, hours, work_date, created_at'
     )
-    .not('address_lat', 'is', null)
-    .not('address_lng', 'is', null)
+    .not('lat', 'is', null)
+    .not('lon', 'is', null)
     .in('status', ['pending', 'priced', 'payment_sent', 'paid', 'in_progress'])
     .order('created_at', { ascending: false })
     .limit(100);
@@ -31,5 +31,20 @@ export async function GET() {
     }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, orders: data || [] });
+  const orders = (data || []).map((o: any) => ({
+    order_id: o.order_id,
+    order_number: o.order_number,
+    work_type: o.work_type,
+    subcategory: o.subcategory,
+    address: o.address,
+    address_lat: o.lat,
+    address_lng: o.lon,
+    status: o.status,
+    people_count: o.people_count,
+    hours: o.hours,
+    work_date: o.work_date,
+    created_at: o.created_at,
+  }));
+
+  return NextResponse.json({ ok: true, orders });
 }
