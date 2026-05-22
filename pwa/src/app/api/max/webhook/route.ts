@@ -109,25 +109,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, batch_processed: processed });
   }
 
-  // DEBUG: log every webhook receipt to bot_messages (temp)
-  try {
-    const db = getServiceClient();
-    await db.from('bot_messages').insert({
-      channel: CHANNEL,
-      direction: 'inbound',
-      external_id: `debug-${Date.now()}`,
-      contact_id: null,
-      kind: 'system',
-      text: JSON.stringify({
-        update_type: rawBody.update_type ?? 'unknown',
-        chat_id: rawBody.chat_id ?? 'none',
-        user_id: (rawBody.user as any)?.user_id ?? 'none',
-        timestamp: new Date().toISOString(),
-        raw_keys: Object.keys(rawBody).filter(k => k !== 'secret'),
-      }),
-    });
-  } catch {} // silently ignore
-
   // 2. Security: webhook secret
   const expectedSecret = process.env.MAX_WEBHOOK_SECRET;
   if (expectedSecret) {
