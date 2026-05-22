@@ -5,14 +5,14 @@ services:
     ports:
       - "127.0.0.1:5678:5678"
     environment:
-      - N8N_HOST=${N8N_DOMAIN}
+      - N8N_HOST=n8n.podryadpro.ru
       - N8N_PORT=5678
-      - N8N_PROTOCOL=https
+      - N8N_PROTOCOL=http
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - N8N_DEFAULT_USER_EMAIL=${N8N_DEFAULT_USER_EMAIL:-admin@podryadpro.ru}
       - N8N_DEFAULT_USER_PASSWORD=${N8N_DEFAULT_USER_PASSWORD}
-      - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE:-false}
-      - WEBHOOK_URL=https://${N8N_DOMAIN}
+      - N8N_SECURE_COOKIE=false
+      - WEBHOOK_URL=http://n8n.podryadpro.ru
       - GENERIC_TIMEZONE=Europe/Moscow
       - TZ=Europe/Moscow
     volumes:
