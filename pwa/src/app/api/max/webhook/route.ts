@@ -5,7 +5,6 @@ import { MaxMapper } from '@/lib/channels/max';
 import { getChannelRouter } from '@/lib/channels';
 import { getOpenAIClient } from '@/lib/ai/openai-client';
 import { enqueueJob } from '@/lib/job-queue';
-import { checkRateLimit } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
 import { getServiceClient } from '@/lib/supabase';
 import { getMaxConfig } from '@/lib/channels/config';
@@ -18,234 +17,100 @@ import {
 import { extractMaxUpdateId } from '@/lib/channels/dedupe';
 import { linkMessengerAccount, getOrdersByMessengerId, formatOrderStatus } from '@/lib/channels/link';
 import { handleFunnelEvent } from '@/lib/bot/funnel-handler';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 const CHANNEL = 'max' as const;
-
 const mapper = new MaxMapper();
-
-function timingSafeSecretCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  try {
-    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
-  } catch {
-    return false;
-  }
-}
-
-function readMaxSecret(req: NextRequest, body: Record<string, unknown> | null): string {
-  return (
-    req.headers.get('x-max-bot-api-secret-token') ??
-    req.headers.get('secret') ??
-    req.nextUrl.searchParams.get('secret') ??
-    (body && typeof body.secret === 'string' ? body.secret : '') ??
-    ''
-  );
-}
-
-const HELP_TEXT = `Подряд PRO — платформа для заказа рабочей силы в Омске и Новосибирске.
-
-Команды:
-/start — приветствие
-/help — справка
-/order — создать заказ
-/status — статус ваших заказов
-/link — привязать аккаунт к номеру телефона
-/orders — актуальные заказы (для исполнителей)
-
-Просто напишите, что вам нужно — я помогу!`;
-
-const START_TEXT = `Привет! Я — бот сервиса Подряд PRO 🏗️
-
-Мы помогаем найти:
-• Рабочих (грузчики, разнорабочие, строители)
-
-Напишите, что вам нужно, или используйте кнопки ниже.`;
-
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
 
 export async function POST(req: NextRequest) {
   const t0 = Date.now();
 
-  // 1. Check channel is enabled
   const config = getMaxConfig();
   if (!config.enabled) {
-    log.error('[MaxWebhook] Channel disabled — MAX_BOT_TOKEN not configured');
     return NextResponse.json({ error: 'Channel disabled' }, { status: 503 });
   }
 
-  // Parse body first to check for in-body secret
   let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
+  try { body = await req.json(); } catch {
     return NextResponse.json({ ok: true, error: 'invalid_json' });
   }
   const rawBody = (body ?? {}) as Record<string, unknown>;
 
-  // Handle /updates batch format (from n8n Long Poll proxy)
+  // Secret validation
+  const expectedSecret = process.env.MAX_WEBHOOK_SECRET;
+  if (expectedSecret) {
+    const secret = getSecret(req, rawBody);
+    if (secret !== expectedSecret || secret.length !== expectedSecret.length || !secret) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  }
+
+  const updateId = extractMaxUpdateId(rawBody);
+
+  // All processing in background — respond immediately
+  waitUntil(processInBackground(rawBody, updateId, t0).catch((err) => {
+    log.error('[MaxWebhook] background failed', { error: String(err), update_id: updateId, elapsed: Date.now() - t0 });
+  }));
+
+  return NextResponse.json({ ok: true, update_id: updateId, elapsed: Date.now() - t0 });
+}
+
+function getSecret(req: NextRequest, body: Record<string, unknown>): string {
+  return (
+    req.headers.get('x-max-bot-api-secret-token') ??
+    req.headers.get('secret') ??
+    req.nextUrl.searchParams.get('secret') ??
+    (typeof body.secret === 'string' ? body.secret : '') ??
+    ''
+  );
+}
+
+async function processInBackground(rawBody: Record<string, unknown>, updateId: string, t0: number) {
+  // Handle batch
   if (Array.isArray(rawBody.updates)) {
-    const updates = rawBody.updates as Array<Record<string, unknown>>;
-    let processed = 0;
-    for (const update of updates) {
+    for (const update of rawBody.updates as Array<Record<string, unknown>>) {
       try {
         const event = mapper.normalize(update);
         const uid = event.user_id;
         const cid = event.chat_id;
         if (!cid) continue;
-        void enqueueJob({
-          queueName: 'channels',
-          jobType: 'channel.incoming_message',
-          dedupeKey: `max:${extractMaxUpdateId(update)}`,
-          payload: { channel: CHANNEL, user_id: uid, chat_id: cid, text: event.text, type: event.type, timestamp: event.timestamp },
-        }).catch(() => {});
-        waitUntil(processMessage(event, uid, cid, extractMaxUpdateId(update)).catch(() => {}));
-        processed++;
-      } catch { /* skip malformed */ }
+        const uId = extractMaxUpdateId(update);
+        void enqueueJob({ queueName: 'channels', jobType: 'channel.incoming_message', dedupeKey: `max:${uId}`, payload: { channel: CHANNEL, user_id: uid, chat_id: cid, text: event.text, type: event.type, timestamp: event.timestamp } }).catch(() => {});
+        void processMessage(event, uid, cid, uId).catch(() => {});
+      } catch {}
     }
-    return NextResponse.json({ ok: true, batch_processed: processed });
+    return;
   }
 
-  // 2. Security: webhook secret
-  const expectedSecret = process.env.MAX_WEBHOOK_SECRET;
-  if (expectedSecret) {
-    const secret = readMaxSecret(req, rawBody);
-    if (!timingSafeSecretCompare(secret, expectedSecret)) {
-      log.warn('[MaxWebhook] Forbidden — webhook secret mismatch', { hasSecret: !!secret });
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-  } else {
-    log.warn('[MaxWebhook] MAX_WEBHOOK_SECRET not set — accepting all requests (security gap)');
-  }
+  // Dedup
+  if (await isUpdateProcessed(CHANNEL, updateId)) return;
+  if (!(await tryAcquireProcessingLock(CHANNEL, updateId))) return;
 
-  // 3. Extract update_id
-  const updateId = extractMaxUpdateId(rawBody);
-
-  // 4. Distributed deduplication — READ-ONLY check
-  const alreadyProcessed = await isUpdateProcessed(CHANNEL, updateId);
-  if (alreadyProcessed) {
-    return NextResponse.json({ ok: true, deduped: true });
-  }
-
-  // 5. Acquire distributed processing lock
-  const lockAcquired = await tryAcquireProcessingLock(CHANNEL, updateId);
-  if (!lockAcquired) {
-    return NextResponse.json({ ok: true, locked: true });
-  }
-
-  // 6. Normalize incoming event
-  const event = mapper.normalize(body);
+  // Normalize
+  const event = mapper.normalize(rawBody);
   const userId = event.user_id;
   const chatId = event.chat_id;
+  if (!chatId) { await markUpdateProcessed(CHANNEL, updateId); return; }
 
-  if (!chatId) {
-    await markUpdateProcessed(CHANNEL, updateId);
-    return NextResponse.json({ ok: true, _chat_id: chatId, _user_id: userId });
-  }
-
-  // 7. Rate limit per user
+  // Rate limit
   const rl = await checkRateLimit(`max:${userId}`, 10, 60_000);
-  if (rl.limited) {
-    log.warn('[MaxWebhook] Rate limited', { user_id: userId });
+  if (rl.limited) { await releaseProcessingLock(CHANNEL, updateId); return; }
+
+  // Enqueue CRM
+  void enqueueJob({ queueName: 'channels', jobType: 'channel.incoming_message', dedupeKey: `max:${updateId}`, payload: { channel: CHANNEL, user_id: userId, chat_id: chatId, text: event.text, type: event.type, timestamp: event.timestamp } }).catch(() => {});
+
+  // Process
+  try {
+    await processMessage(event, userId, chatId, updateId);
+    await markUpdateProcessed(CHANNEL, updateId);
+  } catch (err) {
+    log.error('[MaxWebhook] processMessage failed', { error: String(err), user_id: userId, update_id: updateId, elapsed: Date.now() - t0 });
     await releaseProcessingLock(CHANNEL, updateId);
-  return NextResponse.json({ ok: true, debug: { userId, chatId, text: event.text, type: event.type } });
-  }
-
-  // 8. Fire-and-forget CRM event
-  void enqueueJob({
-    queueName: 'channels',
-    jobType: 'channel.incoming_message',
-    dedupeKey: `max:${updateId}`,
-    payload: {
-      channel: CHANNEL,
-      user_id: userId,
-      chat_id: chatId,
-      text: event.text,
-      type: event.type,
-      timestamp: event.timestamp,
-    },
-  }).catch((err) => {
-    log.error('[MaxWebhook] enqueue failed', { error: String(err) });
-  });
-
-  // 9. Use Vercel waitUntil for reliable background processing.
-  waitUntil(
-    processMessage(event, userId, chatId, updateId)
-      .then(() => markUpdateProcessed(CHANNEL, updateId))
-      .catch(async (err) => {
-        log.error('[MaxWebhook] processMessage failed', {
-          error: String(err),
-          user_id: userId,
-          update_id: updateId,
-          elapsed_ms: Date.now() - t0,
-        });
-        await releaseProcessingLock(CHANNEL, updateId);
-      })
-  );
-
-  return NextResponse.json({ ok: true, _chat_id: chatId, _user_id: userId });
-}
-
-/* ------------------------------------------------------------------ */
-/*  processMessage (runs in background after 200 response)             */
-/* ------------------------------------------------------------------ */
-
-async function processFastStart(chatId: string, userId: string): Promise<void> {
-  const router = getChannelRouter();
-  try {
-    await router.send({
-      channel: CHANNEL,
-      chat_id: chatId,
-      user_id: userId,
-      text: '👋 Здравствуйте!\n\nЯ — бот «Подряд PRO». Помогаю быстро заказать работы по дому и участку, стройматериалы.\n\n📍 В каком городе вы находитесь?',
-      buttons: [
-        [
-          { type: 'callback', text: '📍 Омск', callback_data: 'region:omsk' },
-          { type: 'callback', text: '📍 Новосибирск', callback_data: 'region:novosibirsk' },
-        ],
-      ],
-    });
-  } catch (err) {
-    log.error('[MaxWebhook] fastStart send failed', { error: String(err) });
-  }
-}
-
-async function answerMaxCallback(
-  callbackId: string,
-  text?: string,
-): Promise<void> {
-  const config = getMaxConfig();
-  const proxyBase = process.env.MAX_API_PROXY;
-  try {
-    const url = proxyBase
-      ? `${proxyBase}/proxy/max/answers?callback_id=${encodeURIComponent(callbackId)}`
-      : `${config.apiBase}/answers?callback_id=${encodeURIComponent(callbackId)}`;
-    const body: Record<string, unknown> = {};
-    if (text) body.message = { text };
-    await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: config.botToken }, body: JSON.stringify(body) });
-  } catch (err) {
-    log.error('[MaxWebhook] answerMaxCallback failed', { error: String(err) });
-  }
-}
-
-async function sendOrLog(
-  router: ReturnType<typeof getChannelRouter>,
-  msg: Parameters<ReturnType<typeof getChannelRouter>['send']>[0],
-): Promise<void> {
-  try {
-    const res = await router.send(msg);
-    if (!res.success) {
-      log.error('[MaxWebhook] router.send failed', {
-        chat_id: msg.chat_id,
-        text_len: msg.text.length,
-        error: res.error,
-      });
-    }
-  } catch (err) {
-    log.error('[MaxWebhook] router.send threw', { error: String(err), chat_id: msg.chat_id });
   }
 }
 
@@ -256,211 +121,85 @@ async function processMessage(
   updateId: string,
 ): Promise<void> {
   const router = getChannelRouter();
-  const text = event.text.trim();
+  const text = (event.text || '').trim();
   const payload = (event.payload ?? {}) as { callback_id?: string; username?: string; display_name?: string };
-  const maxCallbackId = payload.callback_id;
 
-  // ── Funnel handler ──
+  // Funnel
   try {
-    const funnelResponse = await handleFunnelEvent({
+    const res = await handleFunnelEvent({
       type: event.type as 'message' | 'command' | 'callback',
-      channel: CHANNEL,
-      chatId,
-      userId,
-      text,
-      updateId,
-      username: payload.username,
-      displayName: payload.display_name,
+      channel: CHANNEL, chatId, userId, text, updateId,
+      username: payload.username, displayName: payload.display_name,
       attachments: event.attachments?.map(a => ({ type: a.type === 'image' ? 'image' as const : 'document' as const, url: a.url })),
     });
-    if (funnelResponse) {
-      await sendOrLog(router, {
-        channel: CHANNEL,
-        chat_id: chatId,
-        user_id: userId,
-        text: funnelResponse.text,
-        buttons: funnelResponse.buttons,
-      });
-      if (maxCallbackId) await answerMaxCallback(maxCallbackId);
+    if (res) {
+      await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: res.text, buttons: res.buttons });
       return;
     }
-    if (maxCallbackId) await answerMaxCallback(maxCallbackId);
   } catch (err) {
-    log.error('[MaxWebhook] funnelHandler failed', { error: String(err), user_id: userId });
-    if (maxCallbackId) await answerMaxCallback(maxCallbackId, 'Произошла ошибка. Попробуйте ещё раз.');
-  }
-
-  // Callbacks (legacy fallback)
-  if (event.type === 'callback') {
-    await sendOrLog(router, {
-      channel: CHANNEL,
-      chat_id: chatId,
-      user_id: userId,
-      text: 'Это действие больше не доступно. Пожалуйста, используйте меню ниже.',
-      buttons: [
-        { type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' },
-      ],
-    });
-    return;
+    log.error('[MaxWebhook] funnel failed', { error: String(err), user_id: userId });
   }
 
   // Commands
   if (event.type === 'command') {
-    const [cmd, ...args] = text.split(/\s+/);
-    switch (cmd.toLowerCase()) {
+    switch (text.split(/\s+/)[0].toLowerCase()) {
       case '/start':
-        await sendOrLog(router, {
-          channel: CHANNEL,
-          chat_id: chatId,
-          user_id: userId,
-          text: START_TEXT,
-          buttons: [
-            [
-              { type: 'url', text: '🚀 Создать заказ', url: `${APP_URL}/order/new` },
-              { type: 'url', text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` },
-            ],
-            [
-              { type: 'url', text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` },
-            ],
-          ],
-        });
+        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId,
+          text: `Привет! Я — бот сервиса Подряд PRO 🏗️\n\nМы помогаем найти:\n• Рабочих (грузчики, разнорабочие, строители)\n\nНапишите, что вам нужно, или используйте кнопки ниже.`,
+          buttons: [[
+            { type: 'url', text: '🚀 Создать заказ', url: `${APP_URL}/order/new` },
+            { type: 'url', text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` },
+          ], [
+            { type: 'url', text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` },
+          ]] });
         return;
-
       case '/help':
-        await sendOrLog(router, {
-          channel: CHANNEL,
-          chat_id: chatId,
-          user_id: userId,
-          text: HELP_TEXT,
-        });
+        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: `Подряд PRO — платформа для заказа рабочей силы в Омске и Новосибирске.\n\nКоманды:\n/start — приветствие\n/help — справка\n/order — создать заказ\n/status — статус ваших заказов\n/link — привязать аккаунт к номеру телефона\n/orders — актуальные заказы (для исполнителей)\n\nПросто напишите, что вам нужно — я помогу!` });
         return;
-
-      case '/order': {
-        await sendOrLog(router, {
-          channel: CHANNEL,
-          chat_id: chatId,
-          user_id: userId,
-          text: '📋 Оформление заказа\n\nОпишите, что нужно сделать и где. Например:\n«Нужны 2 грузчика на завтра в 10:00, ул. Ленина 15, разгрузить фуру»\n\nЯ передам заказ администратору для расчёта стоимости.',
-        });
-        void enqueueJob({
-          queueName: 'leads',
-          jobType: 'chat.lead_intent',
-          dedupeKey: `lead:max:${userId}:${updateId}`,
-          payload: { user_id: userId, chat_id: chatId, channel: CHANNEL, raw_text: args.join(' ') },
-        }).catch((err) => {
-          log.error('[MaxWebhook] lead enqueue failed', { error: String(err), user_id: userId });
-        });
+      case '/order':
+        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: '📋 Оформление заказа\n\nОпишите, что нужно сделать и где.' });
         return;
-      }
-
       case '/status': {
         const orders = await getOrdersByMessengerId({ channel: CHANNEL, userId });
         if (orders.length === 0) {
-          await sendOrLog(router, {
-            channel: CHANNEL,
-            chat_id: chatId,
-            user_id: userId,
-            text: '🔍 Проверка статуса\n\nУ вас пока нет заказов, или ваш MAX не привязан к аккаунту.\nОтправьте /link ВАШ_ТЕЛЕФОН для привязки.',
-          });
+          await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: 'У вас пока нет заказов. /link ВАШ_ТЕЛЕФОН для привязки.' });
         } else {
-          const lines = orders.slice(0, 5).map((o) => {
-            const num = o.order_number ? `#${o.order_number}` : `ID: ${String(o.order_id).slice(0, 8)}`;
-            return `• ${num} — ${formatOrderStatus(String(o.status ?? ''))}`;
-          });
-          await sendOrLog(router, {
-            channel: CHANNEL,
-            chat_id: chatId,
-            user_id: userId,
-            text: `📋 Ваши заказы\n\n${lines.join('\n')}\n\nПодробнее: ${APP_URL}/my`,
-          });
+          const lines = orders.slice(0, 5).map((o: any) => `• ${o.order_number ? '#' + o.order_number : 'ID:' + String(o.order_id).slice(0, 8)} — ${formatOrderStatus(String(o.status ?? ''))}`);
+          await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: `📋 Ваши заказы\n\n${lines.join('\n')}\n\nПодробнее: ${APP_URL}/my` });
         }
         return;
       }
-
       case '/link': {
-        const phoneArg = args.join('').replace(/\s+/g, '');
+        const phoneArg = text.split(/\s+/).slice(1).join('').replace(/\s+/g, '');
         const result = await linkMessengerAccount({ channel: CHANNEL, userId, rawPhone: phoneArg });
-        await sendOrLog(router, {
-          channel: CHANNEL,
-          chat_id: chatId,
-          user_id: userId,
-          text: result.message,
-        });
+        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: result.message });
         return;
       }
-
       case '/orders': {
-        const { data: pubMaxOrders } = await (await import('@/lib/supabase')).getServiceClient()
-          .from('orders')
-          .select('order_id, order_number, work_type, display_price, city, created_at')
-          .in('status', ['published', 'pending'])
-          .order('created_at', { ascending: false })
-          .limit(5);
-        if (!pubMaxOrders || pubMaxOrders.length === 0) {
-          await sendOrLog(router, {
-            channel: CHANNEL,
-            chat_id: chatId,
-            user_id: userId,
-            text: '📢 Актуальные заказы\n\nСейчас нет активных заказов. Загляните позже!',
-          });
+        const db = getServiceClient();
+        const { data } = await db.from('orders').select('order_id,order_number,work_type,display_price,created_at').in('status', ['published','pending']).order('created_at', { ascending: false }).limit(5);
+        if (!data || data.length === 0) {
+          await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: 'Сейчас нет активных заказов.' });
         } else {
-          const orderLines = pubMaxOrders.map((o: Record<string, unknown>) => {
-            const num = o.order_number ? `#${o.order_number}` : `ID: ${String(o.order_id).slice(0, 8)}`;
-            const price = o.display_price ? `${o.display_price} ₽` : 'цена не указана';
-            const type = String(o.work_type ?? '');
-            return `• ${num} — ${type}, ${price}`;
-          });
-          await sendOrLog(router, {
-            channel: CHANNEL,
-            chat_id: chatId,
-            user_id: userId,
-            text: `📢 Актуальные заказы\n\n${orderLines.join('\n')}\n\nОткликнуться: ${APP_URL}/orders`,
-          });
+          const lines = data.map((o: any) => `• ${o.order_number ? '#' + o.order_number : 'ID:' + String(o.order_id).slice(0, 8)} — ${o.work_type || ''}, ${o.display_price || 'цена не указана'} ₽`);
+          await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: `📢 Актуальные заказы\n\n${lines.join('\n')}\n\nОткликнуться: ${APP_URL}/orders` });
         }
         return;
       }
-
-      default:
-        break;
     }
   }
 
-  // Free-text → AI
-  const maxLen = 2000;
-  const trimmedText = text.length > maxLen ? text.slice(0, maxLen) : text;
-  if (text.length > maxLen) {
-    log.warn('[MaxWebhook] Message truncated', { user_id: userId, original_len: text.length });
-  }
-
+  // Free text → AI
   try {
     const ai = getOpenAIClient();
-    const aiResponse = await ai.chat({
-      channel: CHANNEL,
-      message: trimmedText,
-      history: [],
-      systemConstraints: [
-        'Город работы: Омск, Новосибирск',
-        'Ты помогаешь заказать рабочую силу, технику или стройматериалы',
-        'Если пользователь хочет заказ — предложи описать детали',
-        'Краткие ответы, 2-3 предложения максимум',
-        'Не выдумывай цены',
-        'Не используй markdown-разметку в ответах',
-      ],
-    });
-
-    await sendOrLog(router, {
-      channel: CHANNEL,
-      chat_id: chatId,
-      user_id: userId,
-      text: aiResponse.text,
-    });
-  } catch (err) {
-    log.error('[MaxWebhook] AI or send failed', { error: String(err), user_id: userId });
-    await sendOrLog(router, {
-      channel: CHANNEL,
-      chat_id: chatId,
-      user_id: userId,
-      text: 'Извините, произошла ошибка. Пожалуйста, попробуйте позже или свяжитесь с нами через сайт.',
-    });
+    const aiRes = await ai.chat({ channel: CHANNEL, message: text.slice(0, 2000), history: [], systemConstraints: ['Город: Омск, Новосибирск', 'Краткие ответы, 2-3 предложения', 'Без markdown', 'Не выдумывай цены'] });
+    await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: aiRes.text });
+  } catch {
+    await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: 'Извините, произошла ошибка. Попробуйте позже.' });
   }
+}
+
+async function sendOrLog(router: ReturnType<typeof getChannelRouter>, msg: Parameters<ReturnType<typeof getChannelRouter>['send']>[0]) {
+  try { const r = await router.send(msg); if (!r.success) log.error('[MaxWebhook] send failed', { error: r.error }); }
+  catch (err) { log.error('[MaxWebhook] send threw', { error: String(err) }); }
 }
