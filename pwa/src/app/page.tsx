@@ -1131,12 +1131,14 @@ export default function HomePage() {
               >
                 Карта заказов
               </Link>
-              <Link
-                href="/admin"
+              <a
+                href="https://podryad-pro-kohl.vercel.app/admin"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-white/35 hover:text-white/60 text-xs transition-colors duration-200 w-fit mt-1"
               >
                 Управление
-              </Link>
+              </a>
             </div>
           </div>
 
