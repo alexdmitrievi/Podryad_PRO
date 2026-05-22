@@ -34,3 +34,4 @@ pwa/test-results/
 supabase/.temp/
 /pwa/coverage/
 supabase/combined_test_migrations.sql
+.vercel
