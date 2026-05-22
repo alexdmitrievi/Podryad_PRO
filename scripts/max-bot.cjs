@@ -53,8 +53,10 @@ function extractText(update) {
 function maxPost(path, query, body, cb) {
   var qs = query ? '?' + Object.keys(query).map(function(k) { return k + '=' + encodeURIComponent(query[k]); }).join('&') : '';
   var u = API_BASE + path + qs;
-  var data = JSON.stringify({ payload: { message: body } });
+  var data = JSON.stringify(body);
   var parsed = url.parse(u);
+  log('[maxPost] URL:', u);
+  log('[maxPost] Body:', data);
   var req = https.request({
     hostname: parsed.hostname,
     port: 443,
