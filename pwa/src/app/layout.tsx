@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     title: 'Подряд PRO',
     description: 'Закажите работы по дому и участку',
     type: 'website',
-    url: 'https://podryad.pro',
+    url: 'https://podryadpro.ru',
     siteName: 'Подряд PRO',
   },
   twitter: {
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     title: 'Подряд PRO',
     description: 'Закажите работы по дому и участку',
   },
-  alternates: { canonical: 'https://podryad.pro' },
+  alternates: { canonical: 'https://podryadpro.ru' },
   robots: 'index, follow',
   icons: {
     icon: [

@@ -234,7 +234,7 @@ export default function ConfirmPage() {
             Ссылка повреждена или не содержит необходимых данных.
           </p>
           <a
-            href="mailto:support@podryad.pro"
+            href="mailto:support@podryadpro.ru"
             className="text-[#2d35a8] text-sm font-medium hover:underline"
           >
             Обратитесь в поддержку
@@ -343,7 +343,7 @@ export default function ConfirmPage() {
               Ссылка действительна 24 часа. Запросите новую у отправителя.
             </p>
             <a
-              href="mailto:support@podryad.pro"
+              href="mailto:support@podryadpro.ru"
             className="text-[#2d35a8] text-sm font-medium hover:underline"
             >
               Обратитесь в поддержку
@@ -367,7 +367,7 @@ export default function ConfirmPage() {
               Этот заказ нельзя подтвердить в текущем статусе.
             </p>
             <a
-              href="mailto:support@podryad.pro"
+              href="mailto:support@podryadpro.ru"
               className="text-[#2d35a8] text-sm font-medium hover:underline"
             >
               Обратитесь в поддержку
@@ -389,7 +389,7 @@ export default function ConfirmPage() {
             {'message' in result ? result.message : 'Произошла ошибка. Попробуйте снова.'}
           </p>
           <a
-            href="mailto:support@podryad.pro"
+            href="mailto:support@podryadpro.ru"
             className="text-[#2d35a8] text-sm font-medium hover:underline"
           >
             Обратитесь в поддержку

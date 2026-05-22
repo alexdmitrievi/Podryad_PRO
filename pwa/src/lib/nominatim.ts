@@ -12,7 +12,7 @@ export async function geocode(address: string): Promise<{ lat: number; lon: numb
     url.searchParams.set('countrycodes', 'ru');
 
     const res = await fetch(url.toString(), {
-      headers: { 'User-Agent': 'PodraydPRO/1.0 (admin@podryad.pro)' },
+      headers: { 'User-Agent': 'PodraydPRO/1.0 (admin@podryadpro.ru)' },
       next: { revalidate: 3600 },
     });
 

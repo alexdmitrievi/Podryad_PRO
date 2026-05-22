@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     token = created.access_token;
   }
 
-  const host = req.headers.get('host') || 'podryad.pro';
+  const host = req.headers.get('host') || 'podryadpro.ru';
   const proto = host.includes('localhost') ? 'http' : 'https';
   const link = `${proto}://${host}/my/${token}`;
 

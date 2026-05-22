@@ -4,7 +4,7 @@ import { log } from '@/lib/logger';
 // Инициализация (серверная сторона)
 const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 const vapidPrivate = process.env.VAPID_PRIVATE_KEY || '';
-const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@podryad.pro';
+const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@podryadpro.ru';
 
 if (vapidPublic && vapidPrivate) {
   webPush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);

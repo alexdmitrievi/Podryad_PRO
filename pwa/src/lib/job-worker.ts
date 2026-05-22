@@ -134,7 +134,7 @@ function buildContractorRegisteredText(payload: JobPayload): string {
 }
 
 function getAppUrl(): string {
-  return (process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro').replace(/\/$/, '');
+  return (process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru').replace(/\/$/, '');
 }
 
 function buildDashboardLinkMessage(payload: JobPayload): { channel: Channel; chatId: string; text: string } | null {

@@ -38,8 +38,8 @@ export default function PrivacyPage() {
           <p className="text-gray-700 leading-relaxed mb-3">
             Настоящая Политика конфиденциальности (далее — «Политика») определяет порядок обработки
             и защиты персональных данных пользователей сервиса Подряд PRO, расположенного по адресу{' '}
-            <a href="https://podryad.pro" className="text-brand-900 underline hover:no-underline">
-              podryad.pro
+            <a href="https://podryadpro.ru" className="text-brand-900 underline hover:no-underline">
+              podryadpro.ru
             </a>{' '}
             (далее — «Сервис», «Платформа»).
           </p>
@@ -58,8 +58,8 @@ export default function PrivacyPage() {
             </p>
             <p>
               Сайт:{' '}
-              <a href="https://podryad.pro" className="text-brand-900 hover:underline">
-                podryad.pro
+              <a href="https://podryadpro.ru" className="text-brand-900 hover:underline">
+                podryadpro.ru
               </a>
             </p>
           </div>
@@ -309,8 +309,8 @@ export default function PrivacyPage() {
             </p>
             <p>
               Сайт:{' '}
-              <a href="https://podryad.pro" className="text-brand-900 hover:underline">
-                podryad.pro
+              <a href="https://podryadpro.ru" className="text-brand-900 hover:underline">
+                podryadpro.ru
               </a>
             </p>
           </div>
