@@ -80,8 +80,8 @@ function handleLocalCommand(update) {
 
   var startText = 'Привет! Я — бот сервиса Подряд PRO 🏗️\n\nМы помогаем найти:\n• Рабочих (грузчики, разнорабочие, строители)\n\nНапишите, что вам нужно, или используйте кнопки ниже.';
   var startButtons = [
-    [{ type: 'url', text: '🚀 Создать заказ', url: APP_URL + '/order/new' }, { type: 'url', text: '👷 Стать исполнителем', url: APP_URL + '/executor/register' }],
-    [{ type: 'url', text: '🏗 Каталог', url: APP_URL + '/catalog/labor' }]
+    [{ type: 'link', text: '🚀 Создать заказ', url: APP_URL + '/order/new' }, { type: 'link', text: '👷 Стать исполнителем', url: APP_URL + '/executor/register' }],
+    [{ type: 'link', text: '🏗 Каталог', url: APP_URL + '/catalog/labor' }]
   ];
   var helpText = 'Подряд PRO — платформа для заказа рабочей силы.\n\nКоманды:\n/старт — приветствие\n/помощь — справка\n/заказ — создать заказ\n/статус — статус заказов\n/заказы — все заказы';
 
