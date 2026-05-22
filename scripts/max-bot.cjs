@@ -53,11 +53,19 @@ function extractText(update) {
 function maxPost(path, query, body, cb) {
   var qs = query ? '?' + Object.keys(query).map(function(k) { return k + '=' + encodeURIComponent(query[k]); }).join('&') : '';
   var u = API_BASE + path + qs;
-  var data = JSON.stringify(body);
+  var data = JSON.stringify({ message: body });
   var parsed = url.parse(u);
-  var opts = { hostname: parsed.hostname, port: 443, path: parsed.path, method: 'POST',
-    headers: { Authorization: TOKEN, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } };
-  var req = https.request(opts, function(res) {
+  var req = https.request({
+    hostname: parsed.hostname,
+    port: 443,
+    path: parsed.path,
+    method: 'POST',
+    headers: {
+      Authorization: TOKEN,
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(data)
+    }
+  }, function(res) {
     var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { try { cb(null, JSON.parse(b)); } catch(e) { cb(null, { raw: b }); } });
   });
   req.on('error', function(e) { cb(e); });
