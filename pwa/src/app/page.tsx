@@ -1133,6 +1133,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/admin"
+                prefetch={false}
                 className="text-white/35 hover:text-white/60 text-xs transition-colors duration-200 w-fit mt-1"
               >
                 Управление
