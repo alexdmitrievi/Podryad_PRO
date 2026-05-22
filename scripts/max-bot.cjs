@@ -57,6 +57,7 @@ function maxPost(path, query, body, cb) {
   var parsed = url.parse(u);
   log('[maxPost] URL:', u);
   log('[maxPost] Body:', data);
+  data = JSON.stringify({ payload: body });
   var req = https.request({
     hostname: parsed.hostname,
     port: 443,
