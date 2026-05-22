@@ -260,55 +260,12 @@ async function processMessage(
   const payload = (event.payload ?? {}) as { callback_id?: string; username?: string; display_name?: string };
   const maxCallbackId = payload.callback_id;
 
-  // ── Funnel handler ──
-  try {
-    const funnelResponse = await handleFunnelEvent({
-      type: event.type as 'message' | 'command' | 'callback',
-      channel: CHANNEL,
-      chatId,
-      userId,
-      text,
-      updateId,
-      username: payload.username,
-      displayName: payload.display_name,
-      attachments: event.attachments?.map(a => ({ type: a.type === 'image' ? 'image' as const : 'document' as const, url: a.url })),
-    });
-    if (funnelResponse) {
-      await sendOrLog(router, {
-        channel: CHANNEL,
-        chat_id: chatId,
-        user_id: userId,
-        text: funnelResponse.text,
-        buttons: funnelResponse.buttons,
-      });
-      if (maxCallbackId) await answerMaxCallback(maxCallbackId);
-      return;
-    }
-    if (maxCallbackId) await answerMaxCallback(maxCallbackId);
-  } catch (err) {
-    log.error('[MaxWebhook] funnelHandler failed', { error: String(err), user_id: userId });
-    if (maxCallbackId) await answerMaxCallback(maxCallbackId, 'Произошла ошибка. Попробуйте ещё раз.');
-  }
-
-  // Callbacks (legacy fallback)
-  if (event.type === 'callback') {
-    await sendOrLog(router, {
-      channel: CHANNEL,
-      chat_id: chatId,
-      user_id: userId,
-      text: 'Это действие больше не доступно. Пожалуйста, используйте меню ниже.',
-      buttons: [
-        { type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' },
-      ],
-    });
-    return;
-  }
-
-  // Commands
+  // ── Commands (fast path — no Supabase needed for /start, /help, /order) ──
   if (event.type === 'command') {
     const [cmd, ...args] = text.split(/\s+/);
     switch (cmd.toLowerCase()) {
       case '/start':
+      case '/старт':
         await sendOrLog(router, {
           channel: CHANNEL,
           chat_id: chatId,
@@ -327,6 +284,7 @@ async function processMessage(
         return;
 
       case '/help':
+      case '/помощь':
         await sendOrLog(router, {
           channel: CHANNEL,
           chat_id: chatId,
@@ -335,7 +293,8 @@ async function processMessage(
         });
         return;
 
-      case '/order': {
+      case '/order':
+      case '/заказ': {
         await sendOrLog(router, {
           channel: CHANNEL,
           chat_id: chatId,
@@ -353,7 +312,8 @@ async function processMessage(
         return;
       }
 
-      case '/status': {
+      case '/status':
+      case '/статус': {
         const orders = await getOrdersByMessengerId({ channel: CHANNEL, userId });
         if (orders.length === 0) {
           await sendOrLog(router, {
@@ -423,6 +383,50 @@ async function processMessage(
       default:
         break;
     }
+  }
+
+  // ── Funnel handler (for callback navigation and complex flows) ──
+  try {
+    const funnelResponse = await handleFunnelEvent({
+      type: event.type as 'message' | 'command' | 'callback',
+      channel: CHANNEL,
+      chatId,
+      userId,
+      text,
+      updateId,
+      username: payload.username,
+      displayName: payload.display_name,
+      attachments: event.attachments?.map(a => ({ type: a.type === 'image' ? 'image' as const : 'document' as const, url: a.url })),
+    });
+    if (funnelResponse) {
+      await sendOrLog(router, {
+        channel: CHANNEL,
+        chat_id: chatId,
+        user_id: userId,
+        text: funnelResponse.text,
+        buttons: funnelResponse.buttons,
+      });
+      if (maxCallbackId) await answerMaxCallback(maxCallbackId);
+      return;
+    }
+    if (maxCallbackId) await answerMaxCallback(maxCallbackId);
+  } catch (err) {
+    log.error('[MaxWebhook] funnelHandler failed', { error: String(err), user_id: userId });
+    if (maxCallbackId) await answerMaxCallback(maxCallbackId, 'Произошла ошибка. Попробуйте ещё раз.');
+  }
+
+  // Callbacks (legacy fallback)
+  if (event.type === 'callback') {
+    await sendOrLog(router, {
+      channel: CHANNEL,
+      chat_id: chatId,
+      user_id: userId,
+      text: 'Это действие больше не доступно. Пожалуйста, используйте меню ниже.',
+      buttons: [
+        { type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' },
+      ],
+    });
+    return;
   }
 
   // Free-text → AI
