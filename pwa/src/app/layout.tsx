@@ -74,29 +74,29 @@ const THEME_SCRIPT = `
 }catch(e){}})();
 `;
 
+function getRedirectUrl(): string | null {
+  try {
+    const heads = headers();
+    const host = heads.get('host') || '';
+    if (host === 'podryadpro.ru' || host === 'www.podryadpro.ru') {
+      return `https://podryad-pro-kohl.vercel.app${heads.get('x-forwarded-path') || ''}`;
+    }
+  } catch {}
+  return null;
+}
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  let redirectMeta = null;
-  try {
-    const heads = headers();
-    const host = heads.get('host') || '';
-    if (host === 'podryadpro.ru' || host === 'www.podryadpro.ru') {
-      redirectMeta = (
-        <meta
-          httpEquiv="refresh"
-          content={`0;url=https://podryad-pro-kohl.vercel.app${heads.get('x-forwarded-path') || ''}`}
-        />
-      );
-    }
-  } catch {}
+  let redirectUrl: string | null = null;
+  try { redirectUrl = getRedirectUrl(); } catch {}
 
   return (
     <html lang="ru" className={`${inter.variable} ${manrope.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <head>
-        {redirectMeta}
+        {redirectUrl && <meta httpEquiv="refresh" content={`0;url=${redirectUrl}`} />}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <meta name="theme-color" content="#2F5BFF" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
