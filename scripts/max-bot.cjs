@@ -38,10 +38,10 @@ function postJSON(targetUrl, body, headers, cb) {
 
 // ====== Local fast-reply for simple commands ======
 
-function extractChatId(update) {
+function extractUserId(update) {
   var msg = update.message || {};
-  var recip = msg.recipient || {};
-  return recip.chat_id || update.chat_id || '';
+  var sender = msg.sender || {};
+  return sender.user_id || (update.user && update.user.user_id) || update.user_id || '';
 }
 
 function extractText(update) {
@@ -64,25 +64,26 @@ function maxPost(path, query, body, cb) {
   req.write(data); req.end();
 }
 
-function replyFast(chatId, text, buttons) {
+function replyFast(userId, text, buttons) {
   var body = { text: text };
   if (buttons) body.attachments = [{ type: 'inline_keyboard', buttons: buttons }];
-  maxPost('/messages', { user_id: chatId }, body, function(err, res) {
+  maxPost('/messages', { user_id: userId }, body, function(err, res) {
     if (err) log('[reply] FAIL:', err.message);
+    else if (res && res.code) log('[reply] API error:', res.code, res.message);
     else log('[reply] OK');
   });
 }
 
 function handleLocal(update) {
   var text = extractText(update);
-  var chatId = extractChatId(update);
-  if (!chatId || !text) return false;
+  var userId = extractUserId(update);
+  if (!userId || !text) return false;
 
   var parts = text.split(/\s+/);
   var cmd = parts[0].toLowerCase();
 
   if (['/start', '/старт'].includes(cmd)) {
-    replyFast(chatId,
+    replyFast(userId,
       'Привет! Я — бот сервиса Подряд PRO 🏗️\n\nМы помогаем найти:\n• Рабочих (грузчики, разнорабочие, строители)\n\nНапишите, что вам нужно, или используйте кнопки ниже.',
       [[{ type: 'link', text: '🚀 Создать заказ', url: APP_URL + '/order/new' }, { type: 'link', text: '👷 Стать исполнителем', url: APP_URL + '/executor/register' }],
        [{ type: 'link', text: '🏗 Каталог', url: APP_URL + '/catalog/labor' }]]);
