@@ -6,10 +6,6 @@
   ],
   "crons": [
     {
-      "path": "/api/cron/max-poll",
-      "schedule": "*/3 * * * *"
-    },
-    {
       "path": "/api/cron/jobs",
       "schedule": "0 0 * * *"
     },
