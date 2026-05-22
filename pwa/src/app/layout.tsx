@@ -73,15 +73,6 @@ const THEME_SCRIPT = `
 }catch(e){}})();
 `;
 
-const REDIRECT_SCRIPT = `
-(function(){
-  var host = window.location.hostname;
-  if (host === 'www.podryadpro.ru' || host === 'podryadpro.ru') {
-    window.location.replace('https://podryad-pro-kohl.vercel.app' + window.location.pathname + window.location.search + window.location.hash);
-  }
-})();
-`;
-
 export default function RootLayout({
   children,
 }: {
@@ -90,7 +81,6 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${inter.variable} ${manrope.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: REDIRECT_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <meta name="theme-color" content="#2F5BFF" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
