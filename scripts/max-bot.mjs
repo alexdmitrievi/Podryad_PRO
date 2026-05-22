@@ -12,18 +12,6 @@ const APP_URL = 'https://podryadpro.ru';
 
 const bot = new Bot(TOKEN);
 
-// Monkey-patch: wrap body in { payload: {...} } for MAX API
-const origSend = bot.api.raw.messages.send.bind(bot.api.raw.messages);
-bot.api.raw.messages.send = async (params) => {
-  const { chat_id, user_id, disable_link_preview, text, ...extra } = params;
-  const body = { text, ...extra };
-  const result = await bot.api.raw.post('messages', {
-    body: { payload: body },
-    query: { chat_id, user_id, disable_link_preview },
-  });
-  return result;
-};
-
 const HELP_TEXT = `Подряд PRO — платформа для заказа рабочей силы.
 
 Команды:
@@ -54,10 +42,12 @@ bot.command('старт', async (ctx) => {
   await ctx.reply('Привет! Я — бот сервиса Подряд PRO 🏗️\n\nМы помогаем найти:\n• Рабочих (грузчики, разнорабочие, строители)\n\nНапишите, что вам нужно, или используйте кнопки ниже.', {
     attachments: [{
       type: 'inline_keyboard',
-      buttons: [
-        [{ type: 'link', text: '🚀 Создать заказ', url: APP_URL + '/order/new' }, { type: 'link', text: '👷 Стать исполнителем', url: APP_URL + '/executor/register' }],
-        [{ type: 'link', text: '🏗 Каталог', url: APP_URL + '/catalog/labor' }],
-      ]
+      payload: {
+        buttons: [
+          [{ type: 'link', text: '🚀 Создать заказ', url: APP_URL + '/order/new' }, { type: 'link', text: '👷 Стать исполнителем', url: APP_URL + '/executor/register' }],
+          [{ type: 'link', text: '🏗 Каталог', url: APP_URL + '/catalog/labor' }],
+        ]
+      }
     }]
   });
 });
