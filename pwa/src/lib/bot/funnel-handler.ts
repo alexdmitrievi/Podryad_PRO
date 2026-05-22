@@ -628,7 +628,7 @@ async function handleCallback(
         (discountPercent ? `Скидка: ${discountPercent}%\n` : '') +
         (state.mediaIds?.length ? `📸 Фото: ${state.mediaIds.length} шт.\n` : '') +
         `Канал: ${channel === 'telegram' ? 'Telegram' : 'MAX'}\n` +
-        `\n<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru'}/admin">Открыть админку</a>`
+        `\n<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro'}/admin">Открыть админку</a>`
       );
 
       await clearSession(chatId, channel);
@@ -817,7 +817,7 @@ async function handleCallback(
         `Тип клиента: ${state.customerType === 'b2b' ? 'Бизнес' : 'Частник'}\n` +
         `Доп:${state.needsPump ? ' бетононасос' : ''}${state.needsManipulator ? ' манипулятор' : ''}${state.deliveryOnly ? ' разгрузка с борта' : ''}\n` +
         `Канал: ${channel === 'telegram' ? 'Telegram' : 'MAX'}\n` +
-        `\n<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru'}/admin">Открыть админку</a>`
+        `\n<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://podryad.pro'}/admin">Открыть админку</a>`
       );
 
       await clearSession(chatId, channel);
