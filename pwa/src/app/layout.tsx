@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import { Inter, Manrope, Space_Grotesk } from 'next/font/google';
 import DevUnregisterSW from '@/components/DevUnregisterSW';
 import NavWrapper from '@/components/NavWrapper';
@@ -78,9 +79,24 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  let redirectMeta = null;
+  try {
+    const heads = headers();
+    const host = heads.get('host') || '';
+    if (host === 'podryadpro.ru' || host === 'www.podryadpro.ru') {
+      redirectMeta = (
+        <meta
+          httpEquiv="refresh"
+          content={`0;url=https://podryad-pro-kohl.vercel.app${heads.get('x-forwarded-path') || ''}`}
+        />
+      );
+    }
+  } catch {}
+
   return (
     <html lang="ru" className={`${inter.variable} ${manrope.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <head>
+        {redirectMeta}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <meta name="theme-color" content="#2F5BFF" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
