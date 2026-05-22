@@ -21,9 +21,15 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   fallbacks: {
     document: '/offline',
   },
-  // Не кешировать данные и API — только статику и страницы
-  buildExcludes: [/middleware-manifest\.json$/, /_buildManifest\.js$/, /_ssgManifest\.js$/],
-  // Максимальный размер файла для precache: 2 MB
+  workboxOptions: {
+    exclude: [
+      /_buildManifest\.js$/,
+      /_ssgManifest\.js$/,
+      /middleware-manifest\.json$/,
+      /\.map$/,
+      /\/_next\/static\/.*\.woff2$/,
+    ],
+  },
   maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
   runtimeCaching: [
     // Страницы: StaleWhileRevalidate — показываем из кеша мгновенно, обновляем в фоне
