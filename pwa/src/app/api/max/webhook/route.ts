@@ -52,7 +52,21 @@ export async function POST(req: NextRequest) {
 
   const updateId = extractMaxUpdateId(rawBody);
 
-  // All processing in background — respond immediately
+  // Fast-path: process simple commands synchronously (no Supabase needed)
+  const event = mapper.normalize(rawBody);
+  const userId = event.user_id;
+  const chatId = event.chat_id;
+  const text = (event.text || '').trim();
+
+  if (chatId && (event.type === 'command' || (text && text.startsWith('/')))) {
+    const result = await handleCommandSync(text, userId, chatId);
+    if (result) {
+      void processInBackground(rawBody, updateId, t0).catch(() => {});
+      return NextResponse.json({ ok: true, replied: true, command: text.split(/\s+/)[0], elapsed: Date.now() - t0 });
+    }
+  }
+
+  // All other processing in background
   waitUntil(processInBackground(rawBody, updateId, t0).catch((err) => {
     log.error('[MaxWebhook] background failed', { error: String(err), update_id: updateId, elapsed: Date.now() - t0 });
   }));
@@ -68,6 +82,40 @@ function getSecret(req: NextRequest, body: Record<string, unknown>): string {
     (typeof body.secret === 'string' ? body.secret : '') ??
     ''
   );
+}
+
+async function handleCommandSync(text: string, userId: string, chatId: string): Promise<boolean> {
+  const cmd = text.split(/\s+/)[0].toLowerCase();
+  const router = getChannelRouter();
+
+  const isStart = ['/start', '/старт'].includes(cmd);
+  const isHelp = ['/help', '/помощь'].includes(cmd);
+
+  if (isStart) {
+    await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId,
+      text: `Привет! Я — бот сервиса Подряд PRO 🏗️\n\nМы помогаем найти:\n• Рабочих (грузчики, разнорабочие, строители)\n\nНапишите, что вам нужно, или используйте кнопки ниже.`,
+      buttons: [[
+        { type: 'url', text: '🚀 Создать заказ', url: `${APP_URL}/order/new` },
+        { type: 'url', text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` },
+      ], [
+        { type: 'url', text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` },
+      ]] });
+    return true;
+  }
+
+  if (isHelp) {
+    await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId,
+      text: `Подряд PRO — платформа для заказа рабочей силы.\n\nКоманды:\n/старт — приветствие\n/помощь — справка\n/заказ — создать заказ\n/статус — статус заказов\n/заказы — все заказы` });
+    return true;
+  }
+
+  if (['/order', '/заказ'].includes(cmd)) {
+    await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId,
+      text: '📋 Оформление заказа\n\nОпишите, что нужно сделать и где.' });
+    return true;
+  }
+
+  return false;
 }
 
 async function processInBackground(rawBody: Record<string, unknown>, updateId: string, t0: number) {
