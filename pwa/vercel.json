@@ -18,24 +18,6 @@
       "schedule": "0 10 * * *"
     }
   ],
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        { "type": "host", "value": "www.podryadpro.ru" }
-      ],
-      "destination": "https://podryad-pro-kohl.vercel.app/:path*",
-      "permanent": false
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        { "type": "host", "value": "podryadpro.ru" }
-      ],
-      "destination": "https://podryad-pro-kohl.vercel.app/:path*",
-      "permanent": false
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
