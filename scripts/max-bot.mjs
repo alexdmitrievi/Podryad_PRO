@@ -4,6 +4,8 @@
 
 import { Bot } from '@maxhub/max-bot-api';
 
+console.log('[MAX Bot] Starting...');
+
 const TOKEN = process.env.MAX_BOT_TOKEN || 'f9LHodD0cOKYOJZ3PlLNERjdxkhwkbwqg8aP6T5zxMSlBdxybafZC1cB73jmDquo-KLlMOUGcVHQmx3PMhsN';
 const WEBHOOK_URL = process.env.MAX_WEBHOOK_URL || 'https://podryad-pro-kohl.vercel.app/api/max/webhook';
 const APP_URL = 'https://podryadpro.ru';
@@ -81,4 +83,6 @@ bot.catch((err) => {
   console.error('Bot error:', err.message);
 });
 
-bot.start().then(() => console.log('[MAX Bot] Running — Long Polling active'));
+bot.start()
+  .then(() => console.log('[MAX Bot] Running — Long Polling active'))
+  .catch(err => { console.error('[MAX Bot] Failed to start:', err.message); process.exit(1); });
