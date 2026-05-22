@@ -44,6 +44,12 @@ function extractUserId(update) {
   return sender.user_id || (update.user && update.user.user_id) || update.user_id || '';
 }
 
+function extractChatId(update) {
+  var msg = update.message || {};
+  var recip = msg.recipient || {};
+  return recip.chat_id || update.chat_id || '';
+}
+
 function extractText(update) {
   var msg = update.message || {};
   var body = msg.body || {};
@@ -57,8 +63,6 @@ function maxPost(path, query, body, cb) {
   var parsed = url.parse(u);
   log('[maxPost] URL:', u);
   log('[maxPost] Body:', data);
-  data = JSON.stringify({ payload: body });
-  log('[maxPost] Wrapped:', data);
   var req = https.request({
     hostname: parsed.hostname,
     port: 443,
@@ -76,10 +80,10 @@ function maxPost(path, query, body, cb) {
   req.write(data); req.end();
 }
 
-function replyFast(userId, text, buttons) {
+function replyToChat(chatId, text, buttons) {
   var body = { text: text };
   if (buttons) body.attachments = [{ type: 'inline_keyboard', buttons: buttons }];
-  maxPost('/messages', { user_id: userId }, body, function(err, res) {
+  maxPost('/chats/' + chatId + '/messages', {}, body, function(err, res) {
     if (err) log('[reply] FAIL:', err.message);
     else if (res && res.code) log('[reply] API error:', JSON.stringify(res));
     else log('[reply] OK');
@@ -88,25 +92,25 @@ function replyFast(userId, text, buttons) {
 
 function handleLocal(update) {
   var text = extractText(update);
-  var userId = extractUserId(update);
-  if (!userId || !text) return false;
+  var chatId = extractChatId(update);
+  if (!chatId || !text) return false;
 
   var parts = text.split(/\s+/);
   var cmd = parts[0].toLowerCase();
 
   if (['/start', '/старт'].includes(cmd)) {
-    replyFast(userId,
+    replyToChat(chatId,
       'Привет! Я — бот сервиса Подряд PRO 🏗️\n\nМы помогаем найти:\n• Рабочих (грузчики, разнорабочие, строители)\n\nНапишите, что вам нужно, или используйте кнопки ниже.',
       [[{ type: 'link', text: '🚀 Создать заказ', url: APP_URL + '/order/new' }, { type: 'link', text: '👷 Стать исполнителем', url: APP_URL + '/executor/register' }],
        [{ type: 'link', text: '🏗 Каталог', url: APP_URL + '/catalog/labor' }]]);
     return true;
   }
   if (['/help', '/помощь'].includes(cmd)) {
-    replyFast(chatId, 'Подряд PRO — платформа для заказа рабочей силы.\n\nКоманды:\n/старт — приветствие\n/помощь — справка\n/заказ — создать заказ\n/статус — статус заказов\n/заказы — все заказы');
+    replyToChat(chatId, 'Подряд PRO — платформа для заказа рабочей силы.\n\nКоманды:\n/старт — приветствие\n/помощь — справка\n/заказ — создать заказ\n/статус — статус заказов\n/заказы — все заказы');
     return true;
   }
   if (['/order', '/заказ'].includes(cmd)) {
-    replyFast(chatId, '📋 Оформление заказа\n\nОпишите, что нужно сделать и где.');
+    replyToChat(chatId, '📋 Оформление заказа\n\nОпишите, что нужно сделать и где.');
     return true;
   }
   return false;
