@@ -74,24 +74,19 @@ const THEME_SCRIPT = `
 }catch(e){}})();
 `;
 
-function getRedirectUrl(): string | null {
-  try {
-    const heads = headers();
-    const host = heads.get('host') || '';
-    if (host === 'podryadpro.ru' || host === 'www.podryadpro.ru') {
-      return `https://podryad-pro-kohl.vercel.app${heads.get('x-forwarded-path') || ''}`;
-    }
-  } catch {}
-  return null;
-}
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   let redirectUrl: string | null = null;
-  try { redirectUrl = getRedirectUrl(); } catch {}
+  try {
+    const heads = await headers();
+    const host = heads.get('host') || '';
+    if (host === 'podryadpro.ru' || host === 'www.podryadpro.ru') {
+      redirectUrl = `https://podryad-pro-kohl.vercel.app${heads.get('x-forwarded-path') || ''}`;
+    }
+  } catch {}
 
   return (
     <html lang="ru" className={`${inter.variable} ${manrope.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
