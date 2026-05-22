@@ -124,6 +124,12 @@ async function processMessage(
   const text = (event.text || '').trim();
   const payload = (event.payload ?? {}) as { callback_id?: string; username?: string; display_name?: string };
 
+  // Commands — fast path before funnel (avoids Supabase timeout)
+  if (event.type === 'command' || (event.type === 'message' && text.startsWith('/'))) {
+    const handled = await handleCommand(router, text, userId, chatId);
+    if (handled) return;
+  }
+
   // Funnel
   try {
     const res = await handleFunnelEvent({
@@ -140,55 +146,6 @@ async function processMessage(
     log.error('[MaxWebhook] funnel failed', { error: String(err), user_id: userId });
   }
 
-  // Commands
-  if (event.type === 'command') {
-    switch (text.split(/\s+/)[0].toLowerCase()) {
-      case '/start':
-        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId,
-          text: `Привет! Я — бот сервиса Подряд PRO 🏗️\n\nМы помогаем найти:\n• Рабочих (грузчики, разнорабочие, строители)\n\nНапишите, что вам нужно, или используйте кнопки ниже.`,
-          buttons: [[
-            { type: 'url', text: '🚀 Создать заказ', url: `${APP_URL}/order/new` },
-            { type: 'url', text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` },
-          ], [
-            { type: 'url', text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` },
-          ]] });
-        return;
-      case '/help':
-        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: `Подряд PRO — платформа для заказа рабочей силы в Омске и Новосибирске.\n\nКоманды:\n/start — приветствие\n/help — справка\n/order — создать заказ\n/status — статус ваших заказов\n/link — привязать аккаунт к номеру телефона\n/orders — актуальные заказы (для исполнителей)\n\nПросто напишите, что вам нужно — я помогу!` });
-        return;
-      case '/order':
-        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: '📋 Оформление заказа\n\nОпишите, что нужно сделать и где.' });
-        return;
-      case '/status': {
-        const orders = await getOrdersByMessengerId({ channel: CHANNEL, userId });
-        if (orders.length === 0) {
-          await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: 'У вас пока нет заказов. /link ВАШ_ТЕЛЕФОН для привязки.' });
-        } else {
-          const lines = orders.slice(0, 5).map((o: any) => `• ${o.order_number ? '#' + o.order_number : 'ID:' + String(o.order_id).slice(0, 8)} — ${formatOrderStatus(String(o.status ?? ''))}`);
-          await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: `📋 Ваши заказы\n\n${lines.join('\n')}\n\nПодробнее: ${APP_URL}/my` });
-        }
-        return;
-      }
-      case '/link': {
-        const phoneArg = text.split(/\s+/).slice(1).join('').replace(/\s+/g, '');
-        const result = await linkMessengerAccount({ channel: CHANNEL, userId, rawPhone: phoneArg });
-        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: result.message });
-        return;
-      }
-      case '/orders': {
-        const db = getServiceClient();
-        const { data } = await db.from('orders').select('order_id,order_number,work_type,display_price,created_at').in('status', ['published','pending']).order('created_at', { ascending: false }).limit(5);
-        if (!data || data.length === 0) {
-          await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: 'Сейчас нет активных заказов.' });
-        } else {
-          const lines = data.map((o: any) => `• ${o.order_number ? '#' + o.order_number : 'ID:' + String(o.order_id).slice(0, 8)} — ${o.work_type || ''}, ${o.display_price || 'цена не указана'} ₽`);
-          await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: `📢 Актуальные заказы\n\n${lines.join('\n')}\n\nОткликнуться: ${APP_URL}/orders` });
-        }
-        return;
-      }
-    }
-  }
-
   // Free text → AI
   try {
     const ai = getOpenAIClient();
@@ -197,6 +154,78 @@ async function processMessage(
   } catch {
     await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: 'Извините, произошла ошибка. Попробуйте позже.' });
   }
+}
+
+async function handleCommand(
+  router: ReturnType<typeof getChannelRouter>,
+  text: string,
+  userId: string,
+  chatId: string,
+): Promise<boolean> {
+  const cmd = text.split(/\s+/)[0].toLowerCase();
+  // Support both Russian and English command names
+  const isHelp = ['/help', '/помощь', '/help', '/start', '/старт'].includes(cmd);
+  const isStart = ['/start', '/старт'].includes(cmd);
+
+  if (isStart) {
+    await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId,
+      text: `Привет! Я — бот сервиса Подряд PRO 🏗️\n\nМы помогаем найти:\n• Рабочих (грузчики, разнорабочие, строители)\n\nНапишите, что вам нужно, или используйте кнопки ниже.`,
+      buttons: [[
+        { type: 'url', text: '🚀 Создать заказ', url: `${APP_URL}/order/new` },
+        { type: 'url', text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` },
+      ], [
+        { type: 'url', text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` },
+      ]] });
+    return true;
+  }
+
+  if (isHelp) {
+    await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: `Подряд PRO — платформа для заказа рабочей силы.\n\nКоманды:\n/старт — приветствие\n/помощь — справка\n/заказ — создать заказ\n/статус — статус заказов\n/заказы — все заказы` });
+    return true;
+  }
+
+  if (['/order', '/заказ'].includes(cmd)) {
+    await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: '📋 Оформление заказа\n\nОпишите, что нужно сделать и где.' });
+    return true;
+  }
+
+  if (['/status', '/статус'].includes(cmd)) {
+    try {
+      const orders = await getOrdersByMessengerId({ channel: CHANNEL, userId });
+      if (orders.length === 0) {
+        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: 'У вас пока нет заказов.' });
+      } else {
+        const lines = orders.slice(0, 5).map((o: any) => `• ${o.order_number ? '#' + o.order_number : 'ID:' + String(o.order_id).slice(0, 8)} — ${formatOrderStatus(String(o.status ?? ''))}`);
+        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: `📋 Ваши заказы\n\n${lines.join('\n')}` });
+      }
+    } catch { await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: 'Не удалось проверить статус. Попробуйте позже.' }); }
+    return true;
+  }
+
+  if (['/link', '/привязать'].includes(cmd)) {
+    const phoneArg = text.split(/\s+/).slice(1).join('').replace(/\s+/g, '');
+    try {
+      const result = await linkMessengerAccount({ channel: CHANNEL, userId, rawPhone: phoneArg });
+      await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: result.message });
+    } catch { await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: 'Не удалось привязать аккаунт.' }); }
+    return true;
+  }
+
+  if (['/orders', '/заказы'].includes(cmd)) {
+    try {
+      const db = getServiceClient();
+      const { data } = await db.from('orders').select('order_id,order_number,work_type,display_price,created_at').in('status', ['published','pending']).order('created_at', { ascending: false }).limit(5);
+      if (!data || data.length === 0) {
+        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: 'Сейчас нет активных заказов.' });
+      } else {
+        const lines = data.map((o: any) => `• ${o.order_number ? '#' + o.order_number : 'ID:' + String(o.order_id).slice(0, 8)} — ${o.work_type || ''}, ${o.display_price || 'цена не указана'} ₽`);
+        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: `📢 Актуальные заказы\n\n${lines.join('\n')}` });
+      }
+    } catch { await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: 'Не удалось загрузить заказы.' }); }
+    return true;
+  }
+
+  return false; // not a command, fall through to funnel
 }
 
 async function sendOrLog(router: ReturnType<typeof getChannelRouter>, msg: Parameters<ReturnType<typeof getChannelRouter>['send']>[0]) {
