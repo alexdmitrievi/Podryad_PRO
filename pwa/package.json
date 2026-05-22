@@ -7,7 +7,9 @@
   },
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node -e \"try{require('fs').rmSync('.next/cache',{recursive:true,force:true})}catch(e){}\"",
     "build": "next build",
+    "vercel-build": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true})}catch(e){}\" && next build",
     "start": "next start",
     "lint": "next lint",
     "lighthouse": "npx lighthouse http://localhost:3000 --view --preset=desktop --output-path=./lighthouse-report.html",
