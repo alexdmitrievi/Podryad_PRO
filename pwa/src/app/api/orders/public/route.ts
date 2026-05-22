@@ -23,8 +23,12 @@ export async function GET() {
     .limit(100);
 
   if (error) {
-    log.error('GET /api/orders/public', { error: String(error) });
-    return NextResponse.json({ error: 'server_error' }, { status: 500 });
+    log.error('GET /api/orders/public', { error: String(error), code: (error as any)?.code, details: (error as any)?.details, hint: (error as any)?.hint, message: (error as any)?.message });
+    return NextResponse.json({
+      error: 'server_error',
+      code: (error as any)?.code || '',
+      message: (error as any)?.message || String(error),
+    }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, orders: data || [] });
