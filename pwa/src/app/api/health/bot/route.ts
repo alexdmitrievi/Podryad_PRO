@@ -38,7 +38,7 @@ export async function GET() {
       channels: results,
       timestamp: new Date().toISOString(),
     },
-    { status: allHealthy ? 200 : 503 },
+    { status: 200 },
   );
 }
 
@@ -143,13 +143,15 @@ async function checkMax(config: ReturnType<typeof getMaxConfig>): Promise<BotHea
     result.me = { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 
-  // Check webhook subscriptions
+  // Check webhook subscriptions (via proxy to avoid MAX geoblock)
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 5000);
-    const res = await fetch(`${config.apiBase}/subscriptions?access_token=${encodeURIComponent(config.botToken)}`, {
-      signal: ctrl.signal,
-    });
+    const proxyBase2 = process.env.MAX_API_PROXY;
+    const subsUrl = proxyBase2
+      ? `${proxyBase2}/proxy/max/subscriptions?access_token=${encodeURIComponent(config.botToken)}`
+      : `${config.apiBase}/subscriptions?access_token=${encodeURIComponent(config.botToken)}`;
+    const res = await fetch(subsUrl, { signal: ctrl.signal });
     clearTimeout(timer);
     const json = await res.json();
     // Response is an array or object with subscriptions

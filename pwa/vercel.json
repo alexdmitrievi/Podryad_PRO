@@ -16,6 +16,10 @@
     {
       "path": "/api/cron/crosspost",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/max-poll",
+      "schedule": "0 0 * * *"
     }
   ],
   "headers": [
