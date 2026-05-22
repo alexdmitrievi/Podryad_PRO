@@ -152,6 +152,7 @@ type TabId = 'unified-crm' | 'listings' | 'contractors' | 'customers' | 'leads' 
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "unified-crm", label: "CRM Unified", icon: TrendingUp },
+  { id: "invites", label: "Инвайтинг", icon: Send },
   { id: "crm", label: "CRM Воронка", icon: TrendingUp },
   { id: "own-equipment", label: "Наша техника", icon: Truck },
   { id: "analytics", label: "Аналитика", icon: Activity },
@@ -167,7 +168,6 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "documents", label: "Документы", icon: FileDown },
   { id: "markups", label: "Наценки", icon: Tag },
   { id: "disputes", label: "Споры", icon: AlertTriangle },
-  { id: "invites", label: "Инвайтинг", icon: Send },
 ];
 
 function fmtDate(iso: string): string {
