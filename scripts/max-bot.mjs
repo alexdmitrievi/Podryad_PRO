@@ -12,6 +12,18 @@ const APP_URL = 'https://podryadpro.ru';
 
 const bot = new Bot(TOKEN);
 
+// Monkey-patch: wrap body in { payload: {...} } for MAX API
+const origSend = bot.api.raw.messages.send.bind(bot.api.raw.messages);
+bot.api.raw.messages.send = async (params) => {
+  const { chat_id, user_id, disable_link_preview, text, ...extra } = params;
+  const body = { text, ...extra };
+  const result = await bot.api.raw.post('messages', {
+    body: { payload: body },
+    query: { chat_id, user_id, disable_link_preview },
+  });
+  return result;
+};
+
 const HELP_TEXT = `Подряд PRO — платформа для заказа рабочей силы.
 
 Команды:
