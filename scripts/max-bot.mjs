@@ -83,6 +83,14 @@ bot.catch((err) => {
   console.error('Bot error:', err.message);
 });
 
-bot.start()
-  .then(() => console.log('[MAX Bot] Running — Long Polling active'))
-  .catch(err => { console.error('[MAX Bot] Failed to start:', err.message); process.exit(1); });
+try {
+  const info = await bot.api.getMyInfo();
+  console.log('[MAX Bot] Bot:', info.first_name, '@' + info.username, 'ID:', info.user_id);
+} catch (err) {
+  console.error('[MAX Bot] Failed to get bot info:', err.message);
+  process.exit(1);
+}
+
+// Start long polling (never resolves — runs forever)
+bot.start();
+console.log('[MAX Bot] Long Polling started');
