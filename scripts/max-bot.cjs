@@ -58,6 +58,7 @@ function maxPost(path, query, body, cb) {
   log('[maxPost] URL:', u);
   log('[maxPost] Body:', data);
   data = JSON.stringify({ payload: body });
+  log('[maxPost] Wrapped:', data);
   var req = https.request({
     hostname: parsed.hostname,
     port: 443,
@@ -80,7 +81,7 @@ function replyFast(userId, text, buttons) {
   if (buttons) body.attachments = [{ type: 'inline_keyboard', buttons: buttons }];
   maxPost('/messages', { user_id: userId }, body, function(err, res) {
     if (err) log('[reply] FAIL:', err.message);
-    else if (res && res.code) log('[reply] API error:', res.code, res.message);
+    else if (res && res.code) log('[reply] API error:', JSON.stringify(res));
     else log('[reply] OK');
   });
 }
