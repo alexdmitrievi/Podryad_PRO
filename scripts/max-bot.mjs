@@ -30,8 +30,15 @@ bot.api.setMyCommands([
   { name: 'заказы', description: '📦 Все заказы' },
 ]).catch(() => {});
 
-// Fast local commands
-bot.command('start', async (ctx) => {
+// Debug — log all inbound messages
+bot.use(async (ctx, next) => {
+  const text = ctx.message?.body?.text || '';
+  console.log('[MSG]', ctx.update.update_type, text.slice(0, 80));
+  return next();
+});
+
+// Fast local commands — Russian
+bot.command('старт', async (ctx) => {
   await ctx.reply('Привет! Я — бот сервиса Подряд PRO 🏗️\n\nМы помогаем найти:\n• Рабочих (грузчики, разнорабочие, строители)\n\nНапишите, что вам нужно, или используйте кнопки ниже.', {
     attachments: [{
       type: 'inline_keyboard',
@@ -43,11 +50,11 @@ bot.command('start', async (ctx) => {
   });
 });
 
-bot.command('help', async (ctx) => {
+bot.command('помощь', async (ctx) => {
   await ctx.reply(HELP_TEXT);
 });
 
-bot.command('order', async (ctx) => {
+bot.command('заказ', async (ctx) => {
   await ctx.reply('📋 Оформление заказа\n\nОпишите, что нужно сделать и где.');
 });
 
