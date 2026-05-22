@@ -83,7 +83,7 @@ function maxPost(path, query, body, cb) {
 function replyToChat(chatId, text, buttons) {
   var body = { text: text };
   if (buttons) body.attachments = [{ type: 'inline_keyboard', buttons: buttons }];
-  maxPost('/chats/' + chatId + '/messages', {}, body, function(err, res) {
+  maxPost('/messages', { chat_id: chatId }, body, function(err, res) {
     if (err) log('[reply] FAIL:', err.message);
     else if (res && res.code) log('[reply] API error:', JSON.stringify(res));
     else log('[reply] OK');
