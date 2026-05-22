@@ -146,6 +146,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, _chat_id: chatId, _user_id: userId });
   }
 
+  // Fast-path: sync reply for simple commands (no Supabase needed)
+  const cmdText = (event.text || '').trim();
+  if (event.type === 'command' || (cmdText && cmdText.startsWith('/'))) {
+    const cmd = cmdText.split(/\s+/)[0].toLowerCase();
+    if (['/start', '/старт', '/help', '/помощь', '/order', '/заказ'].includes(cmd)) {
+      const router = getChannelRouter();
+      if (['/start', '/старт'].includes(cmd)) {
+        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId,
+          text: START_TEXT,
+          buttons: [[
+            { type: 'url', text: '🚀 Создать заказ', url: `${APP_URL}/order/new` },
+            { type: 'url', text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` },
+          ], [
+            { type: 'url', text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` },
+          ]] });
+      } else if (['/help', '/помощь'].includes(cmd)) {
+        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: HELP_TEXT });
+      } else {
+        await sendOrLog(router, { channel: CHANNEL, chat_id: chatId, user_id: userId, text: '📋 Оформление заказа\n\nОпишите, что нужно сделать и где.' });
+      }
+      // Still process in background for CRM, stats, etc.
+      waitUntil(processMessage(event, userId, chatId, updateId).then(() => markUpdateProcessed(CHANNEL, updateId)).catch(async (err) => {
+        log.error('[MaxWebhook] processMessage failed', { error: String(err), user_id: userId, update_id: updateId });
+        await releaseProcessingLock(CHANNEL, updateId);
+      }));
+      return NextResponse.json({ ok: true, replied: true, command: cmd, _chat_id: chatId, _user_id: userId });
+    }
+  }
+
   // 7. Rate limit per user
   const rl = await checkRateLimit(`max:${userId}`, 10, 60_000);
   if (rl.limited) {
