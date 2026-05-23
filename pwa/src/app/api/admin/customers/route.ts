@@ -36,7 +36,8 @@ export async function PUT(req: NextRequest) {
 
     if (error) {
       const msg = error?.message ? String(error.message) : String(error);
-      return NextResponse.json({ error: msg }, { status: 500 });
+      const code = msg.includes('uuid') || msg.includes('syntax') ? 400 : 500;
+      return NextResponse.json({ error: msg }, { status: code });
     }
 
     return NextResponse.json({ ok: true });

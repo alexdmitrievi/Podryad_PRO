@@ -20,10 +20,7 @@ export async function GET(req: NextRequest) {
   if (source) query = query.eq('source', source);
   if (channel) query = query.eq('channel', channel);
   if (search) {
-    query = query.or(
-      `name.ilike.%${search}%,admin_notes.ilike.%${search}%` +
-      `,bot_contacts.phone.ilike.%${search}%,bot_contacts.full_name.ilike.%${search}%`
-    );
+    query = query.or(`name.ilike.%${search}%,admin_notes.ilike.%${search}%`);
   }
 
   const from = (page - 1) * perPage;
@@ -72,7 +69,8 @@ export async function PUT(req: NextRequest) {
     const { error } = await db.from('bot_leads').update(update).eq('id', id);
     if (error) {
       const msg = error?.message ? String(error.message) : String(error);
-      return NextResponse.json({ error: msg }, { status: 500 });
+      const code = msg.includes('uuid') || msg.includes('syntax') ? 400 : 500;
+      return NextResponse.json({ error: msg }, { status: code });
     }
   } catch (err: any) {
     const msg = err?.message ? String(err.message) : String(err);
