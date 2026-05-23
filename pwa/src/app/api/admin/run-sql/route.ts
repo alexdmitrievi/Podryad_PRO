@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
-import dns from 'dns';
 import { Pool } from 'pg';
 
 function verifyPin(pin: string): boolean {
@@ -11,38 +10,12 @@ function verifyPin(pin: string): boolean {
   return pinBuf.length === expectedBuf.length && timingSafeEqual(pinBuf, expectedBuf);
 }
 
-async function resolveHost(host: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    dns.resolve6(host, (err, addresses) => {
-      if (err || !addresses.length) {
-        dns.resolve4(host, (err4, addrs4) => {
-          if (err4 || !addrs4.length) reject(new Error(`DNS failed: ${err?.message ?? 'no records'}`));
-          else resolve(addrs4[0]);
-        });
-      } else {
-        resolve(addresses[0]);
-      }
-    });
-  });
-}
-
 export async function POST(req: NextRequest) {
   const pin = req.headers.get('x-admin-pin') ?? '';
   if (!verifyPin(pin)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const hostname = process.env.SUPABASE_DB_HOST ?? 'db.rnqalafmuyrlfioqdore.supabase.co';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 
-  let ip: string;
-  try {
-    ip = await resolveHost(hostname);
-    console.log(`[run-sql] Resolved ${hostname} -> ${ip}`);
-  } catch (e) {
-    console.error(`[run-sql] DNS failed for ${hostname}: ${e}`);
-    return NextResponse.json({ error: `DNS resolution failed for ${hostname}` }, { status: 500 });
-  }
-
-  // Migration SQL
   const sql = `
 CREATE TABLE IF NOT EXISTS public.invite_accounts (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -61,31 +34,48 @@ CREATE POLICY IF NOT EXISTS "invite_accounts_service_all" ON public.invite_accou
   FOR ALL USING (auth.role() = 'service_role');
 `;
 
-  const pool = new Pool({
-    host: ip,
-    port: 5432,
-    user: 'postgres',
-    password: key,
-    database: 'postgres',
-    ssl: { rejectUnauthorized: false },
-    max: 1,
-    connectionTimeoutMillis: 15000,
-  });
+  const configs = [
+    // Try IPv6 direct
+    { host: '2a05:d018:837:ae00:6ccb:2bb5:f790:af24', port: 5432, label: 'IPv6 direct' },
+    // Try API host on Postgres port
+    { host: 'rnqalafmuyrlfioqdore.supabase.co', port: 5432, label: 'API host:5432' },
+    { host: 'rnqalafmuyrlfioqdore.supabase.co', port: 6543, label: 'API host:6543' },
+    // Try various poolers
+    { host: 'aws-0-us-east-1.pooler.supabase.com', port: 6543, label: 'Pooler us-east-1:6543' },
+    { host: 'aws-0-us-east-2.pooler.supabase.com', port: 6543, label: 'Pooler us-east-2:6543' },
+    { host: 'aws-0-eu-west-1.pooler.supabase.com', port: 6543, label: 'Pooler eu-west-1:6543' },
+    { host: 'aws-0-eu-central-1.pooler.supabase.com', port: 5432, label: 'Pooler eu-central-1:5432' },
+  ];
 
-  try {
-    const client = await pool.connect();
+  const errors: string[] = [];
+
+  for (const cfg of configs) {
     try {
-      console.log('[run-sql] Connected, executing migration...');
-      await client.query(sql);
-      console.log('[run-sql] Migration 050 applied successfully');
-      return NextResponse.json({ ok: true, message: 'Migration 050 applied' });
-    } finally {
-      client.release();
-      await pool.end();
+      const pool = new Pool({
+        host: cfg.host,
+        port: cfg.port,
+        user: 'postgres',
+        password: key,
+        database: 'postgres',
+        ssl: { rejectUnauthorized: false },
+        max: 1,
+        connectionTimeoutMillis: 8000,
+      });
+      const client = await pool.connect();
+      try {
+        await client.query(sql);
+        return NextResponse.json({ ok: true, message: `Migration applied via ${cfg.label}` });
+      } finally {
+        client.release();
+        await pool.end();
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      errors.push(`${cfg.label}: ${msg}`);
+      continue;
     }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[run-sql] Error: ${msg}`);
-    return NextResponse.json({ error: msg }, { status: 500 });
   }
+
+  console.error('[run-sql] All connections failed:', errors);
+  return NextResponse.json({ error: 'All connections failed', details: errors }, { status: 500 });
 }
