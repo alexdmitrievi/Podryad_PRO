@@ -156,7 +156,6 @@ export async function POST(req: NextRequest) {
         payload: { ...laborNurturePayload, step: stepKey },
       }).catch(() => {});
     }
-    }
 
     // Notify available executors
     void enqueueJob({
@@ -263,7 +262,7 @@ export async function POST(req: NextRequest) {
         order_id: orderData.order_id,
         work_type: 'Аренда техники',
         city: 'omsk',
-        display_price: orderData.display_price ?? orderData.customer_total ?? 0,
+        display_price: 0,
       },
     }).catch(() => {});
 
