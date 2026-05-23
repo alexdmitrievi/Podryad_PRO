@@ -20,10 +20,9 @@ export async function GET(req: NextRequest) {
   if (source) query = query.eq('source', source);
   if (channel) query = query.eq('channel', channel);
   if (search) {
-    const esc = search.replace(/'/g, "''").replace(/%/g, '\\%').replace(/_/g, '\\_');
     query = query.or(
-      `name.ilike.%${esc}%,admin_notes.ilike.%${esc}%` +
-      `,bot_contacts(phone.ilike.%${esc}%,full_name.ilike.%${esc}%)`
+      `name.ilike.%${search}%,admin_notes.ilike.%${search}%` +
+      `,bot_contacts.phone.ilike.%${search}%,bot_contacts.full_name.ilike.%${search}%`
     );
   }
 
@@ -69,10 +68,15 @@ export async function PUT(req: NextRequest) {
 
   update.updated_at = new Date().toISOString();
 
-  const { error } = await db.from('bot_leads').update(update).eq('id', id);
-  if (error) {
-    const msg = error?.message ? String(error.message) : String(error);
-    return NextResponse.json({ error: msg }, { status: 500 });
+  try {
+    const { error } = await db.from('bot_leads').update(update).eq('id', id);
+    if (error) {
+      const msg = error?.message ? String(error.message) : String(error);
+      return NextResponse.json({ error: msg }, { status: 500 });
+    }
+  } catch (err: any) {
+    const msg = err?.message ? String(err.message) : String(err);
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 
   return NextResponse.json({ ok: true });

@@ -39,6 +39,7 @@ export async function PUT(req: NextRequest) {
   } catch (err: any) {
     const msg = err?.message ? String(err.message) : String(err);
     log.error('PUT /api/admin/contractors', { error: msg });
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const code = msg.includes('uuid') || msg.includes('invalid') ? 400 : 500;
+    return NextResponse.json({ error: msg }, { status: code });
   }
 }
