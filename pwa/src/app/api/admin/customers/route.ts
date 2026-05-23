@@ -20,19 +20,29 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const { id, admin_notes } = await req.json();
+    const body = await req.json();
+    const { id, admin_notes } = body || {};
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
+    if (admin_notes === undefined) {
+      return NextResponse.json({ error: 'no fields to update' }, { status: 400 });
+    }
 
     const db = getServiceClient();
     const { error } = await db
       .from('customers')
-      .update({ admin_notes })
+      .update({ admin_notes, updated_at: new Date().toISOString() })
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      const msg = error?.message ? String(error.message) : String(error);
+      return NextResponse.json({ error: msg }, { status: 500 });
+    }
+
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    log.error('PUT /api/admin/customers', { error: String(err) });
-    return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  } catch (err: any) {
+    const msg = err?.message ? String(err.message) : String(err);
+    log.error('PUT /api/admin/customers', { error: msg });
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

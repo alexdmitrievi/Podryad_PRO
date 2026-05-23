@@ -59,7 +59,13 @@ async function handlePost(req: NextRequest) {
   const pin = getPin(req);
   if (!verifyPin(pin)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const formData = await req.formData();
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch {
+    return NextResponse.json({ error: 'Ожидается multipart/form-data (файл + поля формы)' }, { status: 400 });
+  }
+
   const file = formData.get('file') as File | null;
   const targetType = String(formData.get('target_type') || 'channel');
   const targetId = String(formData.get('target_id') || '');

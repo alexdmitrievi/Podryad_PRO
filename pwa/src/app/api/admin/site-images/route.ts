@@ -33,7 +33,13 @@ function pathFromPublicUrl(url: string): string | null {
  * site_images row.
  */
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch {
+    return NextResponse.json({ error: 'invalid_content_type: multipart/form-data required' }, { status: 400 });
+  }
+
   const slug = String(formData.get('slug') || '');
   const file = formData.get('file') as File | null;
 

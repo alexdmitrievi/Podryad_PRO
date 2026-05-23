@@ -19,7 +19,13 @@ export async function GET(req: NextRequest) {
   if (status) query = query.eq('status', status);
   if (source) query = query.eq('source', source);
   if (channel) query = query.eq('channel', channel);
-  if (search) query = query.or(`name.ilike.%${search}%,admin_notes.ilike.%${search}%,bot_contacts.phone.ilike.%${search}%,bot_contacts.full_name.ilike.%${search}%`);
+  if (search) {
+    const esc = search.replace(/'/g, "''").replace(/%/g, '\\%').replace(/_/g, '\\_');
+    query = query.or(
+      `name.ilike.%${esc}%,admin_notes.ilike.%${esc}%` +
+      `,bot_contacts(phone.ilike.%${esc}%,full_name.ilike.%${esc}%)`
+    );
+  }
 
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
@@ -27,7 +33,8 @@ export async function GET(req: NextRequest) {
   const { data, error, count } = await query.range(from, to);
 
   if (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    const msg = error?.message ? String(error.message) : String(error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 
   return NextResponse.json({
@@ -64,7 +71,8 @@ export async function PUT(req: NextRequest) {
 
   const { error } = await db.from('bot_leads').update(update).eq('id', id);
   if (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    const msg = error?.message ? String(error.message) : String(error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

@@ -29,11 +29,16 @@ export async function PUT(req: NextRequest) {
   if (status !== undefined) updates.status = status;
   if (admin_notes !== undefined) updates.admin_notes = admin_notes;
 
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'no fields to update' }, { status: 400 });
+  }
+
   try {
     await updateContractor(id, updates);
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    log.error('PUT /api/admin/contractors', { error: String(err) });
-    return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  } catch (err: any) {
+    const msg = err?.message ? String(err.message) : String(err);
+    log.error('PUT /api/admin/contractors', { error: msg });
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

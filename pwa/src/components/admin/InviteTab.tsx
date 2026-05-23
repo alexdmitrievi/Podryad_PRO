@@ -203,9 +203,27 @@ export default function InviteTab({ pin }: { pin: string }) {
                 <h3 className="font-semibold text-gray-900 dark:text-white">Настройка технического аккаунта Telegram (MTProto)</h3>
               </div>
               <div className="ml-8 space-y-1.5 text-gray-600 dark:text-gray-400">
-                <p><strong>ВНИМАНИЕ:</strong> используйте <u>отдельный</u> технический номер телефона, <u>не ваш основной</u> аккаунт. Telegram может забанить аккаунт за массовые приглашения — не рискуйте личным.</p>
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl mb-3">
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Что такое INVITE_ACCOUNT_PHONE?</p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Это <strong>номер телефона отдельного Telegram-аккаунта</strong>, через который воркер будет приглашать пользователей в ваш канал/чат.
+                    Инвайтинг работает не через Bot API, а через MTProto — протокол обычного клиента Telegram.
+                    Поэтому нужен <u>реальный аккаунт</u> с номером телефона.
+                  </p>
+                  <div className="mt-2 text-xs text-blue-700 dark:text-blue-300 space-y-0.5">
+                    <p><strong>Где взять номер:</strong></p>
+                    <ul className="list-disc ml-4 space-y-0.5">
+                      <li>Купите виртуальный номер (сервисы: SMS-Activate, SMS-man, 5sim, Grizzly SMS) — от 50 ₽</li>
+                      <li>Или используйте отдельную физическую SIM-карту, не привязанную к вашему основному аккаунту</li>
+                      <li>Зарегистрируйте новый Telegram-аккаунт на этот номер</li>
+                    </ul>
+                  </div>
+                  <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-xs text-red-700 dark:text-red-300">
+                    <strong>НИКОГДА не используйте свой личный номер!</strong> Telegram банит аккаунты за массовые приглашения — вы потеряете доступ к своим личным чатам и контактам.
+                  </div>
+                </div>
                 <ol className="list-decimal ml-4 space-y-1">
-                  <li>Зайдите на <a href="https://my.telegram.org" target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline">my.telegram.org</a> и авторизуйтесь под техническим номером</li>
+                  <li>Зайдите на <a href="https://my.telegram.org" target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline">my.telegram.org</a> и авторизуйтесь <strong>под техническим номером</strong></li>
                   <li>Перейдите в <strong>API Development</strong></li>
                   <li>Создайте приложение (любое название, например «Inviter»)</li>
                   <li>Сохраните полученные <code className="bg-gray-100 dark:bg-dark-border px-1.5 py-0.5 rounded text-xs">api_id</code> (число) и <code className="bg-gray-100 dark:bg-dark-border px-1.5 py-0.5 rounded text-xs">api_hash</code> (строка)</li>
@@ -217,7 +235,10 @@ TELEGRAM_MT_PROTO_API_HASH=a1b2c3d4e5f6...
 INVITE_ACCOUNT_PHONE=+79991234567`}
                 </pre>
                 <p className="text-xs text-gray-400 mt-1">
-                  Добавьте этот же номер в поле «Аккаунт для инвайтинга» в форме загрузки списка ниже.
+                  <code className="bg-gray-100 dark:bg-dark-border px-1 py-0.5 rounded text-xs">INVITE_ACCOUNT_PHONE</code> — это номер телефона, который вы использовали при регистрации технического аккаунта (в международном формате: +7...).
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Этот же номер нужно добавить в таблицу <code className="bg-gray-100 dark:bg-dark-border px-1 py-0.5 rounded text-xs">invite_accounts</code> через SQL (см. миграцию 050), после чего он появится в выпадающем списке «Аккаунт для инвайтинга» в форме ниже.
                 </p>
               </div>
             </div>
