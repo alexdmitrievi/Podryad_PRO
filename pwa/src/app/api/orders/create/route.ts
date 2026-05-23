@@ -156,6 +156,20 @@ export async function POST(req: NextRequest) {
         payload: { ...laborNurturePayload, step: stepKey },
       }).catch(() => {});
     }
+    }
+
+    // Notify available executors
+    void enqueueJob({
+      queueName: 'crm',
+      jobType: 'executor.new_order_available',
+      dedupeKey: `exec_new_order:${orderData.order_id}`,
+      payload: {
+        order_id: orderData.order_id,
+        work_type: body.type === 'labor' ? (body as LaborOrderBody).work_type : 'Аренда техники',
+        city: 'omsk',
+        display_price: customerTotal ?? 0,
+      },
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true, order_id: orderData.order_id }, { status: 201 });
   }
@@ -240,6 +254,18 @@ export async function POST(req: NextRequest) {
         payload: { ...rentalNurturePayload, step: stepKey },
       }).catch(() => {});
     }
+
+    void enqueueJob({
+      queueName: 'crm',
+      jobType: 'executor.new_order_available',
+      dedupeKey: `exec_new_order:${orderData.order_id}`,
+      payload: {
+        order_id: orderData.order_id,
+        work_type: 'Аренда техники',
+        city: 'omsk',
+        display_price: orderData.display_price ?? orderData.customer_total ?? 0,
+      },
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true, order_id: orderData.order_id }, { status: 201 });
   }

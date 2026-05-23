@@ -120,6 +120,19 @@ export async function PUT(
     } catch (error) {
       log.error('enqueue notify.payment_held failed (non-blocking)', { error: String(error) });
     }
+
+    if (updated?.customer_phone) {
+      try {
+        await enqueueJob({
+          queueName: 'crm',
+          jobType: 'customer.notify_payment_received',
+          dedupeKey: `cust_paid:${orderId}`,
+          payload: { order_id: orderId, customer_phone: String(updated.customer_phone) },
+          sourceTable: 'orders',
+          sourceId: orderId,
+        });
+      } catch { /* non-blocking */ }
+    }
   }
 
   if (executor_payout_status === 'paid') {
@@ -165,6 +178,19 @@ export async function PUT(
       } catch (error) {
         log.error('enqueue notify.contractor_payout_sent failed (non-blocking)', { error: String(error) });
       }
+    }
+
+    if (updated?.customer_phone) {
+      try {
+        await enqueueJob({
+          queueName: 'crm',
+          jobType: 'customer.notify_work_completed',
+          dedupeKey: `cust_completed:${orderId}`,
+          payload: { order_id: orderId, customer_phone: String(updated.customer_phone) },
+          sourceTable: 'orders',
+          sourceId: orderId,
+        });
+      } catch { /* non-blocking */ }
     }
   }
 

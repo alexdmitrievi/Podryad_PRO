@@ -125,6 +125,32 @@ export async function PUT(
       }).catch((err) => {
         log.error(`PUT /api/admin/orders/${orderId} assign notify`, { error: String(err) });
       });
+
+      void enqueueJob({
+        queueName: 'crm',
+        jobType: 'customer.notify_contractor_assigned',
+        dedupeKey: `cust_assign:${orderId}`,
+        payload: { order_id: orderId, customer_phone: customer_phone ?? '' },
+      }).catch(() => {});
+    }
+
+    if (updates.status === 'priced' && display_price && customer_phone) {
+      void autoSendPaymentLink(orderId, String(customer_phone), display_price);
+      void enqueueJob({
+        queueName: 'crm',
+        jobType: 'customer.notify_order_priced',
+        dedupeKey: `cust_priced:${orderId}`,
+        payload: { order_id: orderId, customer_phone: String(customer_phone), display_price },
+      }).catch(() => {});
+    }
+
+    if (updates.status === 'in_progress' && customer_phone) {
+      void enqueueJob({
+        queueName: 'crm',
+        jobType: 'customer.notify_work_started',
+        dedupeKey: `cust_work_started:${orderId}`,
+        payload: { order_id: orderId, customer_phone: String(customer_phone) },
+      }).catch(() => {});
     }
 
     return NextResponse.json({ ok: true });
@@ -132,4 +158,39 @@ export async function PUT(
     log.error(`PUT /api/admin/orders/${orderId}`, { error: String(err) });
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
+}
+
+async function autoSendPaymentLink(orderId: string, customerPhone: string, displayPrice: number) {
+  try {
+    const db = getServiceClient();
+    const { data: token } = await db
+      .from('customer_tokens')
+      .select('access_token')
+      .eq('phone', customerPhone)
+      .maybeSingle();
+
+    void enqueueJob({
+      queueName: 'notifications',
+      jobType: 'customer.send_payment_link',
+      dedupeKey: `payment_link:${orderId}`,
+      payload: {
+        order_id: orderId,
+        customer_phone: customerPhone,
+        access_token: token?.access_token,
+        display_price: displayPrice,
+      },
+    }).catch((err) => log.error(`auto payment-link for ${orderId}`, { error: String(err) }));
+
+    const now = Date.now();
+    for (const step of ['2h', '24h']) {
+      const delay = step === '2h' ? 2 : 24;
+      void enqueueJob({
+        queueName: 'crm',
+        jobType: 'customer.payment_reminder',
+        dedupeKey: `payment_reminder:${step}:${orderId}`,
+        runAt: new Date(now + delay * 60 * 60 * 1000).toISOString(),
+        payload: { order_id: orderId, customer_phone: customerPhone, step },
+      }).catch(() => {});
+    }
+  } catch { /* non-blocking */ }
 }

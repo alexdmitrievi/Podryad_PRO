@@ -3,6 +3,7 @@ import type { Channel, NormalizedOutgoingMessage, SendResult } from './channels'
 import { completeJob, failJob, type JobPayload, type JobQueueRow } from './job-queue';
 import { getServiceClient } from './supabase';
 import { log } from './logger';
+import { sendCustomerPush, broadcastPush } from './push';
 
 /** Escape Telegram legacy Markdown special characters in user-supplied text. */
 function escapeMd(text: string): string {
@@ -181,6 +182,9 @@ const NURTURE_STEP_LABELS: Record<string, string> = {
   followup_2h: '2 часа назад',
   followup_24h: '24 часа назад',
   followup_72h: '72 часа назад',
+  followup_7d: '7 дней назад',
+  followup_14d: '14 дней назад',
+  followup_30d: '30 дней назад',
 };
 
 function buildNurtureCustomerText(payload: JobPayload): string {
@@ -196,6 +200,12 @@ function buildNurtureCustomerText(payload: JobPayload): string {
       return `📋 Ваша заявка на *${workType}* всё ещё активна.\n\nХотите уточнить детали или назначить время? Просто ответьте на это сообщение.`;
     case 'followup_72h':
       return `🔔 Хотим убедиться, что вы получили помощь с *${workType}*.\n\nГотовы подобрать исполнителя прямо сейчас — ответьте на это сообщение.`;
+    case 'followup_7d':
+      return `🌟 У нас сезонные акции на ${workType.toLowerCase()} и другие услуги!\n\nПосмотрите каталог и актуальные цены: ${appUrl}/catalog/labor`;
+    case 'followup_14d':
+      return `📸 Взгляните на наши недавние проекты — качество работы, которым мы гордимся.\n\n${appUrl}#услуги\n\nНужна помощь? Просто ответьте.`;
+    case 'followup_30d':
+      return `🎁 Специально для вас — *скидка 10% на первый заказ*.\n\nВернитесь и закажите услугу со скидкой: ${appUrl}\n\nПредложение действует 7 дней.`;
     default:
       return `📋 Обновление по вашей заявке на *${workType}*. Свяжитесь с нами, если нужна помощь.`;
   }
@@ -213,6 +223,9 @@ function buildNurtureAdminReminderText(payload: JobPayload): string {
     followup_2h: '⏰',
     followup_24h: '📋',
     followup_72h: '🔔',
+    followup_7d: '🌟',
+    followup_14d: '📸',
+    followup_30d: '🎁',
   };
   const emoji = stepEmoji[step] || '📌';
   return `${emoji} *Nurture: ${stepLabel}*\n\n📞 Телефон: ${phone}${nameLine}\n🔨 Тип работ: ${workType}\n\n👉 Свяжитесь с клиентом вручную (нет подключённого мессенджера).`;
@@ -548,6 +561,130 @@ export async function handleJob(job: Pick<JobQueueRow, 'id' | 'job_type' | 'payl
       const manualText = `📋 *Ручная отправка платёжной ссылки*\n\nЗаказ: ${asString(job.payload.order_id, '—')}\nСсылка: ${dashboardUrl}\n\nОтправьте клиенту ссылку вручную.`;
       await sendOrThrow([{ channel: 'telegram', chat_id: adminChatId, text: manualText }]);
       return { delivered: 1, manual: true };
+    }
+
+    case 'customer.notify_order_priced': {
+      const phone = asString(job.payload.customer_phone);
+      const orderId = asString(job.payload.order_id);
+      const price = formatAmount(job.payload.display_price);
+      const appUrl = getAppUrl();
+      const dashUrl = `${appUrl}/my`;
+      void sendCustomerPush(phone, 'Заказ оценён', `Ваш заказ оценён в ${price}. Перейдите в кабинет для оплаты.`, dashUrl);
+      return { push: true, order_id: orderId };
+    }
+
+    case 'customer.notify_contractor_assigned': {
+      const phone = asString(job.payload.customer_phone);
+      const orderId = asString(job.payload.order_id);
+      const appUrl = getAppUrl();
+      void sendCustomerPush(phone, 'Исполнитель назначен', 'На ваш заказ назначен исполнитель. Скоро с вами свяжутся.', `${appUrl}/my`);
+      return { push: true, order_id: orderId };
+    }
+
+    case 'customer.notify_payment_received': {
+      const phone = asString(job.payload.customer_phone);
+      const orderId = asString(job.payload.order_id);
+      void sendCustomerPush(phone, 'Оплата получена', 'Ваша оплата подтверждена. Исполнитель приступает к работе.');
+      return { push: true, order_id: orderId };
+    }
+
+    case 'customer.notify_work_started': {
+      const phone = asString(job.payload.customer_phone);
+      const orderId = asString(job.payload.order_id);
+      void sendCustomerPush(phone, 'Работа началась', 'Исполнитель приступил к выполнению заказа.');
+      return { push: true, order_id: orderId };
+    }
+
+    case 'customer.notify_work_completed': {
+      const phone = asString(job.payload.customer_phone);
+      const orderId = asString(job.payload.order_id);
+      void sendCustomerPush(phone, 'Заказ завершён', 'Работа по вашему заказу выполнена. Спасибо! Оцените качество в кабинете.');
+      return { push: true, order_id: orderId };
+    }
+
+    case 'customer.payment_reminder': {
+      const phone = asString(job.payload.customer_phone);
+      const orderId = asString(job.payload.order_id);
+      const step = asString(job.payload.step);
+      const delayLabel = step === '2h' ? '2 часа назад' : '24 часа назад';
+      void sendCustomerPush(
+        phone,
+        'Не забудьте оплатить заказ',
+        `Вы получили оценку заказа ${delayLabel}. Перейдите в кабинет для оплаты, чтобы исполнитель приступил к работе.`,
+      );
+      return { push: true, order_id: orderId, step };
+    }
+
+    case 'executor.new_order_available': {
+      const city = asString(job.payload.city);
+      const workType = asString(job.payload.work_type);
+      const displayPrice = formatAmount(job.payload.display_price);
+      const appUrl = getAppUrl();
+      void broadcastPush(
+        'Новый заказ',
+        `Новый заказ: ${workType}, ${city}, ${displayPrice}. Откройте приложение, чтобы откликнуться.`,
+        `${appUrl}/dashboard`,
+      );
+      return { push: true, city, work_type: workType };
+    }
+
+    case 'crm.winback_check': {
+      const db = getServiceClient();
+      const now = new Date();
+      const windows = [
+        { label: '30d', since: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(), before: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000).toISOString() },
+        { label: '60d', since: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString(), before: new Date(now.getTime() - 55 * 24 * 60 * 60 * 1000).toISOString() },
+        { label: '90d', since: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString(), before: new Date(now.getTime() - 85 * 24 * 60 * 60 * 1000).toISOString() },
+      ];
+
+      let sent = 0;
+      for (const win of windows) {
+        const { data: contacts } = await db
+          .from('bot_contacts')
+          .select('id, phone, full_name, city')
+          .not('phone', 'is', null);
+
+        if (!contacts?.length) continue;
+
+        for (const contact of contacts as Array<{ id: string; phone: string; full_name: string | null; city: string | null }>) {
+          const { count } = await db
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .eq('customer_phone', contact.phone)
+            .gte('created_at', win.since)
+            .lt('created_at', win.before)
+            .eq('status', 'completed');
+
+          if ((count ?? 0) === 0) continue;
+
+          const { count: recentCount } = await db
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .eq('customer_phone', contact.phone)
+            .gte('created_at', win.since);
+
+          if ((recentCount ?? 0) > 0) continue;
+
+          const { data: alreadySent } = await db
+            .from('winback_log')
+            .select('id')
+            .eq('contact_id', contact.id)
+            .eq('campaign_type', win.label)
+            .maybeSingle();
+
+          if (alreadySent) continue;
+
+          const name = contact.full_name || 'Клиент';
+          const msg = `👋 ${name}, давно не виделись!\n\nУ нас сезонные скидки на услуги. Закажите прямо сейчас — подберём лучшего исполнителя.\n\n📍 ${contact.city || 'Ваш город'}`;
+          try {
+            await sendOrThrow(getAdminMessages(msg));
+            await db.from('winback_log').insert({ contact_id: contact.id, campaign_type: win.label, channel: 'telegram' });
+            sent++;
+          } catch { /* skip */ }
+        }
+      }
+
+      return { winback_sent: sent };
     }
 
     default:

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const today = new Date().toISOString().slice(0, 10);
 
   await enqueueJob({
     queueName: 'analytics',
@@ -31,6 +31,14 @@ export async function GET(req: NextRequest) {
     payload: { date: today },
     maxAttempts: 3,
   });
+
+  void enqueueJob({
+    queueName: 'crm',
+    jobType: 'crm.winback_check',
+    dedupeKey: `winback:daily:${today}`,
+    payload: { date: today },
+    maxAttempts: 2,
+  }).catch(() => {});
 
   return NextResponse.json({ ok: true, date: today });
 }

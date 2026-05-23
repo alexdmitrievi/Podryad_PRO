@@ -38,7 +38,7 @@ export async function sendPushNotification(
         keys: subscription.keys,
       },
       JSON.stringify(payload),
-      { TTL: 60 * 60 * 24 } // 24 часа
+      { TTL: 60 * 60 * 24 }
     );
     return true;
   } catch (error: unknown) {
@@ -52,12 +52,99 @@ export async function sendPushNotification(
     const message =
       error instanceof Error ? error.message : String(error);
 
-    // 410 Gone = подписка недействительна, нужно удалить
     if (statusCode === 410 || statusCode === 404) {
       log.info('Push subscription expired', { endpointSuffix: subscription.endpoint.slice(-20) });
-      return false; // Вызывающий код должен удалить подписку
+      return false;
     }
     log.error('Push error', { error: message });
     return false;
   }
+}
+
+export async function sendCustomerPush(
+  phone: string,
+  title: string,
+  body: string,
+  url?: string,
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+
+  try {
+    const { getServiceClient } = await import('@/lib/supabase');
+    const db = getServiceClient();
+
+    const { data: tokens } = await db
+      .from('customer_tokens')
+      .select('access_token')
+      .eq('phone', phone);
+
+    if (!tokens?.length) return { sent, failed };
+
+    const tokenValues = tokens.map((t: { access_token: string }) => t.access_token);
+
+    const { data: subs } = await db
+      .from('push_subscriptions')
+      .select('endpoint, p256dh, auth')
+      .in('access_token', tokenValues);
+
+    if (!subs?.length) return { sent, failed };
+
+    for (const sub of subs as Array<{ endpoint: string; p256dh: string; auth: string }>) {
+      const ok = await sendPushNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        { title, body, url },
+      );
+      if (ok) sent++; else failed++;
+    }
+  } catch (err) {
+    log.error('sendCustomerPush failed', { error: String(err) });
+  }
+
+  return { sent, failed };
+}
+
+export async function broadcastPush(
+  title: string,
+  body: string,
+  url?: string,
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+
+  try {
+    const { getServiceClient } = await import('@/lib/supabase');
+    const db = getServiceClient();
+
+    const { data: subs } = await db
+      .from('push_subscriptions')
+      .select('endpoint, p256dh, auth');
+
+    if (!subs?.length) return { sent, failed };
+
+    let concurrency = 0;
+    const MAX_CONCURRENT = 10;
+    const promises: Promise<void>[] = [];
+
+    for (const sub of subs as Array<{ endpoint: string; p256dh: string; auth: string }>) {
+      const p = (async () => {
+        const ok = await sendPushNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          { title, body, url },
+        );
+        if (ok) sent++; else failed++;
+      })();
+      promises.push(p);
+      concurrency++;
+      if (concurrency >= MAX_CONCURRENT) {
+        await Promise.race(promises);
+        concurrency--;
+      }
+    }
+    await Promise.allSettled(promises);
+  } catch (err) {
+    log.error('broadcastPush failed', { error: String(err) });
+  }
+
+  return { sent, failed };
 }

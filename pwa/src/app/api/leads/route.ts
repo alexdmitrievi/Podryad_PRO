@@ -39,6 +39,9 @@ export async function POST(req: NextRequest) {
   }
 
   const { phone, work_type, city, address, messenger, comment, source, name, email, telegram } = body;
+  const utm_source = (body as any).utm_source || null;
+  const utm_medium = (body as any).utm_medium || null;
+  const utm_campaign = (body as any).utm_campaign || null;
 
   // Validate phone: require 10+ digits after stripping
   const digits = stripPhone(phone ?? '');
@@ -73,6 +76,17 @@ export async function POST(req: NextRequest) {
     } catch { /* geocoding is best-effort */ }
   }
 
+  // Lead scoring
+  let score = 0;
+  const { data: existingCustomer } = await db
+    .from('customers')
+    .select('id')
+    .eq('phone', digits)
+    .maybeSingle();
+  if (existingCustomer) score += 20;
+  if (address?.trim()) score += 10;
+  if (digits.length >= 11 && digits.startsWith('7')) score += 5;
+
   const { data: insertedLead, error } = await db.from('leads').insert({
     phone: digits,
     work_type,
@@ -86,6 +100,10 @@ export async function POST(req: NextRequest) {
     name: name?.trim() || null,
     email: email?.trim() || null,
     telegram: telegram?.trim() || null,
+    score,
+    utm_source,
+    utm_medium,
+    utm_campaign,
   }).select('id').single();
 
   if (error) {
@@ -172,6 +190,9 @@ export async function POST(req: NextRequest) {
     { step: 'followup_2h',  runAt: new Date(now + 2  * 60 * 60 * 1000).toISOString(),  dedupeKey: `nurture:2h:${leadId ?? digits}` },
     { step: 'followup_24h', runAt: new Date(now + 24 * 60 * 60 * 1000).toISOString(),  dedupeKey: `nurture:24h:${leadId ?? digits}` },
     { step: 'followup_72h', runAt: new Date(now + 72 * 60 * 60 * 1000).toISOString(),  dedupeKey: `nurture:72h:${leadId ?? digits}` },
+    { step: 'followup_7d',  runAt: new Date(now + 7  * 24 * 60 * 60 * 1000).toISOString(),  dedupeKey: `nurture:7d:${leadId ?? digits}` },
+    { step: 'followup_14d', runAt: new Date(now + 14 * 24 * 60 * 60 * 1000).toISOString(), dedupeKey: `nurture:14d:${leadId ?? digits}` },
+    { step: 'followup_30d', runAt: new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(), dedupeKey: `nurture:30d:${leadId ?? digits}` },
   ];
   for (const step of nurtureSteps) {
     void enqueueJob({
