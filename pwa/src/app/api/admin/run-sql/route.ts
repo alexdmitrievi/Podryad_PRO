@@ -15,6 +15,8 @@ export async function POST(req: NextRequest) {
   if (!verifyPin(pin)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+  const projectRef = 'rnqalafmuyrlfioqdore';
+  const poolerUser = `postgres.${projectRef}`;
 
   const sql = `
 CREATE TABLE IF NOT EXISTS public.invite_accounts (
@@ -35,16 +37,18 @@ CREATE POLICY IF NOT EXISTS "invite_accounts_service_all" ON public.invite_accou
 `;
 
   const configs = [
-    // Try IPv6 direct
-    { host: '2a05:d018:837:ae00:6ccb:2bb5:f790:af24', port: 5432, label: 'IPv6 direct' },
-    // Try API host on Postgres port
-    { host: 'rnqalafmuyrlfioqdore.supabase.co', port: 5432, label: 'API host:5432' },
-    { host: 'rnqalafmuyrlfioqdore.supabase.co', port: 6543, label: 'API host:6543' },
-    // Try various poolers
-    { host: 'aws-0-us-east-1.pooler.supabase.com', port: 6543, label: 'Pooler us-east-1:6543' },
-    { host: 'aws-0-us-east-2.pooler.supabase.com', port: 6543, label: 'Pooler us-east-2:6543' },
-    { host: 'aws-0-eu-west-1.pooler.supabase.com', port: 6543, label: 'Pooler eu-west-1:6543' },
-    { host: 'aws-0-eu-central-1.pooler.supabase.com', port: 5432, label: 'Pooler eu-central-1:5432' },
+    // Pooler connections with projec user
+    { host: 'aws-0-eu-central-1.pooler.supabase.com', port: 6543, user: poolerUser, label: 'Pooler eu-central-1:6543' },
+    { host: 'aws-0-eu-central-1.pooler.supabase.com', port: 5432, user: poolerUser, label: 'Pooler eu-central-1:5432' },
+    { host: 'aws-0-eu-west-1.pooler.supabase.com', port: 6543, user: poolerUser, label: 'Pooler eu-west-1:6543' },
+    { host: 'aws-0-eu-west-2.pooler.supabase.com', port: 6543, user: poolerUser, label: 'Pooler eu-west-2:6543' },
+    { host: 'aws-0-us-east-1.pooler.supabase.com', port: 6543, user: poolerUser, label: 'Pooler us-east-1:6543' },
+    // Direct connection with manual DNS via IPv6
+    { host: '2a05:d018:837:ae00:6ccb:2bb5:f790:af24', port: 5432, user: 'postgres', label: 'IPv6 direct' },
+    // Try API host
+    { host: 'rnqalafmuyrlfioqdore.supabase.co', port: 5432, user: 'postgres', label: 'API host:5432' },
+    // Direct with SNI
+    { host: 'db.rnqalafmuyrlfioqdore.supabase.co', port: 5432, user: 'postgres', label: 'Direct db host:5432' },
   ];
 
   const errors: string[] = [];
@@ -54,7 +58,7 @@ CREATE POLICY IF NOT EXISTS "invite_accounts_service_all" ON public.invite_accou
       const pool = new Pool({
         host: cfg.host,
         port: cfg.port,
-        user: 'postgres',
+        user: cfg.user,
         password: key,
         database: 'postgres',
         ssl: { rejectUnauthorized: false },
@@ -72,7 +76,6 @@ CREATE POLICY IF NOT EXISTS "invite_accounts_service_all" ON public.invite_accou
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`${cfg.label}: ${msg}`);
-      continue;
     }
   }
 
