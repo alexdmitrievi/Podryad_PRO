@@ -25,7 +25,7 @@ async function handleGet(req: NextRequest) {
   const db = getServiceClient();
   const { data, error } = await db
     .from('invite_lists')
-    .select('*')
+    .select('*, inviter_account:inviter_account_id(id, phone, label)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -39,7 +39,17 @@ async function handleGet(req: NextRequest) {
     .eq('id', 1)
     .maybeSingle();
 
-  return NextResponse.json({ lists: data ?? [], worker: worker ?? { is_active: false } });
+  const { data: accounts } = await db
+    .from('invite_accounts')
+    .select('id, phone, label, is_default')
+    .order('is_default', { ascending: false })
+    .order('label', { ascending: true });
+
+  return NextResponse.json({
+    lists: data ?? [],
+    accounts: accounts ?? [],
+    worker: worker ?? { is_active: false },
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -55,6 +65,7 @@ async function handlePost(req: NextRequest) {
   const targetId = String(formData.get('target_id') || '');
   const targetName = String(formData.get('target_name') || '');
   const dailyLimit = parseInt(String(formData.get('daily_limit') || '0'), 10) || 15;
+  const inviterAccountId = String(formData.get('inviter_account_id') || '') || null;
 
   if (!file) {
     return NextResponse.json({ error: 'Файл не загружен' }, { status: 400 });
@@ -102,6 +113,7 @@ async function handlePost(req: NextRequest) {
       total_count: rows.length,
       daily_limit: dailyLimit,
       status: 'draft',
+      inviter_account_id: inviterAccountId || null,
     })
     .select('id')
     .single();
