@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import { headers } from 'next/headers';
 import { Inter, Manrope, Space_Grotesk } from 'next/font/google';
 import DevUnregisterSW from '@/components/DevUnregisterSW';
 import NavWrapper from '@/components/NavWrapper';
@@ -79,19 +78,9 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  let redirectUrl: string | null = null;
-  try {
-    const heads = await headers();
-    const host = heads.get('host') || '';
-    if (host === 'podryadpro.ru' || host === 'www.podryadpro.ru') {
-      redirectUrl = `https://podryad-pro-kohl.vercel.app${heads.get('x-forwarded-path') || ''}`;
-    }
-  } catch {}
-
   return (
     <html lang="ru" className={`${inter.variable} ${manrope.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <head>
-        {redirectUrl && <meta httpEquiv="refresh" content={`0;url=${redirectUrl}`} />}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
