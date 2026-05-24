@@ -7,7 +7,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
     name: 'Подряд PRO',
     short_name: 'Подряд PRO',
     description: 'Закажите работы по дому и участку',
-    start_url: '/?v=2',
+    start_url: '/',
     display: 'standalone',
     orientation: 'any',
     background_color: '#f0f2f5',
@@ -39,7 +39,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
         (request.mode === 'navigate' && !url.pathname.startsWith('/api/')),
       handler: 'StaleWhileRevalidate',
       options: {
-        cacheName: 'pages-v2',
+        cacheName: 'pages',
         expiration: { maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 },
         networkTimeoutSeconds: 5,
       },
@@ -49,7 +49,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       urlPattern: /\/_next\/static\/chunks\/.*\.js$/,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'next-js-v2',
+        cacheName: 'next-js',
         expiration: { maxEntries: 64, maxAgeSeconds: 30 * 24 * 60 * 60 },
       },
     },
@@ -58,7 +58,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       urlPattern: /\/_next\/static\/css\/.*\.css$/,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'next-css-v2',
+        cacheName: 'next-css',
         expiration: { maxEntries: 16, maxAgeSeconds: 7 * 24 * 60 * 60 },
       },
     },
@@ -67,7 +67,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       urlPattern: /\.(?:png|jpg|jpeg|svg|ico|webp|woff2?|eot|ttf|otf)$/,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'static-assets-v2',
+        cacheName: 'static-assets',
         expiration: { maxEntries: 64, maxAgeSeconds: 30 * 24 * 60 * 60 },
         networkTimeoutSeconds: 3,
       },
@@ -95,7 +95,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       urlPattern: /.*/,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'fallback-v2',
+        cacheName: 'fallback',
         expiration: { maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 },
         networkTimeoutSeconds: 5,
       },
