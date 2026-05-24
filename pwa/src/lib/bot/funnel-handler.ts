@@ -155,6 +155,19 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
   if (type === 'message' && screen === 'subscription_confirm') return handleSubscriptionText(text, contactId, chatId, channel, state);
   if (type === 'message' && screen === 'quick_order') return handleQuickOrder(text, contactId, chatId, channel, state, region, event.attachments);
 
+  // ── Smart quick-order detection: recognise service requests even without session state ──
+  if (type === 'message') {
+    const lower = text.toLowerCase().trim();
+    const quickKeywords = ['покос', 'газон', 'мусор', 'сорняк', 'спил', 'вспашк', 'бассейн', 'сварк', 'расчистк', 'уборк', 'прополк', 'стрижк'];
+    if (quickKeywords.some(k => lower.includes(k))) {
+      const qr = await handleQuickOrder(text, contactId, chatId, channel, state, region, event.attachments);
+      if (qr) {
+        const hasConfirm = qr.buttons?.some(row => row.some(b => (b.callback_data || '').startsWith('confirm:')));
+        if (hasConfirm) return qr;
+      }
+    }
+  }
+
   // ── Fallback: help keywords / unknown ──
   if (type === 'message') {
     const lower = text.toLowerCase().trim();
