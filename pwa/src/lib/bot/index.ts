@@ -79,6 +79,8 @@ export {
   getContactRegion,
   setCustomerType,
   getContactCustomerType,
+  getContactProfile,
+  confirmBotOrder,
 } from './order-flow';
 export type { ChannelName } from './order-flow';
 

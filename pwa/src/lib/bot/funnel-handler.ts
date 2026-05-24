@@ -4,7 +4,8 @@ import {
   createBotLead, computeDiscount, applyDiscountToLead,
   listMyAllOrders, getBotOrder, cancelBotOrder, updateBotOrderDate, repeatBotOrder,
   getPriceEstimate, getReferralLink, getReferralStats, recordReferralVisit,
-  setContactRegion, getContactRegion, setCustomerType, getContactCustomerType, notifyN8n,
+  setContactRegion, getContactProfile, setCustomerType, getContactCustomerType, notifyN8n,
+  confirmBotOrder,
 } from './index';
 import { createMaterialOrder } from './order-flow';
 import {
@@ -94,11 +95,16 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
   try { session = await getOrCreateSession(chatId, channel, contactId); } catch { session = null; }
 
   let state: SessionState = (session?.state ?? {}) as SessionState;
-  if (!state.region) {
-    try { state = { ...state, region: await getContactRegion(contactId) }; } catch { state = { ...state, region: 'omsk' }; }
-  }
-  if (!state.customerType) {
-    try { state = { ...state, customerType: await getContactCustomerType(contactId) }; } catch { /* ok */ }
+
+  // Single query for region + customer_type (was 2 DB calls)
+  if (!state.region || !state.customerType) {
+    try {
+      const profile = await getContactProfile(contactId);
+      if (!state.region) state = { ...state, region: profile.region };
+      if (!state.customerType && profile.customerType) state = { ...state, customerType: profile.customerType };
+    } catch {
+      if (!state.region) state = { ...state, region: 'omsk' };
+    }
   }
   const screen = state.screen ?? 'home';
   const region = state.region ?? 'omsk';
@@ -585,20 +591,19 @@ async function handleCallback(
 
       let leadId: string;
       try {
-        leadId = await createBotLead({
+        const result = await confirmBotOrder({
           contactId, serviceKind: sk, channel,
           description: state.description,
           areaValue: area, areaUnit: state.areaUnit ?? 'сотка',
           district: `${REGION_LABEL[region]}, ${state.district ?? ''}`,
-          discountPercent, discountRub: 0,
+          discountPercent,
+          bonusRub,
+          chatId,
         });
+        leadId = result.leadId;
       } catch (err) {
-        log.error('[funnel-handler] createBotLead failed', { error: String(err), contactId, serviceKind: sk });
+        log.error('[funnel-handler] confirmBotOrder failed', { error: String(err), contactId, serviceKind: sk });
         return { text: '❌ Не удалось создать заявку. Попробуйте позже.', buttons: backToHomeButton() };
-      }
-
-      try { await applyDiscountToLead(contactId, leadId, discountPercent, bonusRub); } catch (err) {
-        log.error('[funnel-handler] applyDiscountToLead failed', { error: String(err), leadId, discountPercent, bonusRub });
       }
 
       const humanId = `B-${leadId.slice(0, 6).toUpperCase()}`;
@@ -631,7 +636,6 @@ async function handleCallback(
         `\n<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru'}/admin">Открыть админку</a>`
       );
 
-      await clearSession(chatId, channel);
       const thanksText = isB2b(state)
         ? `🤝 <b>Запрос #${humanId} принят</b>\n\nУслуга: ${SERVICE_LABEL[sk]}\n${state.whenHuman ? `Когда: ${state.whenHuman}\n` : ''}Менеджер подготовит КП в течение часа.`
         : UI.thanks({ humanId, service: SERVICE_LABEL[sk], when: state.whenHuman, district: `${REGION_LABEL[region]}, ${state.district ?? ''}` });

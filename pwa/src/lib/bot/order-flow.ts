@@ -144,6 +144,58 @@ export async function getContactCustomerType(contactId: string): Promise<'b2c' |
   return (ct === 'b2c' || ct === 'b2b') ? ct : undefined;
 }
 
+/** Single-query contact profile (region + customer_type) — saves 1 HTTP roundtrip. */
+export async function getContactProfile(contactId: string): Promise<{
+  region: RegionCode;
+  customerType?: 'b2c' | 'b2b';
+}> {
+  const { data } = await getServiceClient()
+    .from('bot_contacts')
+    .select('region, customer_type')
+    .eq('id', contactId)
+    .maybeSingle();
+  const row = (data as { region?: string; customer_type?: string } | null) ?? {};
+  const ct = row.customer_type === 'b2c' || row.customer_type === 'b2b'
+    ? (row.customer_type as 'b2c' | 'b2b')
+    : undefined;
+  return {
+    region: row.region === 'novosibirsk' ? 'novosibirsk' : 'omsk',
+    customerType: ct,
+  };
+}
+
+/** Consolidated confirm — replaces createBotLead + applyDiscountToLead + clearSession in one RPC. */
+export async function confirmBotOrder(params: {
+  contactId: string;
+  serviceKind: BotServiceKind;
+  channel: ChannelName;
+  description?: string;
+  areaValue?: number;
+  areaUnit?: string;
+  district?: string;
+  discountPercent?: number;
+  bonusRub?: number;
+  chatId?: string;
+}): Promise<{ leadId: string; usedBonus: number }> {
+  const result = await rpc<{ lead_id: string; used_bonus: number }>('confirm_bot_order', {
+    p_contact_id: params.contactId,
+    p_service_kind: params.serviceKind,
+    p_channel: params.channel,
+    p_description: params.description ?? null,
+    p_area_value: params.areaValue ?? null,
+    p_area_unit: params.areaUnit ?? null,
+    p_district: params.district ?? null,
+    p_discount_percent: params.discountPercent ?? 0,
+    p_bonus_rub: Math.min(params.bonusRub ?? 0, PER_ORDER_BONUS_CAP),
+    p_chat_id: params.chatId ?? null,
+  });
+  const row = Array.isArray(result) ? (result[0] as Record<string, unknown>) : (result as Record<string, unknown>);
+  return {
+    leadId: String(row.lead_id ?? ''),
+    usedBonus: Number(row.used_bonus ?? 0),
+  };
+}
+
 /** Set customer_type via direct UPDATE (no dedicated RPC in current schema). */
 export async function setCustomerType(contactId: string, ct: 'b2c' | 'b2b'): Promise<void> {
   const { error } = await getServiceClient()
