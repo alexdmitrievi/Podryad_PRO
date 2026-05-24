@@ -19,13 +19,19 @@ function timingSafeSecretCompare(a: string, b: string): boolean {
   try { return timingSafeEqual(Buffer.from(a), Buffer.from(b)); } catch { return false; }
 }
 
-/** Send message directly to Telegram. */
-async function tgSend(chatId: string, text: string, buttons?: Array<Array<{ text: string; data: string }>>): Promise<boolean> {
+/** Send message directly to Telegram. Supports callback_data, url, and web_app buttons. */
+async function tgSend(chatId: string, text: string, buttons?: Array<Array<{ text: string; data?: string; url?: string; web_app?: { url: string } }>>): Promise<boolean> {
   if (!BOT_TOKEN) return false;
   try {
     const body: Record<string, unknown> = { chat_id: chatId, text, parse_mode: 'HTML' };
     if (buttons?.length) {
-      body.reply_markup = { inline_keyboard: buttons.map(row => row.map(b => ({ text: b.text, callback_data: b.data }))) };
+      body.reply_markup = { inline_keyboard: buttons.map(row =>
+        row.map(b => {
+          if (b.web_app) return { text: b.text, web_app: b.web_app };
+          if (b.url) return { text: b.text, url: b.url };
+          return { text: b.text, callback_data: b.data ?? '' };
+        })
+      )};
     }
     const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -34,6 +40,16 @@ async function tgSend(chatId: string, text: string, buttons?: Array<Array<{ text
     return j.ok;
   } catch (e) { log.error('[tgSend] failed', { error: String(e) }); return false; }
 }
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
+
+const START_BUTTONS: Array<Array<{ text: string; url?: string; data?: string; web_app?: { url: string } }>> = [
+  [{ text: '🚀 Создать заказ', url: `${APP_URL}/order/new` }],
+  [{ text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` }],
+  [{ text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` }],
+  [{ text: '🛠 Мини-приложение', web_app: { url: `${APP_URL}/tg-app` } }],
+  [{ text: '📋 Чат-заказ', data: 'menu:services' }],
+];
 
 const REGION_BUTTONS = [[{ text: '📍 Омск', data: 'region:omsk' }, { text: '📍 Новосибирск', data: 'region:novosibirsk' }]];
 const CTYPE_BUTTONS = [[{ text: '🏡 Для частного дома', data: 'ctype:b2c' }], [{ text: '🏗 Для компании / стройки', data: 'ctype:b2b' }]];
@@ -84,7 +100,7 @@ export async function POST(req: NextRequest) {
   // ── FAST PATH: simple onboarding ──
 
   if (isCommand && text === '/start') {
-    await tgSend(chatId, '👋 Здравствуйте!\n\nЯ — бот «Подряд PRO». Помогаю быстро заказать работы по дому и участку, стройматериалы.\n\n📍 <b>В каком городе вы находитесь?</b>', REGION_BUTTONS);
+    await tgSend(chatId, '👋 Здравствуйте!\n\nЯ — бот «Подряд PRO». Помогаю быстро заказать работы по дому и участку, стройматериалы.\n\nВыберите действие:', START_BUTTONS);
     return logAndReturn(t0, 'start');
   }
 
