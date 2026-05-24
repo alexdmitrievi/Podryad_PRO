@@ -54,6 +54,7 @@ function mapButtons(buttons: Array<Array<{ type: string; text: string; url?: str
 }
 
 export async function POST(req: NextRequest) {
+  try {
   const t0 = Date.now();
 
   const config = getTelegramConfig();
@@ -144,6 +145,10 @@ export async function POST(req: NextRequest) {
   }
 
   return logAndReturn(t0, 'funneled');
+  } catch (err) {
+    log.error('[TG] unhandled error', { error: String(err), stack: (err as Error)?.stack });
+    return NextResponse.json({ error: String(err), stack: (err as Error)?.stack?.slice(0, 500) }, { status: 500 });
+  }
 }
 
 function logAndReturn(t0: number, step: string) {

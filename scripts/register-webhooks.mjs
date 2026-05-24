@@ -7,6 +7,7 @@
  *   dotenv -e pwa/.env.local -- node scripts/register-webhooks.mjs
  *   dotenv -e pwa/.env.local -- node scripts/register-webhooks.mjs --telegram-only
  *   dotenv -e pwa/.env.local -- node scripts/register-webhooks.mjs --max-only
+ *   dotenv -e pwa/.env.local -- node scripts/register-webhooks.mjs --skip-telegram
  *   dotenv -e pwa/.env.local -- node scripts/register-webhooks.mjs --check
  *
  * Required env vars:
@@ -26,6 +27,7 @@ const MAX_API_BASE = process.env.MAX_API_BASE || 'https://platform-api.max.ru';
 
 const TELEGRAM_ONLY = process.argv.includes('--telegram-only');
 const MAX_ONLY = process.argv.includes('--max-only');
+const SKIP_TELEGRAM = process.argv.includes('--skip-telegram');
 const CHECK_ONLY = process.argv.includes('--check');
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -193,6 +195,21 @@ async function checkAll() {
   }
 }
 
+async function telegramDeleteWebhook() {
+  if (!TG_TOKEN) return { ok: false, error: 'TELEGRAM_BOT_TOKEN not set' };
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/deleteWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ drop_pending_updates: false }),
+    });
+    const json = await res.json();
+    return json;
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
 async function registerAll() {
   console.log(DRY_RUN ? '🔍 DRY RUN — no changes will be made\n' : '🚀 Registering webhooks...\n');
 
@@ -202,6 +219,15 @@ async function registerAll() {
     if (!TG_TOKEN) {
       console.log('❌ TELEGRAM_BOT_TOKEN is not set. Skipping Telegram.');
       exitCode = 1;
+    } else if (SKIP_TELEGRAM) {
+      console.log('   --skip-telegram: deleting webhook (long-polling on VPS)');
+      if (!DRY_RUN) {
+        const delResult = await telegramDeleteWebhook();
+        if (delResult.ok) console.log('   ✅ Webhook deleted — long-poll proxy will receive updates');
+        else console.log('   ⚠️  Delete failed:', delResult.description || delResult.error);
+      } else {
+        console.log('   [DRY RUN] Would delete webhook');
+      }
     } else {
       const tgMe = await telegramGetMe();
       if (!tgMe.ok) {
