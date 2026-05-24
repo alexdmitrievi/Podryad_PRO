@@ -6,7 +6,7 @@ import {
 } from './funnel-state';
 import type { BotServiceKind, MaterialKind, RegionCode, SubscriptionPlanCode, SessionState } from './types';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryad-pro-kohl.vercel.app';
 
 const BACK_BTN: MessageButton = { type: 'callback', text: '◀️ Назад', callback_data: 'nav:back' };
 const HOME_BTN: MessageButton = { type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' };
