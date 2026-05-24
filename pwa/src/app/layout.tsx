@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     title: 'Подряд PRO',
     description: 'Закажите работы по дому и участку',
     type: 'website',
-    url: 'https://podryadpro.ru',
+    url: 'https://podryad-pro-kohl.vercel.app',
     siteName: 'Подряд PRO',
   },
   twitter: {
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     title: 'Подряд PRO',
     description: 'Закажите работы по дому и участку',
   },
-  alternates: { canonical: 'https://podryadpro.ru' },
+  alternates: { canonical: 'https://podryad-pro-kohl.vercel.app' },
   robots: 'index, follow',
   icons: {
     icon: [
