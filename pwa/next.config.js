@@ -106,9 +106,6 @@ const withPWA = require('@ducanh2912/next-pwa').default({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: __dirname,
-  assetPrefix: process.env.VERCEL_ENV === 'production'
-    ? 'https://podryad-pro-kohl.vercel.app'
-    : undefined,
   reactStrictMode: true,
   experimental: {
     optimizePackageImports: ['lucide-react'],

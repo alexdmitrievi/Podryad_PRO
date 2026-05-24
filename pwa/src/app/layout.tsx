@@ -93,6 +93,19 @@ export default async function RootLayout({
       <head>
         {redirectUrl && <meta httpEquiv="refresh" content={`0;url=${redirectUrl}`} />}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: `
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              for (var i = 0; i < regs.length; i++) {
+                try { regs[i].unregister(); } catch(e) {}
+              }
+              if (regs.length > 0 && !window.__sw_cleared) {
+                window.__sw_cleared = true;
+                window.location.reload();
+              }
+            });
+          }
+        `}} />
         <meta name="theme-color" content="#2F5BFF" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
