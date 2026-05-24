@@ -1,11 +1,11 @@
 // Bot funnel event handler — processes callback_data and free-text in funnel context
 import {
-  getBotContact, getOrCreateSession, setSessionState, clearSession,
+  getOrCreateSession, setSessionState, clearSession,
   createBotLead, computeDiscount, applyDiscountToLead,
   listMyAllOrders, getBotOrder, cancelBotOrder, updateBotOrderDate, repeatBotOrder,
   getPriceEstimate, getReferralLink, getReferralStats, recordReferralVisit,
-  setContactRegion, getContactProfile, setCustomerType, getContactCustomerType, notifyN8n,
-  confirmBotOrder,
+  setContactRegion, setCustomerType, getContactCustomerType, notifyN8n,
+  confirmBotOrder, resolveBotContext,
 } from './index';
 import { createMaterialOrder } from './order-flow';
 import {
@@ -82,37 +82,32 @@ function isB2b(state: SessionState): boolean {
 export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelResponse | null> {
   const { channel, chatId, userId, text, type } = event;
 
-  let contact: { contactId: string; identityId: string; isNew: boolean } | null = null;
+  // Single RPC: contact + session + profile (was 3 separate calls)
+  let ctx: { contactId: string; isNew: boolean; region: RegionCode; customerType: CustomerType | undefined; session: Record<string, unknown> };
   try {
-    contact = await getBotContact(channel, userId, event.username, event.displayName);
+    const raw = await resolveBotContext({
+      channel, externalId: userId, chatId,
+      username: event.username, displayName: event.displayName,
+    });
+    ctx = { contactId: raw.contactId, isNew: raw.isNew, region: raw.region, customerType: raw.customerType, session: raw.session as unknown as Record<string, unknown> };
   } catch (err) {
-    log.error('[funnel-handler] getBotContact failed', { error: String(err) });
+    log.error('[funnel-handler] resolveBotContext failed', { error: String(err) });
     return null;
   }
-  const { contactId } = contact;
+  const { contactId } = ctx;
 
-  let session;
-  try { session = await getOrCreateSession(chatId, channel, contactId); } catch { session = null; }
-
-  let state: SessionState = (session?.state ?? {}) as SessionState;
-
-  // Single query for region + customer_type (was 2 DB calls)
-  if (!state.region || !state.customerType) {
-    try {
-      const profile = await getContactProfile(contactId);
-      if (!state.region) state = { ...state, region: profile.region };
-      if (!state.customerType && profile.customerType) state = { ...state, customerType: profile.customerType };
-    } catch {
-      if (!state.region) state = { ...state, region: 'omsk' };
-    }
-  }
+  let state: SessionState = ((ctx.session?.state ?? {}) as SessionState);
+  // Default from context profile (skip region/customer-type picker steps for speed)
+  if (!state.region) state = { ...state, region: ctx.region };
+  if (!state.customerType && ctx.customerType) state = { ...state, customerType: ctx.customerType };
+  if (!state.customerType) state = { ...state, customerType: 'b2c' };
   const screen = state.screen ?? 'home';
   const region = state.region ?? 'omsk';
 
   // ── Handle callbacks ──
   if (type === 'callback') {
     try {
-      return await handleCallback(text, contactId, chatId, channel, state, event, contact.isNew);
+      return await handleCallback(text, contactId, chatId, channel, state, event, ctx.isNew);
     } catch (err) {
       log.error('[funnel-handler] handleCallback threw', { error: String(err), text });
       return { text: '⚠️ Произошёл сбой. Попробуйте ещё раз.\n\n' + UI.homeMenu, buttons: homeFor(region, state.customerType) };
@@ -131,12 +126,12 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
       if (referrerName) {
         return { text: UI.referralActivated(referrerName), buttons: [...regionButtons(), [{ type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' }]] };
       }
-      return regionOrTypeOrHome(state, contact.isNew, event.displayName);
+      return customerTypeOrHome(state, ctx.isNew, event.displayName);
     }
 
     if (cmd === '/start') {
       await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home' });
-      return regionOrTypeOrHome(state, contact.isNew, event.displayName);
+      return customerTypeOrHome(state, ctx.isNew, event.displayName);
     }
 
     if (cmd === '/cancel') {
@@ -292,22 +287,17 @@ async function handleQuickOrder(
   };
 }
 
-/** Region first, then customer type, then main menu. */
-function regionOrTypeOrHome(state: SessionState, isNew: boolean, displayName?: string): FunnelResponse {
-  if (!state.regionPicked) {
-    return { text: UI.askRegion(displayName), buttons: regionButtons() };
-  }
-  return customerTypeOrHome(state, isNew, displayName);
+/** Skip region/ctype picker — defaults applied, main menu immediately. */
+function regionOrTypeOrHome(state: SessionState, _isNew: boolean, displayName?: string): FunnelResponse {
+  return customerTypeOrHome(state, _isNew, displayName);
 }
 
-/** If customer type not set, show picker; otherwise main menu. */
+/** Skip customer-type picker — B2C default, main menu immediately. */
 function customerTypeOrHome(state: SessionState, _isNew: boolean, displayName?: string): FunnelResponse {
-  if (!state.ctypePicked) {
-    return { text: UI.askCustomerType(displayName), buttons: customerTypeButtons() };
-  }
   const region = state.region ?? 'omsk';
-  const menu = homeFor(region, state.customerType);
-  const text = state.customerType === 'b2b' ? UI.homeWelcomeB2b(displayName) : UI.homeWelcome(displayName);
+  if (!state.ctypePicked) state = { ...state, ctypePicked: true };
+  const menu = homeFor(region, state.customerType ?? 'b2c');
+  const text = (state.customerType ?? 'b2c') === 'b2b' ? UI.homeWelcomeB2b(displayName) : UI.homeWelcome(displayName);
   return { text, buttons: menu };
 }
 
@@ -477,8 +467,8 @@ async function handleCallback(
       await setSessionState(chatId, channel, 'order', 'params', next);
       return { text: `<b>${SERVICE_LABEL[kind]}</b>\n\nОцените площадь участка:`, buttons: areaButtons(kind) };
     }
-    await setSessionState(chatId, channel, 'order', 'district', { ...next, area: 1, areaUnit: 'шт' });
-    return { text: UI.askDistrict, buttons: districtButtons() };
+    await setSessionState(chatId, channel, 'order', 'when', { ...next, area: 1, areaUnit: 'шт', district: REGION_LABEL[region] });
+    return { text: UI.askWhen, buttons: whenButtons() };
   }
 
   // ── Area selection ──
@@ -489,13 +479,14 @@ async function handleCallback(
       return { text: 'Напишите точную площадь в сотках (например, «15» или «3.5»):' };
     }
     const avgArea = Math.round((parsed.min + parsed.max) / 2) || parsed.max;
-    await setSessionState(chatId, channel, 'order', 'district', {
-      ...state, screen: 'order', area: avgArea, areaUnit: parsed.unit, areaBucket: parsed.bucket,
+    // Skip district — go straight to when
+    await setSessionState(chatId, channel, 'order', 'when', {
+      ...state, screen: 'order', area: avgArea, areaUnit: parsed.unit, areaBucket: parsed.bucket, district: REGION_LABEL[region],
     });
-    return { text: UI.askDistrict, buttons: districtButtons() };
+    return { text: UI.askWhen, buttons: whenButtons() };
   }
 
-  // ── District → when ──
+  // ── District → when (kept for subscription flow and backwards compat) ──
   if (data.startsWith('district:')) {
     const code = data.slice(9);
     const name = districtName(code) ?? code;
@@ -506,6 +497,7 @@ async function handleCallback(
       });
       return { text: 'Напишите адрес (улица, дом).' };
     }
+    // Direct path: district → when (kept for links/backwards compat)
     await setSessionState(chatId, channel, 'order', 'when', {
       ...state, screen: 'order', district: name, districtCode: code,
     });
@@ -515,6 +507,30 @@ async function handleCallback(
   // ── When → confirm (services + materials share when: scope) ──
   if (data.startsWith('when:')) {
     const label = data.slice(5);
+    if (label === 'asap') {
+      // No date — skip directly to confirm
+      const sk = state.serviceKind!; const area = state.area || 1;
+      const price = await getPriceEstimate(sk, area, region);
+      let discountPercent = 0, bonusRub = 0;
+      try { const d = await computeDiscount(contactId); discountPercent = d.percent; bonusRub = d.bonusRub; } catch { /* ok */ }
+      const final = applyDiscountToRange(price, discountPercent, Math.min(bonusRub, 500));
+      await setSessionState(chatId, channel, 'order', 'confirm', {
+        ...state, screen: 'order', whenLabel: 'asap', whenHuman: undefined,
+        whenFrom: undefined, whenTo: undefined, discountPercent, bonusRub: Math.min(bonusRub, 500),
+      });
+      return {
+        text: UI.confirm({
+          service: SERVICE_LABEL[sk],
+          area: state.areaBucket
+            ? `${state.areaBucket === '5' ? 'до 5' : state.areaBucket === '10' ? '5–10' : state.areaBucket === '20' ? '10–20' : '20+'} соток`
+            : `${area} ${state.areaUnit ?? 'сотка'}`,
+          district: REGION_LABEL[region],
+          when: 'Как можно скорее', priceLow: price.low, priceHigh: price.high,
+          discountPercent, bonusRub: 0, finalLow: final.low, finalHigh: final.high,
+        }),
+        buttons: confirmButtons(isB2b(state)),
+      };
+    }
     if (label === 'custom') {
       // Stay in current screen so handleFunnelText / handleMaterialText catches the date
       return { text: 'Напишите удобную дату (например, «15 мая»):' };

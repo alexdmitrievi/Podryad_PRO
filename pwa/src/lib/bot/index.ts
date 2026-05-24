@@ -92,3 +92,6 @@ export {
 } from './loyalty';
 
 export { rpc, query, querySingle, insert, update as dbUpdate } from './supabase';
+
+export { resolveBotContext } from './context';
+export type { BotContext } from './context';

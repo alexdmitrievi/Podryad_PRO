@@ -171,6 +171,9 @@ export function districtButtons(): MessageButton[][] {
 export function whenButtons(): MessageButton[][] {
   return [
     [
+      { type: 'callback', text: 'Как можно скорее', callback_data: 'when:asap' },
+    ],
+    [
       { type: 'callback', text: 'Сегодня', callback_data: 'when:today' },
       { type: 'callback', text: 'Завтра', callback_data: 'when:tomorrow' },
     ],
