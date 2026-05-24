@@ -8,7 +8,7 @@ import { getChannelRouter } from '@/lib/channels';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 25;
+export const maxDuration = 60;
 
 const CHANNEL = 'telegram' as const;
 const mapper = new TelegramMapper();

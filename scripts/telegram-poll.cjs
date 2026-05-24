@@ -325,6 +325,13 @@ function processUpdates(updates, index) {
 
   if (cbid) tgPost('/answerCallbackQuery', { callback_query_id: cbid }, function(){});
 
+  // Show instant loading feedback for callbacks (Supabase Free Tier is slow, Vercel may take 15-20s)
+  if (cbid) {
+    var loadingText = '\u23f3 \u041e\u0431\u0440\u0430\u0431\u0430\u0442\u044b\u0432\u0430\u044e...\n\u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u043f\u043e\u0434\u043e\u0436\u0434\u0438\u0442\u0435.';
+    var chatId = extractChatId(update);
+    if (chatId) sendMessage(chatId, loadingText);
+  }
+
   postJSON(WEBHOOK_URL, update, { 'x-telegram-bot-api-secret-token': WEBHOOK_SECRET }, function(err, status, body) {
     if (err) log('[fwd] ' + kind + ' Error:', err.message);
     else if (status !== 200) log('[fwd] ' + kind + ' HTTP ' + status + ': ' + body.slice(0, 200));
