@@ -6,7 +6,7 @@
 var https = require('https');
 
 var TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-var WEBHOOK_URL = process.env.TELEGRAM_WEBHOOK_URL || 'https://podryad-pro-kohl.vercel.app/api/telegram/webhook';
+var WEBHOOK_URL = process.env.TELEGRAM_WEBHOOK_URL || 'http://localhost:3000/api/telegram/webhook';
 var WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
 var API_BASE = 'https://api.telegram.org';
 var offset = 0;
@@ -102,7 +102,7 @@ var NAV_ROW = [
   { text: '\uD83C\uDFE0 \u0412 \u043c\u0435\u043d\u044e', callback_data: 'nav:home' }
 ];
 
-var APP_URL = 'https://podryad-pro-kohl.vercel.app';
+var APP_URL = 'https://podryadpro.ru';
 
 var START_BUTTONS = [
   [{ text: '\uD83D\uDE80 \u0421\u043e\u0437\u0434\u0430\u0442\u044c \u0437\u0430\u043a\u0430\u0437', url: APP_URL + '/order/new' }],

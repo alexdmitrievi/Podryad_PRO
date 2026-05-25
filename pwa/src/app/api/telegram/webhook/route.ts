@@ -41,7 +41,7 @@ async function tgSend(chatId: string, text: string, buttons?: Array<Array<{ text
   } catch (e) { log.error('[tgSend] failed', { error: String(e) }); return false; }
 }
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryad-pro-kohl.vercel.app';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru';
 
 const START_BUTTONS: Array<Array<{ text: string; url?: string; data?: string; web_app?: { url: string } }>> = [
   [{ text: '🚀 Создать заказ', url: `${APP_URL}/order/new` }],

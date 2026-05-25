@@ -6,7 +6,7 @@ var https = require('https');
 var url = require('url');
 
 var TOKEN = process.env.MAX_BOT_TOKEN || 'f9LHodD0cOKYOJZ3PlLNERjdxkhwkbwqg8aP6T5zxMSlBdxybafZC1cB73jmDquo-KLlMOUGcVHQmx3PMhsN';
-var WEBHOOK_URL = process.env.MAX_WEBHOOK_URL || 'https://podryad-pro-kohl.vercel.app/api/max/webhook';
+var WEBHOOK_URL = process.env.MAX_WEBHOOK_URL || 'http://localhost:3000/api/max/webhook';
 var WEBHOOK_SECRET = process.env.MAX_WEBHOOK_SECRET || 'c5d8f23a1da89ca4b25c5a83171e3538858e3cc51b2ceb9d235cd669d49ce30c';
 var API_BASE = 'https://platform-api.max.ru';
 var APP_URL = 'https://podryadpro.ru';
