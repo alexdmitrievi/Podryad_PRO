@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Подряд PRO</title>
+<style>
+:root {
+  --bg: #f0f2f5;
+  --card-bg: #fff;
+  --text: #1a1a1a;
+  --text-secondary: #888;
+  --header-gradient: linear-gradient(135deg, #2F5BFF, #6C5CE7);
+  --btn-primary-bg: #2F5BFF;
+  --btn-primary-text: #fff;
+  --btn-secondary-bg: #fff;
+  --btn-secondary-text: #2F5BFF;
+  --btn-secondary-border: #2F5BFF;
+  --card-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  --card-hover-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  --service-card-bg: #fff;
+  --service-name-color: #444;
+  --badge-gradient: linear-gradient(135deg, #F59E0B, #EF4444);
+  --badge-text: #fff;
+  --footer-color: #aaa;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%}
+.header{background:var(--header-gradient);padding:20px 16px 28px;color:#fff;text-align:center}
+.header h1{font-size:20px}.header p{font-size:13px;opacity:0.9;margin-top:4px}
+.user-card{background:var(--card-bg);border-radius:16px;padding:14px 16px;margin:-12px 16px 12px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:12px;position:relative;z-index:2;transition:box-shadow 0.2s}
+.user-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#2F5BFF,#6C5CE7);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+.user-name{font-weight:600;font-size:15px}.user-sub{font-size:12px;color:var(--text-secondary)}
+.actions{padding:8px 16px;display:grid;gap:10px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;border:none;width:100%;transition:transform 0.15s,opacity 0.15s;text-decoration:none}
+.btn:active{transform:scale(0.97);opacity:0.85}
+.btn-primary{background:var(--btn-primary-bg);color:var(--btn-primary-text)}
+.btn-secondary{background:var(--btn-secondary-bg);color:var(--btn-secondary-text);border:2px solid var(--btn-secondary-border)}
+.section-title{padding:12px 16px 4px;font-size:14px;font-weight:700;color:#555;display:flex;align-items:center;gap:6px}
+.section-title .badge{font-size:11px;background:var(--badge-gradient);color:var(--badge-text);padding:3px 8px;border-radius:10px;font-weight:600}
+.service-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 16px 16px}
+.service-card{background:var(--service-card-bg);border-radius:14px;padding:14px 10px;box-shadow:0 1px 6px rgba(0,0,0,0.06);text-align:center;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;position:relative;overflow:hidden}
+.service-card:active{transform:scale(0.95)}
+.service-icon{font-size:28px;margin-bottom:6px;display:inline-block;transition:transform 0.2s}
+.service-card:active .service-icon{transform:scale(1.2)}
+.service-name{font-size:12px;font-weight:600;color:var(--service-name-color)}
+.materials-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:4px 16px 16px}
+.material-card{background:var(--service-card-bg);border-radius:14px;padding:12px 8px;box-shadow:0 1px 6px rgba(0,0,0,0.06);text-align:center;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s}
+.material-card:active{transform:scale(0.95)}
+.material-icon{font-size:24px;margin-bottom:4px;display:inline-block;transition:transform 0.2s}
+.material-card:active .material-icon{transform:scale(1.2) rotate(10deg)}
+.material-name{font-size:11px;font-weight:600;color:var(--service-name-color)}
+.footer{text-align:center;padding:20px 16px;color:var(--footer-color);font-size:11px}
+.loading{text-align:center;padding:40px}
+.spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#2F5BFF;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes floatIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.card-animate{animation:floatIn 0.4s ease backwards}
+.card-animate:nth-child(1){animation-delay:0.05s}
+.card-animate:nth-child(2){animation-delay:0.1s}
+.card-animate:nth-child(3){animation-delay:0.15s}
+.card-animate:nth-child(4){animation-delay:0.2s}
+.card-animate:nth-child(5){animation-delay:0.25s}
+.card-animate:nth-child(6){animation-delay:0.3s}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading"><div class="spinner"></div><p>Загрузка...</p></div></div>
+
+<script>
+(function(){
+var APP_URL = 'https://podryadpro.ru';
+var bridgeReady = false;
+var tg = null;
+
+function detectTelegram() {
+  try {
+    if (window.Telegram && window.Telegram.WebApp) {
+      tg = window.Telegram.WebApp;
+      tg.ready();
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+function applyTheme() {
+  if (!tg) return;
+  try {
+    var p = tg.themeParams;
+    if (!p) return;
+    var root = document.documentElement.style;
+    var isDark = tg.colorScheme === 'dark';
+    root.setProperty('--bg', p.secondary_bg_color || (isDark ? '#1c1c1e' : '#f0f2f5'));
+    root.setProperty('--card-bg', p.bg_color || (isDark ? '#2c2c2e' : '#fff'));
+    root.setProperty('--text', p.text_color || (isDark ? '#f5f5f5' : '#1a1a1a'));
+    root.setProperty('--text-secondary', p.hint_color || (isDark ? '#8e8e93' : '#888'));
+    root.setProperty('--btn-primary-bg', p.button_color || '#2F5BFF');
+    root.setProperty('--btn-primary-text', p.button_text_color || '#fff');
+    root.setProperty('--service-card-bg', p.bg_color || (isDark ? '#2c2c2e' : '#fff'));
+    root.setProperty('--footer-color', p.hint_color || (isDark ? '#636366' : '#aaa'));
+    if (isDark) {
+      root.setProperty('--card-shadow', '0 2px 12px rgba(0,0,0,0.3)');
+      root.setProperty('--btn-secondary-bg', p.bg_color || '#2c2c2e');
+      root.setProperty('--btn-secondary-text', p.button_color || '#5B8FF9');
+    }
+  } catch(e) {}
+}
+
+function render(user) {
+  var el = document.getElementById('app');
+  var name = user ? (user.first_name || 'Пользователь') : 'Гость';
+  if (user && user.last_name) name += ' ' + user.last_name;
+  var avatar = (name[0] || 'П').toUpperCase();
+  var sub = user ? (user.username ? '@' + user.username : 'ID: ' + user.id) : 'Запустите через Telegram';
+
+  el.innerHTML =
+    '<div class="header"><h1>🏗️ Подряд PRO</h1><p>Закажите работы по дому и участку</p></div>' +
+    '<div class="user-card"><div class="user-avatar">' + avatar + '</div><div><div class="user-name">' + esc(name) + '</div><div class="user-sub">' + sub + '</div></div></div>' +
+    '<div class="actions">' +
+      '<button class="btn btn-primary card-animate" onclick="openLink(\'' + APP_URL + '/order/new\')">🚀 Создать заказ</button>' +
+      '<button class="btn btn-secondary card-animate" onclick="openLink(\'' + APP_URL + '/executor/register\')">👷 Стать исполнителем</button>' +
+    '</div>' +
+    '<div class="section-title">Популярные услуги</div>' +
+    '<div class="service-grid">' +
+      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><span class="service-icon">🌿</span><div class="service-name">Покос газона</div></div>' +
+      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><span class="service-icon">🚜</span><div class="service-name">Расчистка участка</div></div>' +
+      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><span class="service-icon">🪓</span><div class="service-name">Валка деревьев</div></div>' +
+      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="service-icon">🧱</span><div class="service-name">Материалы</div></div>' +
+    '</div>' +
+    '<div class="section-title"><span class="badge">Выгодно</span> Материалы от Подряд PRO</div>' +
+    '<div class="materials-grid">' +
+      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🏖️</span><div class="material-name">Песок</div></div>' +
+      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🪨</span><div class="material-name">Щебень</div></div>' +
+      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🧱</span><div class="material-name">Бетон</div></div>' +
+      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🪵</span><div class="material-name">Дерево</div></div>' +
+      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🔩</span><div class="material-name">Металл</div></div>' +
+      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🛣️</span><div class="material-name">Асфальт</div></div>' +
+    '</div>' +
+    '<div class="footer">Подряд PRO © 2026' + (bridgeReady ? ' · Telegram' : '') + '</div>';
+
+  if (tg) {
+    try {
+      var BackButton = tg.BackButton;
+      BackButton.show();
+      BackButton.onClick(function() { tg.close(); });
+    } catch(e) {}
+  }
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+window.openLink = function(url) {
+  try {
+    if (tg && tg.openLink) { tg.openLink(url); return; }
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
+      window.Telegram.WebApp.openLink(url); return;
+    }
+  } catch(e) {}
+  window.open(url, '_blank');
+};
+
+(function init() {
+  if (detectTelegram()) {
+    applyTheme();
+    render(tg.initDataUnsafe && tg.initDataUnsafe.user);
+    bridgeReady = true;
+  } else {
+    // Poll for Telegram bridge (may load after page)
+    var attempts = 0;
+    var check = function() {
+      attempts++;
+      if (detectTelegram()) {
+        applyTheme();
+        render(tg.initDataUnsafe && tg.initDataUnsafe.user);
+        bridgeReady = true;
+        return;
+      }
+      if (attempts < 25) setTimeout(check, 200);
+      else render(null);
+    };
+    setTimeout(check, 100);
+    // Fallback after 3s
+    setTimeout(function() {
+      if (!bridgeReady && document.getElementById('app').innerHTML.indexOf('спиннер') > -1) {
+        render(null);
+      }
+    }, 3000);
+  }
+})();
+})();
+</script>
+</body>
+</html>

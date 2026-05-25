@@ -123,8 +123,10 @@ export default function LiveOrdersMap() {
     fetch('/api/orders/public')
       .then((r) => r.json())
       .then((d) => {
-        const list = d.orders ?? [];
-        setOrders(list.length > 0 ? list : DEMO_ORDERS);
+        const realOrders: PublicOrderMarker[] = d.orders ?? [];
+        const realIds = new Set(realOrders.map(o => o.order_id));
+        const demoOnly = DEMO_ORDERS.filter(o => !realIds.has(o.order_id));
+        setOrders([...realOrders, ...demoOnly]);
       })
       .catch(() => setOrders(DEMO_ORDERS))
       .finally(() => setLoading(false));

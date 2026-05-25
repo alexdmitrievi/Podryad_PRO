@@ -609,13 +609,16 @@ export default function HomePage() {
                 <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Бригады от 2 до 15 человек</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
                   {[
-                    { label: 'Грузчики', price: 'от 350 ₽/ч' },
-                    { label: 'Разнорабочие', price: 'от 300 ₽/ч' },
-                    { label: 'Благоустройство', price: 'от 250 ₽/ч' },
-                    { label: 'Ремонт', price: 'от 500 ₽/ч' },
+                    { emoji: '💪', label: 'Грузчики', price: 'от 350 ₽/ч' },
+                    { emoji: '👷', label: 'Разнорабочие', price: 'от 300 ₽/ч' },
+                    { emoji: '🏡', label: 'Благоустройство', price: 'от 250 ₽/ч' },
+                    { emoji: '🔨', label: 'Ремонт', price: 'от 500 ₽/ч' },
                   ].map((row) => (
-                    <li key={row.label} className="flex justify-between items-center gap-2">
-                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0">{row.label}</span>
+                    <li key={row.label} className="flex justify-between items-center gap-2 group/item cursor-default">
+                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0 flex items-center gap-2">
+                        <span className="text-base transition-transform duration-300 group-hover/item:scale-125 inline-block">{row.emoji}</span>
+                        {row.label}
+                      </span>
                       <span className="price-label whitespace-nowrap">{row.price}</span>
                     </li>
                   ))}
