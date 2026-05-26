@@ -39,17 +39,23 @@ bot.use(async (ctx, next) => {
 
 // Fast local commands — Russian
 bot.command('старт', async (ctx) => {
-  await ctx.reply('Привет! Я — бот сервиса Подряд PRO 🏗️\n\nМы помогаем найти:\n• Рабочих (грузчики, разнорабочие, строители)\n\nНапишите, что вам нужно, или используйте кнопки ниже.', {
-    attachments: [{
-      type: 'inline_keyboard',
-      payload: {
-        buttons: [
-          [{ type: 'link', text: '🚀 Создать заказ', url: APP_URL + '/order/new' }, { type: 'link', text: '👷 Стать исполнителем', url: APP_URL + '/executor/register' }],
-          [{ type: 'link', text: '🏗 Каталог', url: APP_URL + '/catalog/labor' }],
-        ]
-      }
-    }]
-  });
+  try {
+    console.log('[REPLY] /старт — sending...');
+    await ctx.reply('Привет! Я — бот сервиса Подряд PRO 🏗️\n\nМы помогаем найти:\n• Рабочих (грузчики, разнорабочие, строители)\n\nНапишите, что вам нужно, или используйте кнопки ниже.', {
+      attachments: [{
+        type: 'inline_keyboard',
+        payload: {
+          buttons: [
+            [{ type: 'link', text: '🚀 Создать заказ', url: APP_URL + '/order/new' }, { type: 'link', text: '👷 Стать исполнителем', url: APP_URL + '/executor/register' }],
+            [{ type: 'link', text: '🏗 Каталог', url: APP_URL + '/catalog/labor' }],
+          ]
+        }
+      }]
+    });
+    console.log('[REPLY] /старт OK');
+  } catch(e) {
+    console.error('[REPLY] /старт FAILED:', e.message, e.stack);
+  }
 });
 
 bot.command('помощь', async (ctx) => {
