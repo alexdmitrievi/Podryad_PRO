@@ -154,10 +154,13 @@ export async function POST(req: NextRequest) {
       }
     } else if (isCommand) {
       await tgSend(chatId, '⏳ Обрабатываю...');
+    } else if (isCallback) {
+      await tgSend(chatId, '⏳ Загружаю меню...');
     }
   } catch (err) {
     log.error('[TG] funnelHandler failed', { error: String(err), user_id: userId });
     if (isCommand) await tgSend(chatId, '⏳ Обрабатываю...');
+    else if (isCallback) await tgSend(chatId, '⏳ Загружаю меню...');
   }
 
   return logAndReturn(t0, 'funneled');
