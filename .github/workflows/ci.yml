@@ -282,7 +282,7 @@ jobs:
     needs: [lint-build-test, e2e-api, e2e-browser, lighthouse]
     environment:
       name: production
-      url: https://podryad.pro
+      url: https://podryadpro.ru
 
     steps:
       - uses: actions/checkout@v4

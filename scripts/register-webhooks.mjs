@@ -11,7 +11,7 @@
  *   dotenv -e pwa/.env.local -- node scripts/register-webhooks.mjs --check
  *
  * Required env vars:
- *   NEXT_PUBLIC_APP_URL      — app base URL (e.g. https://podryad.pro or http://localhost:3000)
+ *   NEXT_PUBLIC_APP_URL      — app base URL (e.g. https://podryadpro.ru or http://localhost:3000)
  *   TELEGRAM_BOT_TOKEN       — Telegram bot token from BotFather
  *   TELEGRAM_WEBHOOK_SECRET  — random secret for webhook validation
  *   MAX_BOT_TOKEN            — MAX bot access token

@@ -142,23 +142,23 @@ describe('Origin vs Host matching (pure logic)', () => {
   }
 
   it('matches when origin host equals request host', () => {
-    expect(originMatchesHost('https://podryad.pro', 'podryad.pro')).toBe(true);
+    expect(originMatchesHost('https://podryadpro.ru', 'podryadpro.ru')).toBe(true);
   });
 
   it('rejects when origin host differs from request host', () => {
-    expect(originMatchesHost('https://evil.com', 'podryad.pro')).toBe(false);
+    expect(originMatchesHost('https://evil.com', 'podryadpro.ru')).toBe(false);
   });
 
   it('returns true (skip) when origin is missing', () => {
-    expect(originMatchesHost(null, 'podryad.pro')).toBe(true);
+    expect(originMatchesHost(null, 'podryadpro.ru')).toBe(true);
   });
 
   it('returns true (skip) when host is missing', () => {
-    expect(originMatchesHost('https://podryad.pro', null)).toBe(true);
+    expect(originMatchesHost('https://podryadpro.ru', null)).toBe(true);
   });
 
   it('rejects malformed origin URL', () => {
-    expect(originMatchesHost('not-a-url', 'podryad.pro')).toBe(false);
+    expect(originMatchesHost('not-a-url', 'podryadpro.ru')).toBe(false);
   });
 
   it('matches with port numbers', () => {

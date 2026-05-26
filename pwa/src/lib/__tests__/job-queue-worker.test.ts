@@ -120,7 +120,7 @@ describe('handleJob', () => {
     );
     expect(send).toHaveBeenCalledWith(
       expect.objectContaining({
-        text: expect.stringContaining('https://podryad.pro/my/abc123'),
+        text: expect.stringContaining('https://podryadpro.ru/my/abc123'),
       }),
     );
   });
@@ -322,7 +322,7 @@ describe('handleJob customer.send_payment_link fallback', () => {
     );
     expect(send).toHaveBeenCalledWith(
       expect.objectContaining({
-        text: expect.stringContaining('https://podryad.pro/my/tok123'),
+        text: expect.stringContaining('https://podryadpro.ru/my/tok123'),
       }),
     );
   });
