@@ -53,14 +53,15 @@ export class MaxTransport implements ChannelTransport {
       return { success: false, channel: 'max', error: 'No chat_id provided', latency_ms: 0 };
     }
 
-    // MAX API: auth via Authorization header, user_id/chat_id in URL query
+    // MAX API: auth via access_token query param (required by MAX/TamTam API)
     const proxyBase = process.env.MAX_API_PROXY;
     const encodedUserId = encodeURIComponent(chatId);
+    const encodedToken = encodeURIComponent(this.config.botToken);
     const url = proxyBase
-      ? `${proxyBase}/proxy/max/messages?user_id=${encodedUserId}`
-      : `${this.config.apiBase}/messages?user_id=${encodedUserId}`;
+      ? `${proxyBase}/proxy/max/messages?user_id=${encodedUserId}&access_token=${encodedToken}`
+      : `${this.config.apiBase}/messages?user_id=${encodedUserId}&access_token=${encodedToken}`;
 
-    const headers: Record<string, string> = { 'Content-Type': 'application/json', Authorization: this.config.botToken };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
     // MAX doesn't render HTML/Markdown — strip tags so <b>...</b> doesn't leak.
     const plainText = stripHtml(message.text);
