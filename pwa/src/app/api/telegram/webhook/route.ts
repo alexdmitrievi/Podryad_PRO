@@ -56,6 +56,17 @@ const CTYPE_BUTTONS = [[{ text: '🏡 Для частного дома', data: '
 const B2C_MENU = [[{ text: '📝 Описать задачу', data: 'menu:quick_order' }], [{ text: '🛠 Услуги', data: 'menu:services' }, { text: '🧱 Материалы', data: 'menu:materials' }], [{ text: '📋 Мои заказы', data: 'menu:my_orders' }, { text: '🎁 Друзьям +500 ₽', data: 'menu:referral' }], [{ text: '📅 Абонентка', data: 'menu:subscription' }, { text: '📍 Регион: Омск', data: 'menu:region' }], [{ text: '❔ Помощь', data: 'menu:help' }, { text: '☎️ Оператор', data: 'menu:operator' }], [{ text: '🔄 Я бизнес', data: 'ctype:b2b' }]];
 const B2B_MENU = [[{ text: '📝 Описать задачу', data: 'menu:quick_order' }], [{ text: '🧱 Материалы', data: 'menu:materials' }, { text: '🛠 Услуги', data: 'menu:services' }], [{ text: '📋 Мои заказы', data: 'menu:my_orders' }, { text: '🎁 Партнёрам', data: 'menu:referral' }], [{ text: '🤝 Договор / счёт', data: 'menu:contract' }, { text: '☎️ Менеджер', data: 'menu:operator' }], [{ text: '📍 Регион: Омск', data: 'menu:region' }, { text: '🔄 Я частник', data: 'ctype:b2c' }]];
 
+const SERVICES_MENU: Array<Array<{ text: string; data?: string }>> = [
+  [{ text: '🌱 Покос газона', data: 'svc:lawn_mowing' }, { text: '🌾 Удаление сорняков', data: 'svc:weed_removal' }],
+  [{ text: '🚮 Вывоз мусора', data: 'svc:debris_removal' }, { text: '🪓 Расчистка участка', data: 'svc:land_clearing' }],
+  [{ text: '🪚 Спил деревьев', data: 'svc:tree_cutting' }, { text: '🚜 Вспашка', data: 'svc:tilling' }],
+  [{ text: '🏊 Чистка бассейна', data: 'svc:pool_cleaning' }, { text: '🔥 Сварочные работы', data: 'svc:welding' }],
+  [{ text: '🌿 Скарификация', data: 'svc:scarification' }, { text: '🌬 Аэрация', data: 'svc:aeration' }],
+  [{ text: '🏗 Сборка бассейна', data: 'svc:pool_assembly' }, { text: '💦 Обслуживание бассейна', data: 'svc:pool_maintenance' }],
+  [{ text: '📅 Абонентка', data: 'menu:subscription' }],
+  [{ text: '🏠 В меню', data: 'nav:home' }],
+];
+
 const HELP = `🔍 <b>Как это работает</b>\n\n1. Выберите услугу.\n2. Ответьте на 3-4 простых вопроса.\n3. Мастер свяжется с вами в течение 30 минут.\n\n📞 Нужна помощь? Напишите оператору через меню.`;
 
 /** Convert unified MessageButton to Telegram format */
@@ -111,6 +122,11 @@ export async function POST(req: NextRequest) {
 
   if (isCallback) {
     const data = text;
+
+    if (data === 'menu:services') {
+      await tgSend(chatId, '🛠 <b>Услуги</b>\n\nВыберите, что нужно сделать:', SERVICES_MENU);
+      return logAndReturn(t0, 'services');
+    }
 
     if (data.startsWith('region:')) {
       await tgSend(chatId, '✅ Регион выбран.\n\nЧтобы предложить подходящее меню — подскажите: вы оформляете заказ для частного дома или для компании / стройки?', CTYPE_BUTTONS);
