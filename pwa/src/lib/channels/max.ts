@@ -185,7 +185,7 @@ export class MaxMapper implements ChannelMapper {
     // MAX API: Update.chat_id is the conversation ID (use for responses); Message.recipient.chat_id is the bot
     const topUser = (data.user ?? update.user) as Record<string, unknown> | undefined;
     let userId = String(topUser?.user_id ?? sender.user_id ?? sender.id ?? '');
-    let cId = String(data.chat_id ?? update.chat_id ?? recipient.chat_id ?? message.chat_id ?? '');
+    let cId = String(data.chat_id ?? update.chat_id ?? recipient.chat_id ?? message.chat_id ?? topUser?.user_id ?? userId ?? '');
     let username: string | undefined = sender.username ? String(sender.username) : undefined;
     let displayName: string | undefined = sender.name ? String(sender.name) : (sender.first_name ? String(sender.first_name) : undefined);
 
