@@ -17,7 +17,7 @@ export async function recordReferralVisit(
   return data ?? null;
 }
 
-export async function getReferralLink(contactId: string, botName = 'PodraydPRO_bot'): Promise<string> {
+export async function getReferralLink(contactId: string, botName = 'Podryad_PRO_bot'): Promise<string> {
   const code = await ensureReferralCode(contactId);
   return `https://t.me/${botName}?start=ref_${code}`;
 }

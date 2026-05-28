@@ -384,7 +384,7 @@ async function handleCallback(
         const next = pushNav({ ...state, screen: 'referral' }, state.screen ?? 'home');
         await setSessionState(chatId, channel, 'referral', 'main', next);
         try {
-          const botName = process.env.TELEGRAM_BOT_USERNAME || 'PodraydPRO_bot';
+          const botName = process.env.TELEGRAM_BOT_USERNAME || 'Podryad_PRO_bot';
           const link = await getReferralLink(contactId, botName);
           const stats = await getReferralStats(contactId);
           return { text: UI.referralIntro({ link, invited: stats.invited, balance: stats.balance }), buttons: referralButtons() };
