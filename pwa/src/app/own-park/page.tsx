@@ -15,6 +15,14 @@ const SERVICES = [
   { emoji: '📅', title: 'Абонентское обслуживание участков и территорий под ключ', desc: 'Постоянный уход за территорией. Покос, уборка, мелкий ремонт, вывоз мусора — по графику.' },
 ];
 
+const MATERIALS = [
+  { emoji: '🏗️', title: 'Бетон', desc: 'Бетон любых марок: M100–M400. Доставка миксером.' },
+  { emoji: '🪨', title: 'Щебень', desc: 'Щебень всех фракций: 5–20, 20–40, 40–70, гранитный, гравийный.' },
+  { emoji: '🏖️', title: 'Песок', desc: 'Песок карьерный, речной, мытый, строительный.' },
+  { emoji: '🧱', title: 'Кирпич', desc: 'Кирпич рядовой, облицовочный, силикатный, керамический.' },
+  { emoji: '📦', title: 'Цемент', desc: 'Цемент M400, M500. В мешках 25/50 кг или россыпью.' },
+];
+
 export default function OwnParkPage() {
   return (
     <div className="min-h-screen bg-surface dark:bg-dark-bg">
@@ -118,6 +126,56 @@ export default function OwnParkPage() {
                   <Link
                     href="/#lead-form"
                     className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-brand-500/10 text-brand-500 hover:bg-brand-500/20 transition-all duration-200 cursor-pointer hover:gap-1.5"
+                  >
+                    Заявка
+                    <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+                      <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Materials grid ─────────────────────────────────── */}
+      <section className="py-10 sm:py-14 px-4 bg-gray-50 dark:bg-dark-bg/50">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-8">
+            <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-amber-500">
+              Материалы &middot; от Подряд PRO
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
+              Стройматериалы с доставкой
+            </h2>
+            <p className="text-gray-500 dark:text-dark-muted text-sm mt-1">
+              Прямые поставки от производителей. Доставка по Омску и области.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {MATERIALS.map((item) => (
+              <article
+                key={item.title}
+                className="group relative bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-card hover:-translate-y-0.5 transition-all duration-300"
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 text-2xl transition-transform duration-300 group-hover:scale-125">
+                  {item.emoji}
+                </div>
+
+                <h3 className="font-bold text-[#1a1a2e] dark:text-white text-base mb-2 font-heading leading-tight pr-8">
+                  {item.title}
+                </h3>
+                <p className="text-gray-500 dark:text-dark-muted text-xs mb-4 leading-relaxed">{item.desc}</p>
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-dark-border">
+                  <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                    Цена по запросу
+                  </span>
+                  <Link
+                    href="/#lead-form"
+                    className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 transition-all duration-200 cursor-pointer hover:gap-1.5"
                   >
                     Заявка
                     <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
