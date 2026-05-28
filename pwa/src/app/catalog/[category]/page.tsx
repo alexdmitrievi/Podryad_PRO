@@ -376,7 +376,7 @@ export default function CatalogCategoryPage({ params }: { params: Promise<{ cate
                   key={item.id}
                   className="group bg-white dark:bg-dark-card rounded-2xl p-6 sm:p-8 shadow-card border border-gray-100 dark:border-dark-border card-lift flex flex-col"
                 >
-                  <div className="relative w-full h-40 rounded-xl overflow-hidden mb-4 bg-gray-100">
+                  <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-4 bg-gray-100">
                     {item.image ? (
                       <Image src={item.image} alt={item.title} fill className="object-cover" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                     ) : (

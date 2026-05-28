@@ -584,7 +584,7 @@ export default function HomePage() {
               className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
               {siteImages['hero.labor'] ? (
-                <div className="relative w-full aspect-[16/9] bg-gray-100 dark:bg-dark-border">
+                <div className="relative w-full aspect-square bg-gray-100 dark:bg-dark-border">
                   <Image
                     src={siteImages['hero.labor']}
                     alt="Рабочая сила"

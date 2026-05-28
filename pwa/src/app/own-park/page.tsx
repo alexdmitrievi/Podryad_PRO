@@ -110,9 +110,15 @@ export default function OwnParkPage() {
                 key={item.title}
                 className="group relative bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-card hover:-translate-y-0.5 transition-all duration-300"
               >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 text-2xl transition-transform duration-300 group-hover:scale-125">
-                  {item.emoji}
-                </div>
+                {'image' in item && (item as any).image ? (
+                  <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-3 bg-gray-100">
+                    <Image src={(item as any).image} alt={item.title} fill className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 text-2xl transition-transform duration-300 group-hover:scale-125">
+                    {item.emoji}
+                  </div>
+                )}
 
                 <h3 className="font-bold text-[#1a1a2e] dark:text-white text-base mb-2 font-heading leading-tight pr-8">
                   {item.title}
@@ -160,9 +166,15 @@ export default function OwnParkPage() {
                 key={item.title}
                 className="group relative bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-card hover:-translate-y-0.5 transition-all duration-300"
               >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 text-2xl transition-transform duration-300 group-hover:scale-125">
-                  {item.emoji}
-                </div>
+                {'image' in item && (item as any).image ? (
+                  <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-3 bg-gray-100">
+                    <Image src={(item as any).image} alt={item.title} fill className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 text-2xl transition-transform duration-300 group-hover:scale-125">
+                    {item.emoji}
+                  </div>
+                )}
 
                 <h3 className="font-bold text-[#1a1a2e] dark:text-white text-base mb-2 font-heading leading-tight pr-8">
                   {item.title}
