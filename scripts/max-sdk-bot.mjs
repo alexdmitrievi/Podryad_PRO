@@ -1,4 +1,4 @@
-import { Bot, Keyboard } from '@maxhub/max-bot-api';
+import { Bot } from '@maxhub/max-bot-api';
 
 const TOKEN = 'f9LHodD0cOKYOJZ3PlLNERjdxkhwkbwqg8aP6T5zxMSlBdxybafZC1cB73jmDquo-KLlMOUGcVHQmx3PMhsN';
 const APP_URL = 'https://podryadpro.ru';
@@ -13,12 +13,17 @@ bot.use(async (ctx, next) => {
   return next();
 });
 
-const startKbd = Keyboard.inlineKeyboard([
-  [Keyboard.button.link('🚀 Создать заказ', APP_URL + '/order/new'),
-   Keyboard.button.link('👷 Стать исполнителем', APP_URL + '/executor/register')],
-  [Keyboard.button.link('🏗 Каталог', APP_URL + '/catalog/labor')],
-  [Keyboard.button.openApp('🛠 Мини-приложение', APP_URL + '/max-app')],
-]);
+const startKbd = {
+  type: 'inline_keyboard',
+  payload: {
+    buttons: [
+      [{ type: 'link', text: '🚀 Создать заказ', url: APP_URL + '/order/new' },
+       { type: 'link', text: '👷 Стать исполнителем', url: APP_URL + '/executor/register' }],
+      [{ type: 'link', text: '🏗 Каталог', url: APP_URL + '/catalog/labor' }],
+      [{ type: 'open_app', text: '🛠 Мини-приложение', url: APP_URL + '/max-app' }],
+    ],
+  },
+};
 
 bot.command('start', async (ctx) => {
   console.log('[SDK] /start handler');
@@ -29,7 +34,7 @@ bot.command('start', async (ctx) => {
 });
 
 bot.command('старт', async (ctx) => {
-  console.log('[SDK] /старт handler');
+  console.log('[SDK] /стврт handler');
   await ctx.reply('Привет! Я — бот Подряд PRO. Выберите действие:', {
     attachments: [startKbd],
   });
