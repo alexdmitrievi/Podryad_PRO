@@ -37,10 +37,11 @@ export interface NormalizedOutgoingMessage {
 }
 
 export interface MessageButton {
-  type: 'url' | 'callback';
+  type: 'url' | 'callback' | 'web_app';
   text: string;
   url?: string;
   callback_data?: string;
+  web_app_url?: string;
 }
 
 export interface Attachment {

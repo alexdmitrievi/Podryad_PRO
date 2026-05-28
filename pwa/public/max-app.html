@@ -5,26 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Подряд PRO</title>
 <style>
+:root {
+  --bg: #f0f2f5;
+  --card-bg: #fff;
+  --text: #1a1a1a;
+  --text-secondary: #888;
+  --text-heading: #555;
+  --header-gradient-1: #2F5BFF;
+  --header-gradient-2: #6C5CE7;
+  --shadow: rgba(0,0,0,0.06);
+}
+body.dark {
+  --bg: #1a1a2e;
+  --card-bg: #252540;
+  --text: #e0e0e0;
+  --text-secondary: #999;
+  --text-heading: #aaa;
+  --header-gradient-1: #2F5BFF;
+  --header-gradient-2: #1a2550;
+  --shadow: rgba(0,0,0,0.2);
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#1a1a1a;-webkit-text-size-adjust:100%}
-.header{background:linear-gradient(135deg,#2F5BFF,#6C5CE7);padding:20px 16px 28px;color:#fff;text-align:center}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%}
+.header{background:linear-gradient(135deg,var(--header-gradient-1),var(--header-gradient-2));padding:20px 16px 28px;color:#fff;text-align:center}
 .header h1{font-size:20px}.header p{font-size:13px;opacity:0.9;margin-top:4px}
-.user-card{background:#fff;border-radius:16px;padding:14px 16px;margin:-12px 16px 12px;box-shadow:0 2px 12px rgba(0,0,0,0.1);display:flex;align-items:center;gap:12px;position:relative;z-index:2}
+.user-card{background:var(--card-bg);border-radius:16px;padding:14px 16px;margin:-12px 16px 12px;box-shadow:0 2px 12px var(--shadow);display:flex;align-items:center;gap:12px;position:relative;z-index:2}
 .user-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#2F5BFF,#6C5CE7);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
-.user-name{font-weight:600;font-size:15px}.user-sub{font-size:12px;color:#888}
+.user-name{font-weight:600;font-size:15px}.user-sub{font-size:12px;color:var(--text-secondary)}
 .actions{padding:8px 16px;display:grid;gap:10px}
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;border:none;width:100%;transition:opacity 0.15s;text-decoration:none}
 .btn:active{opacity:0.8}
 .btn-primary{background:#2F5BFF;color:#fff}
-.btn-secondary{background:#fff;color:#2F5BFF;border:2px solid #2F5BFF}
+.btn-secondary{background:var(--card-bg);color:#2F5BFF;border:2px solid #2F5BFF}
 .services{padding:4px 16px 16px}
-.services h3{font-size:15px;font-weight:600;margin-bottom:10px;color:#555}
+.services h3{font-size:15px;font-weight:600;margin-bottom:10px;color:var(--text-heading)}
 .service-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.service-card{background:#fff;border-radius:14px;padding:14px 10px;box-shadow:0 1px 6px rgba(0,0,0,0.06);text-align:center;cursor:pointer}
-.service-card:active{opacity:0.8}
+.service-card{background:var(--card-bg);border-radius:14px;padding:14px 10px;box-shadow:0 1px 6px var(--shadow);text-align:center;cursor:pointer;transition:transform 0.15s}
+.service-card:active{opacity:0.8;transform:scale(0.97)}
 .service-icon{font-size:26px;margin-bottom:6px}
-.service-name{font-size:12px;font-weight:600;color:#444}
-.footer{text-align:center;padding:16px;color:#aaa;font-size:11px}
+.service-name{font-size:12px;font-weight:600;color:var(--text)}
+.footer{text-align:center;padding:16px;color:var(--text-secondary);font-size:11px}
 .loading{text-align:center;padding:40px}
 .spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#2F5BFF;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -35,7 +55,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 <script>
 (function(){
-var APP_URL = 'https://www.podryadpro.ru';
+var APP_URL = 'https://podryadpro.ru';
 var bridgeReady = false;
 
 function render(user) {
@@ -44,7 +64,7 @@ function render(user) {
   if (user && user.last_name) name += ' ' + user.last_name;
   var avatar = (name[0] || 'П').toUpperCase();
   var sub = user ? 'ID: ' + user.id : 'Запустите через MAX';
-  
+
   el.innerHTML =
     '<div class="header"><h1>🏗️ Подряд PRO</h1><p>Закажите работы по дому и участку</p></div>' +
     '<div class="user-card"><div class="user-avatar">' + avatar + '</div><div><div class="user-name">' + esc(name) + '</div><div class="user-sub">' + sub + '</div></div></div>' +
@@ -56,7 +76,13 @@ function render(user) {
       '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><div class="service-icon">🌿</div><div class="service-name">Покос газона</div></div>' +
       '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><div class="service-icon">🌲</div><div class="service-name">Расчистка участка</div></div>' +
       '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><div class="service-icon">🪓</div><div class="service-name">Валка деревьев</div></div>' +
-      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><div class="service-icon">🧱</div><div class="service-name">Материалы</div></div>' +
+      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><div class="service-icon">🔥</div><div class="service-name">Сварка</div></div>' +
+    '</div></div>' +
+    '<div class="services"><h3>Стройматериалы</h3><div class="service-grid">' +
+      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><div class="service-icon">🏗️</div><div class="service-name">Бетон</div></div>' +
+      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><div class="service-icon">🪨</div><div class="service-name">Щебень</div></div>' +
+      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><div class="service-icon">🏖️</div><div class="service-name">Песок</div></div>' +
+      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><div class="service-icon">🧱</div><div class="service-name">Кирпич</div></div>' +
     '</div></div>' +
     '<div class="footer">Подряд PRO © 2026' + (bridgeReady ? ' · MAX' : '') + '</div>';
 }
@@ -70,12 +96,24 @@ window.openLink = function(url) {
   window.open(url, '_blank');
 };
 
+// Apply MAX theme
+function applyTheme() {
+  try {
+    if (window.WebApp && window.WebApp.colorScheme) {
+      if (window.WebApp.colorScheme === 'dark') {
+        document.body.classList.add('dark');
+      }
+    }
+  } catch(e) {}
+}
+
 function checkBridge(n) {
   n = n || 0;
   try {
     if (window.WebApp && window.WebApp.initDataUnsafe) {
       render(window.WebApp.initDataUnsafe.user);
       bridgeReady = true;
+      applyTheme();
       return;
     }
   } catch(e) {}
@@ -86,7 +124,7 @@ function checkBridge(n) {
 // Start checking for Bridge, render after 3s even without it
 checkBridge(0);
 setTimeout(function() {
-  if (document.getElementById('app').innerHTML.indexOf('спиннер') !== -1 || document.getElementById('app').innerHTML.indexOf('spinner') !== -1) {
+  if (document.getElementById('app').innerHTML.indexOf('spinner') !== -1) {
     render(null);
   }
 }, 3000);
