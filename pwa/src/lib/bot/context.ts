@@ -44,7 +44,15 @@ export async function resolveBotContext(params: {
       contact_id: sessionRaw.contact_id ? String(sessionRaw.contact_id) : undefined,
       funnel: String(sessionRaw.funnel ?? ''),
       step: String(sessionRaw.step ?? ''),
-      state: (sessionRaw.state ?? {}) as BotSession['state'],
+      state: parseState(sessionRaw.state),
     },
   };
+}
+
+function parseState(raw: unknown): BotSession['state'] {
+  if (!raw || typeof raw === 'object') return (raw ?? {}) as BotSession['state'];
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw); } catch { return {}; }
+  }
+  return {};
 }

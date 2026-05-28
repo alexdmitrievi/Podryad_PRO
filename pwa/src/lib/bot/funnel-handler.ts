@@ -96,7 +96,7 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
   }
   const { contactId } = ctx;
 
-  let state: SessionState = ((ctx.session?.state ?? {}) as SessionState);
+  let state: SessionState = (typeof ctx.session?.state === 'string' ? JSON.parse(ctx.session.state) : (ctx.session?.state ?? {})) as SessionState;
   // Default from context profile (skip region/customer-type picker steps for speed)
   if (!state.region) state = { ...state, region: ctx.region };
   if (!state.customerType && ctx.customerType) state = { ...state, customerType: ctx.customerType };
