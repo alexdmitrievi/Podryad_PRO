@@ -39,7 +39,7 @@ export async function updateSession(
     p_channel: channel,
     p_funnel: opts.funnel ?? null,
     p_step: opts.step ?? null,
-    p_state: opts.state ?? null,
+    p_state: opts.state ? JSON.stringify(typeof opts.state === 'string' ? JSON.parse(opts.state) : opts.state) : null,
   });
 }
 
