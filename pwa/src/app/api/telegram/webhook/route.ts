@@ -89,11 +89,10 @@ export async function POST(req: NextRequest) {
 
   const secret = req.headers.get('x-telegram-bot-api-secret-token') ?? '';
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  // TEMPORARY: skip secret check for debugging (PWA restart causes mismatch)
-  // if (expectedSecret && !timingSafeSecretCompare(secret, expectedSecret)) {
-  //   log.warn('[TG] secret mismatch');
-  //   return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  // }
+  if (expectedSecret && !timingSafeSecretCompare(secret, expectedSecret)) {
+    log.warn('[TG] secret mismatch');
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ ok: true }); }
