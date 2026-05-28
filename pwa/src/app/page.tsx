@@ -519,14 +519,13 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div ref={revServiceCards} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-            {/* Выгодно от Подряд PRO — карточка №1 */}
+           <div ref={revServiceCards} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+            {/* Выгодно от Подряд PRO — материалы + услуги под ключ */}
             <Link
-              href="/own-park"
+              href="/catalog/materials"
               className="group relative overflow-hidden rounded-2xl p-6 card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 text-white"
               style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2d1b69 100%)' }}
             >
-              {/* Admin-uploaded background photo (optional) */}
               {siteImages['hero.combo'] && (
                 <>
                   <Image
@@ -537,22 +536,12 @@ export default function HomePage() {
                     className="object-cover absolute inset-0 transition-transform duration-500 group-hover:scale-[1.03]"
                     aria-hidden
                   />
-                  {/* Dark gradient overlay — preserves contrast for white text */}
                   <div className="absolute inset-0 bg-gradient-to-br from-[#1E2A5A]/90 via-[#1E2A5A]/75 to-[#2d1b69]/90 pointer-events-none" />
                 </>
               )}
 
-              {/* bg accents */}
               <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-violet/25 blur-[60px] pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-brand-500/25 blur-[50px] pointer-events-none" />
-
-              {/* Ribbon — "−20%" */}
-              <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1a2e] text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg tracking-wide">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                </svg>
-                −20%
-              </div>
 
               <div className="relative z-[1] flex flex-col h-full">
                 <div className="service-icon-wrap service-icon--amber mb-5">
@@ -562,21 +551,29 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">Выгодно<br/>от Подряд PRO</h3>
                 <p className="text-white/80 text-xs mb-4 font-medium">Гарантия. Договор. Качество.</p>
-                <ul className="space-y-2.5 text-sm mb-5 flex-1">
+                <div className="space-y-2 text-sm mb-5 flex-1">
                   {[
-                    { label: 'Услуги', price: 'по запросу' },
-                    { label: 'Материалы', price: 'напрямую' },
-                    { label: 'Всё под ключ', price: 'с документами' },
-                  ].map((row) => (
-                    <li key={row.label} className="flex justify-between items-center gap-2">
-                      <span className="text-white/90 truncate min-w-0">{row.label}</span>
-                      <span className="text-amber-300 text-xs font-semibold whitespace-nowrap">{row.price}</span>
-                    </li>
+                    { emoji: '🏗️', label: 'Бетон', hint: 'M100–M400' },
+                    { emoji: '🪨', label: 'Щебень', hint: 'все фракции' },
+                    { emoji: '🏖️', label: 'Песок', hint: 'карьерный, речной' },
+                    { emoji: '🧊', label: 'Цемент', hint: 'M400, M500' },
+                    { emoji: '🧱', label: 'Кирпич', hint: 'рядовой, облиц.' },
+                  ].map((m) => (
+                    <div key={m.label} className="flex items-center justify-between gap-2">
+                      <span className="text-white/85 truncate min-w-0 flex items-center gap-2">
+                        <span className="text-base">{m.emoji}</span>
+                        {m.label}
+                      </span>
+                      <span className="text-white/40 text-[10px] whitespace-nowrap">{m.hint}</span>
+                    </div>
                   ))}
-                </ul>
-                <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
-                  <span>Смотреть предложения</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <div className="flex flex-col gap-2 mt-auto">
+                  <span className="text-amber-300 text-xs font-semibold text-center">Цена по запросу</span>
+                  <span className="flex items-center justify-center gap-1.5 text-white font-semibold text-sm bg-white/15 rounded-lg py-2 group-hover:bg-white/25 transition-colors">
+                    <span>Оставить заявку</span>
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </span>
                 </div>
               </div>
             </Link>
