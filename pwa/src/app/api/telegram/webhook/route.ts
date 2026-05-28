@@ -47,7 +47,7 @@ const START_BUTTONS: Array<Array<{ text: string; url?: string; data?: string; we
   [{ text: '🚀 Создать заказ', url: `${APP_URL}/order/new` }],
   [{ text: '👷 Стать исполнителем', url: `${APP_URL}/executor/register` }],
   [{ text: '🏗 Каталог', url: `${APP_URL}/catalog/labor` }],
-  [{ text: '🛠 Мини-приложение', web_app: { url: `${APP_URL}/tg-app` } }],
+  [{ text: '🛠 Мини-приложение', web_app: { url: `${APP_URL}/tg-app.html` } }],
   [{ text: '📋 Чат-заказ', data: 'menu:services' }],
 ];
 

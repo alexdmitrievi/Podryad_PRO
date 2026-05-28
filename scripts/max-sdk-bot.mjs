@@ -20,7 +20,7 @@ const startKbd = {
       [{ type: 'link', text: '🚀 Создать заказ', url: APP_URL + '/order/new' },
        { type: 'link', text: '👷 Стать исполнителем', url: APP_URL + '/executor/register' }],
       [{ type: 'link', text: '🏗 Каталог', url: APP_URL + '/catalog/labor' }],
-      [{ type: 'open_app', text: '🛠 Мини-приложение', url: APP_URL + '/max-app' }],
+      [{ type: 'open_app', text: '🛠 Мини-приложение', url: APP_URL + '/max-app.html' }],
     ],
   },
 };
