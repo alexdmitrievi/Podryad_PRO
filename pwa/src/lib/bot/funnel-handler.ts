@@ -124,7 +124,11 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
       try { referrerName = (await recordReferralVisit(contactId, code)) ?? undefined; } catch { /* ok */ }
       await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home', referredBy: code });
       if (referrerName) {
-        return { text: UI.referralActivated(referrerName), buttons: [...regionButtons(), [{ type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' }]] };
+        return { text: UI.referralActivated(referrerName), buttons: [
+          ...regionButtons(),
+          [{ type: 'url', text: '📢 Вступить в чат', url: 'https://t.me/podryadpro_chat' }],
+          [{ type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' }]
+        ] };
       }
       return customerTypeOrHome(state, ctx.isNew, event.displayName);
     }

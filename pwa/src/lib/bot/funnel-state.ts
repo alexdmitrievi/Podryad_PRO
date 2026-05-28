@@ -428,7 +428,8 @@ export const UI = {
     `3. Когда мастер выполнит работу — вам и другу по 500 ₽ на следующий заказ.\n\n` +
     `Ваша ссылка:\n<code>${p.link}</code>\n\n` +
     `Друзей пригласили: ${p.invited}\n` +
-    `Баланс: ${p.balance} ₽`,
+    `Баланс: ${p.balance} ₽\n\n` +
+    `📢 Приглашайте друзей в наш чат: t.me/podryadpro_chat`,
 
   referralActivated: (referrerName?: string) =>
     `👋 Вас пригласил ${referrerName ?? 'друг'}!\n` +

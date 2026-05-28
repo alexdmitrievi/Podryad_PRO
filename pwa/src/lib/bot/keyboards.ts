@@ -262,6 +262,7 @@ export function myOrdersButtons(
 /** Referral program buttons. */
 export function referralButtons(): MessageButton[][] {
   return [
+    [{ type: 'url', text: '📢 Наш чат Подряд PRO', url: 'https://t.me/podryadpro_chat' }],
     [{ type: 'callback', text: '👥 Мои рефералы', callback_data: 'menu:referral_list' }],
     [
       { type: 'callback', text: '◀️ Назад', callback_data: 'nav:back' },
