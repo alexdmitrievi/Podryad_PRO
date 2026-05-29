@@ -125,7 +125,7 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
       await setSessionState(chatId, channel, 'home', 'start', { ...state, screen: 'home', referredBy: code });
       if (referrerName) {
         return { text: UI.referralActivated(referrerName), buttons: [
-          [{ type: 'url', text: '📢 Подписаться на канал', url: 'https://t.me/podryad_pro' }],
+          [{ type: 'url', text: '📢 Подписаться на канал — активировать 500 ₽', url: 'https://t.me/podryad_pro' }],
           ...regionButtons(),
           [{ type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' }]
         ] };
