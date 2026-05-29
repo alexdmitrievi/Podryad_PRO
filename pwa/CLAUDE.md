@@ -172,6 +172,11 @@ sync && echo 3 > /proc/sys/vm/drop_caches  # ОСТОРОЖНО: на прода
 - [ ] Живой тест рефералов с двумя Telegram аккаунтами
 - [ ] n8n health: "unhealthy" из-за IPv6 в Docker-контейнерах (system-level disable уже есть, но Docker network всё ещё имеет IPv6)
 - [ ] Настроить бэкапы VPS (конфиги, база)
+- [ ] Изображения: заполнить `image` поля в 3 местах (сейчас заглушки `''`):
+  - `pwa/src/app/catalog/[category]/page.tsx` → LABOR_SERVICES (6 рабочих: Грузчики, Разнорабочие, Благоустройство, Строители, Землекопы, Дворники)
+  - `pwa/src/app/own-park/page.tsx` → SERVICES (9 услуг) + MATERIALS (5 материалов)
+  - Формат: квадратные 1:1 WebP 800x800. Карточка показывает фото если `image` не пустой, иначе emoji
+  - Пользователь пришлёт URL-ы в формате: «Грузчики: https://...» — подставить в соответствующий массив
 
 ## CREDENTIALS (protected — GitHub scanner bypass)
 
