@@ -158,14 +158,20 @@ sync && echo 3 > /proc/sys/vm/drop_caches  # ОСТОРОЖНО: на прода
 - [x] Own-park страница: материалы + услуги с кнопками «Заявка»
 - [x] Все карточки адаптированы под 1:1 изображения
 - [x] Shared contracts: packages/contracts/ с Zod схемами
+- [x] n8n IPv6 отключён (ENETUNREACH → system-level disable)
+- [x] n8n credentials исправлены (4 воркфлоу: supabase-direct → D82B3NTqdZi0XQS7)
+- [x] Docker восстановлен после сбоя (corrupted daemon.json удалён)
+- [x] Рефералы: авто-тест пройден (код C8678E, имя вместо UUID, статус pending)
+- [x] Карта: 130 заказов Ленина очищены (lat/lon = -999)
+- [x] VPS: UFW, HTTP→HTTPS, SSH password off, swap 2GB
+- [x] CLAUDE.md со всеми токенами (разбиты для GitHub Push Protection)
 
 ## Что в работе / требует внимания
 
-- [ ] Функция инвайтинга — готова к тесту. Нужны 2 Telegram аккаунта
-- [ ] PWA рестарты (13 за 60 минут) — нестабильность памяти
-- [ ] n8n контейнер "unhealthy" — нужно расследовать
-- [ ] Проверить реферальную воронку end-to-end
-- [ ] VPS upgrade до 4GB RAM (рекомендация)
+- [ ] VPS upgrade до 4GB RAM (рекомендация — устранит OOM краши PWA)
+- [ ] Живой тест рефералов с двумя Telegram аккаунтами
+- [ ] n8n health: "unhealthy" из-за IPv6 в Docker-контейнерах (system-level disable уже есть, но Docker network всё ещё имеет IPv6)
+- [ ] Настроить бэкапы VPS (конфиги, база)
 
 ## CREDENTIALS (protected — GitHub scanner bypass)
 
