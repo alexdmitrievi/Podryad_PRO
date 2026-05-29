@@ -1,70 +1,178 @@
-# Подряд PRO
+# Подряд PRO — Операционный контекст
 
-## Стек
-Next.js 15 App Router, Supabase (PostgreSQL), Tailwind CSS, n8n webhooks, OpenAI GPT-4o
+## Быстрый вход в контекст
+Ты работаешь над маркетплейсом строительных услуг «Подряд PRO». 
+Проект на Next.js 15, хостится на VPS (89.124.122.12), база в Supabase.
+Два чат-бота: Telegram (вебхук) и MAX (SDK long-polling).
+Прочитай этот файл полностью — в нём ВСЁ что нужно для продолжения работы.
 
-## Архитектура
+---
+
+## Доступы
+
+| Ресурс | Доступ |
+|--------|--------|
+| **VPS SSH** | `ssh root@89.124.122.12` (пароль: `MakarZhbankov2018!`) |
+| **Supabase** | Project `rnqalafmuyrlfioqdore`, PAT: `<в .env.local>` |
+| **Supabase URL** | `https://rnqalafmuyrlfioqdore.supabase.co` |
+| **Supabase ANON** | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJucWFsYWZtdXlybGZpb3Fkb3JlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNDMyODEsImV4cCI6MjA4OTcxOTI4MX0.mI-8c3lEzGTlqvTt6LtJcAzvU3AZuX5VLpiJJykigQc` |
+| **Supabase SERVICE_ROLE** | `<в .env.local>` |
+| **Vercel** | Token: `<.env.local>`, Project: `podryad-pro` |
+| **n8n** | `https://n8n.podryadpro.ru`, API key в `.env` |
+| **n8n login** | `admin@podryad.pro` / `jK9#mP2$$vL6@xR4!` |
+| **Админ-панель** | `https://podryadpro.ru/admin`, PIN: `8489` |
+| **Домен** | `podryadpro.ru` |
+| **Telegram bot** | `@Podryad_PRO_bot`, token: `8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM` |
+| **Telegram webhook secret** | `bf76b833989e10831a29500c20775fe81cf1c240429dfc19f8a0db9164d03d23` |
+| **MAX bot** | `@id550516401202_bot`, token: `f9LHodD0cOKYOJZ3PlLNERjdxkhwkbwqg8aP6T5zxMSlBdxybafZC1cB73jmDquo-KLlMOUGcVHQmx3PMhsN` |
+| **Telegram канал** | `t.me/podryad_pro` |
+| **Telegram админ chat_id** | `407721399` (@zhbankov_alex, Алексей Жбанков) |
+
+---
+
+## Архитектура (production)
+
 ```
-webhook → route handler → validation → channel router → transport → platform API
-                ↕
-         funnel handler → Supabase RPC → session/order state
+Пользователь → podryadpro.ru → VPS nginx (:80/:443) → PWA localhost:3000 (PM2)
+                                                          ↓
+MAX бот:    @maxhub/max-bot-api SDK → long-polling → platform-api.max.ru (PM2: max-bot)
+Telegram:   webhook → podryadpro.ru/api/telegram/webhook → PWA
+n8n:        docker-контейнер на n8n.podryadpro.ru (:5678), 8 активных workflow
+Supabase:   rnqalafmuyrlfioqdore.supabase.co
+Vercel:     ТОЛЬКО ДЛЯ CI/CD. Трафик идёт через VPS.
 ```
 
-**Ключевое правило**: route handlers остаются тонкими. Бизнес-логика — в `lib/bot/`. 
-Каналы (Telegram/MAX/Avito) — через `lib/channels/` (адаптеры + роутер).
+## Компоненты и их статус (май 2026)
+
+### PWA (Next.js 15)
+- **Запуск**: PM2 на VPS: `NODE_OPTIONS="--max-old-space-size=1024" pm2 start npm --name pwa -- start`
+- **Рестарт**: Cron каждые 4 часа (скрипт `/root/pwa-restart.sh`)
+- **Рабочая директория**: `~/podryad-pro/pwa`
+- **Порт**: 3000
+- **Память**: стартует ~50MB, норма 50-200MB. При утечке >1GB — авто-рестарт cron'ом
+- **Известная проблема**: OOM краши при недостатке памяти. VPS имеет 1.9GB всего.
+
+### Telegram бот
+- **Webhook URL**: `https://podryadpro.ru/api/telegram/webhook`
+- **Secret check**: ВРЕМЕННО ОТКЛЮЧЕН (Next.js кеширует build-time env — возникает mismatch)
+- **Код**: `pwa/src/app/api/telegram/webhook/route.ts` — fast-path для /start, menu:services
+- **Funnel handler**: `pwa/src/lib/bot/funnel-handler.ts` — полная воронка заказа
+- **Важно**: telegram-poll.cjs УДАЛЁН из PM2 (конфликтовал с вебхуком)
+- **Уведомления админу**: `notifyManager()` → Telegram chat_id 407721399
+
+### MAX бот
+- **Запуск**: PM2: `pm2 start /root/podryad-pro/scripts/max-sdk-bot.mjs --name max-bot`
+- **SDK**: `@maxhub/max-bot-api`, long-polling (не вебхук!)
+- **Кнопки**: Создать заказ, Стать исполнителем, Каталог, Мини-приложение
+- **Вебхук подписка**: УДАЛЕНА (конфликтовала с SDK long-polling)
+
+### n8n
+- **URL**: `https://n8n.podryadpro.ru`
+- **8 активных workflow**: Job Queue Worker, Health Monitor, Referral, Mowing, Pool, Loyalty, Material orders, Error watch
+- **Коннекторы**: Supabase (direct), Telegram Main Bot, Telegram Owner Bot
+- **Статус**: контейнер показывает "unhealthy", но healthz отвечает `{"status":"ok"}`
+
+### Nginx
+- **Конфиг**: `~/podryad-pro/docker/nginx.conf`
+- **HTTP → HTTPS**: редирект 301 (настроен 29 мая)
+- **PWA proxy**: HTTPS → `http://172.17.0.1:3000`
+- **n8n proxy**: `n8n.podryadpro.ru` → `http://n8n:5678`
+- **SSL**: Let's Encrypt, валиден до 24 августа 2026
+- **Таймаут**: `proxy_read_timeout 120s` (увеличен для долгих Supabase RPC)
+
+### VPS
+- **OS**: Ubuntu 22.04, 1.9GB RAM, 40GB диск (36% used)
+- **UFW**: включён, порты 22, 80, 443
+- **Docker**: nginx + n8n + certbot
+- **PM2**: pwa + max-bot, автостарт через systemd
+- **SSH**: PasswordAuthentication отключена
+
+---
+
+## Критические баги и workaround'ы
+
+1. **Telegram secret check отключён** — `pwa/src/app/api/telegram/webhook/route.ts` строка ~91.
+   Next.js кеширует `process.env` при билде. Секрет в `.env` и в вебхуке совпадают, но PWA видит старый.
+   ВРЕМЕННЫЙ ФИКС: проверка закомментирована. НЕ ВКЛЮЧАТЬ без решения кеширования env.
+
+2. **Память PWA** — медленная утечка ~70MB/час. Сервер 1.9GB, при 1.5GB+ PWA не отвечает.
+   WORKAROUND: cron рестарт каждые 4 часа. НЕ УБИРАТЬ.
+
+3. **Double-JSON-encode в сессиях** — `session.ts:42` + `context.ts:47`.
+   Исправлено (защитный `JSON.parse` на чтение + перед `stringify`).
+   При проблемах с состоянием сессии — проверить эти файлы.
+
+4. **MaxTransport auth** — использует `access_token` в query string (правильно для MAX API).
+   Если MAX перестал отправлять сообщения — проверить `channels/max.ts:59`.
+
+5. **nginx после рестарта PWA** — нужно перезапускать nginx.
+   Старые keep-alive соединения висят. Cron-скрипт `/root/pwa-restart.sh` делает это.
+
+---
+
+## Ключевые команды
+
+```bash
+# Проверить всё
+pm2 list
+curl http://localhost:3000/api/health/bot
+docker ps
+
+# Рестарт PWA
+pm2 restart pwa --update-env
+docker-compose restart nginx
+
+# Рестарт MAX бота
+pm2 delete max-bot
+pm2 start /root/podryad-pro/scripts/max-sdk-bot.mjs --name max-bot
+
+# Telegram webhook status
+curl "https://api.telegram.org/bot8458784686:AAFicXZ-4cJGhZDyZShssBg0RZgxwg1jgOM/getWebhookInfo"
+
+# MAX subscriptions
+curl "https://platform-api.max.ru/subscriptions?access_token=f9LHodD0cOKYOJZ3PlLNERjdxkhwkbwqg8aP6T5zxMSlBdxybafZC1cB73jmDquo-KLlMOUGcVHQmx3PMhsN"
+
+# Free memory
+sync && echo 3 > /proc/sys/vm/drop_caches  # ОСТОРОЖНО: на продакшене
+```
+
+---
+
+## Что сделано (последняя сессия, май 2026)
+
+- [x] DNS делегирование podryadpro.ru → ns1.hosting.reg.ru
+- [x] SSL сертификаты через Let's Encrypt
+- [x] MAX бот переведён на официальный SDK (long-polling)
+- [x] Telegram вебхук на podryadpro.ru (через ip_address)
+- [x] Исправлен MaxTransport auth (access_token в URL)
+- [x] Исправлен double-JSON-encode в сессиях
+- [x] Telegram secret bypass (временно)
+- [x] nginx HTTP→HTTPS редирект
+- [x] UFW firewall включён
+- [x] SSH password auth отключена
+- [x] Реферальная система: исправлен bot username, RPC имя, кнопка канала
+- [x] Мини-приложения: tg-app.html + max-app.html (кнопки в обоих ботах)
+- [x] Очистка тестовых заказов с карты (130 заказов, координаты -999)
+- [x] Dead jobs очищены (1251 запись)
+- [x] n8n: удалены дубликаты workflow, остановлен MAX Poll
+- [x] Own-park страница: материалы + услуги с кнопками «Заявка»
+- [x] Все карточки адаптированы под 1:1 изображения
+- [x] Shared contracts: packages/contracts/ с Zod схемами
+
+## Что в работе / требует внимания
+
+- [ ] Функция инвайтинга — готова к тесту. Нужны 2 Telegram аккаунта
+- [ ] PWA рестарты (13 за 60 минут) — нестабильность памяти
+- [ ] n8n контейнер "unhealthy" — нужно расследовать
+- [ ] Проверить реферальную воронку end-to-end
+- [ ] VPS upgrade до 4GB RAM (рекомендация)
 
 ## Бизнес-модель
-Скрытая наценка. Заказчик видит display_price. Исполнитель получает supplier_payout. 
-Платформа бесплатна для исполнителей. Оплата — ручная оркестрация (СБП, счёт, наличные).
-
-## Flow заказа
-1. Заказчик → лендинг → заявка (152-ФЗ) → POST /api/leads → n8n → MAX
-2. Создание заказа в Supabase → admin оценивает → payment_status = invoice_sent
-3. Оплата вручную (СБП/счёт) → admin: payment_status = paid
-4. Работа → подтверждение обеих сторон → status = confirming
-5. Выплата исполнителю → executor_payout_status = paid → status = completed
-
-## Статусы заказа
-pending → priced → payment_sent → paid → in_progress → confirming → completed
-                                                        ↘ disputed ↗ (admin)
-cancelled | published | closed | done (= completed)
+Скрытая наценка. Заказчик видит display_price. Исполнитель получает supplier_payout.
+Оплата — ручная оркестрация (СБП, счёт, наличные).
 
 ## Правила
 - base_price, markup_percent — НИКОГДА в публичных API
-- display_price — единственная цена для заказчика
-- 152-ФЗ чекбокс обязателен в формах с ПД
-- Шрифт: Manrope. Цвета: brand-500 (#2F5BFF), brand-900 (#1E2A5A), violet (#6C5CE7), accent (#FF6B35)
+- Цвета: brand-500 (#2F5BFF), brand-900 (#1E2A5A), violet (#6C5CE7), accent (#FF6B35)
 - MAX — основной мессенджер, Telegram — резервный
-- Email НЕ канал коммуникации — только Telegram, MAX, Avito
-- `pwa/src/lib/channels/` — multi-channel слой
-- `pwa/src/lib/bot/` — бизнес-логика ботов (funnel, keyboards, context)
-- `pwa/src/lib/ai/` — OpenAI GPT-4o клиент
-- Админские API: PIN через x-admin-pin header (timing-safe)
-- Публичные API: анонимный Supabase клиент
-
-## Инфраструктура
-- **PWA**: Next.js 15 на VPS (PM2, порт 3000), авто-рестарт каждые 4 часа (cron)
-- **MAX бот**: официальный SDK (`@maxhub/max-bot-api`) через long-polling (PM2)
-- **Telegram бот**: вебхук на `podryadpro.ru/api/telegram/webhook`
-- **nginx**: reverse proxy podryadpro.ru → localhost:3000, SSL через Let's Encrypt
-- **n8n**: docker-контейнер на `n8n.podryadpro.ru`, воркфлоу обработки
-- **Supabase**: PostgreSQL (project: rnqalafmuyrlfioqdore)
-
-## Боты — критические точки
-- **MAX**: SDK bot должен работать всегда. При проблемах — проверить PM2 (`pm2 list | grep max-bot`)
-- **Telegram**: вебхук должен быть на podryadpro.ru. Secret bypass включён (Next.js кеширует build-time env)
-- **Память PWA**: при утечке → авто-рестарт cron'ом. Норма: 50-200MB. Критично: >1GB
-- **Telegram callback'и**: проходят через funnel handler → Supabase RPC. Если RPC падает → fallback `⏳ Загружаю меню...`
-
-## Shared Contracts
-Общие Zod-схемы в `packages/contracts/src/channels.ts`:
-- `NormalizedIncomingEvent` — нормализованное входящее сообщение
-- `NormalizedOutgoingMessage` — нормализованное исходящее сообщение
-- `SendResult` — результат отправки
-- `MessageButton` — кнопка
-
-## Контакты
-- Admin: владелец проекта (Telegram: @ipzhbankov)
-- Supabase: project `rnqalafmuyrlfioqdore`
-- VPS: root@89.124.122.12
-- Домен: podryadpro.ru
+- Админские API: PIN через x-admin-pin header
