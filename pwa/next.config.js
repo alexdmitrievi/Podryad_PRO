@@ -1,4 +1,4 @@
-const SW_VERSION = '07';
+const SW_VERSION = '08';
 
 const withPWA = require('@ducanh2912/next-pwa').default({
   dest: 'public',
@@ -34,16 +34,15 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   },
   maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
   runtimeCaching: [
-    // Страницы: StaleWhileRevalidate — показываем из кеша мгновенно, обновляем в фоне
+    // Страницы: NetworkOnly — всегда свежий HTML с сервера
+    // (StaleWhileRevalidate ломается после деплоя: старый HTML → старые JS → ERR_FAILED)
     {
       urlPattern: ({ request, url }) =>
         request.destination === 'document' ||
         (request.mode === 'navigate' && !url.pathname.startsWith('/api/')),
-      handler: 'StaleWhileRevalidate',
+      handler: 'NetworkOnly',
       options: {
         cacheName: `pages-${SW_VERSION}`,
-        expiration: { maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 },
-        networkTimeoutSeconds: 5,
       },
     },
     // JS бандлы: CacheFirst (immutable, content-hashed)
