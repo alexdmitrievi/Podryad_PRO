@@ -1,4 +1,4 @@
-const SW_VERSION = '08';
+const SW_VERSION = '09';
 
 const withPWA = require('@ducanh2912/next-pwa').default({
   dest: 'public',
@@ -31,79 +31,78 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       /\.map$/,
       /\/_next\/static\/.*\.woff2$/,
     ],
+    runtimeCaching: [
+      // Страницы: NetworkOnly — всегда свежий HTML с сервера
+      {
+        urlPattern: ({ request, url }: any) =>
+          request.destination === 'document' ||
+          (request.mode === 'navigate' && !url.pathname.startsWith('/api/')),
+        handler: 'NetworkOnly',
+        options: {
+          cacheName: `pages-${SW_VERSION}`,
+        },
+      },
+      // JS бандлы: CacheFirst (immutable, content-hashed)
+      {
+        urlPattern: /\/_next\/static\/chunks\/.*\.js$/,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: `next-js-${SW_VERSION}`,
+          expiration: { maxEntries: 64, maxAgeSeconds: 30 * 24 * 60 * 60 },
+        },
+      },
+      // CSS: CacheFirst
+      {
+        urlPattern: /\/_next\/static\/css\/.*\.css$/,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: `next-css-${SW_VERSION}`,
+          expiration: { maxEntries: 16, maxAgeSeconds: 7 * 24 * 60 * 60 },
+        },
+      },
+      // Изображения/шрифты: CacheFirst
+      {
+        urlPattern: /\.(?:png|jpg|jpeg|svg|ico|webp|woff2?|eot|ttf|otf)$/,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: `static-${SW_VERSION}`,
+          expiration: { maxEntries: 64, maxAgeSeconds: 30 * 24 * 60 * 60 },
+          networkTimeoutSeconds: 3,
+        },
+      },
+      // API: NetworkOnly — никогда не кешируем
+      {
+        urlPattern: /\/api\/.*/,
+        handler: 'NetworkOnly',
+        options: {
+          cacheName: `api-${SW_VERSION}`,
+        },
+      },
+      // Google Fonts
+      {
+        urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/,
+        handler: 'StaleWhileRevalidate',
+        options: {
+          cacheName: `fonts-${SW_VERSION}`,
+          expiration: { maxEntries: 8, maxAgeSeconds: 365 * 24 * 60 * 60 },
+          networkTimeoutSeconds: 3,
+        },
+      },
+      // Внешние CDN (не Next.js, не API)
+      {
+        urlPattern: ({ url }: any) =>
+          !url.pathname.startsWith('/_next/') &&
+          !url.pathname.startsWith('/api/'),
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: `fallback-${SW_VERSION}`,
+          expiration: { maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 },
+          networkTimeoutSeconds: 5,
+        },
+      },
+    ],
   },
   maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
-  runtimeCaching: [
-    // Страницы: NetworkOnly — всегда свежий HTML с сервера
-    // (StaleWhileRevalidate ломается после деплоя: старый HTML → старые JS → ERR_FAILED)
-    {
-      urlPattern: ({ request, url }) =>
-        request.destination === 'document' ||
-        (request.mode === 'navigate' && !url.pathname.startsWith('/api/')),
-      handler: 'NetworkOnly',
-      options: {
-        cacheName: `pages-${SW_VERSION}`,
-      },
-    },
-    // JS бандлы: CacheFirst (immutable, content-hashed)
-    {
-      urlPattern: /\/_next\/static\/chunks\/.*\.js$/,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: `next-js-${SW_VERSION}`,
-        expiration: { maxEntries: 64, maxAgeSeconds: 30 * 24 * 60 * 60 },
-      },
-    },
-    // CSS: CacheFirst
-    {
-      urlPattern: /\/_next\/static\/css\/.*\.css$/,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: `next-css-${SW_VERSION}`,
-        expiration: { maxEntries: 16, maxAgeSeconds: 7 * 24 * 60 * 60 },
-      },
-    },
-    // Изображения/шрифты: CacheFirst
-    {
-      urlPattern: /\.(?:png|jpg|jpeg|svg|ico|webp|woff2?|eot|ttf|otf)$/,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: `static-${SW_VERSION}`,
-        expiration: { maxEntries: 64, maxAgeSeconds: 30 * 24 * 60 * 60 },
-        networkTimeoutSeconds: 3,
-      },
-    },
-    // API: NetworkOnly — никогда не кешируем API-ответы
-    {
-      urlPattern: /\/api\/.*/,
-      handler: 'NetworkOnly',
-      options: {
-        cacheName: `api-${SW_VERSION}`,
-      },
-    },
-    // Внешние ресурсы (Google Fonts, etc.): StaleWhileRevalidate
-    {
-      urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/,
-      handler: 'StaleWhileRevalidate',
-      options: {
-        cacheName: `fonts-${SW_VERSION}`,
-        expiration: { maxEntries: 8, maxAgeSeconds: 365 * 24 * 60 * 60 },
-        networkTimeoutSeconds: 3,
-      },
-    },
-    // Внешние CDN / сторонние ресурсы: NetworkFirst (не Next.js, не API)
-    {
-      urlPattern: ({ url }) =>
-        !url.pathname.startsWith('/_next/') &&
-        !url.pathname.startsWith('/api/'),
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: `fallback-${SW_VERSION}`,
-        expiration: { maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 },
-        networkTimeoutSeconds: 5,
-      },
-    },
-  ],
 });
 
 /** @type {import('next').NextConfig} */
