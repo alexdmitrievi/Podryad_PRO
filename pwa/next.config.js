@@ -34,7 +34,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
     runtimeCaching: [
       // Страницы: NetworkOnly — всегда свежий HTML с сервера
       {
-        urlPattern: ({ request, url }: any) =>
+        urlPattern: ({ request, url }) =>
           request.destination === 'document' ||
           (request.mode === 'navigate' && !url.pathname.startsWith('/api/')),
         handler: 'NetworkOnly',
@@ -90,7 +90,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       },
       // Внешние CDN (не Next.js, не API)
       {
-        urlPattern: ({ url }: any) =>
+        urlPattern: ({ url }) =>
           !url.pathname.startsWith('/_next/') &&
           !url.pathname.startsWith('/api/'),
         handler: 'NetworkFirst',
