@@ -67,6 +67,25 @@ export async function POST(req: NextRequest) {
 
   const db = getServiceClient();
 
+  // Dedup: reject orders with same address + work_type + people + hours within 10 min
+  if (body.type === 'labor') {
+    const { work_type, people } = body;
+    const dedupHours = body.unit === 'hour' ? body.quantity : body.unit === 'shift' ? body.quantity * 8 : body.quantity;
+    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { data: dups } = await db.from('orders')
+      .select('order_id')
+      .eq('address', address)
+      .eq('work_type', work_type)
+      .eq('people_count', people)
+      .eq('hours', dedupHours)
+      .gte('created_at', tenMinAgo)
+      .limit(1);
+    if (dups && dups.length > 0) {
+      log.warn('POST /api/orders/create duplicate', { ip, address, work_type, people, hours: dedupHours });
+      return NextResponse.json({ error: 'duplicate_order' }, { status: 429 });
+    }
+  }
+
   if (body.type === 'labor') {
     const { work_type, people, rate, unit, quantity } = body;
     if (!work_type || !people || !rate) {
