@@ -1,10 +1,12 @@
-const SW_VERSION = '09';
+const SW_VERSION = '10';
+
+const PWA_DISABLED = true; // временно: старый SW на iOS не сбрасывается
 
 const withPWA = require('@ducanh2912/next-pwa').default({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
+  disable: PWA_DISABLED || process.env.NODE_ENV === 'development',
   manifest: {
     name: 'Подряд PRO',
     short_name: 'Подряд PRO',
