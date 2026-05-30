@@ -1,3 +1,5 @@
+const SW_VERSION = '06';
+
 const withPWA = require('@ducanh2912/next-pwa').default({
   dest: 'public',
   register: true,
@@ -39,7 +41,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
         (request.mode === 'navigate' && !url.pathname.startsWith('/api/')),
       handler: 'StaleWhileRevalidate',
       options: {
-        cacheName: 'pages',
+        cacheName: `pages-${SW_VERSION}`,
         expiration: { maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 },
         networkTimeoutSeconds: 5,
       },
@@ -49,7 +51,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       urlPattern: /\/_next\/static\/chunks\/.*\.js$/,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'next-js',
+        cacheName: `next-js-${SW_VERSION}`,
         expiration: { maxEntries: 64, maxAgeSeconds: 30 * 24 * 60 * 60 },
       },
     },
@@ -58,7 +60,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       urlPattern: /\/_next\/static\/css\/.*\.css$/,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'next-css',
+        cacheName: `next-css-${SW_VERSION}`,
         expiration: { maxEntries: 16, maxAgeSeconds: 7 * 24 * 60 * 60 },
       },
     },
@@ -67,7 +69,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       urlPattern: /\.(?:png|jpg|jpeg|svg|ico|webp|woff2?|eot|ttf|otf)$/,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'static-assets',
+        cacheName: `static-${SW_VERSION}`,
         expiration: { maxEntries: 64, maxAgeSeconds: 30 * 24 * 60 * 60 },
         networkTimeoutSeconds: 3,
       },
@@ -77,7 +79,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       urlPattern: /\/api\/.*/,
       handler: 'NetworkOnly',
       options: {
-        cacheName: 'api',
+        cacheName: `api-${SW_VERSION}`,
       },
     },
     // Внешние ресурсы (Google Fonts, etc.): StaleWhileRevalidate
@@ -85,17 +87,19 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/,
       handler: 'StaleWhileRevalidate',
       options: {
-        cacheName: 'external-fonts',
+        cacheName: `fonts-${SW_VERSION}`,
         expiration: { maxEntries: 8, maxAgeSeconds: 365 * 24 * 60 * 60 },
         networkTimeoutSeconds: 3,
       },
     },
-    // Всё остальное: NetworkFirst с таймаутом 5 сек
+    // Внешние CDN / сторонние ресурсы: NetworkFirst (не Next.js, не API)
     {
-      urlPattern: /.*/,
+      urlPattern: ({ url }) =>
+        !url.pathname.startsWith('/_next/') &&
+        !url.pathname.startsWith('/api/'),
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'fallback',
+        cacheName: `fallback-${SW_VERSION}`,
         expiration: { maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 },
         networkTimeoutSeconds: 5,
       },
