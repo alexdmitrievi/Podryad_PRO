@@ -67,7 +67,6 @@ const withPWA = require('@ducanh2912/next-pwa').default({
         options: {
           cacheName: `static-${SW_VERSION}`,
           expiration: { maxEntries: 64, maxAgeSeconds: 30 * 24 * 60 * 60 },
-          networkTimeoutSeconds: 3,
         },
       },
       // API: NetworkOnly — никогда не кешируем
@@ -85,7 +84,6 @@ const withPWA = require('@ducanh2912/next-pwa').default({
         options: {
           cacheName: `fonts-${SW_VERSION}`,
           expiration: { maxEntries: 8, maxAgeSeconds: 365 * 24 * 60 * 60 },
-          networkTimeoutSeconds: 3,
         },
       },
       // Внешние CDN (не Next.js, не API)
