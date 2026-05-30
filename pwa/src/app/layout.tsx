@@ -74,6 +74,16 @@ const THEME_SCRIPT = `
 }catch(e){}})();
 `;
 
+const SW_UNREGISTER_SCRIPT = `
+(function(){try{
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      for(var i=0;i<regs.length;i++){regs[i].unregister();}
+    });
+  }
+}catch(e){}})();
+`;
+
 export default async function RootLayout({
   children,
 }: {
@@ -83,6 +93,7 @@ export default async function RootLayout({
     <html lang="ru" className={`${inter.variable} ${manrope.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: SW_UNREGISTER_SCRIPT }} />
         <meta name="theme-color" content="#2F5BFF" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
