@@ -18,6 +18,8 @@ export async function GET() {
     )
     .not('lat', 'is', null)
     .not('lon', 'is', null)
+    .neq('lat', 0)
+    .neq('lon', 0)
     .in('status', ['pending', 'priced', 'payment_sent', 'paid', 'in_progress'])
     .order('created_at', { ascending: false })
     .limit(100);

@@ -15,6 +15,44 @@ const CITY_OPTIONS = [
 
 type CityKey = (typeof CITY_OPTIONS)[number]['key'];
 
+const DEMO_ORDERS: PublicOrder[] = [
+  {
+    order_id: 'demo-1', order_number: '101', work_type: 'labor',
+    address: 'ул. Ленина, 25, Центральный р-н',
+    address_lat: 54.9893, address_lng: 73.3686,
+    status: 'pending', people_count: 4, hours: 8,
+    created_at: new Date().toISOString(),
+  },
+  {
+    order_id: 'demo-2', order_number: '102', work_type: 'equipment',
+    address: 'ул. Красный Путь, 76, Кировский р-н',
+    address_lat: 54.9815, address_lng: 73.2880,
+    status: 'paid', people_count: 1, hours: 4,
+    created_at: new Date().toISOString(), subcategory: 'Экскаватор 20 т',
+  },
+  {
+    order_id: 'demo-3', order_number: '103', work_type: 'materials',
+    address: 'пр. Мира, 32, Советский р-н',
+    address_lat: 55.0185, address_lng: 73.3420,
+    status: 'in_progress',
+    created_at: new Date().toISOString(), subcategory: 'Бетон М300',
+  },
+  {
+    order_id: 'demo-4', order_number: '104', work_type: 'labor',
+    address: 'ул. 10 лет Октября, 40, Ленинский р-н',
+    address_lat: 54.9520, address_lng: 73.3820,
+    status: 'pending', people_count: 2, hours: 6,
+    created_at: new Date().toISOString(),
+  },
+  {
+    order_id: 'demo-5', order_number: '105', work_type: 'combo',
+    address: 'ул. Воровского, 12, Октябрьский р-н',
+    address_lat: 55.0040, address_lng: 73.4280,
+    status: 'priced', people_count: 6, hours: 10,
+    created_at: new Date().toISOString(),
+  },
+];
+
 export default function DashboardPage() {
   const [orders, setOrders] = useState<PublicOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +61,13 @@ export default function DashboardPage() {
   useEffect(() => {
     fetch('/api/orders/public')
       .then((r) => r.json())
-      .then((d) => setOrders(d.orders ?? []))
-      .catch(() => {})
+      .then((d) => {
+        const realOrders: PublicOrder[] = d.orders ?? [];
+        const realIds = new Set(realOrders.map(o => o.order_id));
+        const demoOnly = DEMO_ORDERS.filter(o => !realIds.has(o.order_id));
+        setOrders([...realOrders, ...demoOnly]);
+      })
+      .catch(() => setOrders(DEMO_ORDERS))
       .finally(() => setLoading(false));
   }, []);
 
