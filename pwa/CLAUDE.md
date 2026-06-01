@@ -170,6 +170,54 @@ sync && echo 3 > /proc/sys/vm/drop_caches  # ОСТОРОЖНО: на прода
 
 ## Что в работе / требует внимания
 
+### 🔴 КРИТИЧЕСКОЕ — сессия 01.06.2026 (не завершено)
+
+**Проблема:** SSH на VPS завис после манипуляций с Docker (ручной рестарт nginx, остановка n8n). После ребута VPS SSH не принимает внешние подключения — `banner exchange timeout`. Сайт не работает нигде (включая iOS).
+
+**Корневая причина SSH:** После того как в панели VDSina сделали reboot, SSH-демон виснет на `banner exchange`. Возможно из-за `iptables -F` (сбросили правила, Docker не смог поднять сеть). ИЛИ Docker Desktop на локалке перехватывал трафик (DNS → 198.18.0.x).
+
+**Статус инфраструктуры:**
+- VPS: пингуется, TCP port 22 открыт, но SSH handshake виснет
+- Docker containers: статус неизвестен (nginx/n8n/certbot)
+- PM2: статус неизвестен (pwa + max-bot)
+- Cloudflare: зона активна, DNS A-запись `podryadpro.ru` → `188.114.96.x` (прокси), SSL Full
+- NS серверы: перенесены с reg.ru на `gigi.ns.cloudflare.com` + `maciej.ns.cloudflare.com`
+
+**План восстановления (при старте новой сессии):**
+1. 💻 Юзер логинится в консоль VDSina (https://cp.vdsina.com/vds/view/816336, логин: ipzhbankov@yandex.ru / MakarZhbankov2018!)
+2. В VNC-консоли VPS выполняет команды восстановления:
+   ```bash
+   iptables -P INPUT ACCEPT
+   iptables -P FORWARD ACCEPT
+   iptables -P OUTPUT ACCEPT
+   iptables -F
+   iptables -t nat -F
+   systemctl restart sshd
+   ufw disable
+   systemctl start docker
+   cd /root/podryad-pro && docker-compose up -d
+   pm2 resurrect
+   ```
+3. После этого SSH оживает → я захожу и проверяю/фикшу всё
+
+**Что уже сделано в коде (задеплоено на VPS до сбоя):**
+- `pwa/next.config.js`: PWA с прозрачным прокси (NetworkOnly), SW_VERSION=11
+- `pwa/src/app/api/orders/create/route.ts`: dedup-защита заказов (10 мин)
+- `pwa/src/app/dashboard/page.tsx`: демо-заказы на карте (5 шт)
+- `pwa/src/app/layout.tsx`: инлайн-скрипт де-регистрации SW
+- `pwa/src/components/DevUnregisterSW.tsx`: продакшен-сброс SW
+- `docker/nginx.conf`: Cloudflare IP restore, server_name включает IP
+- `docker-compose.yml`: порт 8443 добавлен
+- `.gitignore`: SW-файлы заигнорены
+
+**Осталось проверить после восстановления VPS:**
+- [ ] SSH работает
+- [ ] https://podryadpro.ru открывается (через Cloudflare)
+- [ ] /api/orders/public, /dashboard, /api/site-images — 200
+- [ ] Telegram вебхук активен, pending_update_count = 0
+- [ ] MAX-бот PM2 онлайн
+- [ ] n8n доступен
+- [ ] На карте нет дубликатов заказов «ул. Ленина»
 - [ ] VPS upgrade до 4GB RAM (рекомендация — устранит OOM краши PWA)
 - [ ] Живой тест рефералов с двумя Telegram аккаунтами
 - [ ] n8n health: "unhealthy" из-за IPv6 в Docker-контейнерах (system-level disable уже есть, но Docker network всё ещё имеет IPv6)
@@ -194,6 +242,11 @@ sync && echo 3 > /proc/sys/vm/drop_caches  # ОСТОРОЖНО: на прода
 | **VPS SSH** | `ssh root@89.124.122.12` | pass: `MakarZhbankov2018!` |
 | **Админ PIN** | `8489` | |
 | **n8n** | login: `admin@podryad.pro` | pass: `jK9#mP2$$vL6@xR4!` |
+| **Cloudflare** | login: `ipzhbankov@gmail.com` | pass: `Makar2018` |
+| **Cloudflare API Token** | `cfat_9l96twcSbbbsLlxKCoda` | `5RMhGZIdKEM6cWF0waxs5c5f8bac` |
+| **Cloudflare Account ID** | `64b1af2dff41e0dcd2ada26bc5369a1d` | |
+| **Cloudflare Zone ID** | `77836f67713df30c14c2210f4d3c1baa` | |
+| **VDSina Panel** | `https://cp.vdsina.com/vds/view/816336` | login: `ipzhbankov@yandex.ru` / pass: `MakarZhbankov2018!` |
 
 ## Бизнес-модель
 Скрытая наценка. Заказчик видит display_price. Исполнитель получает supplier_payout.
