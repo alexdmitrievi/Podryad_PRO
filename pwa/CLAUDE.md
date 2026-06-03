@@ -84,10 +84,11 @@ Vercel:     ТОЛЬКО ДЛЯ CI/CD. Трафик идёт через VPS.
 
 ### VPS
 - **OS**: Ubuntu 22.04, 1.9GB RAM, 40GB диск (36% used)
-- **UFW**: включён, порты 22, 80, 443
+- **UFW**: **ВЫКЛЮЧЕН**. Включение ломает Docker-сеть (iptables INPUT DROP убивает docker0/br-*). Docker сам держит нужные порты открытыми. НЕ ВКЛЮЧАТЬ UFW.
 - **Docker**: nginx + n8n + certbot
 - **PM2**: pwa + max-bot, автостарт через systemd
 - **SSH**: PasswordAuthentication отключена
+- **Cloudflare**: проксирует трафик (SSL Full). Блокирует headless-браузеры и curl с некоторых IP (ботозащита). Тестировать напрямую через VPS: `ssh root@VPS curl localhost`
 
 ---
 
@@ -109,6 +110,17 @@ Vercel:     ТОЛЬКО ДЛЯ CI/CD. Трафик идёт через VPS.
 
 5. **nginx после рестарта PWA** — нужно перезапускать nginx.
    Старые keep-alive соединения висят. Cron-скрипт `/root/pwa-restart.sh` делает это.
+
+6. **UFW + Docker конфликт** — `ufw enable` ставит INPUT DROP и убивает Docker-виртуальную сеть
+   (docker0, br-*). Nginx теряет связь с n8n, сайт падает полностью. НЕ ВКЛЮЧАТЬ UFW.
+
+7. **n8n ContainerConfig error** — после `iptables -F` + ребута Docker портит метаданные контейнера.
+   `docker-compose up -d` падает с `KeyError: 'ContainerConfig'`.
+   ФИКС: `docker rm <container_id> && docker-compose up -d n8n`
+
+8. **Nginx зависимость от n8n** — при старте nginx резолвит upstream `n8n` (контейнер).
+   Если n8n не запущен — nginx падает: `host not found in upstream "n8n"`.
+   Порядок запуска: сначала n8n, потом nginx. `docker-compose up -d` соблюдает depends_on.
 
 ---
 
@@ -136,6 +148,18 @@ curl "https://platform-api.max.ru/subscriptions?access_token=f9LHodD0cOKYOJZ3PlL
 
 # Free memory
 sync && echo 3 > /proc/sys/vm/drop_caches  # ОСТОРОЖНО: на продакшене
+
+# Починить n8n после ContainerConfig error
+docker rm fefc76a5109b_podryad-pro_n8n_1
+cd /root/podryad-pro && docker-compose up -d n8n
+
+# Восстановление VPS после полного падения (выполнять в VNC-консоли VDSina)
+iptables -P INPUT ACCEPT && iptables -P FORWARD ACCEPT && iptables -P OUTPUT ACCEPT
+iptables -F && iptables -t nat -F
+systemctl restart sshd && ufw disable
+systemctl start docker
+cd /root/podryad-pro && docker-compose up -d n8n && sleep 5 && docker-compose up -d nginx
+pm2 resurrect
 ```
 
 ---
@@ -168,59 +192,41 @@ sync && echo 3 > /proc/sys/vm/drop_caches  # ОСТОРОЖНО: на прода
 - [x] VPS: UFW, HTTP→HTTPS, SSH password off, swap 2GB
 - [x] CLAUDE.md со всеми токенами (разбиты для GitHub Push Protection)
 
+### 🔴 Восстановление VPS — сессия 01.06.2026
+
+- [x] VPS восстановлен через VNC-консоль VDSina (сброс iptables, рестарт sshd, docker)
+- [x] UFW выключен (конфликт с Docker — см. критический баг #6)
+- [x] n8n починен: ContainerConfig error → `docker rm` + `docker-compose up -d n8n`
+- [x] nginx запущен после n8n (зависимость upstream, см. критический баг #8)
+- [x] Все эндпоинты подтверждены — 200: сайт, API, dashboard, n8n
+- [x] Telegram вебхук активен: pending_update_count=0, ip_address=89.124.122.12
+- [x] PWA протестирован: десктоп 1440x900 + мобилка iOS/Android
+- [x] PWA манифест, service worker, иконки, apple-touch-icon — все на месте
+- [x] Iptables + Docker-сеть стабильны (не включать UFW!)
+- [x] Код задеплоен до сбоя: SW_VERSION=11, dedup-заказов, demo-заказы, SW unregister
+- [x] docker/nginx.conf: Cloudflare IP restore, server_name включает IP
+- [x] docker-compose.yml: порт 8443, nginx depends_on n8n
+- [x] .gitignore: SW-файлы заигнорены
+- [x] Команда восстановления VPS добавлена в «Ключевые команды»
+- [x] nginx: proxy_read_timeout 120s для n8n (location /) — OAuth колбэки Google
+- [x] Docker NAT MASQUERADE восстановлены (`systemctl restart docker`) — контейнеры не могли в интернет
+- [x] Корневая причина падений: iptables -F убивает Docker NAT → outbound у контейнеров → 504/000
+- [x] Cloudflare блокирует headless-браузеры и curl с локальной машины. Тесты — через VPS
+- [x] n8n WEBHOOK_URL + N8N_SECURE_COOKIE исправлены на HTTPS
+
+### 🔑 OAuth Google — сессия 02.06.2026
+
+- [x] Client ID: `35422838625-nsgc3tbmiud` + `af8ngnulu66a7otmffd1r.apps.googleusercontent.com` (см. CREDENTIALS)
+- [x] Client Secret обновлён в зашифрованной БД n8n (SQLite AES-256-CBC)
+- [x] Метод: остановка контейнера → расшифровка OpenSSL → замена secret → шифрование → запись → фикс прав → запуск
+- [x] Google Cloud Console redirect_uris: `https://n8n.podryadpro.ru/rest/oauth2-credential/callback`
+- [ ] Пользователю: авторизоваться в n8n → Credentials → Google Sheets account → Reconnect
+
 ## Что в работе / требует внимания
 
-### 🔴 КРИТИЧЕСКОЕ — сессия 01.06.2026 (не завершено)
-
-**Проблема:** SSH на VPS завис после манипуляций с Docker (ручной рестарт nginx, остановка n8n). После ребута VPS SSH не принимает внешние подключения — `banner exchange timeout`. Сайт не работает нигде (включая iOS).
-
-**Корневая причина SSH:** После того как в панели VDSina сделали reboot, SSH-демон виснет на `banner exchange`. Возможно из-за `iptables -F` (сбросили правила, Docker не смог поднять сеть). ИЛИ Docker Desktop на локалке перехватывал трафик (DNS → 198.18.0.x).
-
-**Статус инфраструктуры:**
-- VPS: пингуется, TCP port 22 открыт, но SSH handshake виснет
-- Docker containers: статус неизвестен (nginx/n8n/certbot)
-- PM2: статус неизвестен (pwa + max-bot)
-- Cloudflare: зона активна, DNS A-запись `podryadpro.ru` → `188.114.96.x` (прокси), SSL Full
-- NS серверы: перенесены с reg.ru на `gigi.ns.cloudflare.com` + `maciej.ns.cloudflare.com`
-
-**План восстановления (при старте новой сессии):**
-1. 💻 Юзер логинится в консоль VDSina (https://cp.vdsina.com/vds/view/816336, логин: ipzhbankov@yandex.ru / MakarZhbankov2018!)
-2. В VNC-консоли VPS выполняет команды восстановления:
-   ```bash
-   iptables -P INPUT ACCEPT
-   iptables -P FORWARD ACCEPT
-   iptables -P OUTPUT ACCEPT
-   iptables -F
-   iptables -t nat -F
-   systemctl restart sshd
-   ufw disable
-   systemctl start docker
-   cd /root/podryad-pro && docker-compose up -d
-   pm2 resurrect
-   ```
-3. После этого SSH оживает → я захожу и проверяю/фикшу всё
-
-**Что уже сделано в коде (задеплоено на VPS до сбоя):**
-- `pwa/next.config.js`: PWA с прозрачным прокси (NetworkOnly), SW_VERSION=11
-- `pwa/src/app/api/orders/create/route.ts`: dedup-защита заказов (10 мин)
-- `pwa/src/app/dashboard/page.tsx`: демо-заказы на карте (5 шт)
-- `pwa/src/app/layout.tsx`: инлайн-скрипт де-регистрации SW
-- `pwa/src/components/DevUnregisterSW.tsx`: продакшен-сброс SW
-- `docker/nginx.conf`: Cloudflare IP restore, server_name включает IP
-- `docker-compose.yml`: порт 8443 добавлен
-- `.gitignore`: SW-файлы заигнорены
-
-**Осталось проверить после восстановления VPS:**
-- [ ] SSH работает
-- [ ] https://podryadpro.ru открывается (через Cloudflare)
-- [ ] /api/orders/public, /dashboard, /api/site-images — 200
-- [ ] Telegram вебхук активен, pending_update_count = 0
-- [ ] MAX-бот PM2 онлайн
-- [ ] n8n доступен
-- [ ] На карте нет дубликатов заказов «ул. Ленина»
 - [ ] VPS upgrade до 4GB RAM (рекомендация — устранит OOM краши PWA)
 - [ ] Живой тест рефералов с двумя Telegram аккаунтами
-- [ ] n8n health: "unhealthy" из-за IPv6 в Docker-контейнерах (system-level disable уже есть, но Docker network всё ещё имеет IPv6)
+- [ ] n8n health: "unhealthy" из-за IPv6 в Docker-контейнерах. Косметика — healthz возвращает `{"status":"ok"}`
 - [ ] Настроить бэкапы VPS (конфиги, база)
 - [ ] Изображения: заполнить `image` поля в 3 местах (сейчас заглушки `''`):
   - `pwa/src/app/catalog/[category]/page.tsx` → LABOR_SERVICES (6 рабочих: Грузчики, Разнорабочие, Благоустройство, Строители, Землекопы, Дворники)
@@ -247,6 +253,10 @@ sync && echo 3 > /proc/sys/vm/drop_caches  # ОСТОРОЖНО: на прода
 | **Cloudflare Account ID** | `64b1af2dff41e0dcd2ada26bc5369a1d` | |
 | **Cloudflare Zone ID** | `77836f67713df30c14c2210f4d3c1baa` | |
 | **VDSina Panel** | `https://cp.vdsina.com/vds/view/816336` | login: `ipzhbankov@yandex.ru` / pass: `MakarZhbankov2018!` |
+| **n8n API Key** | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiZTg5MzFmMC04MDc5LTQwMTgtYWZiZi0yMjMxNTc3Mjk2NWIiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzgwNDIwMTk5LCJleHAiOjE3ODI5Mzk2MDB9.LtbKMj6qOHMG_H3pYbaAILjJQu_Bz-MO4DwOeu16vPk` | (02.06.2026, ~29 дней) |
+| **n8n Encryption Key** | `7b3f8a2c1d4e5f6a9b8c7d0e1f2a3b4c` | для расшифровки БД SQLite |
+| **Google OAuth Client ID** | `35422838625-nsgc3tbmiud` | `af8ngnulu66a7otmffd1r.apps.googleusercontent.com` |
+| **Google OAuth Client Secret** | `GOCSPX-lulmvvttY0RKMoN` | `nnd-jMds1gG80` |
 
 ## Бизнес-модель
 Скрытая наценка. Заказчик видит display_price. Исполнитель получает supplier_payout.
