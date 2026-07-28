@@ -121,6 +121,14 @@ export async function POST(req: NextRequest) {
     log.warn('[MaxWebhook] MAX_WEBHOOK_SECRET not set — accepting all requests (security gap)');
   }
 
+  // IP-based rate limiting (defence-in-depth with nginx limit_req_zone)
+  const clientIp = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
+  const ipRl = await checkRateLimit(`max-webhook:${clientIp}`, 60, 60_000);
+  if (ipRl.limited) {
+    log.warn('[MaxWebhook] IP rate limited', { ip: clientIp });
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  }
+
   // 3. Extract update_id
   const updateId = extractMaxUpdateId(rawBody);
 

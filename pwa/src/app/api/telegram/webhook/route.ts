@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { TelegramMapper } from '@/lib/channels/telegram';
 import { log } from '@/lib/logger';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { getTelegramConfig } from '@/lib/channels/config';
 import { handleFunnelEvent } from '@/lib/bot/funnel-handler';
 import { getChannelRouter } from '@/lib/channels';
@@ -88,13 +89,20 @@ export async function POST(req: NextRequest) {
   if (!config.enabled) return NextResponse.json({ error: 'disabled' }, { status: 503 });
 
   const secret = req.headers.get('x-telegram-bot-api-secret-token') ?? '';
-  // Secret check temporarily disabled — Next.js caches build-time env
-  // const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET || '';
-  // if (expectedSecret && !timingSafeSecretCompare(secret, expectedSecret)) {
-  //   log.warn('[TG] secret mismatch', { hasSecret: !!secret });
-  //   return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  // }
-  void secret; // suppress unused warning
+  // Bracket notation prevents Next.js from inlining env at build time
+  const expectedSecret = process.env['TELEGRAM_WEBHOOK_SECRET'] || '';
+  if (expectedSecret && !timingSafeSecretCompare(secret, expectedSecret)) {
+    log.warn('[TG] secret mismatch', { hasSecret: !!secret });
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  // IP-based rate limiting (defence-in-depth with nginx limit_req_zone)
+  const clientIp = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
+  const rl = await checkRateLimit(`tg-webhook:${clientIp}`, 60, 60_000);
+  if (rl.limited) {
+    log.warn('[TG] rate limited', { ip: clientIp });
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  }
 
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ ok: true }); }
