@@ -114,23 +114,9 @@ const DEMO_ORDERS: PublicOrderMarker[] = [
 export default function LiveOrdersMap() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
-  const [orders, setOrders] = useState<PublicOrderMarker[]>([]);
+  const [orders] = useState<PublicOrderMarker[]>(DEMO_ORDERS);
   const [selected, setSelected] = useState<PublicOrderMarker | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  /* Fetch active orders */
-  useEffect(() => {
-    fetch('/api/orders/public')
-      .then((r) => r.json())
-      .then((d) => {
-        const realOrders: PublicOrderMarker[] = d.orders ?? [];
-        const realIds = new Set(realOrders.map(o => o.order_id));
-        const demoOnly = DEMO_ORDERS.filter(o => !realIds.has(o.order_id));
-        setOrders([...realOrders, ...demoOnly]);
-      })
-      .catch(() => setOrders(DEMO_ORDERS))
-      .finally(() => setLoading(false));
-  }, []);
+  const [loading, setLoading] = useState(false);
 
   const handleSelect = useCallback((order: PublicOrderMarker) => {
     setSelected(prev => prev?.order_id === order.order_id ? null : order);

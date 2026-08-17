@@ -15,8 +15,13 @@ services:
       WEBHOOK_URL: https://n8n.podryadpro.ru
       GENERIC_TIMEZONE: Europe/Moscow
       TZ: Europe/Moscow
+      MAX_API_URL: https://platform-api.max.ru
+      MAX_BOT_TOKEN: ${MAX_BOT_TOKEN}
+      TELEGRAM_OWNER_CHAT_ID: ${TELEGRAM_OWNER_CHAT_ID}
+      NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
     volumes:
       - n8n_data:/home/node/.n8n
+      - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:5678/healthz"]
       interval: 30s

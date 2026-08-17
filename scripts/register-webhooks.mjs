@@ -23,7 +23,7 @@ const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TG_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 const MAX_TOKEN = process.env.MAX_BOT_TOKEN;
 const MAX_SECRET = process.env.MAX_WEBHOOK_SECRET;
-const MAX_API_BASE = process.env.MAX_API_BASE || 'https://platform-api.max.ru';
+const MAX_API_BASE = process.env.MAX_API_BASE || 'https://platform-api2.max.ru';
 
 const TELEGRAM_ONLY = process.argv.includes('--telegram-only');
 const MAX_ONLY = process.argv.includes('--max-only');
