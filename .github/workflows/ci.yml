@@ -316,3 +316,43 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H 51.250.66.30 >> ~/.ssh/known_hosts
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes ubuntu@51.250.66.30
+
+  # Advisory AI code review (brooks-lint) on pull requests.
+  # Never blocks merge: continue-on-error. Requires GH_DEEPSEEK_API_KEY secret;
+  # without it the job prints a notice and exits cleanly.
+  brooks-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install brooks-lint skills
+        run: |
+          git clone --depth 1 https://github.com/hyhmrright/brooks-lint.git /tmp/brooks-lint
+          mkdir -p ~/.claude/skills
+          cp -r /tmp/brooks-lint/skills/brooks-review ~/.claude/skills/
+          cp -r /tmp/brooks-lint/skills/_shared ~/.claude/skills/
+
+      - name: Brooks review (advisory)
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.GH_DEEPSEEK_API_KEY }}
+        run: |
+          if [ -z "$DEEPSEEK_API_KEY" ]; then
+            echo "::notice::GH_DEEPSEEK_API_KEY secret not set — brooks-review skipped"
+            exit 0
+          fi
+          git diff "${{ github.event.pull_request.base.sha }}..HEAD" > /tmp/pr.diff
+          if [ ! -s /tmp/pr.diff ]; then
+            echo "::notice::Empty diff — brooks-review skipped"
+            exit 0
+          fi
+          npx -y opencode-ai@latest run -m deepseek/deepseek-chat \
+            "Ты проводишь code review по методологии скилла brooks-review (файлы ~/.claude/skills/brooks-review/SKILL.md, pr-review-guide.md и ~/.claude/skills/_shared/*.md). Сначала прочитай эти файлы скилла, затем проанализируй diff из /tmp/pr.diff и выведи отчёт строго по шаблону скилла (Iron Law: Symptom / Source / Consequence / Remedy). Файлы не изменяй. Отчёт на русском."

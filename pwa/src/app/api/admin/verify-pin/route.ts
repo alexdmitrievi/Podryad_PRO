@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminPin } from '@/lib/auth';
+import { verifyAdminPin } from '@/lib/admin-pin';
 import { checkRateLimit, resetRateLimit } from '@/lib/rate-limit';
 import { writeAuditLog } from '@/lib/audit';
 
