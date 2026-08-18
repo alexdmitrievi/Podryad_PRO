@@ -3,6 +3,44 @@
 Платформа для поиска работы и подработки в Омске.  
 Telegram-бот + канал + PWA + n8n автоматизация. **Данные: Supabase (PostgreSQL)**, не Google Sheets.
 
+## 📌 Текущее состояние (август 2026)
+
+**Хостинг:** Yandex Cloud VM `podryadpro-prod` (ru-central1-a, 2 vCPU / 8 GB, статический IP `51.250.66.30`), Ubuntu 24.04.
+
+**Стек на VM:**
+- nginx (Docker) — :80/:443/:8443 (8443 для обхода DPI), проксирует PWA и `n8n.podryadpro.ru`;
+- Next.js PWA — PM2, порт 3000 (env в `pwa/.env.local`, НЕ в git);
+- n8n 1.89.2 (Docker) — 9 активных workflow (job-queue worker, CRM nurture, health, mowing, pool, referral, loyalty, material orders, error watch); креды: `Supabase (direct)` (pooler `aws-1-eu-west-1.pooler.supabase.com:6543`), `Telegram Main/Owner Bot`;
+- MAX SDK-бот — PM2 long-polling (`scripts/max-sdk-bot.mjs`, `platform-api2.max.ru`);
+- certbot (Let's Encrypt, DNS-01 через Cloudflare-токен) — сертификат на `podryadpro.ru`, `www`, `n8n.podryadpro.ru`.
+
+**Сеть и безопасность:**
+- Cloudflare: `podryadpro.ru` и `www` проксируются (SSL Full strict), `n8n.podryadpro.ru` — без прокси;
+- SG `podryadpro-prod-sg`: 22 только с админских IP, 80/443/8443 публично, 5678 закрыт;
+- Telegram-вебхук зарегистрирован на `https://podryadpro.ru/api/telegram/webhook` (secret token);
+- на VM в `/etc/hosts` и в шаблоне cloud-init: `api.telegram.org → 149.154.167.220` (IPv4), локальные домены на 127.0.0.1; в CA-хранилище добавлены ISRG Root YR и корни НУЦ Минцифры (для MAX).
+
+**CI/CD (GitHub Actions, `.github/workflows/ci.yml`):**
+- `lint-build-test` (жёсткий гейт), `security-audit`, `env-validation`, `lighthouse`;
+- `e2e-api` / `e2e-browser` — не блокируют (требуют тестовый сетап MAX/Telegram; отчёты в артефактах);
+- `deploy-vm` — автодеплой на VM: `POST https://podryadpro.ru/api/deploy` с Bearer `DEPLOY_TOKEN` → VM выполняет `~/deploy.sh` (git reset → build → pm2 restart);
+- `brooks-review` — advisory AI-ревью на PR (нужен секрет `GH_DEEPSEEK_API_KEY`, без него пропускается);
+- Vercel hook — опционален (прод живёт на VM).
+
+**Бэкапы:** cron 03:00 MSK `scripts/backup.mjs` (pg_dump Supabase + конфиги) + Cloud Backup (политики daily/weekly привязаны к VM). Снапшоты диска — по мере миграций.
+
+**Дизайн и документация:**
+- `DESIGN.md` — бренд-контракт (цвета/шрифты/стиль);
+- `docs/diagrams/` — интерактивные диаграммы (archify): деплой-архитектура, воронка заказа, жизненный цикл job_queue;
+- в opencode подключены скиллы: archify, brooks-* (review/audit/health), open-design (design-md, brand-extract, design-brief).
+
+**Отдельный продукт:** карточка «TenderPars» на главной ведёт на `https://parser-juzu.vercel.app/` (парсер тендеров 44-ФЗ/223-ФЗ, отдельный Vercel-проект). Домен `tenderpars.ru` пока не зарегистрирован; API (`/api/meta`, `/api/search/tenders`, `/api/tenders`) периодически отдаёт 502.
+
+**Известные незакрытые задачи:**
+- Ротация секретов, засвеченных ранее (см. `pwa/CLAUDE.md` — там лежат старые доступы);
+- Тестовый сетап MAX/Telegram для e2e-тестов;
+- hol-guard (runtime-защита агента) — отложен: litellm 1.93.0 не собирается на Windows без MSVC Build Tools.
+
 ## 📂 Структура проекта
 
 ```
