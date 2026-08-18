@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Жизненный цикл задачи в job_queue",
+    "subtitle": "pending → processing → completed | retry | dead",
+    "output": "job-queue.lifecycle.html",
+    "visual_preset": "classic",
+    "animation": "trace",
+    "quality_profile": "standard",
+    "views": [
+      {
+        "id": "retry-loop",
+        "label": "Петля повторов",
+        "focus": ["enqueue", "claim", "deliver", "retry"],
+        "note": "Доставка с повторами до max_attempts."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "main", "label": "Основной поток" },
+    { "id": "retries", "label": "Повторы" },
+    { "id": "terminal", "label": "Исходы" }
+  ],
+  "states": [
+    { "id": "enqueue", "type": "start", "label": "Задача создана", "sublabel": "status: pending", "lane": "main", "col": 0, "step": "01" },
+    { "id": "claim", "type": "active", "label": "Захват", "sublabel": "claim_jobs · lease 120 c", "lane": "main", "col": 1, "step": "02" },
+    { "id": "deliver", "type": "decision", "label": "Доставка", "sublabel": "Telegram / MAX", "lane": "main", "col": 2, "step": "03" },
+    { "id": "completed", "type": "success", "label": "Выполнена", "sublabel": "status: completed", "lane": "main", "col": 3, "step": "04" },
+    { "id": "retry", "type": "waiting", "label": "Повтор", "sublabel": "attempts + 1", "lane": "retries", "col": 0 },
+    { "id": "dead", "type": "failure", "label": "Мёртвая задача", "sublabel": "attempts ≥ max → алерт", "lane": "terminal", "col": 0 }
+  ],
+  "transitions": [
+    { "from": "enqueue", "to": "claim", "label": "claim_jobs()", "variant": "emphasis", "route": "straight", "labelAt": [171, 202] },
+    { "from": "claim", "to": "deliver", "label": "обработка", "route": "straight", "labelAt": [325, 202] },
+    { "from": "deliver", "to": "completed", "label": "успех", "variant": "emphasis", "route": "straight" },
+    { "from": "deliver", "to": "retry", "label": "ошибка", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "route": "straight", "labelAt": [402, 202] },
+    { "from": "retry", "to": "enqueue", "label": "повтор", "variant": "emphasis", "route": "left-channel" },
+    { "from": "retry", "to": "dead", "label": "лимит попыток", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "straight", "labelAt": [402, 350] }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Инварианты", "items": ["Просроченный lease возвращается в pending", "attempts ≥ max_attempts → dead навсегда"] },
+    { "dot": "rose", "title": "Наблюдение", "items": ["/api/health алертит: dead ≥ 10, pending ≥ 50", "Workflow 08 чистит dead-джобы"] }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Воронка заказа: от сообщения до уведомления",
+    "subtitle": "Telegram/MAX → парсинг → Supabase → n8n job-queue → уведомления",
+    "output": "order-funnel.workflow.html",
+    "visual_preset": "signal-flow",
+    "animation": "trace",
+    "quality_profile": "standard",
+    "views": [
+      {
+        "id": "happy-path",
+        "label": "Основной путь",
+        "focus": ["user_msg", "bot_parse", "db_save", "job_enqueue", "worker", "notify_channel"],
+        "note": "Заявка от сообщения до уведомления админа и канала."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "customer", "label": "Заказчик" },
+    { "id": "bot", "label": "Бот / PWA" },
+    { "id": "db", "label": "Supabase" },
+    { "id": "n8n", "label": "n8n" },
+    { "id": "channel", "label": "Telegram / MAX" }
+  ],
+  "phases": [
+    { "id": "ph-intake", "label": "Приём заявки", "fromCol": 0, "toCol": 1 },
+    { "id": "ph-store", "label": "Сохранение", "fromCol": 2, "toCol": 3 },
+    { "id": "ph-deliver", "label": "Доставка", "fromCol": 4, "toCol": 5 }
+  ],
+  "mainPath": ["user_msg", "bot_parse", "db_save", "job_enqueue", "worker", "notify_channel"],
+  "nodes": [
+    { "id": "user_msg", "lane": "customer", "col": 0, "type": "external", "label": "Сообщение", "sublabel": "/start · текст", "width": 92 },
+    { "id": "bot_parse", "lane": "bot", "col": 1, "type": "backend", "label": "Обработка", "sublabel": "webhook → funnel-handler", "width": 96 },
+    { "id": "db_save", "lane": "db", "col": 2, "type": "database", "label": "Сохранение", "sublabel": "bot_leads · orders", "width": 96 },
+    { "id": "job_enqueue", "lane": "db", "col": 3, "type": "messagebus", "label": "job_queue", "sublabel": "status: pending", "width": 96 },
+    { "id": "worker", "lane": "n8n", "col": 4, "type": "backend", "label": "Worker", "sublabel": "workflow 01 · 30 c", "width": 96 },
+    { "id": "notify_channel", "lane": "channel", "col": 5, "type": "external", "label": "Уведомления", "sublabel": "админ · канал · клиент", "width": 96 }
+  ],
+  "edges": [
+    { "from": "user_msg", "to": "bot_parse", "label": "webhook / long-poll", "role": "main" },
+    { "from": "bot_parse", "to": "db_save", "label": "INSERT", "role": "main" },
+    { "from": "db_save", "to": "job_enqueue", "label": "enqueue", "role": "main", "route": "outside-right", "labelDy": -18 },
+    { "from": "job_enqueue", "to": "worker", "label": "claim_jobs", "role": "main" },
+    { "from": "worker", "to": "notify_channel", "label": "sendMessage / MAX", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Порядок", "items": ["Сообщение → парсинг → БД → очередь → воркер → доставка", "Повторы до max_attempts, затем dead + алерт (workflow 04)"] },
+    { "dot": "rose", "title": "Риски", "items": ["Два потребителя MAX-апдейтов конфликтуют (cron max-poll vs SDK)", "Просроченный lease уходит в dead"] }
+  ]
+}

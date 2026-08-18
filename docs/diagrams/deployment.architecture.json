@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Подряд PRO — деплой-архитектура",
+    "subtitle": "Cloudflare → Yandex Cloud VM → nginx → PWA/n8n/max-bot → Supabase",
+    "output": "deployment-architecture.html",
+    "visual_preset": "blueprint",
+    "animation": "none",
+    "quality_profile": "standard",
+    "views": [
+      {
+        "id": "user-path",
+        "label": "Путь пользователя",
+        "focus": ["users", "cloudflare", "nginx", "pwa", "supabase"],
+        "note": "Заявка с сайта до базы данных."
+      },
+      {
+        "id": "bots-path",
+        "label": "Боты и автоматизация",
+        "focus": ["telegram", "max", "max_bot", "n8n", "github_actions"],
+        "note": "Telegram-вебхук, MAX long-polling, n8n-воркеры."
+      }
+    ]
+  },
+  "components": [
+    { "id": "users", "type": "external", "label": "Пользователи", "sublabel": "браузер · PWA", "pos": [30, 190], "size": [120, 56] },
+    { "id": "cloudflare", "type": "cloud", "label": "Cloudflare", "sublabel": "CDN · SSL Full (strict)", "pos": [230, 190], "size": [132, 60], "tag": "edge" },
+    { "id": "nginx", "type": "security", "label": "nginx", "sublabel": ":80/:443/:8443 · proxy", "pos": [430, 190], "size": [126, 60], "tag": "vm" },
+    { "id": "pwa", "type": "backend", "label": "Next.js PWA", "sublabel": "PM2 · :3000", "pos": [430, 60], "size": [126, 60], "tag": "vm" },
+    { "id": "n8n", "type": "backend", "label": "n8n", "sublabel": "Docker · :5678", "pos": [650, 190], "size": [126, 60], "tag": "vm" },
+    { "id": "max_bot", "type": "backend", "label": "MAX SDK bot", "sublabel": "PM2 · long-polling", "pos": [650, 320], "size": [126, 60], "tag": "vm" },
+    { "id": "supabase", "type": "database", "label": "Supabase", "sublabel": "Postgres · Realtime · Storage", "pos": [870, 150], "size": [140, 64], "tag": "db" },
+    { "id": "telegram", "type": "external", "label": "Telegram Bot API", "sublabel": "webhook → /api/telegram/webhook", "pos": [30, 400], "size": [132, 60] },
+    { "id": "max", "type": "external", "label": "MAX api2", "sublabel": "platform-api2.max.ru", "pos": [870, 400], "size": [132, 60] },
+    { "id": "github_actions", "type": "external", "label": "GitHub Actions", "sublabel": "CI · deploy-vm по SSH", "pos": [650, 470], "size": [132, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Yandex Cloud VM podryadpro-prod (51.250.66.30)", "wraps": ["nginx", "pwa", "n8n", "max_bot"] },
+    { "kind": "region", "label": "Supabase (eu-west-1)", "wraps": ["supabase"] }
+  ],
+  "connections": [
+    { "from": "users", "to": "cloudflare", "label": "HTTPS", "variant": "emphasis" },
+    { "from": "cloudflare", "to": "nginx", "label": "HTTPS", "variant": "emphasis" },
+    { "from": "nginx", "to": "pwa", "label": "proxy :3000", "fromSide": "top", "toSide": "bottom", "labelAt": [503, 160] },
+    { "from": "nginx", "to": "n8n", "label": "n8n.podryadpro.ru", "labelAt": [603, 212] },
+    { "from": "pwa", "to": "supabase", "label": "PostgREST · Realtime", "variant": "emphasis", "via": [[713, 90], [713, 182]], "labelAt": [723, 128] },
+    { "from": "telegram", "to": "pwa", "label": "webhook", "variant": "dashed", "toSide": "left", "via": [[196, 430], [196, 90]], "labelAt": [206, 240] },
+    { "from": "max_bot", "to": "max", "label": "getUpdates", "variant": "dashed", "fromSide": "right", "toSide": "left", "via": [[823, 350], [823, 430]], "labelAt": [833, 390] },
+    { "from": "n8n", "to": "supabase", "label": "SQL (pooler :6543)", "via": [[823, 220], [823, 182]], "labelAt": [833, 228] },
+    { "from": "pwa", "to": "n8n", "label": "webhooks", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "via": [[493, 150], [713, 150]], "labelAt": [603, 143] },
+    { "from": "github_actions", "to": "nginx", "label": "SSH deploy", "variant": "security", "fromSide": "left", "toSide": "bottom", "via": [[585, 500], [585, 280], [493, 280]], "labelAt": [540, 380] }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Трафик", "items": ["Весь публичный трафик — через Cloudflare (proxy)", "n8n.podryadpro.ru — без CF-прокси, свой TLS", "Порт 8443 — обход DPI"] },
+    { "dot": "emerald", "title": "Данные", "items": ["Единственная БД — Supabase (не трогаем при миграции)", "n8n ходит в БД через IPv4-pooler :6543", "Загрузки файлов — Storage bucket listing-images"] },
+    { "dot": "rose", "title": "Автоматизация", "items": ["GitHub Actions deploy-vm: reset + build + pm2 restart", "Telegram — вебхук с секретом; MAX — long-polling SDK", "Бэкапы: cron pg_dump 03:00 + Cloud Backup daily/weekly"] }
+  ]
+}
