@@ -309,13 +309,11 @@ jobs:
 
       - name: Deploy to production VM
         env:
-          GH_DEPLOY_SSH_KEY: ${{ secrets.GH_DEPLOY_SSH_KEY }}
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
         run: |
-          mkdir -p ~/.ssh
-          echo "$GH_DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H 51.250.66.30 >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes ubuntu@51.250.66.30
+          curl -fsS -X POST "https://podryadpro.ru/api/deploy" \
+            -H "Authorization: Bearer $DEPLOY_TOKEN" \
+            --max-time 30
 
   # Advisory AI code review (brooks-lint) on pull requests.
   # Never blocks merge: continue-on-error. Requires GH_DEEPSEEK_API_KEY secret;
