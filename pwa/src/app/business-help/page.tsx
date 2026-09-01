@@ -33,7 +33,7 @@ export default function BusinessHelpPage() {
             </svg>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading mb-2 tracking-tight">Помощь бизнесу</h1>
-          <p className="text-white/45 text-sm">Выберите способ связи — покажем, как сократить издержки</p>
+          <p className="text-white/45 text-sm">Всё для роста бизнеса в одном окне — от ИИ до данных</p>
         </div>
 
         {/* USP cards — same style as «Выгодно от Подряд PRO» */}
@@ -52,6 +52,23 @@ export default function BusinessHelpPage() {
                 <div className="text-3xl mb-3">{item.icon}</div>
                 <h3 className="font-bold text-sm mb-1 leading-tight">{item.title}</h3>
                 <p className="text-white/55 text-xs leading-relaxed">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* How it works */}
+        <div className="space-y-2 mb-8">
+          {[
+            { n: '1', t: 'Заявка', d: 'Опишите задачу — что нужно бизнесу' },
+            { n: '2', t: 'КП за 30 минут', d: 'Менеджер готовит предложение и цену' },
+            { n: '3', t: 'Результат', d: 'Выполняем — вы принимаете и платите за итог' },
+          ].map((st) => (
+            <div key={st.n} className="flex items-start gap-3 bg-white/[0.05] border border-white/[0.09] rounded-xl px-4 py-3">
+              <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{st.n}</span>
+              <div>
+                <div className="text-white font-semibold text-sm">{st.t}</div>
+                <div className="text-white/40 text-xs mt-0.5">{st.d}</div>
               </div>
             </div>
           ))}
@@ -138,6 +155,16 @@ export default function BusinessHelpPage() {
               <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </a>
+        </div>
+
+        <div className="text-center mt-6">
+          <Link
+            href="/own-park"
+            className="inline-flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-400 text-white font-bold px-6 py-3 rounded-xl transition-all cursor-pointer"
+          >
+            Смотреть все услуги
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </Link>
         </div>
 
         <p className="text-white/20 text-xs text-center mt-8 leading-relaxed">

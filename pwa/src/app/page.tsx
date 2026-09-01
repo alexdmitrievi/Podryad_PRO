@@ -17,19 +17,6 @@ const CITY_LABELS: Record<City, string> = {
   novosibirsk: 'Новосибирск',
 };
 
-/* ── site-wide hero images (admin-managed) ───────────────────── */
-
-function useSiteImages() {
-  const [images, setImages] = useState<Record<string, string | null>>({});
-  useEffect(() => {
-    fetch('/api/site-images')
-      .then((r) => r.json())
-      .then((d) => setImages(d.images ?? {}))
-      .catch(() => {});
-  }, []);
-  return images;
-}
-
 /* ── scroll-reveal hook ─────────────────────────────────────── */
 
 function useReveal() {
@@ -233,7 +220,6 @@ function useCountUp(target: number, duration = 1800) {
 /* ── page ────────────────────────────────────────────────────── */
 
 export default function HomePage() {
-  const siteImages = useSiteImages();
 
   /* form state */
   const [phone, setPhone] = useState('');
@@ -254,8 +240,8 @@ export default function HomePage() {
   const revForm = useReveal();
 
   /* count-up */
-  const orders = useCountUp(500);
-  const contractors = useCountUp(200);
+  const orders = useCountUp(9);
+  const contractors = useCountUp(30);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -426,18 +412,17 @@ export default function HomePage() {
           {/* Live badge */}
           <div className="live-badge mb-6 animate-fade-in inline-flex">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse-dot flex-shrink-0" />
-            Платформа для бизнеса и людей
+            Деловая площадка для бизнеса
           </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-[3.75rem] font-extrabold text-white leading-[1.08] mb-5 font-heading animate-fade-in tracking-tight">
-            Персонал &middot; Техника &middot; Материалы
-            <br />
-            <span className="text-gradient">в&nbsp;Омске и&nbsp;Новосибирске</span>
+            Растите бизнес —<br />
+            <span className="text-gradient">остальное возьмём на&nbsp;себя</span>
           </h1>
           <p className="text-white/65 text-base sm:text-lg mb-8 max-w-xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.15s' }}>
-            Стройка, благоустройство, частные участки.
+            Материалы, рабочая сила, маркетинг, ИИ, автоматизация и данные.
             <br className="hidden sm:block" />
-            Безопасная оплата &middot; Перезвоним за&nbsp;15&nbsp;минут
+            Заявка &middot; КП за&nbsp;30&nbsp;минут
           </p>
 
           {/* Stats card */}
@@ -449,30 +434,30 @@ export default function HomePage() {
               <span ref={orders.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
                 {orders.value}+
               </span>
-              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">заказов</span>
+              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">направлений услуг</span>
             </div>
             <div className="stats-divider" />
             <div className="text-center">
               <span ref={contractors.ref} className="block text-3xl sm:text-4xl font-extrabold text-white tabular-nums font-heading leading-none">
-                {contractors.value}+
+                {contractors.value}
               </span>
-              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">исполнителей</span>
+              <span className="text-white/45 text-[11px] uppercase tracking-widest block mt-1.5 font-medium">минут до КП</span>
             </div>
           </div>
 
           <div className="animate-fade-in w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 px-2 sm:px-0" style={{ animationDelay: '0.45s' }}>
             <a
-              href="/order/new"
+              href="#lead-form"
               className="btn-shine group inline-flex items-center justify-center gap-2.5 bg-white text-brand-500 hover:text-brand-600 font-bold text-lg px-10 py-4 rounded-xl transition-all duration-300 hover:shadow-glow-hover btn-press cursor-pointer"
             >
-              Разместить заказ
+              Оставить заявку
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1.5"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </a>
             <a
-              href="#lead-form"
+              href="#services"
               className="inline-flex items-center justify-center gap-2 text-white font-semibold text-base px-10 py-4 rounded-xl transition-all duration-200 border-2 border-white/35 hover:border-white/65 hover:bg-white/10 active:scale-95 cursor-pointer"
             >
-              Оставить заявку
+              Смотреть услуги
             </a>
           </div>
 
@@ -510,113 +495,33 @@ export default function HomePage() {
       </section>
 
       {/* ── 2. УСЛУГИ — 3 карточки ──────────────────────────────── */}
-      <section id="services" className="py-16 sm:py-20 px-4 bg-white dark:bg-dark-bg">
+            <section id="services" className="py-16 sm:py-20 px-4 bg-white dark:bg-dark-bg">
         <div ref={revServices} className="max-w-6xl mx-auto reveal">
           <div className="text-center mb-12">
             <span className="eyebrow text-brand-500 mb-4 block">Услуги</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
               Что мы предлагаем
             </h2>
+            <p className="text-gray-500 dark:text-dark-muted max-w-xl mx-auto text-sm sm:text-base mt-3">
+              Три направления — один менеджер. Заявка &rarr; КП за 30 минут.
+            </p>
           </div>
 
-           <div ref={revServiceCards} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-            {/* Выгодно от Подряд PRO — карточка №1 */}
-            <Link
-              href="/own-park"
-              className="group relative overflow-hidden rounded-2xl p-6 card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 text-white"
-              style={{ background: 'linear-gradient(135deg, #1E2A5A 0%, #2d1b69 100%)' }}
-            >
-              {siteImages['hero.combo'] && (
-                <>
-                  <Image
-                    src={siteImages['hero.combo']}
-                    alt=""
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover absolute inset-0 transition-transform duration-500 group-hover:scale-[1.03]"
-                    aria-hidden
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#1E2A5A]/90 via-[#1E2A5A]/75 to-[#2d1b69]/90 pointer-events-none" />
-                </>
-              )}
-
-              <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-violet/25 blur-[60px] pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-brand-500/25 blur-[50px] pointer-events-none" />
-
-              {/* Ribbon — "−20%" */}
-              <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1a2e] text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg tracking-wide">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                </svg>
-                −20%
-              </div>
-
-              <div className="relative z-[1] flex flex-col h-full">
-                <div className="service-icon-wrap service-icon--amber mb-5">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">Выгодно<br/>от Подряд PRO</h3>
-                <p className="text-white/80 text-xs mb-4 font-medium">Гарантия. Договор. Качество.</p>
-                <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                  {[
-                    { label: 'Услуги', price: 'по запросу' },
-                    { label: 'Материалы', price: 'напрямую' },
-                    { label: 'Всё под ключ', price: 'с документами' },
-                  ].map((row) => (
-                    <li key={row.label} className="flex justify-between items-center gap-2">
-                      <span className="text-white/90 truncate min-w-0">{row.label}</span>
-                      <span className="text-amber-300 text-xs font-semibold whitespace-nowrap">{row.price}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
-                  <span>Смотреть предложения</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-              </div>
-            </Link>
-
-            {/* Рабочая сила */}
+          <div ref={revServiceCards} className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Блок 1: Материалы и рабочая сила */}
             <Link
               href="/catalog/labor"
               className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
-              {siteImages['hero.labor'] ? (
-                <div className="relative w-full aspect-square bg-gray-100 dark:bg-dark-border">
-                  <Image
-                    src={siteImages['hero.labor']}
-                    alt="Рабочая сила"
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                  />
-                </div>
-              ) : null}
               <div className="p-6 flex flex-col flex-1">
-                {!siteImages['hero.labor'] && (
-                  <div className="service-icon-wrap mb-5">
-                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-brand-500 transition-colors duration-300" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                )}
-                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Рабочая сила</h3>
-                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Бригады от 2 до 15 человек</p>
+                <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 text-2xl">🏗️</div>
+                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Материалы и рабочая сила</h3>
+                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Стройматериалы с доставкой · бригады от 2 до 15 человек</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                  {[
-                    { emoji: '💪', label: 'Грузчики', price: 'от 350 ₽/ч' },
-                    { emoji: '👷', label: 'Разнорабочие', price: 'от 300 ₽/ч' },
-                    { emoji: '🏡', label: 'Благоустройство', price: 'от 250 ₽/ч' },
-                    { emoji: '🔨', label: 'Ремонт', price: 'от 500 ₽/ч' },
-                  ].map((row) => (
-                    <li key={row.label} className="flex justify-between items-center gap-2 group/item cursor-default">
-                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0 flex items-center gap-2">
-                        <span className="text-base transition-transform duration-300 group-hover/item:scale-125 inline-block">{row.emoji}</span>
-                        {row.label}
-                      </span>
-                      <span className="price-label whitespace-nowrap">{row.price}</span>
+                  {['Бетон, щебень, песок, цемент, кирпич', 'Грузчики, разнорабочие, строители', 'Землекопы, дворники, уборщики'].map((row) => (
+                    <li key={row} className="flex items-center gap-2 text-gray-600 dark:text-dark-text">
+                      <span className="text-brand-500 text-xs">●</span>
+                      {row}
                     </li>
                   ))}
                 </ul>
@@ -627,126 +532,62 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* TenderPars */}
-            <a
-              href="https://parser-juzu.vercel.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
-            >
-              <div className="p-6 flex flex-col flex-1">
-                <div className="service-icon-wrap mb-5">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    className="text-brand-500 transition-colors duration-300" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">TenderPars</h3>
-                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Тендеры · аукционы · гранты</p>
-                <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                  {[
-                    { label: 'Поиск тендеров', price: '44-ФЗ / 223-ФЗ' },
-                    { label: 'Аукционы', price: 'все площадки' },
-                    { label: 'Гранты и субсидии', price: 'актуальные' },
-                    { label: 'Соц. контракт', price: 'подробно' },
-                  ].map((row) => (
-                    <li key={row.label} className="flex justify-between items-center gap-2">
-                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0">{row.label}</span>
-                      <span className="price-label whitespace-nowrap">{row.price}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
-                  <span>Перейти на TenderPars</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-              </div>
-            </a>
-
-            {/* Установить приложение */}
+            {/* Блок 2: Маркетинг и ИИ */}
             <Link
-              href="/install"
+              href="/own-park"
               className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
               <div className="p-6 flex flex-col flex-1">
-                <div className="service-icon-wrap mb-5">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    className="text-brand-500 transition-colors duration-300" aria-hidden="true">
-                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" strokeWidth="1.8"/>
-                    <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth="2.5"/>
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Установить приложение</h3>
-                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">На главный экран · в один клик</p>
+                <div className="w-12 h-12 rounded-xl bg-violet/10 flex items-center justify-center mb-5 text-2xl">🤖</div>
+                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Маркетинг и ИИ</h3>
+                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Продвижение, ИИ-сотрудники, CRM и автоматизация</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                  {[
-                    { label: 'Быстрый доступ', price: 'без браузера' },
-                    { label: 'Push-уведомления', price: 'мгновенно' },
-                    { label: 'iPhone / Android', price: 'инструкция' },
-                    { label: 'Всегда под рукой', price: 'как приложение' },
-                  ].map((row) => (
-                    <li key={row.label} className="flex justify-between items-center gap-2">
-                      <span className="text-gray-600 dark:text-dark-text truncate min-w-0">{row.label}</span>
-                      <span className="price-label whitespace-nowrap">{row.price}</span>
+                  {['Холодные рассылки · выдача сайтов в нейросетях · Яндекс Дзен', 'Создание ИИ-менеджеров и агентов', 'Подключение и настройка CRM', 'Автоматизация бизнес-процессов'].map((row) => (
+                    <li key={row} className="flex items-center gap-2 text-gray-600 dark:text-dark-text">
+                      <span className="text-violet text-xs">●</span>
+                      {row}
                     </li>
                   ))}
                 </ul>
                 <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
-                  <span>Как установить?</span>
+                  <span>Получить консультацию</span>
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
             </Link>
 
-            {/* Помощь бизнесу — 5-я карточка */}
+            {/* Блок 3: Продажи и данные */}
             <Link
-              href="/business-help"
-              className="group relative overflow-hidden rounded-2xl p-6 card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 text-white text-left"
-              style={{ background: 'linear-gradient(135deg, #6C5CE7 0%, #2F5BFF 100%)' }}
+              href="/own-park"
+              className="group bg-white dark:bg-dark-card rounded-2xl shadow-card border border-gray-100 dark:border-dark-border card-lift cursor-pointer flex flex-col h-full active:scale-[0.98] transition-transform duration-150 overflow-hidden"
             >
-              {/* bg accents */}
-              <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/15 blur-[60px] pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-[#1E2A5A]/40 blur-[50px] pointer-events-none" />
-
-              {/* Ribbon — NEW */}
-              <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 bg-white text-[#2F5BFF] text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg tracking-wide">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                </svg>
-                НОВИНКА
-              </div>
-
-              <div className="relative z-[1] flex flex-col h-full">
-                <div className="service-icon-wrap service-icon--amber mb-5">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <rect x="3" y="4" width="18" height="12" rx="2"/>
-                    <path d="M8 20h8"/>
-                    <path d="M12 16v4"/>
-                    <circle cx="9" cy="10" r="1" fill="currentColor"/>
-                    <circle cx="15" cy="10" r="1" fill="currentColor"/>
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-1 font-heading leading-tight">Помощь бизнесу</h3>
-                <p className="text-white/80 text-xs mb-4 font-medium">Меньше рутины — больше роста</p>
+              <div className="p-6 flex flex-col flex-1">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-5 text-2xl">📈</div>
+                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Продажи и данные</h3>
+                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Агентские продажи, парсер тендеров, лидоген</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                  {[
-                    { label: 'ИИ-сотрудники', price: 'снижение ФОТ' },
-                    { label: 'Маркетинг', price: 'лиды B2B/B2C' },
-                    { label: 'Автоматизация', price: 'минус рутина' },
-                    { label: 'Всё под ключ', price: 'стратегия роста' },
-                  ].map((row) => (
-                    <li key={row.label} className="flex justify-between items-center gap-2">
-                      <span className="text-white/85 truncate min-w-0">{row.label}</span>
-                      <span className="text-[#FFB347] text-xs font-semibold whitespace-nowrap" style={{ textShadow: '0 0 10px rgba(255,179,71,0.35)' }}>{row.price}</span>
+                  {['Агентские услуги по продажам и закупке', 'Парсер тендеров и аукционов — бесплатно', 'Скрапинг и поиск импортёров / покупателей за рубежом'].map((row) => (
+                    <li key={row} className="flex items-center gap-2 text-gray-600 dark:text-dark-text">
+                      <span className="text-amber-500 text-xs">●</span>
+                      {row}
                     </li>
                   ))}
                 </ul>
-                <div className="flex items-center gap-1.5 text-white font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
-                  <span>Получить консультацию</span>
+                <div className="flex items-center gap-1.5 text-brand-500 font-semibold text-sm group-hover:gap-2.5 transition-[gap] duration-300 mt-auto">
+                  <span>Подробнее</span>
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
               </div>
+            </Link>
+          </div>
+
+          <div className="text-center mt-8">
+            <Link
+              href="/install"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 dark:text-dark-muted hover:text-brand-500 transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" strokeWidth="1.8"/><line x1="12" y1="18" x2="12.01" y2="18" strokeWidth="2.5"/></svg>
+              Установить приложение на главный экран
             </Link>
           </div>
         </div>
@@ -757,10 +598,10 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto text-center">
           <span className="eyebrow text-brand-500 mb-4 block">Начать работу</span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
-            Разместите заказ прямо сейчас
+            Получите КП за 30 минут
           </h2>
           <p className="text-gray-500 dark:text-dark-muted mb-8 max-w-lg mx-auto text-base">
-            Укажите адрес и параметры работы — исполнители увидят ваш заказ и откликнутся
+            Опишите задачу — менеджер подберёт решение и подготовит предложение
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-5">
             <Link
@@ -770,7 +611,7 @@ export default function HomePage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
               </svg>
-              Заказать рабочих
+              Оставить заявку
               <svg width="15" height="15" viewBox="0 0 20 20" fill="none" className="transition-transform duration-300 group-hover:translate-x-1">
                 <path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -790,10 +631,10 @@ export default function HomePage() {
           <div className="text-center mb-14">
             <span className="eyebrow text-brand-400 mb-4 block">Как это работает</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading tracking-tight">
-              Безопасная сделка
+              Как это работает
             </h2>
             <p className="text-white/50 text-sm mt-3 max-w-md mx-auto leading-relaxed">
-              Деньги хранятся у нас до подтверждения работы — никакого риска
+              Заявка &rarr; КП &rarr; договор &rarr; результат. Один менеджер ведёт от начала до конца.
             </p>
           </div>
           <div className="relative grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
@@ -805,7 +646,7 @@ export default function HomePage() {
               {
                 n: '1',
                 title: 'Заявка',
-                desc: 'Опишите задачу — объём, сроки, контакт',
+                desc: 'Опишите задачу — что нужно бизнесу',
                 icon: (
                   <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -814,8 +655,8 @@ export default function HomePage() {
               },
               {
                 n: '2',
-                title: 'Подбор',
-                desc: 'Находим подходящего исполнителя из базы',
+                title: 'КП за 30 минут',
+                desc: 'Менеджер готовит предложение и цену',
                 icon: (
                   <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -824,8 +665,8 @@ export default function HomePage() {
               },
               {
                 n: '3',
-                title: 'Оплата',
-                desc: 'Деньги холдируются — исполнитель приступает',
+                title: 'Согласование',
+                desc: 'Договор и счёт — фиксируем условия',
                 icon: (
                   <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>
@@ -834,8 +675,8 @@ export default function HomePage() {
               },
               {
                 n: '4',
-                title: 'Подтверждение',
-                desc: 'Приняли работу — переводим оплату исполнителю',
+                title: 'Выполнение',
+                desc: 'Принимаете результат — платите за итог',
                 icon: (
                   <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -870,10 +711,10 @@ export default function HomePage() {
         <div ref={revExecutors} className="relative z-10 max-w-3xl mx-auto text-center reveal">
           <span className="eyebrow text-brand-300 mb-4 block">Партнёрам</span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-4 font-heading tracking-tight">
-            Для исполнителей
+            Партнёрам и поставщикам
           </h2>
           <p className="text-white/70 text-base sm:text-lg mb-8 leading-relaxed max-w-xl mx-auto">
-            Платформа полностью бесплатна. Получайте заказы, выставляйте услуги&nbsp;— без комиссий и подписок.
+            Размещайте услуги и материалы, получайте заказы от бизнеса&nbsp;— без комиссий и подписок.
           </p>
 
           {/* Benefit pills */}
@@ -938,7 +779,7 @@ export default function HomePage() {
               href="/register"
               className="inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/18 font-semibold px-8 py-4 rounded-xl transition-all duration-300 cursor-pointer"
             >
-              Регистрация исполнителя
+              Стать партнёром
             </a>
           </div>
         </div>
@@ -953,7 +794,7 @@ export default function HomePage() {
               Оставить заявку
             </h2>
             <p className="text-gray-500 dark:text-dark-muted text-sm">
-              Свяжемся за&nbsp;15&nbsp;минут
+              Подготовим КП за&nbsp;30&nbsp;минут
             </p>
           </div>
 
@@ -975,7 +816,7 @@ export default function HomePage() {
                 </svg>
               </div>
               <p className="text-green-700 font-bold text-xl mb-1 font-heading">Заявка отправлена!</p>
-              <p className="text-green-600 text-sm">Свяжемся в течение 15 минут.</p>
+              <p className="text-green-600 text-sm">Подготовим КП в течение 30 минут.</p>
             </div>
           ) : (
             <form
@@ -1072,11 +913,11 @@ export default function HomePage() {
                 </span>
                 <span className="trust-badge">
                   <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  Ответ за 15 минут
+                  КП за 30 минут
                 </span>
                 <span className="trust-badge">
                   <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                  Эскроу-защита
+                  Договор и гарантия
                 </span>
               </div>
             </form>
@@ -1097,7 +938,7 @@ export default function HomePage() {
                 <span className="text-white/90 text-sm font-heading font-bold tracking-tight">Подряд PRO</span>
               </div>
               <p className="text-white/55 text-xs leading-relaxed max-w-[200px]">
-                Платформа строительных услуг Омска и Новосибирска
+                Деловая площадка: материалы, люди, ИИ, маркетинг и данные
               </p>
               <div className="flex items-center gap-1.5 mt-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
@@ -1113,7 +954,7 @@ export default function HomePage() {
                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-green-400">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                 </svg>
-                <span className="text-white/65 text-[11px] font-medium">Эскроу-защита сделок</span>
+                <span className="text-white/65 text-[11px] font-medium">Договор и закрывающие документы</span>
               </div>
             </div>
 
@@ -1148,7 +989,7 @@ export default function HomePage() {
               © {new Date().getFullYear()} Подряд PRO
             </p>
             <p className="text-white/50 text-xs text-center sm:text-right">
-              Безопасные сделки для строительного бизнеса
+              Растите бизнес — остальное возьмём на себя
             </p>
           </div>
         </div>
