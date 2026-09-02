@@ -115,27 +115,26 @@ function render(user) {
   var sub = user ? (user.username ? '@' + user.username : 'ID: ' + user.id) : 'Запустите через Telegram';
 
   el.innerHTML =
-    '<div class="header"><h1>🏗️ Подряд PRO</h1><p>Закажите работы по дому и участку</p></div>' +
+    '<div class="header"><h1>Подряд PRO</h1><p>Растите бизнес — остальное возьмём на себя</p></div>' +
     '<div class="user-card"><div class="user-avatar">' + avatar + '</div><div><div class="user-name">' + esc(name) + '</div><div class="user-sub">' + sub + '</div></div></div>' +
     '<div class="actions">' +
-      '<button class="btn btn-primary card-animate" onclick="openLink(\'' + APP_URL + '/order/new\')">🚀 Создать заказ</button>' +
-      '<button class="btn btn-secondary card-animate" onclick="openLink(\'' + APP_URL + '/executor/register\')">👷 Стать исполнителем</button>' +
+      '<button class="btn btn-primary card-animate" onclick="openLink(\'' + APP_URL + '/own-park\')">🚀 Смотреть услуги</button>' +
+      '<button class="btn btn-secondary card-animate" onclick="openLink(\'' + APP_URL + '/#lead-form\')">📝 Оставить заявку</button>' +
     '</div>' +
-    '<div class="section-title">Популярные услуги</div>' +
+    '<div class="section-title">Услуги для бизнеса</div>' +
     '<div class="service-grid">' +
-      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><span class="service-icon">🌿</span><div class="service-name">Покос газона</div></div>' +
-      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><span class="service-icon">🚜</span><div class="service-name">Расчистка участка</div></div>' +
-      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><span class="service-icon">🪓</span><div class="service-name">Валка деревьев</div></div>' +
-      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="service-icon">🧱</span><div class="service-name">Материалы</div></div>' +
+      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><span class="service-icon">🏗️</span><div class="service-name">Материалы и рабочая сила</div></div>' +
+      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/own-park\')"><span class="service-icon">🤖</span><div class="service-name">Маркетинг и ИИ</div></div>' +
+      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/own-park\')"><span class="service-icon">📈</span><div class="service-name">Продажи и данные</div></div>' +
+      '<div class="service-card card-animate" onclick="openLink(\'' + APP_URL + '/own-park\')"><span class="service-icon">📊</span><div class="service-name">Парсер тендеров</div></div>' +
     '</div>' +
     '<div class="section-title"><span class="badge">Выгодно</span> Материалы от Подряд PRO</div>' +
     '<div class="materials-grid">' +
-      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🏖️</span><div class="material-name">Песок</div></div>' +
+      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🏗️</span><div class="material-name">Бетон</div></div>' +
       '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🪨</span><div class="material-name">Щебень</div></div>' +
-      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🧱</span><div class="material-name">Бетон</div></div>' +
-      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🪵</span><div class="material-name">Дерево</div></div>' +
-      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🔩</span><div class="material-name">Металл</div></div>' +
-      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🛣️</span><div class="material-name">Асфальт</div></div>' +
+      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🏖️</span><div class="material-name">Песок</div></div>' +
+      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🧊</span><div class="material-name">Цемент</div></div>' +
+      '<div class="material-card card-animate" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><span class="material-icon">🧱</span><div class="material-name">Кирпич</div></div>' +
     '</div>' +
     '<div class="footer">Подряд PRO © 2026' + (bridgeReady ? ' · Telegram' : '') + '</div>';
 
