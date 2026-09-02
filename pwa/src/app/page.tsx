@@ -7,15 +7,9 @@ import dynamic from 'next/dynamic';
 import PhoneInput, { isValidPhone } from '@/components/ui/PhoneInput';
 import Spinner from '@/components/ui/Spinner';
 import AiChatWidget from '@/components/AiChatWidget';
+import { SERVICE_BLOCKS, serviceHint } from '@/lib/service-catalog';
 
 const LiveOrdersMap = dynamic(() => import('@/components/LiveOrdersMap'), { ssr: false });
-
-type City = 'omsk' | 'novosibirsk';
-
-const CITY_LABELS: Record<City, string> = {
-  omsk: 'Омск',
-  novosibirsk: 'Новосибирск',
-};
 
 /* ── scroll-reveal hook ─────────────────────────────────────── */
 
@@ -223,8 +217,10 @@ export default function HomePage() {
 
   /* form state */
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState<City>('omsk');
+  const [name, setName] = useState('');
+  const [company, setCompany] = useState('');
+  const [service, setService] = useState('');
+  const [description, setDescription] = useState('');
   const [consent, setConsent] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -247,6 +243,7 @@ export default function HomePage() {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
     if (!phone || !isValidPhone(phone)) newErrors.phone = 'Введите корректный номер телефона';
+    if (!service) newErrors.service = 'Выберите услугу';
     if (!consent) newErrors.consent = 'Необходимо дать согласие';
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -261,8 +258,10 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone,
-          city,
-          address: address || undefined,
+          name: name || undefined,
+          company: company || undefined,
+          work_type: service,
+          comment: description || undefined,
           source: 'landing',
         }),
       });
@@ -823,17 +822,67 @@ export default function HomePage() {
               onSubmit={handleSubmit}
               className="bg-white dark:bg-dark-card rounded-2xl p-6 sm:p-8 shadow-elevated border border-gray-100/80 dark:border-dark-border space-y-6"
             >
-              {/* Адрес */}
+              {/* Имя */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
-                  Адрес объекта
+                  Имя
                 </label>
                 <input
                   type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="ул. Ленина, 1 (необязательно)"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Как к вам обращаться"
                   className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
+                />
+              </div>
+
+              {/* Компания */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
+                  Компания
+                </label>
+                <input
+                  type="text"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Название или ИНН (необязательно)"
+                  className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
+                />
+              </div>
+
+              {/* Услуга */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
+                  Услуга <span className="text-red-400">*</span>
+                </label>
+                <select
+                  value={service}
+                  onChange={(e) => { setService(e.target.value); if (errors.service) setErrors((prev) => { const { service: _, ...rest } = prev; return rest; }); }}
+                  className={`w-full border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 dark:text-white dark:bg-dark-bg focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow ${errors.service ? 'border-red-400' : 'border-gray-200 dark:border-dark-border'}`}
+                >
+                  <option value="" disabled>Выберите направление</option>
+                  {SERVICE_BLOCKS.map((block) => (
+                    <optgroup key={block.id} label={block.title}>
+                      {block.items.map((it) => (
+                        <option key={it.kind} value={it.kind}>{it.label}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                {errors.service && <p className="text-red-500 text-xs mt-1.5">{errors.service}</p>}
+              </div>
+
+              {/* Описание задачи */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
+                  Описание задачи
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  placeholder={service ? serviceHint(service) : 'Что нужно сделать, объёмы, сроки'}
+                  className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow resize-none"
                 />
               </div>
 
@@ -849,29 +898,6 @@ export default function HomePage() {
                   required
                   error={errors.phone}
                 />
-              </div>
-
-              {/* Город */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
-                  Город
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['omsk', 'novosibirsk'] as City[]).map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setCity(c)}
-                      className={`min-h-[48px] py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer ${
-                        city === c
-                          ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
-                          : 'bg-white dark:bg-dark-card text-gray-700 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-brand-500 hover:shadow-sm'
-                      }`}
-                    >
-                      {CITY_LABELS[c]}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Согласие 152-ФЗ */}

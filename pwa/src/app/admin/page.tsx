@@ -5,6 +5,7 @@ import Link from 'next/link';
 import UnifiedCRM from '@/components/admin/UnifiedCRM';
 import InviteTab from '@/components/admin/InviteTab';
 import MobileTabMenu from '@/components/admin/MobileTabMenu';
+import { SERVICE_LABELS } from '@/lib/service-catalog';
 import {
   Lock, Users, ShoppingBag, Tag, AlertTriangle, BarChart3,
   Copy, Check, ExternalLink, UserPlus, RefreshCw, Save,
@@ -84,6 +85,8 @@ interface Lead {
   city: string;
   comment: string | null;
   source: string;
+  company: string | null;
+  commission_percent: number | null;
   created_at: string;
 }
 
@@ -116,9 +119,8 @@ const LISTING_CATEGORIES: Record<string, { label: string; slug: string }[]> = {
 const PRICE_UNITS = ['₽/м³', '₽/тонна', '₽/час', '₽/сутки', '₽/рейс', '₽/штука'];
 
 const WORK_TYPE_LABELS: Record<string, string> = {
-  labor: 'Рабочая сила',
+  ...SERVICE_LABELS,
   equipment: 'Техника',
-  materials: 'Материалы',
   complex: 'Комплекс',
 };
 
@@ -1601,6 +1603,16 @@ function LeadsTab({ pin }: { pin: string }) {
     finally { setLoading(false); }
   };
 
+  const saveCommission = async (id: number, value: string) => {
+    const v = value.trim();
+    const num = v === '' ? null : Number(v);
+    await fetch('/api/admin/leads', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+      body: JSON.stringify({ id, commission_percent: num }),
+    }).catch(() => {});
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -1619,7 +1631,7 @@ function LeadsTab({ pin }: { pin: string }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-dark-border">
-                  {['Дата', 'Телефон', 'Категория', 'Город', 'Комментарий', 'Источник'].map(h => (
+                  {['Дата', 'Телефон', 'Компания', 'Категория', 'Комментарий', 'Комиссия %', 'Источник'].map(h => (
                     <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -1629,13 +1641,25 @@ function LeadsTab({ pin }: { pin: string }) {
                   <tr key={l.id} className="border-b border-gray-50 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border">
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(l.created_at)}</td>
                     <td className="px-4 py-3 font-mono">{l.phone}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{l.company || '—'}</td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-border">
                         {WORK_TYPE_LABELS[l.work_type] || l.work_type}
                       </span>
                     </td>
-                    <td className="px-4 py-3">{l.city}</td>
                     <td className="px-4 py-3 max-w-[200px] truncate text-gray-600 dark:text-gray-300">{l.comment || '—'}</td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        defaultValue={l.commission_percent != null ? String(l.commission_percent) : ''}
+                        onBlur={(e) => saveCommission(l.id, e.target.value)}
+                        placeholder="—"
+                        className="w-20 px-2 py-1 rounded-lg border border-gray-200 dark:border-dark-border bg-surface text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                      />
+                    </td>
                     <td className="px-4 py-3 text-gray-500">{l.source}</td>
                   </tr>
                 ))}
@@ -1651,7 +1675,7 @@ function LeadsTab({ pin }: { pin: string }) {
                 </div>
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-border font-medium">{WORK_TYPE_LABELS[l.work_type] || l.work_type}</span>
-                  <span className="text-xs text-gray-500">{l.city}</span>
+                  {l.company && <span className="text-xs text-gray-500">{l.company}</span>}
                   <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-500/10 text-brand-500">{l.source}</span>
                 </div>
                 {l.comment && <p className="text-sm text-gray-600 dark:text-gray-300">{l.comment}</p>}

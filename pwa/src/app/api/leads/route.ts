@@ -13,6 +13,7 @@ interface LeadBody {
   comment?: string;
   source?: string;
   name?: string;
+  company?: string;
   email?: string;
   telegram?: string;
 }
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  const { phone, work_type, city, address, messenger, comment, source, name, email, telegram } = body;
+  const { phone, work_type, city, address, messenger, comment, source, name, company, email, telegram } = body;
   const utm_source = (body as any).utm_source || null;
   const utm_medium = (body as any).utm_medium || null;
   const utm_campaign = (body as any).utm_campaign || null;
@@ -50,7 +51,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Validate work_type
-  const validWorkTypes = ['labor', 'equipment', 'materials', 'complex'];
+  const validWorkTypes = [
+    'labor', 'materials', 'equipment', 'complex',
+    'marketing', 'ai_agents', 'crm', 'automation',
+    'agency', 'tender_parser', 'scraping',
+  ];
   if (!work_type || !validWorkTypes.includes(work_type)) {
     return NextResponse.json({ error: 'invalid_work_type' }, { status: 422 });
   }
@@ -98,6 +103,7 @@ export async function POST(req: NextRequest) {
     comment: comment ?? null,
     source: source ?? 'landing',
     name: name?.trim() || null,
+    company: company?.trim() || null,
     email: email?.trim() || null,
     telegram: telegram?.trim() || null,
     score,
@@ -140,7 +146,7 @@ export async function POST(req: NextRequest) {
           city: cityName,
           address: address?.trim() || null,
           source: 'landing',
-          metadata: { work_type, legacy_lead_id: leadId },
+          metadata: { work_type, legacy_lead_id: leadId, company: company ?? null },
         });
         enqueueJob({
           queueName: 'default',
@@ -156,7 +162,7 @@ export async function POST(req: NextRequest) {
   const leadPayload = {
     lead_id: leadId,
     phone: digits, work_type, city: city ?? 'omsk',
-    address, messenger, comment, name, email, telegram,
+    address, messenger, comment, name, company, email, telegram,
     source: source ?? 'landing',
     lat, lon,
   };
