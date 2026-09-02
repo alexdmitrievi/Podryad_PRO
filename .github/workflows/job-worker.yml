@@ -1,0 +1,20 @@
+name: Job Queue Worker
+
+# Обработчик очереди задач (nurture-шаги, уведомления о лидах, входящие сообщения).
+# После переезда с Vercel на VM этот эндпоинт остался без планировщика — воркфлоу
+# дёргает /api/cron/jobs каждые 5 минут с тем же CRON_SECRET, что и max-poll.yml.
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # каждые 5 минут
+  workflow_dispatch:
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process pending job queue
+        run: |
+          curl -sS -X POST "https://podryadpro.ru/api/cron/jobs" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -w "\nHTTP %{http_code}" \
+            --max-time 40
