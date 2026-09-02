@@ -4,15 +4,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 const SERVICES = [
-  { image: '', emoji: '🌿', title: 'Покос, аэрация и скарификация газона', desc: 'Профессиональный уход за газоном любой площади. Выезд, оценка, работа в день обращения.' },
-  { image: '', emoji: '🚜', title: 'Расчистка территорий под строительство', desc: 'Полная подготовка участка: вывоз мусора, планировка, корчевание. Техника и бригада в одном заказе.' },
-  { image: '', emoji: '🪓', title: 'Корчевание пней и спил деревьев', desc: 'Удаление деревьев любой сложности. Спил, корчевание, вывоз порубочных остатков.' },
-  { image: '', emoji: '🌾', title: 'Покос высокой травы и сорняка любого вида', desc: 'Бензокосы, райдеры, тракторные косилки. Любой рельеф и густота.' },
-  { image: '', emoji: '🏊', title: 'Сборка и чистка бассейнов', desc: 'Расконсервация, сборка каркасных и надувных бассейнов, химчистка, подготовка к сезону.' },
-  { image: '', emoji: '🔥', title: 'Любые сварочные работы', desc: 'Аттестованные сварщики NAKS. Монтаж металлоконструкций, ворота, заборы, навесы.' },
-  { image: '', emoji: '🔧', title: 'Ремонтные работы жилой и коммерческой недвижимости', desc: 'Косметический и капитальный ремонт. Квартиры, офисы, торговые площади — под ключ.' },
-  { image: '', emoji: '🏠', title: 'Строительство домов под ключ', desc: 'От фундамента до чистовой отделки. Проектирование, материалы, бригады — полный цикл.' },
-  { image: '', emoji: '📅', title: 'Абонентское обслуживание участков и территорий под ключ', desc: 'Постоянный уход за территорией. Покос, уборка, мелкий ремонт, вывоз мусора — по графику.' },
+  { image: '', emoji: '📣', title: 'Маркетинг и холодные рассылки', desc: 'Холодные email- и мессенджер-рассылки по целевой базе. Поток лидов B2B и B2C.' },
+  { image: '', emoji: '🔍', title: 'Выдача сайтов в нейросетях', desc: 'Оптимизация под ИИ-поиск и нейросети — чтобы ваш сайт рекомендовали клиентам.' },
+  { image: '', emoji: '✍️', title: 'Статьи в Яндекс Дзен с нативной рекламой', desc: 'Автоматическое написание и публикация статей с нативной рекламой вашего продукта.' },
+  { image: '', emoji: '🤖', title: 'ИИ-менеджеры и агенты', desc: 'Создание ИИ-сотрудников: обработка заявок, консультации, поддержка 24/7.' },
+  { image: '', emoji: '📇', title: 'Подключение и настройка CRM', desc: 'Внедрение Bitrix24, amoCRM и других. Воронки, интеграции, обучение команды.' },
+  { image: '', emoji: '⚙️', title: 'Автоматизация бизнес-процессов', desc: 'Оптимизация рутины: боты, интеграции, документооборот. Меньше ручного труда.' },
+  { image: '', emoji: '🤝', title: 'Агентские услуги по продажам и закупке', desc: 'Продаём ваш продукт или закупаем для вас. Комиссия за результат.' },
+  { image: '', emoji: '📊', title: 'Парсер тендеров и аукционов', desc: 'Бесплатный поиск тендеров 44-ФЗ / 223-ФЗ, аукционов и грантов.' },
+  { image: '', emoji: '🌐', title: 'Скрапинг и лидоген', desc: 'Сбор контактов и поиск импортёров в РФ / покупателей за рубежом.' },
 ];
 
 const MATERIALS = [
@@ -38,7 +38,7 @@ export default function OwnParkPage() {
           <div className="flex items-center gap-2">
             <span className="hidden sm:flex items-center gap-1.5 text-white/60 text-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" aria-hidden="true" />
-              Собственный парк услуг
+              Услуги для бизнеса
             </span>
             <Link
               href="/#lead-form"
@@ -63,13 +63,13 @@ export default function OwnParkPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300">
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
-              <span className="font-semibold text-amber-200">Выгодно от Подряд PRO</span>
+              <span className="font-semibold text-amber-200">Всё для роста бизнеса</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-extrabold leading-tight mb-4 font-heading">
-              Собственный парк услуг
+              Услуги для бизнеса
             </h1>
             <p className="text-base sm:text-lg text-white/75 mb-8 leading-relaxed max-w-xl">
-              Гарантия на все услуги. Договор и закрывающие документы для бизнеса. Качество премиум-подрядчика — по рыночной цене.
+              От маркетинга и ИИ до автоматизации и данных. Один менеджер — КП за 30 минут, оплата за результат.
             </p>
 
             {/* Key stats */}
@@ -77,7 +77,7 @@ export default function OwnParkPage() {
               {[
                 { v: '🛡', l: 'гарантия на все услуги' },
                 { v: '📄', l: 'договор и закрывающие документы' },
-                { v: '⚡', l: 'выезд в день заявки' },
+                { v: '⚡', l: 'КП за 30 минут' },
               ].map((s) => (
                 <div key={s.l} className="bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-xl px-3 py-4 text-center">
                   <div className="text-2xl sm:text-3xl">{s.v}</div>
@@ -100,7 +100,7 @@ export default function OwnParkPage() {
               Все цены — по запросу
             </h2>
             <p className="text-gray-500 dark:text-dark-muted text-sm mt-1">
-              Стоимость зависит от объёма, адреса и сроков. Свяжитесь с нами — рассчитаем за 15 минут.
+              Стоимость зависит от задачи. Опишите, что нужно — подготовим КП за 15 минут.
             </p>
           </div>
 
@@ -207,7 +207,7 @@ export default function OwnParkPage() {
           <div className="text-center mb-10">
             <span className="eyebrow text-brand-500 mb-3 block">Почему Подряд PRO</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading tracking-tight">
-              Качество, подтверждённое договором
+              Работаем на результат
             </h2>
           </div>
 
@@ -220,8 +220,8 @@ export default function OwnParkPage() {
                   </svg>
                 ),
                 color: '#6C5CE7',
-                title: 'Гарантия на все услуги',
-                desc: 'Фиксируем обязательства в договоре. Если результат не устроит — переделаем за свой счёт.',
+                title: 'Договор и гарантия',
+                desc: 'Фиксируем обязательства в договоре. Работаем на результат.',
               },
               {
                 icon: (
@@ -241,8 +241,8 @@ export default function OwnParkPage() {
                   </svg>
                 ),
                 color: '#F59E0B',
-                title: 'Рыночные цены',
-                desc: 'Без посредников и скрытых наценок. Цена как у прямого подрядчика — потому что мы им и являемся.',
+                title: 'Оплата за результат',
+                desc: 'Комиссия по договорённости — платите за итог, а не за процесс.',
               },
             ].map((b) => (
               <div
@@ -270,8 +270,7 @@ export default function OwnParkPage() {
             Получите предложение от Подряд PRO
           </h2>
           <p className="text-white/70 mb-8 text-base sm:text-lg">
-            Расскажите о задаче — подберём услуги с максимальной выгодой.
-            Перезвоним за&nbsp;15&nbsp;минут.
+            Расскажите о задаче — подготовим КП за&nbsp;30&nbsp;минут.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link

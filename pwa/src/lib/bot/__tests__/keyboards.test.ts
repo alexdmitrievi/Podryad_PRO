@@ -17,6 +17,9 @@ import {
   materialQtyButtons,
   referralButtons,
   backToHomeButton,
+  blockButtons,
+  leadBudgetButtons,
+  leadConfirmButtons,
 } from '@/lib/bot/keyboards';
 
 describe('keyboards — main menus', () => {
@@ -32,12 +35,12 @@ describe('keyboards — main menus', () => {
     expect(kb.length).toBeGreaterThanOrEqual(4);
   });
 
-  it('mainMenuButtons includes materials button', () => {
+  it('mainMenuButtons includes materials/labor block', () => {
     const kb = mainMenuButtons();
     const all = kb.flat();
-    const matBtn = all.find((b) => b.text?.includes('Материалы'));
-    expect(matBtn).toBeDefined();
-    expect(matBtn!.callback_data).toBe('menu:materials');
+    const blockBtn = all.find((b) => b.callback_data === 'block:0');
+    expect(blockBtn).toBeDefined();
+    expect(blockBtn!.text).toContain('Материалы');
   });
 
   it('mainMenuB2bButtons has materials first', () => {
@@ -46,12 +49,12 @@ describe('keyboards — main menus', () => {
     expect(materialsRow[0]!.text).toContain('Материалы');
   });
 
-  it('mainMenuButtons shows current region in toggle button', () => {
-    const kb = mainMenuButtons('novosibirsk');
+  it('mainMenuButtons has all 3 B2B service blocks', () => {
+    const kb = mainMenuButtons();
     const all = kb.flat();
-    const regionBtn = all.find((b) => b.callback_data === 'menu:region');
-    expect(regionBtn).toBeDefined();
-    expect(regionBtn!.text).toContain('Новосибирск');
+    expect(all.some((b) => b.callback_data === 'block:0')).toBe(true);
+    expect(all.some((b) => b.callback_data === 'block:1')).toBe(true);
+    expect(all.some((b) => b.callback_data === 'block:2')).toBe(true);
   });
 });
 
@@ -179,5 +182,44 @@ describe('keyboards — other', () => {
     const codes = kb[0]!.map((b) => b.callback_data);
     expect(codes).toContain('nav:back');
     expect(codes).toContain('nav:home');
+  });
+});
+
+describe('keyboards — B2B blocks & digital leads', () => {
+  it('blockButtons(0) has materials + labor', () => {
+    const kb = blockButtons(0);
+    const all = kb.flat();
+    expect(all.some((b) => b.callback_data === 'menu:materials')).toBe(true);
+    expect(all.some((b) => b.callback_data === 'digital:labor')).toBe(true);
+  });
+
+  it('blockButtons(1) has 4 digital services', () => {
+    const kb = blockButtons(1);
+    const all = kb.flat();
+    expect(all.some((b) => b.callback_data === 'digital:marketing')).toBe(true);
+    expect(all.some((b) => b.callback_data === 'digital:ai_agents')).toBe(true);
+    expect(all.some((b) => b.callback_data === 'digital:crm')).toBe(true);
+    expect(all.some((b) => b.callback_data === 'digital:automation')).toBe(true);
+  });
+
+  it('blockButtons(2) has 3 data services', () => {
+    const kb = blockButtons(2);
+    const all = kb.flat();
+    expect(all.some((b) => b.callback_data === 'digital:agency')).toBe(true);
+    expect(all.some((b) => b.callback_data === 'digital:tender_parser')).toBe(true);
+    expect(all.some((b) => b.callback_data === 'digital:scraping')).toBe(true);
+  });
+
+  it('leadBudgetButtons has skip', () => {
+    const kb = leadBudgetButtons();
+    const all = kb.flat();
+    expect(all.some((b) => b.callback_data === 'lead:skip_budget')).toBe(true);
+  });
+
+  it('leadConfirmButtons has confirm + cancel', () => {
+    const kb = leadConfirmButtons();
+    const all = kb.flat();
+    expect(all.some((b) => b.callback_data === 'lead:confirm')).toBe(true);
+    expect(all.some((b) => b.callback_data === 'lead:cancel')).toBe(true);
   });
 });

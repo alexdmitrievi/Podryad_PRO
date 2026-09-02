@@ -23,6 +23,16 @@ export type MaterialKind =
   | 'cement'
   | 'brick';
 
+export type DigitalServiceKind =
+  | 'labor'
+  | 'marketing'
+  | 'ai_agents'
+  | 'crm'
+  | 'automation'
+  | 'agency'
+  | 'tender_parser'
+  | 'scraping';
+
 export type RegionCode = 'omsk' | 'novosibirsk';
 export type CustomerType = 'b2c' | 'b2b';
 export type SubscriptionPlanCode = 'basic' | 'comfort' | 'premium';
@@ -45,7 +55,8 @@ export type Screen =
   | 'subscription_pick'
   | 'subscription_confirm'
   | 'region_pick'
-  | 'quick_order';
+  | 'quick_order'
+  | 'lead_qualify';
 
 export type OrderStep =
   | 'service'
@@ -112,6 +123,10 @@ export type SessionState = {
   // Subscription
   subscriptionPlan?: SubscriptionPlanCode;
   subscriptionPeriod?: 'season' | 'half_year' | '3_months';
+  // Digital B2B lead qualification (marketing, AI, CRM, automation, agency, parser, scraping, labor)
+  digitalService?: DigitalServiceKind;
+  leadDescription?: string;
+  leadBudget?: string;
   // Back-stack: previous screens for "◀️ Назад" button
   navStack?: Screen[];
 };

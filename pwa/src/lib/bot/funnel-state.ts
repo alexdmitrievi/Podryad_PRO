@@ -1,5 +1,5 @@
 // Bot funnel state machine — adapted from Premium lib/funnels.ts
-import type { BotServiceKind, MaterialKind, SessionState, OrderStep, RegionCode, SubscriptionPlanCode } from './types';
+import type { BotServiceKind, MaterialKind, SessionState, OrderStep, RegionCode, SubscriptionPlanCode, DigitalServiceKind } from './types';
 
 export const BRAND_NAME = process.env.BOT_BRAND_NAME || 'Подряд PRO';
 
@@ -74,6 +74,17 @@ export const MATERIAL_LABEL: Record<MaterialKind, string> = {
   sand: 'Песок',
   cement: 'Цемент',
   brick: 'Кирпич',
+};
+
+export const DIGITAL_LABEL: Record<DigitalServiceKind, string> = {
+  labor: 'Рабочая сила',
+  marketing: 'Маркетинг и продвижение',
+  ai_agents: 'ИИ-менеджеры и агенты',
+  crm: 'Подключение и настройка CRM',
+  automation: 'Автоматизация бизнес-процессов',
+  agency: 'Агентские услуги по продажам и закупке',
+  tender_parser: 'Парсер тендеров и аукционов',
+  scraping: 'Скрапинг и лидоген',
 };
 
 export const MATERIAL_DESC: Record<MaterialKind, string> = {
@@ -501,4 +512,12 @@ export const UI = {
     `✅ <b>Заявка #${p.humanId} принята</b>\n\n` +
     `Материал: ${p.material} ${p.grade}\n\n` +
     `Менеджер свяжется с вами в течение 30 минут для подтверждения заказа и расчёта доставки.`,
+
+  leadQualifyIntro: (label: string) =>
+    `📝 <b>${label}</b>\n\nРасскажите, что нужно сделать: какой бизнес, какая задача, какие цели.\n\nМожно текстом или голосовым.`,
+  leadQualifyBudget: '💰 Укажите бюджет или сроки — или нажмите «Пропустить».',
+  leadQualifyConfirm: (p: { service: string; description: string; budget?: string }) =>
+    `✅ <b>Проверьте заявку</b>\n\nУслуга: <b>${p.service}</b>\nЗадача: ${p.description}${p.budget ? `\nБюджет/сроки: ${p.budget}` : ''}\n\nМенеджер свяжется и подготовит КП.`,
+  leadQualifyThanks: (p: { humanId: string; service: string }) =>
+    `✅ <b>Заявка #${p.humanId} принята</b>\n\nУслуга: ${p.service}\n\nМенеджер свяжется в течение 30 минут и подготовит КП.`,
 } as const;

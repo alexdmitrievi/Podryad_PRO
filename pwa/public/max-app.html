@@ -66,17 +66,17 @@ function render(user) {
   var sub = user ? 'ID: ' + user.id : 'Запустите через MAX';
 
   el.innerHTML =
-    '<div class="header"><h1>🏗️ Подряд PRO</h1><p>Закажите работы по дому и участку</p></div>' +
+    '<div class="header"><h1>Подряд PRO</h1><p>Растите бизнес — остальное возьмём на себя</p></div>' +
     '<div class="user-card"><div class="user-avatar">' + avatar + '</div><div><div class="user-name">' + esc(name) + '</div><div class="user-sub">' + sub + '</div></div></div>' +
     '<div class="actions">' +
-      '<a class="btn btn-primary" onclick="openLink(\'' + APP_URL + '/order/new\')">🚀 Создать заказ</a>' +
-      '<a class="btn btn-secondary" onclick="openLink(\'' + APP_URL + '/executor/register\')">👷 Стать исполнителем</a>' +
+      '<a class="btn btn-primary" onclick="openLink(\'' + APP_URL + '/own-park\')">🚀 Смотреть услуги</a>' +
+      '<a class="btn btn-secondary" onclick="openLink(\'' + APP_URL + '/#lead-form\')">📝 Оставить заявку</a>' +
     '</div>' +
-    '<div class="services"><h3>Популярные услуги</h3><div class="service-grid">' +
-      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><div class="service-icon">🌿</div><div class="service-name">Покос газона</div></div>' +
-      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><div class="service-icon">🌲</div><div class="service-name">Расчистка участка</div></div>' +
-      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><div class="service-icon">🪓</div><div class="service-name">Валка деревьев</div></div>' +
-      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><div class="service-icon">🔥</div><div class="service-name">Сварка</div></div>' +
+    '<div class="services"><h3>Услуги для бизнеса</h3><div class="service-grid">' +
+      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/labor\')"><div class="service-icon">🏗️</div><div class="service-name">Материалы и рабочая сила</div></div>' +
+      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/own-park\')"><div class="service-icon">🤖</div><div class="service-name">Маркетинг и ИИ</div></div>' +
+      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/own-park\')"><div class="service-icon">📈</div><div class="service-name">Продажи и данные</div></div>' +
+      '<div class="service-card" onclick="openLink(\'' + APP_URL + '/own-park\')"><div class="service-icon">📊</div><div class="service-name">Парсер тендеров</div></div>' +
     '</div></div>' +
     '<div class="services"><h3>Стройматериалы</h3><div class="service-grid">' +
       '<div class="service-card" onclick="openLink(\'' + APP_URL + '/catalog/materials\')"><div class="service-icon">🏗️</div><div class="service-name">Бетон</div></div>' +

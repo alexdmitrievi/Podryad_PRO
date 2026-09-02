@@ -16,58 +16,36 @@ function navRow(includeHome = true): MessageButton[] {
   return includeHome ? [BACK_BTN, HOME_BTN] : [BACK_BTN];
 }
 
-/** Main menu — B2C version (services first). */
-export function mainMenuButtons(region: RegionCode = 'omsk'): MessageButton[][] {
+/** Main menu — 3 B2B service blocks (single menu, no customer-type split). */
+export function mainMenuButtons(_region: RegionCode = 'omsk'): MessageButton[][] {
   return [
     [
       { type: 'callback', text: '📝 Описать задачу', callback_data: 'menu:quick_order' },
     ],
     [
-      { type: 'callback', text: '🛠 Услуги', callback_data: 'menu:services' },
-      { type: 'callback', text: '🧱 Материалы', callback_data: 'menu:materials' },
+      { type: 'callback', text: '🏗️ Материалы и рабочая сила', callback_data: 'block:0' },
+      { type: 'callback', text: '🤖 Маркетинг и ИИ', callback_data: 'block:1' },
     ],
     [
+      { type: 'callback', text: '📈 Продажи и данные', callback_data: 'block:2' },
       { type: 'callback', text: '📋 Мои заказы', callback_data: 'menu:my_orders' },
-      { type: 'callback', text: '🎁 Друзьям +500 ₽', callback_data: 'menu:referral' },
     ],
     [
-      { type: 'callback', text: '📅 Абонентка', callback_data: 'menu:subscription' },
-      { type: 'callback', text: `📍 Регион: ${REGION_LABEL[region]}`, callback_data: 'menu:region' },
+      { type: 'callback', text: '🎁 Партнёрам +500 ₽', callback_data: 'menu:referral' },
     ],
     [
       { type: 'callback', text: '❔ Помощь', callback_data: 'menu:help' },
       { type: 'callback', text: '☎️ Оператор', callback_data: 'menu:operator' },
     ],
     [
-      { type: 'callback', text: '🔄 Я бизнес', callback_data: 'ctype:b2b' },
       { type: 'url', text: '🌐 Сайт', url: APP_URL },
     ],
   ];
 }
 
-/** B2B main menu (materials first, contract/invoice prominent). */
+/** B2B main menu — same 3 blocks (B2B is the default audience now). */
 export function mainMenuB2bButtons(region: RegionCode = 'omsk'): MessageButton[][] {
-  return [
-    [
-      { type: 'callback', text: '📝 Описать задачу', callback_data: 'menu:quick_order' },
-    ],
-    [
-      { type: 'callback', text: '🧱 Материалы', callback_data: 'menu:materials' },
-      { type: 'callback', text: '🛠 Услуги', callback_data: 'menu:services' },
-    ],
-    [
-      { type: 'callback', text: '📋 Мои заказы', callback_data: 'menu:my_orders' },
-      { type: 'callback', text: '🎁 Партнёрам', callback_data: 'menu:referral' },
-    ],
-    [
-      { type: 'callback', text: '🤝 Договор / счёт', callback_data: 'menu:contract' },
-      { type: 'callback', text: '☎️ Менеджер', callback_data: 'menu:operator' },
-    ],
-    [
-      { type: 'callback', text: `📍 Регион: ${REGION_LABEL[region]}`, callback_data: 'menu:region' },
-      { type: 'callback', text: '🔄 Я частник', callback_data: 'ctype:b2c' },
-    ],
-  ];
+  return mainMenuButtons(region);
 }
 
 /** B2C/B2B picker — shown on first /start */
@@ -438,5 +416,49 @@ export function subscriptionPeriodButtons(): MessageButton[][] {
     [{ type: 'callback', text: 'Полгода', callback_data: 'sub:period:half_year' }],
     [{ type: 'callback', text: '3 месяца', callback_data: 'sub:period:3_months' }],
     navRow(),
+  ];
+}
+
+// ── B2B block + digital lead keyboards ───────────────────
+
+/** Block submenu: 0=Материалы и рабочая сила, 1=Маркетинг и ИИ, 2=Продажи и данные. */
+export function blockButtons(blockIndex: number): MessageButton[][] {
+  if (blockIndex === 0) {
+    return [
+      [{ type: 'callback', text: '🧱 Материалы', callback_data: 'menu:materials' }],
+      [{ type: 'callback', text: '👷 Рабочая сила', callback_data: 'digital:labor' }],
+      navRow(),
+    ];
+  }
+  if (blockIndex === 1) {
+    return [
+      [{ type: 'callback', text: '📣 Маркетинг и продвижение', callback_data: 'digital:marketing' }],
+      [{ type: 'callback', text: '🤖 ИИ-менеджеры и агенты', callback_data: 'digital:ai_agents' }],
+      [{ type: 'callback', text: '📇 CRM', callback_data: 'digital:crm' }],
+      [{ type: 'callback', text: '⚙️ Автоматизация процессов', callback_data: 'digital:automation' }],
+      navRow(),
+    ];
+  }
+  return [
+    [{ type: 'callback', text: '🤝 Агентские услуги', callback_data: 'digital:agency' }],
+    [{ type: 'callback', text: '📊 Парсер тендеров', callback_data: 'digital:tender_parser' }],
+    [{ type: 'callback', text: '🌐 Скрапинг и лидоген', callback_data: 'digital:scraping' }],
+    navRow(),
+  ];
+}
+
+/** Budget step: skip or back. */
+export function leadBudgetButtons(): MessageButton[][] {
+  return [
+    [{ type: 'callback', text: '⏭️ Пропустить', callback_data: 'lead:skip_budget' }],
+    navRow(),
+  ];
+}
+
+/** Digital lead confirm. */
+export function leadConfirmButtons(): MessageButton[][] {
+  return [
+    [{ type: 'callback', text: '🤝 Отправить — жду КП', callback_data: 'lead:confirm' }],
+    [{ type: 'callback', text: '❌ Отмена', callback_data: 'lead:cancel' }],
   ];
 }

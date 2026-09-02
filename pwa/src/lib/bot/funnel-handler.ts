@@ -12,7 +12,7 @@ import {
   SERVICE_LABEL, REGION_LABEL, MATERIAL_LABEL, MATERIAL_GRADES, MATERIAL_UNIT, MATERIAL_PRICE_RANGE,
   SUBSCRIPTION_PLANS, REGION_PRICE_MULT,
   UI, parseAreaBucket, whenLabelToRange, districtName,
-  applyDiscountToRange, mapStatusToUi,
+  applyDiscountToRange, mapStatusToUi, DIGITAL_LABEL,
 } from './funnel-state';
 import {
   mainMenuButtons, mainMenuB2bButtons, customerTypeButtons, regionButtons,
@@ -20,8 +20,9 @@ import {
   postOrderButtons, myOrdersButtons, orderCardButtons, referralButtons, backToHomeButton,
   materialsMenuButtons, gradeButtons, materialQtyButtons, extrasButtons,
   subscriptionPlansButtons, subscriptionPeriodButtons,
+  blockButtons, leadBudgetButtons, leadConfirmButtons,
 } from './keyboards';
-import type { BotServiceKind, MaterialKind, RegionCode, CustomerType, SessionState, Screen, SubscriptionPlanCode } from './types';
+import type { BotServiceKind, MaterialKind, RegionCode, CustomerType, SessionState, Screen, SubscriptionPlanCode, DigitalServiceKind } from './types';
 import type { MessageButton } from '@/lib/channels/types';
 import { enqueueJob } from '@/lib/job-queue';
 import { log } from '@/lib/logger';
@@ -147,25 +148,14 @@ export async function handleFunnelEvent(event: FunnelEvent): Promise<FunnelRespo
     if (screen === 'material_order') return handleMaterialText(text, contactId, chatId, channel, state);
     if (screen === 'subscription_confirm') return handleSubscriptionText(text, contactId, chatId, channel, state);
     if (screen === 'quick_order') return handleQuickOrder(text, contactId, chatId, channel, state, region, event.attachments);
+    if (screen === 'lead_qualify') return handleLeadQualifyText(text, contactId, chatId, channel, state);
   }
 
   if (type === 'message' && screen === 'order') return handleFunnelText(text, contactId, chatId, channel, state, event);
   if (type === 'message' && screen === 'material_order') return handleMaterialText(text, contactId, chatId, channel, state);
   if (type === 'message' && screen === 'subscription_confirm') return handleSubscriptionText(text, contactId, chatId, channel, state);
   if (type === 'message' && screen === 'quick_order') return handleQuickOrder(text, contactId, chatId, channel, state, region, event.attachments);
-
-  // ── Smart quick-order detection: recognise service requests even without session state ──
-  if (type === 'message') {
-    const lower = text.toLowerCase().trim();
-    const quickKeywords = ['покос', 'газон', 'мусор', 'сорняк', 'спил', 'вспашк', 'бассейн', 'сварк', 'расчистк', 'уборк', 'прополк', 'стрижк'];
-    if (quickKeywords.some(k => lower.includes(k))) {
-      const qr = await handleQuickOrder(text, contactId, chatId, channel, state, region, event.attachments);
-      if (qr) {
-        const hasConfirm = qr.buttons?.some(row => row.some(b => (b.callback_data || '').startsWith('confirm:')));
-        if (hasConfirm) return qr;
-      }
-    }
-  }
+  if (type === 'message' && screen === 'lead_qualify') return handleLeadQualifyText(text, contactId, chatId, channel, state);
 
   // ── Fallback: help keywords / unknown ──
   if (type === 'message') {
@@ -344,17 +334,15 @@ async function handleCallback(
         return { text: UI.homeMenu, buttons: homeFor(region, state.customerType) };
       }
       case 'quick_order': {
-        await setSessionState(chatId, channel, 'quick_order', 'describe', { ...state, screen: 'quick_order' as Screen });
-        return { text: '📝 <b>Опишите задачу</b>\n\nНапишите, что нужно сделать, какой объём и когда.\n<i>Например: «Покосить газон, 10 соток, завтра»</i>\n\n📸 Можете прикрепить фото.', buttons: [[{ type: 'callback', text: '◀️ Назад', callback_data: 'nav:back' }]] };
+        const next = pushNav({ ...state, screen: 'lead_qualify' }, state.screen ?? 'home');
+        await setSessionState(chatId, channel, 'lead_qualify', 'describe', next);
+        return { text: '📝 <b>Опишите задачу</b>\n\nНапишите, что нужно бизнесу: какая услуга, задача, цели.\n\nМожно текстом или голосовым.', buttons: [[{ type: 'callback', text: '◀️ Назад', callback_data: 'nav:back' }]] };
       }
       case 'services':
       case 'order': {
-        const next = pushNav({ ...state, screen: 'services_menu' }, state.screen ?? 'home');
-        await setSessionState(chatId, channel, 'services_menu', 'pick', next);
-        return {
-          text: isB2b(state) ? UI.servicesMenuIntroB2b : UI.servicesMenuIntro,
-          buttons: serviceSelectionButtons(),
-        };
+        const next = pushNav({ ...state, screen: 'home' }, state.screen ?? 'home');
+        await setSessionState(chatId, channel, 'home', 'block', next);
+        return { text: '🏗️ <b>Материалы и рабочая сила</b>\n\nВыберите услугу:', buttons: blockButtons(0) };
       }
       case 'materials': {
         const next = pushNav({ ...state, screen: 'materials_menu' }, state.screen ?? 'home');
@@ -376,7 +364,7 @@ async function handleCallback(
         await setSessionState(chatId, channel, 'orders', 'list', next);
         const orders = await listMyAllOrders(contactId);
         if (orders.length === 0) {
-          const bb: MessageButton = { type: 'callback', text: '🚀 Заказать', callback_data: 'menu:services' };
+          const bb: MessageButton = { type: 'callback', text: '🚀 Заказать', callback_data: 'block:0' };
           return { text: UI.myOrdersEmpty, buttons: [[bb], [{ type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' }]] };
         }
         return {
@@ -411,6 +399,42 @@ async function handleCallback(
           buttons: backToHomeButton(),
         };
       default: return null;
+    }
+  }
+
+  // ── B2B service blocks ──
+  if (data.startsWith('block:')) {
+    const idx = parseInt(data.slice(6), 10);
+    const titles = ['Материалы и рабочая сила', 'Маркетинг и ИИ', 'Продажи и данные'];
+    const title = titles[idx] ?? 'Услуги';
+    const next = pushNav({ ...state, screen: 'home' }, state.screen ?? 'home');
+    await setSessionState(chatId, channel, 'home', 'block', next);
+    return { text: `🏗️ <b>${title}</b>\n\nВыберите услугу:`, buttons: blockButtons(idx) };
+  }
+
+  // ── Digital/labor service → lead qualification ──
+  if (data.startsWith('digital:')) {
+    const kind = data.slice(8) as DigitalServiceKind;
+    const label = DIGITAL_LABEL[kind] ?? 'Услуга';
+    const next = pushNav({ ...state, screen: 'lead_qualify', digitalService: kind }, state.screen ?? 'home');
+    await setSessionState(chatId, channel, 'lead_qualify', 'describe', next);
+    return { text: UI.leadQualifyIntro(label), buttons: [[{ type: 'callback', text: '◀️ Назад', callback_data: 'nav:back' }]] };
+  }
+
+  // ── Lead qualify: budget skip / confirm / cancel ──
+  if (data.startsWith('lead:')) {
+    const action = data.slice(5);
+    if (action === 'skip_budget') {
+      const next = { ...state, screen: 'lead_qualify' as Screen, leadBudget: undefined };
+      await setSessionState(chatId, channel, 'lead_qualify', 'confirm', next);
+      return renderLeadConfirm(next);
+    }
+    if (action === 'confirm') {
+      return await confirmDigitalLead(contactId, chatId, channel, state, region);
+    }
+    if (action === 'cancel') {
+      await setSessionState(chatId, channel, 'home', 'start', { customerType: state.customerType, region, screen: 'home', navStack: [] });
+      return { text: '❌ Отменено.\n\n' + UI.homeMenu, buttons: homeFor(region, state.customerType) };
     }
   }
 
@@ -976,7 +1000,7 @@ async function showScreen(
     case 'orders': {
       const orders = await listMyAllOrders(contactId);
       if (orders.length === 0) {
-        const bb: MessageButton = { type: 'callback', text: '🚀 Заказать', callback_data: 'menu:services' };
+        const bb: MessageButton = { type: 'callback', text: '🚀 Заказать', callback_data: 'block:0' };
         return { text: UI.myOrdersEmpty, buttons: [[bb], [{ type: 'callback', text: '🏠 В меню', callback_data: 'nav:home' }]] };
       }
       return { text: '<b>Мои заказы</b>', buttons: myOrdersButtons(orders as Array<{ kind?: string; id: string; human_id?: string; title?: string; status?: string }>) };
@@ -1149,4 +1173,89 @@ async function handleMaterialText(
 function MATELABEL(mk: MaterialKind | undefined): string {
   if (!mk) return 'материал';
   return MATERIAL_LABEL[mk];
+}
+
+
+/** Render the digital/labor lead qualification confirm screen. */
+function renderLeadConfirm(state: SessionState): FunnelResponse {
+  const label = DIGITAL_LABEL[state.digitalService ?? 'marketing'] ?? 'Заявка';
+  return {
+    text: UI.leadQualifyConfirm({
+      service: label,
+      description: state.leadDescription ?? '',
+      budget: state.leadBudget,
+    }),
+    buttons: leadConfirmButtons(),
+  };
+}
+
+/** Create a B2B digital/labor lead (service_kind=general) and notify manager. */
+async function confirmDigitalLead(
+  contactId: string, chatId: string, channel: 'telegram' | 'max',
+  state: SessionState, region: RegionCode,
+): Promise<FunnelResponse> {
+  const kind = state.digitalService ?? 'marketing';
+  const label = DIGITAL_LABEL[kind] ?? 'Заявка';
+  const description = [
+    state.leadDescription ?? '',
+    state.leadBudget ? `Бюджет/сроки: ${state.leadBudget}` : '',
+  ].filter(Boolean).join('\n');
+
+  let leadId: string;
+  try {
+    leadId = await createBotLead({
+      contactId,
+      serviceKind: 'general' as BotServiceKind,
+      channel,
+      description,
+      district: label,
+    });
+  } catch (err) {
+    log.error('[funnel-handler] confirmDigitalLead createBotLead failed', { error: String(err) });
+    return { text: '❌ Не удалось создать заявку. Попробуйте позже.', buttons: backToHomeButton() };
+  }
+
+  const humanId = `D-${leadId.slice(0, 6).toUpperCase()}`;
+
+  void enqueueJob({
+    queueName: 'leads', jobType: 'bot.lead_created', dedupeKey: `bot:${leadId}`,
+    payload: { contact_id: contactId, lead_id: leadId, service_kind: 'general', digital_kind: kind, channel, region, customer_type: state.customerType },
+  }).catch(() => {});
+
+  void notifyN8n({
+    type: 'lead.created', subtype: 'digital',
+    leadId, contactId, serviceKind: 'general', digitalKind: kind,
+    channel, region, customerType: state.customerType ?? 'b2c',
+  });
+
+  void notifyManager(
+    `🆕 <b>Новая заявка #${humanId}</b>\n` +
+    `Услуга: <b>${label}</b>\n` +
+    `Задача: ${state.leadDescription ?? 'не указана'}\n` +
+    (state.leadBudget ? `Бюджет/сроки: ${state.leadBudget}\n` : '') +
+    `Тип клиента: ${state.customerType === 'b2b' ? 'Бизнес' : 'Частник'}\n` +
+    `Канал: ${channel === 'telegram' ? 'Telegram' : 'MAX'}\n` +
+    `\n<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://podryadpro.ru'}/admin">Открыть админку</a>`
+  );
+
+  await clearSession(chatId, channel);
+  return { text: UI.leadQualifyThanks({ humanId, service: label }), buttons: postOrderButtons() };
+}
+
+/** Free-text in the digital/labor lead qualification funnel. */
+async function handleLeadQualifyText(
+  text: string, _contactId: string, chatId: string, channel: 'telegram' | 'max', state: SessionState,
+): Promise<FunnelResponse | null> {
+  // Step 1: description
+  if (!state.leadDescription) {
+    await setSessionState(chatId, channel, 'lead_qualify', 'budget', { ...state, screen: 'lead_qualify', leadDescription: text.trim() });
+    return { text: UI.leadQualifyBudget, buttons: leadBudgetButtons() };
+  }
+  // Step 2: budget/terms → confirm
+  if (!state.leadBudget) {
+    const next = { ...state, screen: 'lead_qualify' as Screen, leadBudget: text.trim() };
+    await setSessionState(chatId, channel, 'lead_qualify', 'confirm', next);
+    return renderLeadConfirm(next);
+  }
+  return null;
 }
