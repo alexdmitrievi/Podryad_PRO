@@ -687,6 +687,16 @@ export async function handleJob(job: Pick<JobQueueRow, 'id' | 'job_type' | 'payl
       return { winback_sent: sent };
     }
 
+    case 'channel.incoming_message':
+      // CRM record only — the actual message is handled inline by the channel
+      // webhook/poller. No worker action needed.
+      return { skipped: true, reason: 'handled_inline' };
+
+    case 'chat.lead_intent':
+      // Lead-intent AI analysis is not implemented yet; the enqueue is kept for
+      // future use. Mark complete so it doesn't accumulate as dead jobs.
+      return { skipped: true, reason: 'not_implemented' };
+
     default:
       throw new Error(`Unsupported job_type: ${job.job_type}`);
   }
