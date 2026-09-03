@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Process pending job queue
         run: |
-          curl -sS -X POST "https://podryadpro.ru/api/cron/jobs" \
+          curl -sS -X POST "https://podryadpro.ru/api/cron/jobs?limit=5" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -w "\nHTTP %{http_code}" \
-            --max-time 40
+            --max-time 110
