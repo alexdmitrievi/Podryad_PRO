@@ -16,6 +16,13 @@ const WORK_TYPE_LABELS: Record<string, string> = {
   materials: 'Материалы',
   complex: 'Комплекс услуг',
   combo: 'Комбо-заказ',
+  marketing: 'Маркетинг и продвижение',
+  ai_agents: 'ИИ-менеджеры и агенты',
+  crm: 'CRM',
+  automation: 'Автоматизация процессов',
+  agency: 'Агентские услуги',
+  tender_parser: 'Парсер тендеров',
+  scraping: 'Скрапинг и лидоген',
 };
 
 const INITIATOR_LABELS: Record<string, string> = {
@@ -111,12 +118,13 @@ function buildOrderCreatedText(payload: JobPayload): string {
 
 function buildLeadCreatedText(payload: JobPayload): string {
   const nameLine = payload.name ? `\n👤 Имя: ${escapeMd(asString(payload.name))}` : '';
+  const companyLine = payload.company ? `\n🏢 Компания: ${escapeMd(asString(payload.company))}` : '';
   const source = asString(payload.source, 'landing');
   const comment = escapeMd(asString(payload.comment).slice(0, 400));
   const commentLine = comment ? `\n💬 ${comment}` : '';
   const orderType = asString((payload.order_type ?? payload.type ?? '') as string, '');
   const typeLabel = workTypeLabel(payload.work_type) || orderType || '—';
-  return `📥 *Новая заявка (${source})*\n\n📞 Телефон: ${asString(payload.phone, '—')}${nameLine}\n🔨 Тип: ${typeLabel}\n📍 Адрес: ${escapeMd(asString(payload.address, '—'))}${commentLine}\n\n⚡ /admin → Лиды`;
+  return `📥 *Новая заявка (${source})*\n\n📞 Телефон: ${asString(payload.phone, '—')}${nameLine}${companyLine}\n🔨 Тип: ${typeLabel}\n📍 Адрес: ${escapeMd(asString(payload.address, '—'))}${commentLine}\n\n⚡ /admin → Лиды`;
 }
 
 function buildExecutorResponseText(payload: JobPayload): string {
