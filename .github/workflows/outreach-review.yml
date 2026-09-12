@@ -1,0 +1,20 @@
+name: Outreach Review Notifier
+
+# Шлёт черновики КП (outreach_tasks, status=draft — создаёт Parser sync-crm)
+# владельцу в Telegram с кнопками OK/Правка/Отклонить. Сам эндпоинт помечает
+# задачи in_review, поэтому дублей рассылки не будет даже при частом расписании.
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # каждые 30 минут
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push draft proposals to owner
+        run: |
+          curl -sS -X POST "https://podryadpro.ru/api/cron/outreach-review?limit=5" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -w "\nHTTP %{http_code}" \
+            --max-time 60
