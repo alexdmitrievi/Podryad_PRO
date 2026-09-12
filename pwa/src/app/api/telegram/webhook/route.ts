@@ -5,6 +5,17 @@ import { log } from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getTelegramConfig } from '@/lib/channels/config';
 import { handleFunnelEvent } from '@/lib/bot/funnel-handler';
+import {
+  parseOutreachCallback,
+  getAdminChatId,
+  setOutreachEditState,
+  getOutreachEditTaskId,
+  clearOutreachEditState,
+  handleOutreachAction,
+  regenerateDraft,
+  buildReviewMessage,
+  reviewButtons,
+} from '@/lib/outreach/review';
 import { getChannelRouter } from '@/lib/channels';
 
 export const runtime = 'nodejs';
@@ -133,6 +144,24 @@ export async function POST(req: NextRequest) {
   if (isCallback) {
     const data = text;
 
+    // ── Outreach review (owner-only, Autoclient MVP) ──
+    const outreachCb = parseOutreachCallback(data);
+    if (outreachCb) {
+      const adminChatId = getAdminChatId() ?? '';
+      if (chatId !== adminChatId) {
+        await tgSend(chatId, '⛔ Эта команда доступна только владельцу.');
+        return logAndReturn(t0, 'outreach-denied');
+      }
+      if (outreachCb.action === 'edit') {
+        await setOutreachEditState(chatId, outreachCb.taskId);
+        await tgSend(chatId, `✏️ Пришлите правку к черновику #${outreachCb.taskId} одним сообщением — перегенерирую КП.`);
+      } else {
+        const result = await handleOutreachAction(outreachCb.action, outreachCb.taskId);
+        await tgSend(chatId, result.message);
+      }
+      return logAndReturn(t0, 'outreach-callback');
+    }
+
     if (data === 'menu:services') {
       await tgSend(chatId, '🛠 <b>Услуги</b>\n\nВыберите, что нужно сделать:', SERVICES_MENU);
       return logAndReturn(t0, 'services');
@@ -149,6 +178,21 @@ export async function POST(req: NextRequest) {
         ? '👋 Выберите раздел или напишите, что нужно.\n\nМенеджер подготовит КП и счёт по первому запросу.'
         : '👋 Выберите раздел или напишите, что нужно сделать.\n\nЯ помогу быстро заказать работы по дому и участку.', isB2b ? B2B_MENU : B2C_MENU);
       return logAndReturn(t0, 'ctype');
+    }
+  }
+
+  // ── Outreach edit: owner sent the edit instruction ──
+  if (!isCallback) {
+    const editTaskId = await getOutreachEditTaskId(chatId);
+    if (editTaskId) {
+      await clearOutreachEditState(chatId);
+      const regen = await regenerateDraft(editTaskId, text);
+      if (regen.ok && regen.task) {
+        await tgSend(chatId, buildReviewMessage(regen.task, regen.companyName ?? '', regen.niche), reviewButtons(editTaskId));
+      } else {
+        await tgSend(chatId, `⚠️ Не удалось перегенерировать черновик #${editTaskId}: ${regen.error ?? 'unknown error'}`);
+      }
+      return logAndReturn(t0, 'outreach-regen');
     }
   }
 
