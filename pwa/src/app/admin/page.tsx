@@ -81,6 +81,9 @@ interface AdminListing {
 interface Lead {
   id: number;
   phone: string;
+  name: string | null;
+  email: string | null;
+  telegram: string | null;
   work_type: string;
   city: string;
   comment: string | null;
@@ -1631,7 +1634,7 @@ function LeadsTab({ pin }: { pin: string }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-dark-border">
-                  {['Дата', 'Телефон', 'Компания', 'Категория', 'Комментарий', 'Комиссия %', 'Источник'].map(h => (
+                  {['Дата', 'Телефон', 'Имя', 'Компания', 'Категория', 'Комментарий', 'Комиссия %', 'Источник'].map(h => (
                     <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -1641,6 +1644,7 @@ function LeadsTab({ pin }: { pin: string }) {
                   <tr key={l.id} className="border-b border-gray-50 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border">
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(l.created_at)}</td>
                     <td className="px-4 py-3 font-mono">{l.phone}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{l.name || '—'}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{l.company || '—'}</td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-border">
@@ -1675,6 +1679,7 @@ function LeadsTab({ pin }: { pin: string }) {
                 </div>
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-border font-medium">{WORK_TYPE_LABELS[l.work_type] || l.work_type}</span>
+                  {l.name && <span className="text-xs text-gray-500">{l.name}</span>}
                   {l.company && <span className="text-xs text-gray-500">{l.company}</span>}
                   <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-500/10 text-brand-500">{l.source}</span>
                 </div>
