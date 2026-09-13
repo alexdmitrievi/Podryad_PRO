@@ -86,8 +86,14 @@ async function sendOrThrow(messages: NormalizedOutgoingMessage[]): Promise<SendR
   const router = getChannelRouter();
   const results = await Promise.all(messages.map((message) => router.send(message)));
   const failed = results.filter((result) => !result.success);
-  if (failed.length > 0) {
+  if (failed.length === results.length) {
     throw new Error(`Failed to deliver ${failed.length} message(s): ${failed.map((result) => result.error ?? result.channel).join('; ')}`);
+  }
+  if (failed.length > 0) {
+    // Partial delivery: at least one channel received the message — do not retry the job.
+    log.warn('job-worker: partial delivery failure', {
+      failed: failed.map((result) => result.error ?? result.channel),
+    });
   }
   return results;
 }

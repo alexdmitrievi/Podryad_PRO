@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const db = getServiceClient();
   const { data, error } = await db
     .from('leads')
-    .select('id, phone, work_type, city, comment, source, score, company, created_at')
+    .select('id, phone, name, email, telegram, work_type, city, comment, source, score, company, commission_percent, created_at')
     .order('score', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(1000);

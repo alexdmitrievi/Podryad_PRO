@@ -97,6 +97,45 @@ describe('handleJob', () => {
     );
   });
 
+  it('completes the job when one admin channel fails but another delivers', async () => {
+    send.mockImplementation(async (message: { channel: string }) =>
+      message.channel === 'max'
+        ? { success: false, channel: 'max', error: 'MAX API error: 404 Dialog not found' }
+        : { success: true, channel: 'telegram', latency_ms: 1 },
+    );
+
+    const result = await handleJob({
+      id: 'job-partial',
+      job_type: 'dispute.opened',
+      payload: {
+        order_id: 'ORD-PARTIAL',
+        dispute_id: 'DSP-PARTIAL',
+        initiated_by: 'customer',
+        reason: 'Тест частичной доставки',
+      },
+    });
+
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(result).toBeTruthy();
+  });
+
+  it('throws when every admin channel fails', async () => {
+    send.mockResolvedValue({ success: false, channel: 'max', error: 'MAX API error: 404 Dialog not found' });
+
+    await expect(
+      handleJob({
+        id: 'job-all-fail',
+        job_type: 'dispute.opened',
+        payload: {
+          order_id: 'ORD-FAIL',
+          dispute_id: 'DSP-FAIL',
+          initiated_by: 'customer',
+          reason: 'Тест полного отказа',
+        },
+      }),
+    ).rejects.toThrow('Failed to deliver');
+  });
+
   it('sends payment link to preferred telegram recipient', async () => {
     await handleJob({
       id: 'job-2',
