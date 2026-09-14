@@ -742,15 +742,6 @@ export default function HomePage() {
               {
                 icon: (
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M3 11c0 5 9 10 9 10s9-5 9-10a9 9 0 10-18 0z" />
-                    <circle cx="12" cy="11" r="3" />
-                  </svg>
-                ),
-                label: 'Карта заказов',
-              },
-              {
-                icon: (
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" />
                   </svg>
                 ),
@@ -963,12 +954,6 @@ export default function HomePage() {
                 className="link-underline text-white/65 hover:text-white/90 text-sm transition-colors duration-200 w-fit"
               >
                 Политика конфиденциальности
-              </Link>
-              <Link
-                href="/dashboard"
-                className="link-underline text-white/65 hover:text-white/90 text-sm transition-colors duration-200 w-fit"
-              >
-                Карта заказов
               </Link>
               <a
                 href="https://podryad-pro-kohl.vercel.app/admin"
