@@ -12,7 +12,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: tender-parser
+        working-directory: apps/tender-parser
 
     steps:
       - name: Checkout

@@ -29,7 +29,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: tender-parser
+        working-directory: apps/tender-parser
 
     env:
       LEADS_ENABLED: ${{ vars.LEADS_ENABLED }}

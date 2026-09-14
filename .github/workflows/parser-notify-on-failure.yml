@@ -25,7 +25,7 @@ jobs:
 
     # working-directory здесь намеренно не задан: job только печатает данные
     # упавшего workflow, файлы проекта ему не нужны и checkout не делается.
-    # С working-directory: tender-parser шаг падал бы с "No such file".
+    # С working-directory: apps/tender-parser шаг падал бы с "No such file".
 
     steps:
       - name: Report failure

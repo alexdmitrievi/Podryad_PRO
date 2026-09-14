@@ -15,8 +15,10 @@ name: Tests
 on:
   push:
     branches: [main, master]
+    paths: ['apps/tender-parser/**', '.github/workflows/parser-*.yml']
   pull_request:
     branches: [main, master]
+    paths: ['apps/tender-parser/**', '.github/workflows/parser-*.yml']
   workflow_dispatch:
 
 jobs:
@@ -26,7 +28,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: tender-parser
+        working-directory: apps/tender-parser
 
     steps:
       - name: Checkout
