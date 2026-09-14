@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5, user-scalable=yes" />
+  <title>Подписки на тендеры — Тендер PRO</title>
+  <meta name="description" content="Создайте подписку и получайте уведомления о новых закупках по вашим фильтрам." />
+  <meta property="og:title" content="Подписки на тендеры — Тендер PRO" />
+  <meta property="og:description" content="Создайте подписку и получайте уведомления о новых закупках" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/web/logo.png" />
+  <link rel="preload" href="/web/styles.css" as="style" />
+  <link rel="stylesheet" href="/web/styles.css" />
+  <link rel="preload" href="/web/shared.js" as="script" />
+  <link rel="preload" href="/web/navbar.js" as="script" />
+  <link rel="preload" href="/web/subscribe.js" as="script" />
+  <link rel="icon" type="image/png" href="/web/icon-192.png" />
+  <link rel="manifest" href="/web/manifest.json" />
+  <meta name="theme-color" content="#2F5BFF" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/web/icon-192.png" />
+</head>
+<body>
+  <nav-bar active="subscribe"></nav-bar>
+
+  <div class="container">
+    <header class="page-header">
+      <h1>Подписки на тендеры</h1>
+      <p class="subtitle">Создайте подписку с фильтрами — получайте уведомления о новых закупках</p>
+    </header>
+
+    <p id="global-status" class="status-msg" role="status" aria-live="polite"></p>
+
+    <!-- Create subscription -->
+    <section class="glass panel" aria-labelledby="create-title">
+      <h2 id="create-title">Новая подписка</h2>
+      <form id="sub-form" novalidate>
+        <div class="field">
+          <label class="field-label" for="email">Email</label>
+          <input type="email" name="email" id="email" required autocomplete="email" placeholder="name@example.com" />
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label class="field-label" for="niche">Категория</label>
+            <select name="niche" id="niche">
+              <option value="">Не выбрана</option>
+              <option value="custom">Свои ключевые слова</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="region">Регион</label>
+            <div class="autocomplete-wrap">
+              <input type="text" name="region" id="region" placeholder="Начните вводить регион..." autocomplete="off" />
+              <div id="region-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="keywords">Ключевые слова</label>
+          <textarea name="keywords" id="keywords" placeholder="Через запятую или каждое с новой строки"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label class="field-label" for="min_nmck">НМЦК от, &#8381;</label>
+            <input type="number" name="min_nmck" id="min_nmck" min="0" step="1" placeholder="0" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="max_nmck">НМЦК до, &#8381;</label>
+            <input type="number" name="max_nmck" id="max_nmck" min="0" step="1" placeholder="Не ограничено" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="law_type">Тип закона</label>
+            <select name="law_type" id="law_type">
+              <option value="">Любой</option>
+              <option value="44-fz">44-ФЗ</option>
+              <option value="223-fz">223-ФЗ</option>
+              <option value="commercial">Коммерческий</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-green">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            Подписаться
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- List subscriptions -->
+    <section class="glass panel" aria-labelledby="list-title">
+      <h2 id="list-title">Мои подписки</h2>
+      <p class="subtitle mb-2">Укажите тот же email и нажмите кнопку, чтобы увидеть активные записи.</p>
+      <div class="actions">
+        <button type="button" id="btn-list" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Мои подписки
+        </button>
+      </div>
+      <div id="list-area" class="hidden mt-2" aria-live="polite"></div>
+      <p id="list-empty" class="empty-state hidden">
+        <span class="empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><line x1="1" x2="23" y1="1" y2="23"/></svg>
+        </span>
+        <br />Подписок с этим email не найдено.
+      </p>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <a href="/web/about.html">О сервисе</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/social-contract.html">Соц. контракт</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/subscribe.html">Подписки</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/stats.html">Аналитика</a>
+  <div class="footer-brand">Сервис платформы <a href="https://podryadpro.ru/">Подряд PRO</a></div></footer>
+
+  <script src="/web/shared.js" defer></script>
+  <script src="/web/navbar.js" defer></script>
+  <script src="/web/subscribe.js" defer></script>
+</body>
+</html>

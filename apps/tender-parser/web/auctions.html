@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5, user-scalable=yes" />
+  <title>Аукционы банкротов — Тендер PRO</title>
+  <meta name="description" content="Аукционы банкротов: земля, недвижимость, транспорт, оборудование по всей России." />
+  <meta property="og:title" content="Аукционы банкротов — Тендер PRO" />
+  <meta property="og:description" content="Имущество банкротов на торгах по всей России: недвижимость, транспорт, оборудование" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/web/logo.png" />
+  <link rel="preload" href="/web/styles.css" as="style" />
+  <link rel="stylesheet" href="/web/styles.css" />
+  <link rel="preload" href="/web/shared.js" as="script" />
+  <link rel="preload" href="/web/navbar.js" as="script" />
+  <link rel="preload" href="/web/auctions.js" as="script" />
+  <link rel="icon" type="image/png" href="/web/icon-192.png" />
+  <link rel="manifest" href="/web/manifest.json" />
+  <meta name="theme-color" content="#2F5BFF" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/web/icon-192.png" />
+</head>
+<body>
+  <nav-bar active="auctions"></nav-bar>
+
+  <div class="container">
+    <header class="page-header">
+      <h1 id="page-title">Аукционы банкротов</h1>
+      <p class="subtitle" id="page-subtitle">Имущество банкротов: земля, недвижимость, транспорт, оборудование</p>
+    </header>
+
+    <!-- Tabs -->
+    <div class="auction-tabs" id="auction-tabs">
+      <button class="auction-tab active" data-tab="bankruptcy">Банкротство</button>
+      <button class="auction-tab" data-tab="privatization">Приватизация</button>
+      <button class="auction-tab" data-tab="pledged">Залоговое</button>
+    </div>
+
+    <!-- Filters -->
+    <section class="glass form-panel">
+      <form id="search-form" novalidate>
+        <div class="field">
+          <label class="field-label" for="q">Ключевые слова</label>
+          <div class="search-input-wrap">
+            <span class="search-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </span>
+            <input type="text" name="q" id="q" placeholder="Например: автомобиль, квартира, земельный участок, станок..." autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Строительные фильтры (быстрые кнопки) -->
+        <div class="field" style="margin-top:0.5rem">
+          <label class="field-label" style="margin-bottom:0.5rem">Направление (быстрый фильтр)</label>
+          <div class="chip-row" id="construction-chips">
+            <button type="button" class="chip active" data-chip="all">Все лоты</button>
+            <button type="button" class="chip" data-chip="realestate">🏠 Недвижимость</button>
+            <button type="button" class="chip" data-chip="land">🌍 Земля</button>
+            <button type="button" class="chip" data-chip="vehicles">🚗 Транспорт</button>
+            <button type="button" class="chip" data-chip="equipment">🏗 Оборудование</button>
+          </div>
+        </div>
+
+        <div class="form-row form-row-2">
+          <div class="field">
+            <label class="field-label" for="region">Регион</label>
+            <div class="autocomplete-wrap">
+              <input type="text" name="region" id="region" placeholder="Москва, Омская область..." autocomplete="off" />
+              <div id="region-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="property_type">Тип имущества</label>
+            <select name="niche" id="property_type">
+              <option value="">Все типы</option>
+              <option value="real_estate">Недвижимость</option>
+              <option value="land">Земельные участки</option>
+              <option value="vehicles">Транспорт</option>
+              <option value="equipment">Оборудование</option>
+              <option value="other_assets">Прочие активы</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row form-row-2">
+          <div class="field">
+            <label class="field-label" for="min_nmck">Цена от, &#8381;</label>
+            <input type="number" name="min_nmck" id="min_nmck" min="0" step="1000" placeholder="Минимальная сумма" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="max_nmck">Цена до, &#8381;</label>
+            <input type="number" name="max_nmck" id="max_nmck" min="0" step="1000" placeholder="Максимальная сумма" />
+          </div>
+        </div>
+
+        <input type="hidden" name="page" id="page" value="1" />
+
+        <div class="actions">
+          <button type="submit" id="btn-search" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            Найти лоты
+          </button>
+          <button type="button" id="btn-reset" class="btn btn-ghost">Сбросить</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Status -->
+    <p id="status" class="status-msg" role="status" aria-live="polite"></p>
+
+    <!-- Results toolbar -->
+    <div id="results-toolbar" class="results-toolbar hidden">
+      <div class="results-count" id="results-count"></div>
+      <div class="toolbar-actions">
+        <button type="button" id="btn-export" class="btn btn-ghost btn-sm" title="Экспорт в CSV">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+          CSV
+        </button>
+        <div class="sort-group">
+          <label for="sort-select">Сортировка:</label>
+          <select id="sort-select">
+            <option value="created_at">По дате добавления</option>
+            <option value="nmck">По цене</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <section id="results" class="results-grid" aria-label="Результаты аукционов"></section>
+
+    <!-- Pagination -->
+    <nav id="pager" class="pager hidden" aria-label="Пагинация">
+      <button type="button" id="btn-prev" class="btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Назад
+      </button>
+      <span id="page-info" class="page-info"></span>
+      <button type="button" id="btn-next" class="btn">
+        Вперёд
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </nav>
+  </div>
+
+  <footer class="site-footer">
+    <a href="/web/about.html">О сервисе</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/social-contract.html">Соц. контракт</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/subscribe.html">Подписки</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/stats.html">Аналитика</a>
+  <div class="footer-brand">Сервис платформы <a href="https://podryadpro.ru/">Подряд PRO</a></div></footer>
+
+  <script src="/web/shared.js" defer></script>
+  <script src="/web/navbar.js" defer></script>
+  <script src="/web/auctions.js" defer></script>
+</body>
+</html>

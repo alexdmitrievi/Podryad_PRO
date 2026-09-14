@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5, user-scalable=yes" />
+  <title>Избранные тендеры — Тендер PRO</title>
+  <meta name="description" content="Сохранённые тендеры и аукционы. Управляйте избранными закупками." />
+  <meta property="og:title" content="Избранные тендеры — Тендер PRO" />
+  <meta property="og:description" content="Сохранённые тендеры и аукционы" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/web/logo.png" />
+  <link rel="preload" href="/web/styles.css" as="style" />
+  <link rel="stylesheet" href="/web/styles.css" />
+  <link rel="preload" href="/web/shared.js" as="script" />
+  <link rel="preload" href="/web/navbar.js" as="script" />
+  <link rel="preload" href="/web/favorites.js" as="script" />
+  <link rel="icon" type="image/png" href="/web/icon-192.png" />
+  <link rel="manifest" href="/web/manifest.json" />
+  <meta name="theme-color" content="#2F5BFF" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/web/icon-192.png" />
+</head>
+<body>
+  <nav-bar active="favorites"></nav-bar>
+
+  <div class="container">
+    <header class="page-header">
+      <h1>Избранные тендеры</h1>
+      <p class="subtitle">Сохранённые закупки хранятся в браузере на вашем устройстве</p>
+    </header>
+
+    <div id="fav-toolbar" class="results-toolbar hidden">
+      <div class="results-count" id="fav-count"></div>
+      <div class="toolbar-actions">
+        <button type="button" id="btn-export-fav" class="btn btn-ghost btn-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+          Экспорт CSV
+        </button>
+        <button type="button" id="btn-clear-fav" class="btn btn-danger btn-sm">Очистить все</button>
+      </div>
+    </div>
+
+    <section id="fav-results" class="results-grid"></section>
+  </div>
+
+  <footer class="site-footer">
+    <a href="/web/about.html">О сервисе</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/social-contract.html">Соц. контракт</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/subscribe.html">Подписки</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/stats.html">Аналитика</a>
+  <div class="footer-brand">Сервис платформы <a href="https://podryadpro.ru/">Подряд PRO</a></div></footer>
+
+  <script src="/web/shared.js" defer></script>
+  <script src="/web/navbar.js" defer></script>
+  <script src="/web/favorites.js" defer></script>
+</body>
+</html>

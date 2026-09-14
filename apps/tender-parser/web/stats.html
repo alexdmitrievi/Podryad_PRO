@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5, user-scalable=yes" />
+  <title>Аналитика тендеров — Тендер PRO</title>
+  <meta name="description" content="Статистика по закупкам: категории, регионы, динамика. Аналитика тендерного рынка России." />
+  <meta property="og:title" content="Аналитика тендеров — Тендер PRO" />
+  <meta property="og:description" content="Статистика по закупкам: категории, регионы, динамика" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/web/logo.png" />
+  <link rel="preload" href="/web/styles.css" as="style" />
+  <link rel="stylesheet" href="/web/styles.css" />
+  <link rel="preload" href="/web/shared.js" as="script" />
+  <link rel="preload" href="/web/navbar.js" as="script" />
+  <link rel="icon" type="image/png" href="/web/icon-192.png" />
+  <link rel="manifest" href="/web/manifest.json" />
+  <meta name="theme-color" content="#2F5BFF" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/web/icon-192.png" />
+</head>
+<body>
+  <nav-bar active="stats"></nav-bar>
+
+  <div class="container">
+    <header class="page-header">
+      <h1>Аналитика тендеров</h1>
+      <p class="subtitle">Обзор базы закупок: статистика по категориям, регионам и активности</p>
+    </header>
+
+    <p id="status" class="status-msg" role="status" aria-live="polite"></p>
+
+    <!-- KPI Cards -->
+    <section class="kpi-grid" id="kpi-grid">
+      <div class="kpi-card glass">
+        <div class="kpi-icon blue">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpi-total">—</div>
+          <div class="kpi-label">Всего тендеров</div>
+        </div>
+      </div>
+
+      <div class="kpi-card glass">
+        <div class="kpi-icon green">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpi-recent">—</div>
+          <div class="kpi-label">За последние 7 дней</div>
+        </div>
+      </div>
+
+      <div class="kpi-card glass">
+        <div class="kpi-icon purple">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpi-niches">—</div>
+          <div class="kpi-label">Ниш в базе <span class="kpi-hint" title="Автоматические категории тендеров: мебель, стройка, IT и др. Определяются по ключевым словам и кодам ОКПД2">?</span></div>
+        </div>
+      </div>
+
+      <div class="kpi-card glass">
+        <div class="kpi-icon amber">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpi-regions">—</div>
+          <div class="kpi-label">Регионов</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="charts-grid">
+      <div class="chart-panel glass">
+        <h3>Распределение по категориям</h3>
+        <canvas id="chart-niches"></canvas>
+      </div>
+      <div class="chart-panel glass">
+        <h3>Топ-10 регионов</h3>
+        <canvas id="chart-regions"></canvas>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <a href="/web/about.html">О сервисе</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/social-contract.html">Соц. контракт</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/subscribe.html">Подписки</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="/web/stats.html">Аналитика</a>
+  <div class="footer-brand">Сервис платформы <a href="https://podryadpro.ru/">Подряд PRO</a></div></footer>
+
+  <script src="/web/shared.js" defer></script>
+  <script src="/web/navbar.js" defer></script>
+  <script src="/web/vendor/chart.umd.min.js" defer></script>
+  <script src="/web/stats.js" defer></script>
+</body>
+</html>

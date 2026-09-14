@@ -1,0 +1,129 @@
+name: Parse Leads (China importers)
+
+# Отдельное расписание, не в общем цикле с тендерами: домен leads работает
+# медленно (вежливые задержки) и не должен задерживать парсинг закупок.
+#
+# Job не делает ничего, пока в репозитории не выставлена переменная
+# LEADS_ENABLED=true (Settings → Secrets and variables → Actions → Variables).
+# Пока её нет, workflow отрабатывает вхолостую за секунды.
+
+on:
+  schedule:
+    - cron: "30 2 * * 1"  # раз в неделю, понедельник 02:30 UTC
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Профиль из config/leads_profiles.yaml (пусто = все пилотные АПК)"
+        required: false
+        default: ""
+      skip_enrich:
+        description: "Только collect, без обхода сайтов"
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  parse-leads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    defaults:
+      run:
+        working-directory: tender-parser
+
+    env:
+      LEADS_ENABLED: ${{ vars.LEADS_ENABLED }}
+      LEADS_STORAGE: ${{ vars.LEADS_STORAGE || 'supabase' }}
+      # all.biz — основной источник; made_in_china (404) и customs_api (без
+      # ключа) не запускаем. Переменная LEADS_SOURCES может переопределить.
+      LEADS_SOURCES: ${{ vars.LEADS_SOURCES || 'allbiz,tradekey' }}
+      LEADS_CONTACT_EMAIL: ${{ vars.LEADS_CONTACT_EMAIL }}
+      LEADS_CUSTOMS_API_KEY: ${{ secrets.LEADS_CUSTOMS_API_KEY }}
+      LEADS_CUSTOMS_API_PROVIDER: ${{ vars.LEADS_CUSTOMS_API_PROVIDER }}
+      LEADS_CUSTOMS_API_BASE_URL: ${{ vars.LEADS_CUSTOMS_API_BASE_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      # Все три имени: supabase_key() берёт первое непустое. Исторический
+      # секрет назывался SUPABASE_SERVICE_ROLE_TOKEN — подхватываем и его.
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_ROLE_TOKEN }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+    steps:
+      # Checkout идёт первым: defaults.run.working-directory указывает на
+      # tender-parser, и любой run-шаг до чекаута падает с "No such file or
+      # directory". Сам чекаут — uses-шаг, working-directory на него не влияет.
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check feature flag
+        id: flag
+        run: |
+          if [ "${LEADS_ENABLED}" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "LEADS_ENABLED != true — домен выключен, пропускаю прогон."
+          fi
+
+      - name: Setup Python 3.12
+        if: steps.flag.outputs.enabled == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        if: steps.flag.outputs.enabled == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-parser.txt
+
+      - name: Fail fast if the contact address was not configured
+        if: steps.flag.outputs.enabled == 'true'
+        run: |
+          if [ -z "${LEADS_CONTACT_EMAIL}" ] || \
+             [ "${LEADS_CONTACT_EMAIL}" = "parser-abuse@example.com" ]; then
+            echo "::error::Задайте переменную LEADS_CONTACT_EMAIL — краулер обязан"
+            echo "::error::сообщать рабочий контакт в User-Agent (вежливый режим)."
+            exit 1
+          fi
+
+      - name: Resolve profiles
+        id: profiles
+        if: steps.flag.outputs.enabled == 'true'
+        run: |
+          if [ -n "${{ inputs.profile }}" ]; then
+            PROFILES="${{ inputs.profile }}"
+          else
+            PROFILES="agri_import_machinery_cn agri_export_grain_cn_tr_kz agri_export_meat_cn_kz"
+          fi
+          echo "list=${PROFILES}" >> "$GITHUB_OUTPUT"
+
+      - name: Collect companies
+        if: steps.flag.outputs.enabled == 'true'
+        run: |
+          for p in ${{ steps.profiles.outputs.list }}; do
+            python -m leads collect --profile "$p"
+          done
+
+      - name: Enrich with emails
+        if: steps.flag.outputs.enabled == 'true' && inputs.skip_enrich != true
+        run: |
+          for p in ${{ steps.profiles.outputs.list }}; do
+            python -m leads enrich --profile "$p"
+          done
+
+      - name: Stats
+        if: steps.flag.outputs.enabled == 'true'
+        run: |
+          for p in ${{ steps.profiles.outputs.list }}; do
+            python -m leads stats --profile "$p"
+          done
+
+      - name: Sync enriched leads to CRM (draft proposals)
+        if: steps.flag.outputs.enabled == 'true' && inputs.skip_enrich != true
+        env:
+          AGENT_ROUTER_API_KEY: ${{ secrets.AGENT_ROUTER_API_KEY }}
+        run: |
+          for p in ${{ steps.profiles.outputs.list }}; do
+            python -m leads sync-crm --profile "$p"
+          done
