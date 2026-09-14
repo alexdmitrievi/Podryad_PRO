@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.env
+.vercel
+node_modules/
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Домен leads: локальная база и выгрузки не коммитятся
+data/
+*.sqlite3
+leads*.csv
