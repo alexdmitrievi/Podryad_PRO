@@ -23,7 +23,7 @@ export function mainMenuButtons(_region: RegionCode = 'omsk'): MessageButton[][]
       { type: 'callback', text: '📝 Описать задачу', callback_data: 'menu:quick_order' },
     ],
     [
-      { type: 'callback', text: '🏗️ Материалы и рабочая сила', callback_data: 'block:0' },
+      { type: 'callback', text: '👷 Рабочая сила', callback_data: 'block:0' },
       { type: 'callback', text: '🤖 Маркетинг и ИИ', callback_data: 'block:1' },
     ],
     [
@@ -421,11 +421,10 @@ export function subscriptionPeriodButtons(): MessageButton[][] {
 
 // ── B2B block + digital lead keyboards ───────────────────
 
-/** Block submenu: 0=Материалы и рабочая сила, 1=Маркетинг и ИИ, 2=Продажи и данные. */
+/** Block submenu: 0=Рабочая сила, 1=Маркетинг и ИИ, 2=Продажи и данные. */
 export function blockButtons(blockIndex: number): MessageButton[][] {
   if (blockIndex === 0) {
     return [
-      [{ type: 'callback', text: '🧱 Материалы', callback_data: 'menu:materials' }],
       [{ type: 'callback', text: '👷 Рабочая сила', callback_data: 'digital:labor' }],
       navRow(),
     ];

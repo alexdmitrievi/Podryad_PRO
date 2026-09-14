@@ -20,11 +20,10 @@ export interface ServiceBlock {
 
 export const SERVICE_BLOCKS: ServiceBlock[] = [
   {
-    id: 'materials-labor',
-    title: 'Материалы и рабочая сила',
+    id: 'labor',
+    title: 'Рабочая сила',
     items: [
       { kind: 'labor', label: 'Рабочая сила', hint: 'Бригады, грузчики, разнорабочие, строители' },
-      { kind: 'materials', label: 'Материалы', hint: 'Стройматериалы с доставкой' },
     ],
   },
   {

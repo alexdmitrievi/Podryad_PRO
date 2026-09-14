@@ -35,18 +35,19 @@ describe('keyboards — main menus', () => {
     expect(kb.length).toBeGreaterThanOrEqual(4);
   });
 
-  it('mainMenuButtons includes materials/labor block', () => {
+  it('mainMenuButtons includes labor block (materials hidden)', () => {
     const kb = mainMenuButtons();
     const all = kb.flat();
     const blockBtn = all.find((b) => b.callback_data === 'block:0');
     expect(blockBtn).toBeDefined();
-    expect(blockBtn!.text).toContain('Материалы');
+    expect(blockBtn!.text).toContain('Рабочая сила');
+    expect(all.some((b) => b.callback_data === 'menu:materials')).toBe(false);
   });
 
-  it('mainMenuB2bButtons has materials first', () => {
+  it('mainMenuB2bButtons has labor first (materials hidden)', () => {
     const kb = mainMenuB2bButtons();
-    const materialsRow = kb[1]!;
-    expect(materialsRow[0]!.text).toContain('Материалы');
+    const laborRow = kb[1]!;
+    expect(laborRow[0]!.text).toContain('Рабочая сила');
   });
 
   it('mainMenuButtons has all 3 B2B service blocks', () => {
@@ -186,10 +187,10 @@ describe('keyboards — other', () => {
 });
 
 describe('keyboards — B2B blocks & digital leads', () => {
-  it('blockButtons(0) has materials + labor', () => {
+  it('blockButtons(0) has labor only (materials hidden)', () => {
     const kb = blockButtons(0);
     const all = kb.flat();
-    expect(all.some((b) => b.callback_data === 'menu:materials')).toBe(true);
+    expect(all.some((b) => b.callback_data === 'menu:materials')).toBe(false);
     expect(all.some((b) => b.callback_data === 'digital:labor')).toBe(true);
   });
 
