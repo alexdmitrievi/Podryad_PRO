@@ -9,7 +9,6 @@ import Spinner from '@/components/ui/Spinner';
 import AiChatWidget from '@/components/AiChatWidget';
 import { SERVICE_BLOCKS, serviceHint } from '@/lib/service-catalog';
 
-const LiveOrdersMap = dynamic(() => import('@/components/LiveOrdersMap'), { ssr: false });
 
 /* ── scroll-reveal hook ─────────────────────────────────────── */
 
@@ -217,8 +216,6 @@ export default function HomePage() {
 
   /* form state */
   const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
-  const [company, setCompany] = useState('');
   const [service, setService] = useState('');
   const [description, setDescription] = useState('');
   const [consent, setConsent] = useState(false);
@@ -258,8 +255,6 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone,
-          name: name || undefined,
-          company: company || undefined,
           work_type: service,
           comment: description || undefined,
           source: 'landing',
@@ -341,7 +336,6 @@ export default function HomePage() {
               {[
                 { label: 'Главная', href: '/' },
                 { label: 'Каталог', href: '/catalog/labor' },
-                { label: 'Карта заказов', href: '/dashboard' },
                 { label: 'Собственный парк', href: '/own-park' },
                 { label: 'Разместить заказ', href: '/order/new' },
                 { label: 'Оставить заявку', href: '/#lead-form' },
@@ -472,27 +466,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── LIVE MAP — активные заказы (сразу после Hero) ────── */}
-      <section className="py-14 sm:py-18 px-4 bg-surface dark:bg-dark-bg">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8">
-            <span className="eyebrow text-brand-500 mb-4 block">Карта заказов</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a1a2e] dark:text-white font-heading mb-3 tracking-tight">
-              Заказы прямо сейчас
-            </h2>
-            <p className="text-gray-500 dark:text-dark-muted max-w-xl mx-auto text-sm sm:text-base">
-              Активные заказы на карте в реальном времени. Нажмите на маркер, чтобы увидеть детали.
-            </p>
-          </div>
-          <LiveOrdersMap />
-          <p className="text-center text-gray-400 text-sm mt-4">
-            <Link href="/dashboard" className="link-underline text-brand-500 hover:text-brand-600 font-medium transition-colors duration-200">
-              Открыть полную карту →
-            </Link>
-          </p>
-        </div>
-      </section>
-
       {/* ── 2. УСЛУГИ — 3 карточки ──────────────────────────────── */}
             <section id="services" className="py-16 sm:py-20 px-4 bg-white dark:bg-dark-bg">
         <div ref={revServices} className="max-w-6xl mx-auto reveal">
@@ -514,10 +487,10 @@ export default function HomePage() {
             >
               <div className="p-6 flex flex-col flex-1">
                 <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 text-2xl">🏗️</div>
-                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Материалы и рабочая сила</h3>
-                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Стройматериалы с доставкой · бригады от 2 до 15 человек</p>
+                <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-white mb-1 font-heading">Рабочая сила</h3>
+                <p className="text-gray-500 dark:text-dark-text text-xs mb-4 font-medium">Бригады от 2 до 15 человек · выход в день обращения</p>
                 <ul className="space-y-2.5 text-sm mb-5 flex-1">
-                  {['Бетон, щебень, песок, цемент, кирпич', 'Грузчики, разнорабочие, строители', 'Землекопы, дворники, уборщики'].map((row) => (
+                  {['Грузчики, разнорабочие, строители', 'Землекопы, дворники, уборщики', 'Бригады под задачу любой сложности'].map((row) => (
                     <li key={row} className="flex items-center gap-2 text-gray-600 dark:text-dark-text">
                       <span className="text-brand-500 text-xs">●</span>
                       {row}
@@ -589,6 +562,33 @@ export default function HomePage() {
               Установить приложение на главный экран
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ── 2.4. TENDERPARS — бесплатный парсер тендеров ────────── */}
+      <section className="py-14 sm:py-16 px-4 bg-[#0d1030] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.07] pointer-events-none" aria-hidden="true"
+          style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, #4d5bff 0%, transparent 55%)' }} />
+        <div className="max-w-4xl mx-auto relative flex flex-col sm:flex-row items-center gap-8">
+          <div className="flex-1 text-center sm:text-left">
+            <span className="eyebrow text-brand-400 mb-3 block">Бесплатный инструмент</span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading mb-3 tracking-tight">
+              TenderPars — парсер тендеров и аукционов
+            </h2>
+            <p className="text-white/60 text-sm sm:text-base leading-relaxed max-w-xl">
+              Тендеры 44-ФЗ и 223-ФЗ, аукционы по банкротству, гранты и льготные кредиты для бизнеса.
+              Настройте фильтры под свою нишу — и забирайте только подходящие закупки.
+            </p>
+          </div>
+          <a
+            href="https://parser-juzu.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-shine inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold px-8 py-4 rounded-xl text-base transition-all hover:shadow-glow-hover cursor-pointer shrink-0"
+          >
+            Открыть TenderPars
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </a>
         </div>
       </section>
 
@@ -822,34 +822,6 @@ export default function HomePage() {
               onSubmit={handleSubmit}
               className="bg-white dark:bg-dark-card rounded-2xl p-6 sm:p-8 shadow-elevated border border-gray-100/80 dark:border-dark-border space-y-6"
             >
-              {/* Имя */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
-                  Имя
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Как к вам обращаться"
-                  className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
-                />
-              </div>
-
-              {/* Компания */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
-                  Компания
-                </label>
-                <input
-                  type="text"
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                  placeholder="Название или ИНН (необязательно)"
-                  className="w-full border border-gray-200 dark:border-dark-border rounded-xl px-4 py-3 min-h-[48px] text-sm text-gray-900 dark:text-white dark:bg-dark-bg placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-shadow"
-                />
-              </div>
-
               {/* Услуга */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
@@ -872,10 +844,10 @@ export default function HomePage() {
                 {errors.service && <p className="text-red-500 text-xs mt-1.5">{errors.service}</p>}
               </div>
 
-              {/* Описание задачи */}
+              {/* Комментарий (необязательно) */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-dark-text mb-2">
-                  Описание задачи
+                  Комментарий <span className="text-gray-400 dark:text-dark-muted font-normal">(необязательно)</span>
                 </label>
                 <textarea
                   value={description}
