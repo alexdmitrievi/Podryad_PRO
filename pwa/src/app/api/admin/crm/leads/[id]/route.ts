@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { log } from '@/lib/logger';
-import { CRM_STATUSES } from '../route';
+import { CRM_STATUSES } from '@/lib/crm-leads';
 
 /**
  * Card for a single Autoclient CRM lead:

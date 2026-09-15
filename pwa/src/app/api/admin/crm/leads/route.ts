@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { log } from '@/lib/logger';
-
-export const CRM_STATUSES = ['new', 'analyzed', 'cp_drafted', 'cp_approved', 'sent', 'replied', 'call', 'won', 'lost'] as const;
+import { CRM_STATUSES } from '@/lib/crm-leads';
 
 /**
  * GET /api/admin/crm/leads?status=&channel=&search=&limit=&offset=
