@@ -40,3 +40,6 @@ supabase/.temp/
 /pwa/coverage/
 supabase/combined_test_migrations.sql
 .vercel
+.hermes/
+__pycache__/
+*.pyc
