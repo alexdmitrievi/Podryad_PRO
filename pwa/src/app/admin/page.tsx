@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import UnifiedCRM from '@/components/admin/UnifiedCRM';
+import CrmLeadsTab from '@/components/admin/CrmLeadsTab';
 import InviteTab from '@/components/admin/InviteTab';
 import MobileTabMenu from '@/components/admin/MobileTabMenu';
 import { SERVICE_LABELS } from '@/lib/service-catalog';
@@ -153,12 +154,13 @@ interface ContactEntry {
   source: string;
 }
 
-type TabId = 'unified-crm' | 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'crm' | 'analytics' | 'documents' | 'own-equipment' | 'hero-images' | 'invites';
+type TabId = 'crm-leads' | 'unified-crm' | 'listings' | 'contractors' | 'customers' | 'leads' | 'contacts' | 'users' | 'orders' | 'responses' | 'markups' | 'disputes' | 'crm' | 'analytics' | 'documents' | 'own-equipment' | 'hero-images' | 'invites';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "unified-crm", label: "CRM Unified", icon: TrendingUp },
   { id: "invites", label: "Инвайтинг", icon: Send },
   { id: "crm", label: "CRM Воронка", icon: TrendingUp },
+  { id: "crm-leads", label: "Лиды B2B", icon: TrendingUp },
   { id: "own-equipment", label: "Наша техника", icon: Truck },
   { id: "analytics", label: "Аналитика", icon: Activity },
   { id: "orders", label: "Заказы", icon: ShoppingBag },
@@ -3676,7 +3678,7 @@ function getInitialTab(): TabId {
   if (typeof window === 'undefined') return 'unified-crm';
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab');
-  const validTabs: TabId[] = ['unified-crm', 'listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'crm', 'analytics', 'documents', 'own-equipment', 'hero-images', 'invites'];
+  const validTabs: TabId[] = ['crm-leads', 'unified-crm', 'listings', 'contractors', 'customers', 'leads', 'contacts', 'users', 'orders', 'responses', 'markups', 'disputes', 'crm', 'analytics', 'documents', 'own-equipment', 'hero-images', 'invites'];
   if (tab && validTabs.includes(tab as TabId)) return tab as TabId;
   return 'unified-crm';
 }
@@ -3750,6 +3752,7 @@ export default function AdminPage() {
 
         <div>
           {activeTab === 'unified-crm' && <UnifiedCRM pin={pin} />}
+          {activeTab === 'crm-leads' && <CrmLeadsTab pin={pin} />}
           {activeTab === 'own-equipment' && <OwnEquipmentTab pin={pin} />}
           {activeTab === 'crm' && <CrmFunnelTab pin={pin} />}
           {activeTab === 'analytics' && <AnalyticsTab pin={pin} />}
